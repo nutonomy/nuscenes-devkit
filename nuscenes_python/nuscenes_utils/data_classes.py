@@ -9,7 +9,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 
-from nuscenes_utils.geometry_utils import view_points, pcd_to_numpy
+from nuscenes_utils.geometry_utils import view_points
 
 
 class PointCloud:
@@ -24,9 +24,9 @@ class PointCloud:
     @staticmethod
     def load_pcd_bin(file_name):
         """
-        Loads from binary format version 4 (data is stored as a numpy array with 5 rows (x, y, z, i, r)).
+        Loads from binary format. Data is stored as (x, y, z, intensity, ring index).
         :param file_name: <str>.
-        :return: <np.float: 4, n>. Point cloud matrix.
+        :return: <np.float: 4, n>. Point cloud matrix (x, y, z, intensity).
         """
         scan = np.fromfile(file_name, dtype=np.float32)
         points = scan.reshape((-1, 5))[:, :4]
@@ -42,8 +42,6 @@ class PointCloud:
 
         if file_name.endswith('.bin'):
             points = cls.load_pcd_bin(file_name)
-        elif file_name.endswith('.pcl') or file_name.endswith('.pcd'):
-            points = pcd_to_numpy(file_name).T
         elif file_name.endswith('.npy'):
             points = np.load(file_name)
         else:
