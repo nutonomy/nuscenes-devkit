@@ -120,7 +120,7 @@ def view_points(points, view, normalize):
 
 def box_in_image(box, intrinsic, imsize, vis_level=BoxVisibility.IN_FRONT):
     """
-    Check if a box in visible inside an image without accounting for occlusions.
+    Check if a box is visible inside an image without accounting for occlusions.
     :param box: <Box>.
     :param intrinsic: <float: 3, 3>. Intrinsic camera matrix.
     :param imsize: (width <int>, height <int>).
