@@ -9,7 +9,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 
-from nuscenes_utils.geometry_utils import view_points, pcd_to_numpy
+from utils.geometry_utils import view_points, pcd_to_numpy
 
 
 class PointCloud:
