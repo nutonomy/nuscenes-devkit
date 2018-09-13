@@ -17,36 +17,6 @@ class BoxVisibility(IntEnum):
     IN_FRONT = 3  # Requires all corners to be 1 meter front of the camera AND at least one corner be visible in image.
 
 
-def pcd_to_numpy(pcd_file):
-    """
-    This function converts the pointcloud *.pcl files to numpy (x, y, z, i) format.
-    :param pcd_file: [str] Name of the point cloud file (*.pcl)
-    :return: numpy array of shape (n, 4), dtype = np.float32
-    """
-    with open(pcd_file) as ifile:
-        data = [line.strip() for line in ifile]
-
-    meta = data[:10]
-    assert meta[0].startswith('#'), 'First line must be comment'
-    assert meta[1].startswith('VERSION'), 'Second line must be VERSION'
-
-    fields = meta[2].split(' ')
-    assert fields[1] == 'x'
-    assert fields[2] == 'y'
-    assert fields[3] == 'z'
-    assert fields[5] == 'intensity'
-
-    # not support binary
-    assert data[10] == 'DATA ascii'
-
-    data = data[11:]  # remove header stuff
-    data = [d.split(' ') for d in data] # split each line
-    xyzi = [[d[0], d[1], d[2], d[4]] for d in data] # grab xyz and i
-    xyzi= np.array(xyzi, dtype=np.float32) # convert to numpy and set data type
-
-    return xyzi
-
-
 def quaternion_slerp(q0, q1, fraction):
     """
     Does interpolation between two quaternions. This code is modified from
