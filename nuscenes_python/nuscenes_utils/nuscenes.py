@@ -126,7 +126,7 @@ class NuScenes:
             record['sensor_modality'] = sensor_record['modality']
             record['channel'] = sensor_record['channel']
 
-        # Reverse-index samples with sample_data and annotations
+        # Reverse-index samples with sample_data and annotations.
         for record in self.sample:
             record['data'] = {}
             record['anns'] = []
@@ -242,7 +242,7 @@ class NuScenes:
 
     def get_box(self, sample_annotation_token: str) -> Box:
         """
-        Instantiates a Box class from a sample annotation record
+        Instantiates a Box class from a sample annotation record.
         :param sample_annotation_token: Unique sample_annotation identifier.
         """
         record = self.get('sample_annotation', sample_annotation_token)
@@ -285,7 +285,7 @@ class NuScenes:
             for curr_ann_rec in curr_ann_recs:
 
                 if curr_ann_rec['instance_token'] in prev_inst_map:
-                    # If the annotated instance existed in the previous frame, interpolate center & orientation
+                    # If the annotated instance existed in the previous frame, interpolate center & orientation.
                     prev_ann_rec = prev_inst_map[curr_ann_rec['instance_token']]
 
                     # Interpolate center.
@@ -332,8 +332,9 @@ class NuScenes:
     def render_instance(self, instance_token):
         self.explorer.render_instance(instance_token)
 
-    def render_scene(self, scene_token):
-        self.explorer.render_scene(scene_token)
+    def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
+                     out_path : str=None):
+        self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
     def render_scene_channel(self, scene_token, channel='CAM_FRONT'):
         self.explorer.render_scene_channel(scene_token, channel=channel)
@@ -654,12 +655,14 @@ class NuScenesExplorer:
                 closest[1] = ann_token
         self.render_annotation(closest[1])
 
-    def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float] = (640, 360)) -> None:
+    def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
+                     out_path : str=None) -> None:
         """
         Renders a full scene with all camera channels.
         :param scene_token: Unique identifier of scene to render.
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
+        :param out_path: Optional path to write a video file of the rendered frames.
         """
 
         assert imsize[0] / imsize[1] == 16/9, "Aspect ratio should be 16/9."
@@ -688,6 +691,9 @@ class NuScenesExplorer:
         cv2.moveWindow(window_name, 0, 0)
 
         canvas = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
+        if out_path is not None:
+            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+            out = cv2.VideoWriter(out_path, fourcc, freq, canvas.shape[1::-1])
 
         # Load first sample_data record for each channel
         current_recs = {}  # Holds the current record to be displayed by channel.
@@ -704,7 +710,7 @@ class NuScenesExplorer:
 
             # For each channel, find first sample that has time > current_time.
             for channel, sd_rec in current_recs.items():
-                while sd_rec['timestamp'] < current_time:
+                while sd_rec['timestamp'] < current_time and sd_rec['next'] != '':
                     sd_rec = self.nusc.get('sample_data', sd_rec['next'])
                     current_recs[channel] = sd_rec
 
@@ -737,6 +743,8 @@ class NuScenesExplorer:
 
             # Show updated canvas.
             cv2.imshow(window_name, canvas)
+            if out_path is not None:
+                out.write(canvas)
 
             key = cv2.waitKey(1)  # Wait a very short time (1 ms).
 
@@ -748,8 +756,10 @@ class NuScenesExplorer:
                 break
 
         cv2.destroyAllWindows()
+        if out_path is not None:
+            out.release()
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float] = (640, 360)):
+    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
         """
         Renders a full scene for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.
@@ -794,7 +804,7 @@ class NuScenesExplorer:
             cv2.imshow(name, im)
 
             key = cv2.waitKey(10)  # Images stored at approx 10 Hz, so wait 10 ms.
-            if key == 32:  # If space is pressed, pause
+            if key == 32:  # If space is pressed, pause.
                 key = cv2.waitKey()
 
             if key == 27:  # if ESC is pressed, exit
@@ -811,7 +821,7 @@ class NuScenesExplorer:
     def render_scene_on_map(self, scene_token: str) -> None:
         """
         Renders the ego poses for a scene on the map. Also counts the number of ego poses that were on the
-        drivable area.
+        semantic prior area (drivable surface + sidewalks).
         :param scene_token: Unique identifier of scene to render.
         """
 
@@ -856,8 +866,8 @@ class NuScenesExplorer:
             # Plot
             axes.plot(map_pose[0] / demo_ss_factor, map_pose[1] / demo_ss_factor, 'b.')
 
-            # Check if outside drivable area.
+            # Check if outside semantic prior area.
             on_drivable_cnt += map_mask.is_on_mask(pose[0], pose[1])
 
-        print('For scene {}, {} ego poses ({:.1f}%) were on the drivable area'.format(
+        print('For scene {}, {} ego poses ({:.1f}%) were on the semantic prior area'.format(
             scene_record['name'], on_drivable_cnt, 100*on_drivable_cnt/len(sample_tokens)))
