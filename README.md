@@ -26,18 +26,59 @@ cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
 The dev-kit is tested for Python 3.7. 
 We may add backward compatibility in future releases.
-To install the required packages, run the following in your favourite virtual environment:
+To install the required packages, run the following command in your favourite virtual environment. If you need help in 
+installing Python3.7 or in setting up a new virtual environment, you can look at [these instructions](#setup-new-virtual-environment):
 ```
 pip install -r requirements.txt
 ```
-Also add the `nuscenes_python` directory to your `PYTHONPATH` environmental variable, e.g. by adding the following to your `~/.bashrc`:
+Also add the `python-sdk` directory to your `PYTHONPATH` environmental variable, e.g. by adding the 
+following to your `~/.bashrc`:
 ```
-export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/nuscenes_python"
+export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
 ```
 
 ## Getting started
 To get started with the nuScenes devkit, please run the tutorial as an IPython notebook:
 ```
-jupyter notebook $HOME/nuscenes-devkit/nuscenes_python/nuscenes_tutorial.ipynb
+jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 ```
-In case you want to avoid downloading and setting up the data, you can also take a look at the same notebook on [Github](https://github.com/nutonomy/nuscenes-devkit/blob/master/nuscenes_python/nuscenes_tutorial.ipynb).
+In case you want to avoid downloading and setting up the data, you can also take a look at the same notebook on 
+[Github](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorial.ipynb).
+
+## Setup new virtual environment
+
+It is recommended to install the devkit in a new virtual environment. Here are the steps you can follow to create one:
+
+#### Python 3.7 installation
+
+If you don't have Python 3.7 on your system, you can use the following steps to install it.
+
+UBUNTU:
+```
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.7
+```
+
+MACOS: Download from `https://www.python.org/downloads/mac-osx/` and install.
+
+#### Install virtualenvwrapper
+```
+pip install virtualenvwrapper
+```
+Add these two lines to `~/.bashrc` (`~/.bash_profile` on MACOS) to set the location where the virtual environments 
+should live and the location of the script installed with this package:
+```
+export WORKON_HOME=$HOME/.virtualenvs
+source [VIRTUAL_ENV_LOCATION]
+```
+Replace `[VIRTUAL_ENV_LOCATION]` with either `/usr/local/bin/virtualenvwrapper.sh` or `~/.local/bin/virtualenvwrapper.sh` 
+depending on where it is installed on your system.
+
+After editing it, reload the shell startup file by running e.g. `source ~/.bashrc`.
+
+#### Create the virtual environment
+```
+mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
+```
+PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.

@@ -18,9 +18,9 @@ from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 
-from nuscenes_utils.map_mask import MapMask
-from nuscenes_utils.data_classes import PointCloud, Box
-from nuscenes_utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
+from utils.map_mask import MapMask
+from utils.data_classes import PointCloud, Box
+from utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
 
 
 PYTHON_VERSION = sys.version_info[0]
@@ -305,41 +305,43 @@ class NuScenes:
                 boxes.append(box)
         return boxes
 
-    def list_categories(self):
+    def list_categories(self) -> None:
         self.explorer.list_categories()
 
-    def list_attributes(self):
+    def list_attributes(self) -> None:
         self.explorer.list_attributes()
 
-    def list_scenes(self):
+    def list_scenes(self) -> None:
         self.explorer.list_scenes()
 
-    def list_sample(self, sample_token):
+    def list_sample(self, sample_token: str) -> None:
         self.explorer.list_sample(sample_token)
 
-    def render_pointcloud_in_image(self, sample_token):
-        self.explorer.render_pointcloud_in_image(sample_token)
+    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5) -> None:
+        self.explorer.render_pointcloud_in_image(sample_token, dot_size)
 
-    def render_sample(self, sample_token):
-        self.explorer.render_sample(sample_token)
+    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.IN_FRONT) -> None:
+        self.explorer.render_sample(sample_token, box_vis_level)
 
-    def render_sample_data(self, sample_data_token):
-        self.explorer.render_sample_data(sample_data_token)
+    def render_sample_data(self, sample_data_token: str, with_anns: bool=True, box_vis_level: BoxVisibility=3,
+                           axes_limit: float=40, ax: Axes=None) -> None:
+        self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax)
 
-    def render_annotation(self, sample_annotation_token):
-        self.explorer.render_annotation(sample_annotation_token)
+    def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
+                          box_vis_level: BoxVisibility=3) -> None:
+        self.explorer.render_annotation(sample_annotation_token, margin, view, box_vis_level)
 
-    def render_instance(self, instance_token):
+    def render_instance(self, instance_token: str) -> None:
         self.explorer.render_instance(instance_token)
 
     def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
-                     out_path : str=None):
+                     out_path : str=None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
-    def render_scene_channel(self, scene_token, channel='CAM_FRONT'):
-        self.explorer.render_scene_channel(scene_token, channel=channel)
+    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float] = (640, 360)):
+        self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
-    def render_scene_on_map(self, scene_token):
+    def render_scene_on_map(self, scene_token: str) -> None:
         self.explorer.render_scene_on_map(scene_token)
 
 
