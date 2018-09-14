@@ -1,8 +1,10 @@
 # nuScenes dev-kit
-Welcome to the dev-kit of the [nuScenes](https://nuscenes.org) dataset. 
+Welcome to the dev-kit of the [nuScenes](https://nuscenes.org) dataset.
+ 
+![](https://nuscenes.org/public/images/road.jpg)
 
 ## Dataset download
-To download nuScenes you need to go to [the Download page](https://nuscenes.org/download), 
+To download nuScenes you need to go to the [Download page](https://nuscenes.org/download), 
 create an account and confirm the nuScenes [Terms of Use](https://nuscenes.org/terms-of-use).
 After logging in you will see multiple archives for images, pointclouds and meta data. 
 For the devkit to work you will need to download *all* archives.
@@ -10,7 +12,7 @@ Please unpack the archives to the `/data/nuscenes` folder \*without\* overwritin
 Eventually you should have the following folder structure:
 ```
 /data/nuscenes
-    maps	-	Large image files (~500 Gigapixel) that depict the drivable surface of the scene.
+    maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene
     samples	-	Sensor data for keyframes
     sweeps	-	Sensor data for intermediate frames
     v0.1	-	JSON tables that include all the meta data and annotations
@@ -42,7 +44,6 @@ jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 ```
 In case you want to avoid downloading and setting up the data, you can also take a look at the same notebook on 
 [Github](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorial.ipynb).
-
 
 ## Setup new virtual environment
 

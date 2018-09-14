@@ -11,7 +11,7 @@ import cv2
 class MapMask:
     def __init__(self, img_file, precision=0.1, foreground=255, background=0):
         """
-        Init a map mask object.
+        Init a map mask object that contains the semantic prior (drivable surface and sidewalks) mask.
         :param img_file: <str>. File path to map png file.
         :param precision: <float>. Precision in meters.
         :param foreground: <int>. Foreground value.
@@ -23,7 +23,7 @@ class MapMask:
         self.foreground = foreground
         self.background = background
         self._mask = None
-        self._distance_mask = None  # Distance to semantic_prior (drivable area and sidewalks). (lazy load).
+        self._distance_mask = None  # Distance to semantic_prior. (lazy load).
         self._transf_matrix = None  # Transformation matrix from global coords to map coords. (lazy load).
 
     @property
