@@ -1,11 +1,11 @@
 # nuScenes dev-kit
-Welcome to the dev-kit of the [nuScenes](https://nuscenes.org) dataset.
+Welcome to the dev-kit of the [nuScenes](https://www.nuscenes.org) dataset.
  
-![](https://nuscenes.org/public/images/road.jpg)
+![](https://www.nuscenes.org/public/images/road.jpg)
 
 ## Dataset download
-To download nuScenes you need to go to the [Download page](https://nuscenes.org/download), 
-create an account and confirm the nuScenes [Terms of Use](https://nuscenes.org/terms-of-use).
+To download nuScenes you need to go to the [Download page](https://www.nuscenes.org/download), 
+create an account and confirm the nuScenes [Terms of Use](https://www.nuscenes.org/terms-of-use).
 After logging in you will see multiple archives for images, pointclouds and meta data. 
 For the devkit to work you will need to download *all* archives.
 Please unpack the archives to the `/data/nuscenes` folder \*without\* overwriting folders that occur in multiple archives.
@@ -45,7 +45,7 @@ jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 In case you want to avoid downloading and setting up the data, you can also take a look at the same notebook on 
 [Github](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorial.ipynb).
 
-## Setup new virtual environment
+## Setting up a new virtual environment
 
 It is recommended to install the devkit in a new virtual environment. Here are the steps you can follow to create one:
 
@@ -60,13 +60,13 @@ sudo apt-get update
 sudo apt-get install python3.7
 ```
 
-MACOS: Download from `https://www.python.org/downloads/mac-osx/` and install.
+MAC OS: Download from `https://www.python.org/downloads/mac-osx/` and install.
 
 #### Install virtualenvwrapper
 ```
 pip install virtualenvwrapper
 ```
-Add these two lines to `~/.bashrc` (`~/.bash_profile` on MACOS) to set the location where the virtual environments 
+Add these two lines to `~/.bashrc` (`~/.bash_profile` on MAC OS) to set the location where the virtual environments 
 should live and the location of the script installed with this package:
 ```
 export WORKON_HOME=$HOME/.virtualenvs
