@@ -28,7 +28,7 @@
     + For objects with few LIDAR or RADAR points, use the images to make sure boxes are correctly sized. If you see that a cuboid is too short in the image view, adjust it to cover the entire object based on the image view.
 + **Visibility Attribute** : 
     + The visibility attribute specifies the percentage of object pixels visible in the panoramic view of all cameras. 
-    + ![](https://nuscenes.org/public/images/taxonomy_imgs/lidar_visibility_1.png)
+    + ![](https://www.nuscenes.org/public/images/taxonomy_imgs/lidar_visibility_1.png)
 
 # Labels 
 **For every bounding box, include one of the following labels:**
@@ -95,7 +95,7 @@
         + **61%-80%**: The object is 61% to 80% visible in panoramic view of all cameras.
         + **81%-100%**: The object is 81% to 100% visible in panoramic view of all cameras.
     + This attribute specifies the percentage of an object visible through the cameras. For this estimation to be carried out, all the different camera views should be considered as one and the visible portion would be gauged in the resulting **panoramic view**
-    + ![](https://nuscenes.org/public/images/taxonomy_imgs/lidar_visibility_1.png)
+    + ![](https://www.nuscenes.org/public/images/taxonomy_imgs/lidar_visibility_1.png)
 2. **For each vehicle with four or more wheels, select the status:** 
     + **Vehicle Activity**: 
         + **Parked**: Vehicle is stationary (usually for longer duration) with no immediate intent to move.
@@ -124,37 +124,37 @@ Bounding Box color convention in example images:
     + If the vehicle is designed to carry more than 10 people label it is a bus. 
     + If it is primarily designed to haul cargo it is a truck. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/personal_vehicle_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/personal_vehicle_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/personal_vehicle_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/personal_vehicle_4.jpg)
 
  [Top](#overview)
 ## Truck 
 + Vehicles primarily designed to haul cargo including lorrys, trucks. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/truck_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/truck_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/truck_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/truck_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_5.jpg)
 
  [Top](#overview)
 ## Pickup Truck 
 + A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pickup_truck_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pickup_truck_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pickup_truck_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pickup_truck_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_5.jpg)
 
  [Top](#overview)
 ## Front Of Semi Truck 
 + Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_2.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_3.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_5.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_6.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_7.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_8.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_5.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_6.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_7.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_8.png)
 
  [Top](#overview)
 ## Bendy Bus 
@@ -162,19 +162,19 @@ Bounding Box color convention in example images:
     + Annotate each section of the bendy bus individually. 
     + If you cannot see the pivoting joint of the bus, annotate it as **rigid bus**. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bendy_bus_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bendy_bus_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bendy_bus_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bendy_bus_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bendy_bus_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bendy_bus_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bendy_bus_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bendy_bus_4.jpg)
 
  [Top](#overview)
 ## Rigid Bus 
 + Rigid buses and shuttles designed to carry more than 10 people. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/rigid_bus_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/rigid_bus_3.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/rigid_bus_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/rigid_bus_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/rigid_bus_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/rigid_bus_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/rigid_bus_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/rigid_bus_5.jpg)
 
  [Top](#overview)
 ## Construction Vehicle 
@@ -182,11 +182,11 @@ Bounding Box color convention in example images:
     + Trucks used to hauling rocks or building materials are considered as truck rather than construction vehicles. 
     + Cranes and extremities of construction vehicles are only included in annotations if they interferes with traffic. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_7.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_8.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_9.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_6.jpg) 
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_7.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_8.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_9.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_vehicle_6.jpg) 
 
  [Top](#overview)
 ## Motorcycle 
@@ -195,14 +195,14 @@ Bounding Box color convention in example images:
     + If there is a passenger, include the passenger in the box. 
     + If there is a pedestrian standing next to the motorcycle, do NOT include in the annotation. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_5.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_6.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_7.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/motorcycle_8.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_6.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_7.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/motorcycle_8.jpg)
 
  [Top](#overview)
 ## Bicycle 
@@ -211,100 +211,100 @@ Bounding Box color convention in example images:
     + If there is a passenger, include the passenger in the box 
     + If there is a pedestrian standing next to the bicycle, do NOT include in the annotation 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bicycle_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bicycle_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bicycle_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bicycle_4.jpg) 
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bicycle_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bicycle_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bicycle_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bicycle_4.jpg) 
 
  [Top](#overview)
 ## Bicycle Rack
 + Area or device intended to park or secure the bicycles in a row. It includes all the bicycles parked in it and any empty slots that are intended for parking bicycles.
     + Bicycles that are not part of the rack should not be included. Instead they should be annotated as bicycles separately.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bike_rack_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bike_rack_2.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bike_rack_3.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bike_rack_4.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bike_rack_5.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/bike_rack_6.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bike_rack_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bike_rack_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bike_rack_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bike_rack_4.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bike_rack_5.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/bike_rack_6.png)
 
  [Top](#overview)
 ## Trailer 
 + Any vehicle trailer, both for trucks, cars and motorcycles (regardless of whether currently being towed or not). For semi-trailers (containers) label the truck itself as "front of semi truck".
     + A vehicle towed by another vehicle should be labeled as vehicle (not as trailer). 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_4.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_5.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_6.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_7.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_8.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_9.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/trailer_10.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_4.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_6.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_7.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_8.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_9.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/trailer_10.jpg)
 
  [Top](#overview)
 ## Police Vehicle 
 + All types of police vehicles including police bicycles and motorcycles. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/police_vehicle_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/police_vehicle_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/police_vehicle_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/police_vehicle_3.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/police_vehicle_4.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/police_vehicle_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/police_vehicle_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/police_vehicle_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/police_vehicle_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/police_vehicle_4.png)
 
  [Top](#overview)
 # Firetruck 
 + All types of firetrucks. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/firetruck_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/firetruck_1.jpg)
 
  [Top](#overview)
 ## Ambulance 
 + All types of ambulances. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/ambulance_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/ambulance_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/ambulance_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/ambulance_3.jpg)
 
  [Top](#overview)
 ## Train 
 + Any vehicle that travels on rails e.g. light rail / tram / train. 
     + For trains, that consist of several linked units, annotate each segment with a bounding box. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/train_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/train_2.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/train_3.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/train_4.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_4.png)
 
  [Top](#overview)
 ## Adult Pedestrian 
 + An adult pedestrian moving around the cityscape. 
     + Mannequins should also be treated as adult pedestrian.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/mannequin_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/mannequin_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/adult_pedestrian_5.jpg)
 
  [Top](#overview)
 ## Child Pedestrian 
 + A child pedestrian moving around the cityscape. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/child_pedestrian_5.jpg)
 
  [Top](#overview)
 ## Construction Worker 
 + A human in the scene whose main purpose is construction work. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_worker_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_worker_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_worker_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/construction_worker_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_worker_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_worker_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_worker_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/construction_worker_4.jpg)
 
  [Top](#overview)
 ## Stroller 
@@ -312,10 +312,10 @@ Bounding Box color convention in example images:
     + If a person is in the stroller, include in the annotation. 
     + Pedestrians pushing strollers should be labeled separately.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/stroller_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/stroller_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/stroller_5.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/stroller_6.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/stroller_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/stroller_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/stroller_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/stroller_6.jpg)
 
  [Top](#overview)
 ## Wheelchair 
@@ -323,50 +323,50 @@ Bounding Box color convention in example images:
     + If a person is in the wheelchair, include in the annotation. 
     + Pedestrians pushing wheelchairs should be labeled separately.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/wheelchair_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/wheelchair_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/wheelchair_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/wheelchair_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/wheelchair_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/wheelchair_3.jpg)
 
  [Top](#overview)
 ## Portable Personal Mobility Vehicle
 + A small electric or self-propelled vehicle, e.g. skateboard, segway, or scooters, on which the person typically travels in a upright position. Driver and (if applicable) rider should be included in the bounding box along with the vehicle. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/personal_mobility_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/personal_mobility_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/personal_mobility_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/personal_mobility_3.png)
 
  [Top](#overview)
 ## Traffic Police 
 + Police officer actively directing traffic.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_police_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_police_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_police_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_police_2.png)
 
  [Top](#overview)
 ## Other Police 
 + Police officer NOT actively directing traffic. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/other_police_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/other_police_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/other_police_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/other_police_2.png)
 
  [Top](#overview)
 ## Animal 
 + All animals, e.g. cats, rats, dogs, deer, birds. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/small_animal_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/small_animal_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/large_animal_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/large_animal_3.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/large_animal_4.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/small_animal_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/small_animal_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/large_animal_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/large_animal_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/large_animal_4.png)
 
  [Top](#overview)
 ## Traffic Cone 
 + All types of traffic cones.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_cone_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_cone_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_cone_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_cone_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/traffic_cone_5.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_cone_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_cone_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_cone_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_cone_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_cone_5.jpg)
 
  [Top](#overview)
 ## Temporary Traffic Barrier 
@@ -374,27 +374,27 @@ Bounding Box color convention in example images:
     + If there are multiple barriers either connected or just placed next to each other, they should be annotated separately. 
     + If barriers are installed permanently, then do NOT include them.
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_1.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_6.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_2.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_3.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_4.jpg)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_5.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_1.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_6.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_2.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_3.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_4.jpg)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/temporary_traffic_barrier_5.png)
 
  [Top](#overview)
 ## Pushable Pullable Object 
 + Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_2.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_4.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_3.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_4.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pushable_pullable_3.png)
 
  [Top](#overview)
 ## Debris 
 + Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
 
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/movable_obstacle_1.png)
-    ![](https://nuscenes.org/public/images/taxonomy_imgs/movable_obstacle_2.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/movable_obstacle_1.png)
+    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/movable_obstacle_2.png)
 
  [Top](#overview)
