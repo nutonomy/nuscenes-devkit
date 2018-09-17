@@ -18,9 +18,9 @@ from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 
-from utils.map_mask import MapMask
-from utils.data_classes import PointCloud, Box
-from utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
+from nuscenes_utils.map_mask import MapMask
+from nuscenes_utils.data_classes import PointCloud, Box
+from nuscenes_utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
 
 
 PYTHON_VERSION = sys.version_info[0]

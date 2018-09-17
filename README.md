@@ -27,7 +27,7 @@ cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 The dev-kit is tested for Python 3.7. 
 We may add backward compatibility in future releases.
 To install the required packages, run the following command in your favourite virtual environment. If you need help in 
-installing Python3.7 or in setting up a new virtual environment, you can look at [these instructions](#setup-new-virtual-environment):
+installing Python 3.7 or in setting up a new virtual environment, you can look at [these instructions](#setup-new-virtual-environment):
 ```
 pip install -r requirements.txt
 ```
