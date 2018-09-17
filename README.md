@@ -82,3 +82,6 @@ After editing it, reload the shell startup file by running e.g. `source ~/.bashr
 mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
 ```
 PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.
+
+
+![](https://www.nuscenes.org/public/images/nuscenes-example.png)
