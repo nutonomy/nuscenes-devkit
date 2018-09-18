@@ -1,5 +1,5 @@
-# nuScenes dev-kit
-Welcome to the dev-kit of the [nuScenes](https://www.nuscenes.org) dataset.
+# nuScenes devkit
+Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
  
 ![](https://www.nuscenes.org/public/images/road.jpg)
 
@@ -24,7 +24,7 @@ Download the devkit to your home directory using:
 ```
 cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
-The dev-kit is tested for Python 3.7. 
+The devkit is tested for Python 3.7. 
 We may add backward compatibility in future releases.
 To install the required packages, run the following command in your favourite virtual environment. If you need help in 
 installing Python 3.7 or in setting up a new virtual environment, you can look at [these instructions](#setup-new-virtual-environment):
@@ -32,7 +32,7 @@ installing Python 3.7 or in setting up a new virtual environment, you can look a
 pip install -r requirements.txt
 ```
 Also add the `python-sdk` directory to your `PYTHONPATH` environmental variable, e.g. by adding the 
-following to your `~/.bashrc`:
+following to your `~/.virtualenvs/nuscenes/bin/postactivate` (virtual environment) or `~/.bashrc` (global):
 ```
 export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
 ```
@@ -53,14 +53,14 @@ It is recommended to install the devkit in a new virtual environment. Here are t
 
 If you don't have Python 3.7 on your system, you can use the following steps to install it.
 
-UBUNTU:
+Ubuntu:
 ```
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
 sudo apt-get install python3.7
 ```
 
-MAC OS: Download from `https://www.python.org/downloads/mac-osx/` and install.
+Mac OS: Download from `https://www.python.org/downloads/mac-osx/` and install.
 
 #### Install virtualenvwrapper
 ```
@@ -82,6 +82,17 @@ After editing it, reload the shell startup file by running e.g. `source ~/.bashr
 mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
 ```
 PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.
+
+#### Activating the virtual environment
+If you are inside the virtual environment, your shell prompt should look like: `(nuscenes) user@computer:~$`
+If that is not the case, you can enable the virtual environment using:
+```
+workon nuscenes
+```
+To deactivate the virtual environment, use:
+```
+deactivate
+```
 
 
 ![](https://www.nuscenes.org/public/images/nuscenes-example.png)
