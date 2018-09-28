@@ -26,7 +26,7 @@ from nuscenes_utils.geometry_utils import view_points, box_in_image, quaternion_
 PYTHON_VERSION = sys.version_info[0]
 
 if not PYTHON_VERSION == 3:
-    raise ValueError("nuScenes dev-kit only supports python version 3.")
+    raise ValueError("nuScenes dev-kit only supports Python version 3.")
 
 
 class NuScenes:
@@ -438,7 +438,7 @@ class NuScenesExplorer:
             ann_record = self.nusc.get('sample_annotation', ann_token)
             print('sample_annotation_token: {}, category: {}'.format(ann_record['token'], ann_record['category_name']))
 
-    def map_pointcloud_to_image(self, pointsensor_token: str, camera_token: str):
+    def map_pointcloud_to_image(self, pointsensor_token: str, camera_token: str) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
