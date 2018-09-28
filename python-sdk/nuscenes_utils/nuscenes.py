@@ -317,8 +317,10 @@ class NuScenes:
     def list_sample(self, sample_token: str) -> None:
         self.explorer.list_sample(sample_token)
 
-    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5) -> None:
-        self.explorer.render_pointcloud_in_image(sample_token, dot_size)
+    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5,  pointsensor_channel: str='LIDAR_TOP',
+                                   camera_channel: str='CAM_FRONT') -> None:
+        self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
+                                                 camera_channel=camera_channel)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.IN_FRONT) -> None:
         self.explorer.render_sample(sample_token, box_vis_level)
@@ -436,29 +438,30 @@ class NuScenesExplorer:
             ann_record = self.nusc.get('sample_annotation', ann_token)
             print('sample_annotation_token: {}, category: {}'.format(ann_record['token'], ann_record['category_name']))
 
-    def map_pointcloud_to_image(self, lidar_token: str, camera_token: str):
+    def map_pointcloud_to_image(self, pointsensor_token: str, camera_token: str):
         """
-        Given a lidar and camera sample_data token, load point-cloud and map it to the image plane.
-        :param lidar_token: Lidar sample data token.
-        :param camera_token: Camera sample data token.
+        Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
+        plane.
+        :param pointsensor_token: Lidar/radar sample_data token.
+        :param camera_token: Camera sample_data token.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
 
         cam = self.nusc.get('sample_data', camera_token)
-        top_lidar = self.nusc.get('sample_data', lidar_token)
+        pointsensor = self.nusc.get('sample_data', pointsensor_token)
 
-        pc = PointCloud.from_file(osp.join(self.nusc.dataroot, top_lidar['filename']))
+        pc = PointCloud.from_file(osp.join(self.nusc.dataroot, pointsensor['filename']))
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
 
-        # LIDAR points live in the lidar frame. So they need to be transformed via global to the image plane.
+        # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
 
-        # First step: transform the point cloud to ego vehicle frame for the timestamp of the LIDAR sweep.
-        cs_record = self.nusc.get('calibrated_sensor', top_lidar['calibrated_sensor_token'])
+        # First step: transform the point cloud to ego vehicle frame for the timestamp of the sweep.
+        cs_record = self.nusc.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
         pc.translate(np.array(cs_record['translation']))
 
         # Second step: transform to the global frame.
-        poserecord = self.nusc.get('ego_pose', top_lidar['ego_pose_token'])
+        poserecord = self.nusc.get('ego_pose', pointsensor['ego_pose_token'])
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
         pc.translate(np.array(poserecord['translation']))
 
@@ -495,19 +498,21 @@ class NuScenesExplorer:
 
         return points, coloring, im
 
-    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5) -> None:
+    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5, pointsensor_channel: str='LIDAR_TOP',
+                                   camera_channel: str='CAM_FRONT') -> None:
         """
         Scatter-plots a pointcloud on top of image.
         :param sample_token: Sample token.
+        :param pointsensor_channel: RADAR or LIDAR channel name, e.g. 'LIDAR_TOP'.
         :param dot_size: Scatter plot dot size.
         """
         sample_record = self.nusc.get('sample', sample_token)
 
-        # Here we just grab the front camera and the top lidar.
-        lidar_token = sample_record['data']['LIDAR_TOP']
-        camera_token = sample_record['data']['CAM_FRONT']
+        # Here we just grab the front camera and the point sensor.
+        pointsensor_token = sample_record['data'][pointsensor_channel]
+        camera_token = sample_record['data'][camera_channel]
 
-        points, coloring, im = self.map_pointcloud_to_image(lidar_token, camera_token)
+        points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token)
         plt.figure(figsize=(9, 16))
         plt.imshow(im)
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
