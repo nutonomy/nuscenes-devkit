@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
+import struct
+
 import cv2
 import numpy as np
 from pyquaternion import Quaternion
-
 
 from nuscenes_utils.geometry_utils import view_points
 
@@ -22,15 +23,92 @@ class PointCloud:
         self.points = points
 
     @staticmethod
-    def load_pcd_bin(file_name):
+    def load_numpy_bin(file_name):
         """
-        Loads from binary format. Data is stored as (x, y, z, intensity, ring index).
-        :param file_name: <str>.
+        Loads LIDAR data from binary numpy format. Data is stored as (x, y, z, intensity, ring index).
+        :param file_name: The path of the pointcloud file.
         :return: <np.float: 4, n>. Point cloud matrix (x, y, z, intensity).
         """
         scan = np.fromfile(file_name, dtype=np.float32)
         points = scan.reshape((-1, 5))[:, :4]
         return points.T
+
+    @staticmethod
+    def load_pcd_bin(file_name):
+        """
+        Loads RADAR data from a Point Cloud Data file to a list of lists (=points) and meta data.
+
+        Example of the header fields:
+        # .PCD v0.7 - Point Cloud Data file format
+        VERSION 0.7
+        FIELDS x y z dyn_prop id rcs vx vy vx_comp vy_comp is_quality_valid ambig_state x_rms y_rms invalid_state pdh0 vx_rms vy_rms
+        SIZE 4 4 4 1 2 4 4 4 4 4 1 1 1 1 1 1 1 1
+        TYPE F F F I I F F F F F I I I I I I I I
+        COUNT 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+        WIDTH 125
+        HEIGHT 1
+        VIEWPOINT 0 0 0 1 0 0 0
+        POINTS 125
+        DATA binary
+
+        :param file_name: The path of the pointcloud file.
+        :return: <np.float: 18, n>. Point cloud matrix.
+        """
+        meta = []
+        with open(file_name, 'rb') as f:
+            for line in f:
+                line = line.strip().decode('utf-8')
+                meta.append(line)
+                if line.startswith('DATA'):
+                    break
+
+            data_binary = f.read()
+
+        # Get the header rows and check if they appear as expected.
+        assert meta[0].startswith('#'), 'First line must be comment'
+        assert meta[1].startswith('VERSION'), 'Second line must be VERSION'
+        sizes = meta[3].split(' ')[1:]
+        types = meta[4].split(' ')[1:]
+        counts = meta[5].split(' ')[1:]
+        width = int(meta[6].split(' ')[1])
+        height = int(meta[7].split(' ')[1])
+        data = meta[10].split(' ')[1]
+        feature_count = len(types)
+        assert width > 0
+        assert len([c for c in counts if c != c]) == 0, 'Error: COUNT not supported!'
+        assert height == 1, 'Error: height != 0 not supported!'
+        assert data == 'binary'
+
+        # Lookup table for how to decode the binaries
+        unpacking_lut = {'F': {2: 'e', 4: 'f', 8: 'd'},
+                         'I': {1: 'b', 2: 'h', 4: 'i', 8: 'q'},
+                         'U': {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}}
+        types_str = ''.join([unpacking_lut[t][int(s)] for t, s in zip(types, sizes)])
+
+        # Decode each point
+        offset = 0
+        point_count = width
+        points = []
+        for i in range(point_count):
+            point = []
+            for p in range(feature_count):
+                start_p = offset
+                end_p = start_p + int(sizes[p])
+                assert end_p < len(data_binary)
+                point_p = struct.unpack(types_str[p], data_binary[start_p:end_p])[0]
+                point.append(point_p)
+                offset = end_p
+            points.append(point)
+
+        # A NaN in the first point indicates an empty pointcloud
+        point = np.array(points[0])
+        if np.any(np.isnan(point)):
+            return np.zeros((feature_count, 0))
+
+        # Convert to numpy matrix
+        points = np.array(points).transpose()
+
+        return points
 
     @classmethod
     def from_file(cls, file_name):
@@ -41,9 +119,9 @@ class PointCloud:
         """
 
         if file_name.endswith('.bin'):
+            points = cls.load_numpy_bin(file_name)
+        elif file_name.endswith('.pcd'):
             points = cls.load_pcd_bin(file_name)
-        elif file_name.endswith('.npy'):
-            points = np.load(file_name)
         else:
             raise ValueError('Unsupported filetype {}'.format(file_name))
 
