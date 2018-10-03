@@ -662,7 +662,7 @@ class NuScenesExplorer:
         self.render_annotation(closest[1])
 
     def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
-                     out_path : str=None) -> None:
+                     out_path: str=None) -> None:
         """
         Renders a full scene with all camera channels.
         :param scene_token: Unique identifier of scene to render.
