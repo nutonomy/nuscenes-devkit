@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+import argparse
 from typing import Tuple
 
 import numpy as np
@@ -13,8 +14,8 @@ from nuscenes_utils.nuscenes import NuScenes, NuScenesExplorer
 def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
                             min_dist: float=3.0, max_dist: float=30.0, verbose: bool=True) -> None:
     """
-    Export fused point clouds of a scene to an OBJ file.
-    This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya
+    Export fused point clouds of a scene to a Wavefront OBJ file.
+    This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
     :param explorer: NuScenesExplorer instance.
     :param out_path: Output path to write the point-cloud to.
     :param scene_token: Unique identifier of scene to render.
@@ -37,15 +38,20 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
     start_sample_rec = explorer.nusc.get('sample', scene_rec['first_sample_token'])
     sd_rec = explorer.nusc.get('sample_data', start_sample_rec['data'][channel])
 
+    # Count frames
+    cur_sd_rec = sd_rec
+    frame_count = 0
+    while cur_sd_rec['next'] != '':
+        cur_sd_rec = explorer.nusc.get('sample_data', cur_sd_rec['next'])
+        frame_count += 1
+
     # Write point-cloud.
-    has_more_frames = True
-    frame_ind = 0
     with open(out_path, 'w') as f:
         f.write("OBJ File:\n")
 
-        while has_more_frames:
+        for frame_ind in range(frame_count):
             if verbose:
-                print('Processing frame: %s' % sd_rec['filename'])
+                print('Processing frame %d of %d: %s' % (frame_ind + 1, frame_count, sd_rec['filename']))
             sample_rec = explorer.nusc.get('sample', sd_rec['sample_token'])
             lidar_token = sd_rec['token']
             lidar_rec = explorer.nusc.get('sample_data', lidar_token)
@@ -87,9 +93,6 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
 
             if not sd_rec['next'] == "":
                 sd_rec = explorer.nusc.get('sample_data', sd_rec['next'])
-            else:
-                has_more_frames = False
-            frame_ind += 1
 
 def pointcloud_color_from_image(nusc, pointsensor_token: str, camera_token: str) -> Tuple[np.array, np.array]:
     """
@@ -154,16 +157,29 @@ def pointcloud_color_from_image(nusc, pointsensor_token: str, camera_token: str)
     return coloring, mask
 
 if __name__ == '__main__':
-    # Load NuScenes
-    nusc = NuScenes()
-    scene_tokens = [s['token'] for s in nusc.scene]
+    # Read input parameters
+    parser = argparse.ArgumentParser(description='Export a scene in Wavefront point cloud format.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--scene', default='scene-0061', type=str, help='Name of a scene, e.g. scene-0061')
+    parser.add_argument('--out_dir', default='', type=str,
+                        help='Output folder')
+    parser.add_argument('--verbose', default=1, type=int, help='Whether to print outputs to stdout')
+    args = parser.parse_args()
+    out_dir = args.out_dir
+    scene_name = args.scene
+    verbose = bool(args.verbose)
 
-    # Extract point-cloud for each scene
-    pointcloud_dir = osp.expanduser('~/nuscenes-visualization/pointclouds')
-    if not osp.isdir(pointcloud_dir):
-        os.mkdir(pointcloud_dir)
-    for scene_token in scene_tokens:
-        scene = nusc.get('scene', scene_token)
-        out_path = osp.join(pointcloud_dir, '%s.obj' % scene['name'])
-        if not osp.exists(out_path):
-            export_scene_pointcloud(nusc.explorer, out_path, scene['token'], channel='LIDAR_TOP')
+    # Create output folder
+    if not out_dir == '' and not osp.isdir(out_dir):
+        os.makedirs(out_dir)
+
+    # Extract point-cloud for the specified scene
+    nusc = NuScenes()
+    scene_token = [s['token'] for s in nusc.scene if s['name'] == scene_name]
+    assert len(scene_token) == 1, 'Error: Invalid scene %s' % scene_name
+    scene_rec = nusc.get('scene', scene_token[0])
+    out_path = osp.join(out_dir, '%s.obj' % scene_rec['name'])
+    if osp.exists(out_path):
+        print('Skipping existing file: %s' % out_path)
+    else:
+        export_scene_pointcloud(nusc.explorer, out_path, scene_rec['token'], channel='LIDAR_TOP', verbose=verbose)
