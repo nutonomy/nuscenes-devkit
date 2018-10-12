@@ -8,6 +8,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Dataset download](#dataset-download)
 - [Devkit setup](#devkit-setup)
 - [Getting started](#getting-started)
+- [Frequently asked questions](#frequently-asked-questions)
 - [Setting up a new virtual environment](#setting-up-a-new-virtual-environment)
 
 ## Changelog
