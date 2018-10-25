@@ -74,7 +74,6 @@ calibrated_sensor {
    "translation":             <float> [3] -- Coordinate system origin: x, y, z.
    "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
    "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration matrix.
-   "camera_distortion":       <float> [*] -- Distortion per convention of the CalTech camera calibration toolbox. Can be 5-10 coefficients.
 }
 ```
 ego_pose
