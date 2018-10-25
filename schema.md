@@ -18,7 +18,7 @@ attribute
 ---------
 
 An attribute is a property of an instance that can change while the category remains the same. 
- Example: vehicle pose, and whether or not a bicycle has a rider.
+ Example: a vehicle being parked/stopped/moving, and whether or not a bicycle has a rider.
 ```
 attribute {
    "token":                   <str> -- Unique record identifier.
@@ -65,7 +65,7 @@ sensor {
 calibrated_sensor
 ---------
 
-Definition of a particular sensor as calibrated on a particular vehicle. All extrinsic parameters are 
+Definition of a particular sensor (lidar/radar/camera) as calibrated on a particular vehicle. All extrinsic parameters are 
 given with respect to the ego vehicle body frame.
 ```
 calibrated_sensor {
@@ -73,13 +73,13 @@ calibrated_sensor {
    "sensor_token":            <str> -- Foreign key pointing to the sensor type.
    "translation":             <float> [3] -- Coordinate system origin: x, y, z.
    "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
-   "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration matrix.
+   "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration + rectification matrix. Empty for sensors that are not cameras.
 }
 ```
 ego_pose
 ---------
 
-Ego vehicle pose at a particular timestamp. Given with respect to global coordinate system.
+Ego vehicle pose at a particular timestamp. Given with respect to global coordinate system of the log's map.
 ```
 ego_pose {
    "token":                   <str> -- Unique record identifier.
@@ -134,7 +134,7 @@ sample {
 sample_data
 ---------
 
-A sensor data e.g. image, point cloud, radar return. For sample_data with is_key_frame=True, the time-stamps 
+A sensor data e.g. image, point cloud or radar return. For sample_data with is_key_frame=True, the time-stamps 
 should be very close to the sample it points to. For non key-frames the sample_data points to the 
 sample that follows closest in time.
 ```
@@ -156,8 +156,8 @@ sample_data {
 sample_annotation
 ---------
 
-A geometry defining the position of an object seen in a sample. All location data is given with respect 
-to the world coordinate system.
+A bounding box defining the position of an object seen in a sample. All location data is given with respect 
+to the global coordinate system.
 ```
 sample_annotation {
    "token":                   <str> -- Unique record identifier.
@@ -175,12 +175,12 @@ sample_annotation {
 map
 ---------
 
-Map data that is stored as binary semantic masks from a top-down view.
+Map data that is stored as binary semantic masks from a top-down view. As the maps are updated regularly, there may be multiple versions for the same location. In that case the ego_poses of logs with different maps cannot be compared.
 ```
 map {
    "token":                   <str> -- Unique record identifier.
    "log_token":               <str> -- Foreign key.
-   "category":                <str> -- Map category, e.g. semantic_prior for drivable surface and sidewalk
+   "category":                <str> -- Map category, currently only semantic_prior for drivable surface and sidewalk
    "filename":                <str> -- Relative path to the file with the map mask.
 }
 ```
