@@ -20,6 +20,7 @@ class PointCloud:
         Class for manipulating and viewing point clouds.
         :param points: <np.float: 4, n>. Input point cloud matrix.
         """
+        assert points.shape[0] == 4, 'Error: Pointcloud points must have format: 4 x n'
         self.points = points
 
     @staticmethod
@@ -386,7 +387,7 @@ class Box:
         """
         Renders box using opencv2.
         :param im: <np.array: width, height, 3>. Image array. Channels are in BGR order.
-        :param view: <np.array: 3, 3>. Define a projection in needed (e.g. for drawing projection in an image).
+        :param view: <np.array: 3, 3>. Define a projection if needed (e.g. for drawing projection in an image).
         :param normalize: <bool>. Whether to normalize the remaining coordinate.
         :param colors: ((R, G, B), (R, G, B), (R, G, B)). Colors for front, side & rear.
         :param linewidth: <float>. Linewidth for plot.

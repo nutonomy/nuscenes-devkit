@@ -14,7 +14,6 @@ class BoxVisibility(IntEnum):
     ALL = 0  # Requires all corners are inside the image.
     ANY = 1  # Requires at least one corner visible in the image.
     NONE = 2  # Requires no corners to be inside, i.e. box can be fully outside the image.
-    IN_FRONT = 3  # Requires all corners to be 1 meter front of the camera AND at least one corner be visible in image.
 
 
 def quaternion_slerp(q0, q1, fraction):
@@ -88,7 +87,7 @@ def view_points(points, view, normalize):
     return points
 
 
-def box_in_image(box, intrinsic, imsize, vis_level=BoxVisibility.IN_FRONT):
+def box_in_image(box, intrinsic, imsize, vis_level=BoxVisibility.ANY):
     """
     Check if a box is visible inside an image without accounting for occlusions.
     :param box: <Box>.
@@ -106,15 +105,13 @@ def box_in_image(box, intrinsic, imsize, vis_level=BoxVisibility.IN_FRONT):
     visible = np.logical_and(visible, corners_img[1, :] > 0)
     visible = np.logical_and(visible, corners_3d[2, :] > 1)
 
-    in_front = corners_3d[2, :] > 1  # True if a corner is at least 1 meter in front of camera.
+    in_front = corners_3d[2, :] > 0.1  # True if a corner is at least 0.1 meter in front of the camera.
 
     if vis_level == BoxVisibility.ALL:
-        return all(visible)
+        return all(visible) and all(in_front)
     elif vis_level == BoxVisibility.ANY:
-        return any(visible)
+        return any(visible) and all(in_front)
     elif vis_level == BoxVisibility.NONE:
         return True
-    elif vis_level == BoxVisibility.IN_FRONT:
-        return any(visible) and all(in_front)
     else:
         raise ValueError("vis_level: {} not valid".format(vis_level))

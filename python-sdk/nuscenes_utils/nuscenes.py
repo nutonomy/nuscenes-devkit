@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
+import sklearn.metrics
+from tqdm import tqdm
 
 from nuscenes_utils.map_mask import MapMask
 from nuscenes_utils.data_classes import PointCloud, Box
@@ -189,7 +191,7 @@ class NuScenes:
         sd_record = self.get('sample_data', sample_data_token)
         return osp.join(self.dataroot, sd_record['filename'])
 
-    def get_sample_data(self, sample_data_token, box_vis_level=BoxVisibility.IN_FRONT, selected_anntokens=None) -> \
+    def get_sample_data(self, sample_data_token, box_vis_level=BoxVisibility.ANY, selected_anntokens=None) -> \
             Tuple[str, List[Box], np.array]:
         """
         Returns the data path as well as all annotations related to that sample_data.
@@ -322,15 +324,15 @@ class NuScenes:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel)
 
-    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.IN_FRONT) -> None:
+    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
         self.explorer.render_sample(sample_token, box_vis_level)
 
-    def render_sample_data(self, sample_data_token: str, with_anns: bool=True, box_vis_level: BoxVisibility=3,
-                           axes_limit: float=40, ax: Axes=None) -> None:
+    def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
+                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax)
 
     def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
-                          box_vis_level: BoxVisibility=3) -> None:
+                          box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
         self.explorer.render_annotation(sample_annotation_token, margin, view, box_vis_level)
 
     def render_instance(self, instance_token: str) -> None:
@@ -340,11 +342,11 @@ class NuScenes:
                      out_path : str=None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float] = (640, 360)):
+    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
         self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
-    def render_scene_on_map(self, scene_token: str) -> None:
-        self.explorer.render_scene_on_map(scene_token)
+    def render_egoposes_on_map(self, log_location: str, scene_tokens: List=None, demo_ss_factor: float=2.0) -> None:
+        self.explorer.render_egoposes_on_map(log_location, scene_tokens, demo_ss_factor)
 
 
 class NuScenesExplorer:
@@ -517,7 +519,7 @@ class NuScenesExplorer:
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
         plt.axis('off')
 
-    def render_sample(self, token: str, box_vis_level: BoxVisibility=BoxVisibility.IN_FRONT) -> None:
+    def render_sample(self, token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
@@ -541,8 +543,8 @@ class NuScenesExplorer:
         axes.flatten()[-1].axis('off')
         plt.tight_layout()
 
-    def render_sample_data(self, sample_data_token: str, with_anns: bool=True, box_vis_level: BoxVisibility=3,
-                           axes_limit: float=40, ax: Axes=None) -> None:
+    def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
+                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -590,7 +592,7 @@ class NuScenesExplorer:
         ax.set_aspect('equal')
 
     def render_annotation(self, anntoken: str, margin: float=10, view: np.ndarray=np.eye(4),
-                          box_vis_level: BoxVisibility=3) -> None:
+                          box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
         """
         Render selected annotation.
         :param anntoken: Sample_annotation token.
@@ -728,7 +730,7 @@ class NuScenesExplorer:
 
                     # Get annotations and params from DB.
                     impath, boxes, camera_intrinsic = self.nusc.get_sample_data(sd_rec['token'],
-                                                                                box_vis_level=BoxVisibility.IN_FRONT)
+                                                                                box_vis_level=BoxVisibility.ANY)
 
                     # Load and render
                     if not osp.exists(impath):
@@ -795,7 +797,7 @@ class NuScenesExplorer:
 
             # Get data from DB
             impath, boxes, camera_intrinsic = self.nusc.get_sample_data(sd_rec['token'],
-                                                                        box_vis_level=BoxVisibility.IN_FRONT)
+                                                                        box_vis_level=BoxVisibility.ANY)
 
             # Load and render
             if not osp.exists(impath):
@@ -824,56 +826,65 @@ class NuScenesExplorer:
 
         cv2.destroyAllWindows()
 
-    def render_scene_on_map(self, scene_token: str) -> None:
+    def render_egoposes_on_map(self, log_location: str, scene_tokens: List=None, demo_ss_factor: float=2.0) \
+            -> None:
         """
-        Renders the ego poses for a scene on the map. Also counts the number of ego poses that were on the
-        semantic prior area (drivable surface + sidewalks).
-        :param scene_token: Unique identifier of scene to render.
+        Renders ego poses a the map. These can be filtered by location or scene.
+        :param log_location: Name of the location, e.g. "singapore-onenorth", "boston-seaport".
+        :param scene_tokens: Optional list of scene tokens.
+        :param demo_ss_factor: Subsampling factor for rendering the map.
         """
 
-        _, axes = plt.subplots(1, 1, figsize=(10, 10))
+        # Settings
+        close_dist = 100
+        pixel_to_meter = 0.1
 
-        on_drivable_cnt = 0
+        log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
+        assert len(log_tokens) > 0
+        scene_tokens_location = [e['token'] for e in self.nusc.scene if e['log_token'] in log_tokens]
+        if scene_tokens is not None:
+            scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
+        if len(scene_tokens_location) == 0:
+            print('Warning: Found 0 valid scenes for location %s!' % log_location)
 
-        # Get records from NuScenes database.
-        scene_record = self.nusc.get('scene', scene_token)
-        log_record = self.nusc.get('log', scene_record['log_token'])
-        map_record = self.nusc.get('map', log_record['map_token'])
+        map_poses = []
 
-        # map_record['mask'].mask holds a MapMask instance that we need below.
-        map_mask = map_record['mask']
+        for scene_token in tqdm(scene_tokens_location):
 
-        # Now draw the map mask
+            # Get records from the database.
+            scene_record = self.nusc.get('scene', scene_token)
+            log_record = self.nusc.get('log', scene_record['log_token'])
+            map_record = self.nusc.get('map', log_record['map_token'])
+            map_mask = map_record['mask']
 
-        # For the purpose of this demo, subsample the mask by a factor of 25.
-        demo_ss_factor = 25.0
+            # For each sample in the scene, store the ego pose.
+            sample_tokens = self.nusc.field2token('sample', 'scene_token', scene_token)
+            for sample_token in sample_tokens:
+                sample_record = self.nusc.get('sample', sample_token)
+
+                # Poses are associated with the sample_data. Here we use the lidar sample_data.
+                sample_data_record = self.nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
+                pose_record = self.nusc.get('ego_pose', sample_data_record['ego_pose_token'])
+
+                # Recover the ego pose. A 1 is added at the end to make it homogenous coordinates.
+                pose = np.array(pose_record['translation'] + [1])
+
+                # Calculate the pose on the map.
+                map_pose = np.dot(map_mask.transform_matrix, pose)
+                map_pose = map_pose[:2]
+                map_poses.append(map_pose)
+
+        # Compute number of close ego poses.
+        map_poses = np.vstack(map_poses)
+        dists = sklearn.metrics.pairwise.euclidean_distances(map_poses * pixel_to_meter)
+        close_poses = np.sum(dists < close_dist, axis=0)
+
+        # Plot.
+        _, ax = plt.subplots(1, 1, figsize=(10, 10))
         mask = Image.fromarray(map_mask.mask)
-        axes.imshow(mask.resize((int(mask.size[0]/demo_ss_factor), int(mask.size[1]/demo_ss_factor)),
-                                resample=Image.NEAREST))
-        title = '{}'.format(scene_record['name'])
-        axes.set_title(title)
-
-        # For each sample in the scene, plot the ego pose.
-        sample_tokens = self.nusc.field2token('sample', 'scene_token', scene_token)
-        for sample_token in sample_tokens:
-            sample_record = self.nusc.get('sample', sample_token)
-
-            # Poses are associated with the sample_data. Here we use the LIDAR_TOP sample_data.
-            sample_data_record = self.nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
-
-            pose_record = self.nusc.get('ego_pose', sample_data_record['ego_pose_token'])
-
-            # Recover the ego pose. A 1 is added at the end to make it homogenous coordinates.
-            pose = np.array(pose_record['translation'] + [1])
-
-            # Calculate the pose on the map.
-            map_pose = np.dot(map_mask.transform_matrix, pose)
-
-            # Plot
-            axes.plot(map_pose[0] / demo_ss_factor, map_pose[1] / demo_ss_factor, 'b.')
-
-            # Check if outside semantic prior area.
-            on_drivable_cnt += map_mask.is_on_mask(pose[0], pose[1])
-
-        print('For scene {}, {} ego poses ({:.1f}%) were on the semantic prior area'.format(
-            scene_record['name'], on_drivable_cnt, 100*on_drivable_cnt/len(sample_tokens)))
+        ax.imshow(mask.resize((int(mask.size[0] / demo_ss_factor), int(mask.size[1] / demo_ss_factor)),
+                              resample=Image.NEAREST))
+        title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
+        ax.set_title(title)
+        sc = ax.scatter(map_poses[:, 0] / demo_ss_factor, map_poses[:, 1] / demo_ss_factor, s=10, c=close_poses)
+        plt.colorbar(sc)
