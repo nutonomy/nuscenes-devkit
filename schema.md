@@ -72,7 +72,7 @@ calibrated_sensor {
    "token":                   <str> -- Unique record identifier.
    "sensor_token":            <str> -- Foreign key pointing to the sensor type.
    "translation":             <float> [3] -- Coordinate system origin: x, y, z.
-   "rotation":                <float> [4] -- Coordinate system orientation in quaternions.
+   "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
    "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration matrix.
    "camera_distortion":       <float> [*] -- Distortion per convention of the CalTech camera calibration toolbox. Can be 5-10 coefficients.
 }
@@ -85,7 +85,7 @@ Ego vehicle pose at a particular timestamp. Given with respect to global coordin
 ego_pose {
    "token":                   <str> -- Unique record identifier.
    "translation":             <float> [3] -- Coordinate system origin: x, y, z.
-   "rotation":                <float> [4] -- Coordinate system orientation in quaternions.
+   "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
    "timestamp":               <int> -- Unix time stamp.
 }
 ```
@@ -168,7 +168,7 @@ sample_annotation {
    "visibility_token":        <str> -- Foreign key. Visibility may also change over time.
    "translation":             <float> [3] -- Bounding box location as center_x, center_y, center_z.
    "size":                    <float> [3] -- Bounding box size as width, length, height.
-   "rotation":                <float> [4] -- Bounding box orientation in quaternions.
+   "rotation":                <float> [4] -- Bounding box orientation as quaternion: w, x, y, z.
    "next":                    <str> -- Foreign key. Sample annotation from the same object instance that follows this in time. Empty if this is the last annotation for this object.
    "prev":                    <str> -- Foreign key. Sample annotation from the same object instance that precedes this in time. Empty if this is the first annotation for this object.
 }
