@@ -887,9 +887,11 @@ class NuScenesExplorer:
         # Plot.
         _, ax = plt.subplots(1, 1, figsize=(10, 10))
         mask = Image.fromarray(map_mask.mask)
-        ax.imshow(mask.resize((int(mask.size[0] / demo_ss_factor), int(mask.size[1] / demo_ss_factor)),
-                              resample=Image.NEAREST))
+        ax.imshow(mask.resize((int(mask.size[0] / demo_ss_factor), int(mask.size[1] / demo_ss_factor)), resample=Image.NEAREST))
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
-        ax.set_title(title)
+        ax.set_title(title, color='w')
         sc = ax.scatter(map_poses[:, 0] / demo_ss_factor, map_poses[:, 1] / demo_ss_factor, s=10, c=close_poses)
-        plt.colorbar(sc)
+        color_bar = plt.colorbar(sc, fraction=0.025, pad=0.04)
+        plt.rcParams['figure.facecolor'] = 'black'
+        color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
+        plt.setp(color_bar_ticklabels, color='w')

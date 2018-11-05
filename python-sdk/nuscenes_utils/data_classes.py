@@ -3,19 +3,21 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from __future__ import annotations
-
 import struct
+from typing import Tuple, List
 
 import cv2
 import numpy as np
 from pyquaternion import Quaternion
+import cv2 as Axes
+from matplotlib.axes._axes import Axes
 
 from nuscenes_utils.geometry_utils import view_points
 
 
 class PointCloud:
 
-    def __init__(self, points):
+    def __init__(self, points: np.ndarray):
         """
         Class for manipulating and viewing point clouds.
         :param points: <np.float: 4, n>. Input point cloud matrix.
@@ -24,7 +26,7 @@ class PointCloud:
         self.points = points
 
     @staticmethod
-    def load_numpy_bin(file_name):
+    def load_numpy_bin(file_name: str) -> np.ndarray:
         """
         Loads LIDAR data from binary numpy format. Data is stored as (x, y, z, intensity, ring index).
         :param file_name: The path of the pointcloud file.
@@ -35,7 +37,7 @@ class PointCloud:
         return points.T
 
     @staticmethod
-    def load_pcd_bin(file_name):
+    def load_pcd_bin(file_name: str) -> np.ndarray:
         """
         Loads RADAR data from a Point Cloud Data file to a list of lists (=points) and meta data.
 
@@ -112,11 +114,10 @@ class PointCloud:
         return points
 
     @classmethod
-    def from_file(cls, file_name):
+    def from_file(cls, file_name: str): # -> PointCloud
         """
         Instantiate from a .pcl, .pdc, .npy, or .bin file.
-        :param file_name: <str>. Path of the pointcloud file on disk.
-        :return: <PointCloud>.
+        :param file_name: Path of the pointcloud file on disk.
         """
 
         if file_name.endswith('.bin'):
@@ -128,27 +129,25 @@ class PointCloud:
 
         return cls(points)
 
-    def nbr_points(self):
+    def nbr_points(self) -> int:
         """
         Returns the number of points.
-        :return: <int>. Number of points.
+        :return: Number of points.
         """
         return self.points.shape[1]
 
-    def subsample(self, ratio):
+    def subsample(self, ratio: float) -> None:
         """
         Sub-samples the pointcloud.
-        :param ratio: <float>. Fraction to keep.
-        :return: <None>.
+        :param ratio: Fraction to keep.
         """
         selected_ind = np.random.choice(np.arange(0, self.nbr_points()), size=int(self.nbr_points() * ratio))
         self.points = self.points[:, selected_ind]
 
-    def remove_close(self, radius):
+    def remove_close(self, radius: float) -> None:
         """
         Removes point too close within a certain radius from origin.
-        :param radius: <float>.
-        :return: <None>.
+        :param radius: Radius below which points are removed.
         """
 
         x_filt = np.abs(self.points[0, :]) < radius
@@ -156,65 +155,62 @@ class PointCloud:
         not_close = np.logical_not(np.logical_and(x_filt, y_filt))
         self.points = self.points[:, not_close]
 
-    def translate(self, x):
+    def translate(self, x: np.ndarray) -> None:
         """
         Applies a translation to the point cloud.
         :param x: <np.float: 3, 1>. Translation in x, y, z.
-        :return: <None>.
         """
         for i in range(3):
             self.points[i, :] = self.points[i, :] + x[i]
 
-    def rotate(self, rot_matrix):
+    def rotate(self, rot_matrix: np.ndarray) -> None:
         """
         Applies a rotation.
         :param rot_matrix: <np.float: 3, 3>. Rotation matrix.
-        :return: <None>.
         """
         self.points[:3, :] = np.dot(rot_matrix, self.points[:3, :])
 
-    def transform(self, transf_matrix):
+    def transform(self, transf_matrix: np.ndarray) -> None:
         """
         Applies a homogeneous transform.
         :param transf_matrix: <np.float: 4, 4>. Homogenous transformation matrix.
-        :return: <None>.
         """
         self.points[:3, :] = transf_matrix.dot(np.vstack((self.points[:3, :], np.ones(self.nbr_points()))))[:3, :]
 
-    def render_height(self, ax, view=np.eye(4), x_lim=(-20, 20), y_lim=(-20, 20), marker_size=1):
+    def render_height(self, ax: Axes, view: np.ndarray=np.eye(4), x_lim: Tuple=(-20, 20), y_lim: Tuple=(-20, 20),
+                      marker_size: float=1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by height (z-value).
-        :param ax: <matplotlib.axes.Axes>. Axes on which to render the points.
+        :param ax: Axes on which to render the points.
         :param view: <np.float: n, n>. Defines an arbitrary projection (n <= 4).
-        :param x_lim: (min <float>, max <float>).
-        :param y_lim: (min <float>, max <float>).
-        :param marker_size: <float>. Marker size.
-        :return: <None>.
+        :param x_lim: (min <float>, max <float>). x range for plotting.
+        :param y_lim: (min <float>, max <float>). y range for plotting.
+        :param marker_size: Marker size.
         """
         self._render_helper(2, ax, view, x_lim, y_lim, marker_size)
 
-    def render_intensity(self, ax, view=np.eye(4), x_lim=(-20, 20), y_lim=(-20, 20), marker_size=1):
+    def render_intensity(self, ax: Axes, view: np.ndarray=np.eye(4), x_lim: Tuple=(-20, 20), y_lim: Tuple=(-20, 20),
+                         marker_size: float=1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by intensity.
-        :param ax: <matplotlib.axes.Axes>. Axes on which to render the points.
+        :param ax: Axes on which to render the points.
         :param view: <np.float: n, n>. Defines an arbitrary projection (n <= 4).
         :param x_lim: (min <float>, max <float>).
         :param y_lim: (min <float>, max <float>).
-        :param marker_size: <float>. Marker size.
-        :return: <None>.
+        :param marker_size: Marker size.
         """
         self._render_helper(3, ax, view, x_lim, y_lim, marker_size)
 
-    def _render_helper(self, color_channel, ax, view, x_lim, y_lim, marker_size):
+    def _render_helper(self, color_channel: int, ax: Axes, view: np.ndarray, x_lim: Tuple, y_lim: Tuple,
+                       marker_size: float) -> None:
         """
         Helper function for rendering.
-        :param color_channel: <int>.
-        :param ax: <matplotlib.axes.Axes>. Axes on which to render the points.
+        :param color_channel: Point channel to use as color.
+        :param ax: Axes on which to render the points.
         :param view: <np.float: n, n>. Defines an arbitrary projection (n <= 4).
         :param x_lim: (min <float>, max <float>).
         :param y_lim: (min <float>, max <float>).
-        :param marker_size: <float>. Marker size.
-        :return: <None>.
+        :param marker_size: Marker size.
         """
         points = view_points(self.points[:3, :], view, normalize=False)
         ax.scatter(points[0, :], points[1, :], c=self.points[color_channel, :], s=marker_size)
@@ -225,16 +221,16 @@ class PointCloud:
 class Box:
     """ Simple data class representing a 3d box including, label, score and velocity. """
 
-    def __init__(self, center, size, orientation, label=np.nan, score=np.nan, velocity=(np.nan, np.nan, np.nan),
-                 name=None):
+    def __init__(self, center: List[float], size: List[float], orientation: Quaternion, label: int=np.nan,
+                 score: float=np.nan, velocity: Tuple=(np.nan, np.nan, np.nan), name: str=None):
         """
-        :param center: [<float>: 3]. Center of box given as x, y, z.
-        :param size: [<float>: 3]. Size of box in width, length, height.
-        :param orientation: <Quaternion>. Box orientation.
-        :param label: <int>. Integer label, optional.
-        :param score: <float>. Classification score, optional.
-        :param velocity: [<float>: 3]. Box velocity in x, y, z direction.
-        :param name: <str>. Box name, optional. Can be used e.g. for denote category name.
+        :param center: Center of box given as x, y, z.
+        :param size: Size of box in width, length, height.
+        :param orientation: Box orientation.
+        :param label: Integer label, optional.
+        :param score: Classification score, optional.
+        :param velocity: Box velocity in x, y, z direction.
+        :param name: Box name, optional. Can be used e.g. for denote category name.
         """
         assert not np.any(np.isnan(center))
         assert not np.any(np.isnan(size))
@@ -271,7 +267,7 @@ class Box:
                                self.orientation.axis[2], self.orientation.degrees, self.orientation.radians,
                                self.velocity[0], self.velocity[1], self.velocity[2], self.name)
 
-    def encode(self):
+    def encode(self) -> List[float]:
         """
         Encodes the box instance to a JSON-friendly vector representation.
         :return: [<float>: 16]. List of floats encoding the box.
@@ -280,11 +276,11 @@ class Box:
                 self.label] + [self.score] + self.velocity.tolist() + [self.name]
 
     @classmethod
-    def decode(cls, data):
+    def decode(cls, data: List[float]): # -> Box:
         """
         Instantiates a Box instance from encoded vector representation.
         :param data: [<float>: 16]. Output from encode.
-        :return: <Box>.
+        :return: <Box>. The decoded box.
         """
         return Box(data[0:3], data[3:6], Quaternion(data[6:10]), label=data[10], score=data[11], velocity=data[12:15],
                    name=data[15])
@@ -293,32 +289,30 @@ class Box:
     def rotation_matrix(self) -> np.ndarray:
         """
         Return a rotation matrix.
-        :return: <np.float: (3, 3)>.
+        :return: <np.float: 3, 3>. The box's rotation matrix.
         """
         return self.orientation.rotation_matrix
 
-    def translate(self, x):
+    def translate(self, x: np.ndarray) -> None:
         """
         Applies a translation.
         :param x: <np.float: 3, 1>. Translation in x, y, z direction.
-        :return: <None>.
         """
         self.center += x
 
-    def rotate(self, quaternion: Quaternion):
+    def rotate(self, quaternion: Quaternion) -> None:
         """
         Rotates box.
-        :param quaternion: <Quaternion>. Rotation to apply.
-        :return: <None>.
+        :param quaternion: Rotation to apply.
         """
         self.center = np.dot(quaternion.rotation_matrix, self.center)
         self.orientation = quaternion * self.orientation
         self.velocity = np.dot(quaternion.rotation_matrix, self.velocity)
 
-    def corners(self, wlh_factor: float=1.0):
+    def corners(self, wlh_factor: float=1.0) -> np.ndarray:
         """
         Returns the bounding box corners.
-        :param wlh_factor: <float>. Multiply w, l, h by a factor to inflate or deflate the box.
+        :param wlh_factor: Multiply w, l, h by a factor to scale the box.
         :return: <np.float: 3, 8>. First four corners are the ones facing forward.
             The last four are the ones facing backwards.
         """
@@ -341,22 +335,23 @@ class Box:
 
         return corners
 
-    def bottom_corners(self):
+    def bottom_corners(self) -> np.ndarray:
         """
         Returns the four bottom corners.
         :return: <np.float: 3, 4>. Bottom corners. First two face forward, last two face backwards.
         """
         return self.corners()[:, [2, 3, 7, 6]]
 
-    def render(self, axis, view=np.eye(3), normalize=False, colors=('b', 'r', 'k'), linewidth=2):
+    def render(self, axis: Axes, view: np.ndarray=np.eye(3), normalize: bool=False, colors: Tuple=('b', 'r', 'k'),
+               linewidth:float=2):
         """
         Renders the box in the provided Matplotlib axis.
-        :param axis: <matplotlib.pyplot.axis>. Axis onto which the box should be drawn.
+        :param axis: Axis onto which the box should be drawn.
         :param view: <np.array: 3, 3>. Define a projection in needed (e.g. for drawing projection in an image).
-        :param normalize: <bool>. Whether to normalize the remaining coordinate.
+        :param normalize: Whether to normalize the remaining coordinate.
         :param colors: (<Matplotlib.colors>: 3). Valid Matplotlib colors (<str> or normalized RGB tuple) for front,
             back and sides.
-        :param linewidth: <float>. Width in pixel of the box sides.
+        :param linewidth: Width in pixel of the box sides.
         """
         corners = view_points(self.corners(), view, normalize=normalize)[:2, :]
 
@@ -382,16 +377,15 @@ class Box:
                   [center_bottom[1], center_bottom_forward[1]],
                   color=colors[0], linewidth=linewidth)
 
-    def render_cv2(self, im, view=np.eye(3), normalize=False,
-                   colors=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth=2):
+    def render_cv2(self, im: np.ndarray, view: np.ndarray=np.eye(3), normalize: bool=False,
+                   colors: Tuple=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth: float=2.0) -> None:
         """
         Renders box using opencv2.
         :param im: <np.array: width, height, 3>. Image array. Channels are in BGR order.
         :param view: <np.array: 3, 3>. Define a projection if needed (e.g. for drawing projection in an image).
-        :param normalize: <bool>. Whether to normalize the remaining coordinate.
+        :param normalize: Whether to normalize the remaining coordinate.
         :param colors: ((R, G, B), (R, G, B), (R, G, B)). Colors for front, side & rear.
-        :param linewidth: <float>. Linewidth for plot.
-        :return:
+        :param linewidth: Linewidth for plot.
         """
 
         corners = view_points(self.corners(), view, normalize=normalize)[:2, :]
