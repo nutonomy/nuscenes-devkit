@@ -63,7 +63,7 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
             coloring = np.ones((3, pc.points.shape[1])) * -1
             for channel in camera_channels:
                 camera_token = sample_rec['data'][channel]
-                cam_coloring, cam_mask = pointcloud_color_from_image(nusc, lidar_token, camera_token)
+                cam_coloring, cam_mask = pointcloud_color_from_image(explorer.nusc, lidar_token, camera_token)
                 coloring[:, cam_mask] = cam_coloring
 
             # Points live in their own reference frame. So they need to be transformed via global to the image plane.
