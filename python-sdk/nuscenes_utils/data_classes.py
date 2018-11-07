@@ -43,7 +43,8 @@ class PointCloud:
         Example of the header fields:
         # .PCD v0.7 - Point Cloud Data file format
         VERSION 0.7
-        FIELDS x y z dyn_prop id rcs vx vy vx_comp vy_comp is_quality_valid ambig_state x_rms y_rms invalid_state pdh0 vx_rms vy_rms
+        FIELDS x y z dyn_prop id rcs vx vy vx_comp vy_comp is_quality_valid ambig_state x_rms y_rms invalid_state pdh0
+        vx_rms vy_rms
         SIZE 4 4 4 1 2 4 4 4 4 4 1 1 1 1 1 1 1 1
         TYPE F F F I I F F F F F I I I I I I I I
         COUNT 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
@@ -213,8 +214,8 @@ class PointCloud:
         """
         points = view_points(self.points[:3, :], view, normalize=False)
         ax.scatter(points[0, :], points[1, :], c=self.points[color_channel, :], s=marker_size)
-        ax.set_xlim(x_lim)
-        ax.set_ylim(y_lim)
+        ax.set_xlim(left=x_lim[0], right=x_lim[1])
+        ax.set_ylim(left=y_lim[0], right=y_lim[1])
 
 
 class Box:
@@ -265,25 +266,7 @@ class Box:
                                self.wlh[1], self.wlh[2], self.orientation.axis[0], self.orientation.axis[1],
                                self.orientation.axis[2], self.orientation.degrees, self.orientation.radians,
                                self.velocity[0], self.velocity[1], self.velocity[2], self.name)
-
-    def encode(self) -> List[float]:
-        """
-        Encodes the box instance to a JSON-friendly vector representation.
-        :return: [<float>: 16]. List of floats encoding the box.
-        """
-        return self.center.tolist() + self.wlh.tolist() + self.orientation.elements.tolist() + [
-                self.label] + [self.score] + self.velocity.tolist() + [self.name]
-
-    @classmethod
-    def decode(cls, data: List[float]) -> Box:
-        """
-        Instantiates a Box instance from encoded vector representation.
-        :param data: [<float>: 16]. Output from encode.
-        :return: <Box>. The decoded box.
-        """
-        return Box(data[0:3], data[3:6], Quaternion(data[6:10]), label=data[10], score=data[11], velocity=data[12:15],
-                   name=data[15])
-
+    
     @property
     def rotation_matrix(self) -> np.ndarray:
         """
