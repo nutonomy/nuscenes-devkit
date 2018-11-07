@@ -9,8 +9,7 @@ from typing import Tuple, List
 import cv2
 import numpy as np
 from pyquaternion import Quaternion
-import cv2 as Axes
-from matplotlib.axes._axes import Axes
+from matplotlib.axes import Axes
 
 from nuscenes_utils.geometry_utils import view_points
 
@@ -114,7 +113,7 @@ class PointCloud:
         return points
 
     @classmethod
-    def from_file(cls, file_name: str): # -> PointCloud
+    def from_file(cls, file_name: str) -> PointCloud:
         """
         Instantiate from a .pcl, .pdc, .npy, or .bin file.
         :param file_name: Path of the pointcloud file on disk.
@@ -276,7 +275,7 @@ class Box:
                 self.label] + [self.score] + self.velocity.tolist() + [self.name]
 
     @classmethod
-    def decode(cls, data: List[float]): # -> Box:
+    def decode(cls, data: List[float]) -> Box:
         """
         Instantiates a Box instance from encoded vector representation.
         :param data: [<float>: 16]. Output from encode.
@@ -343,7 +342,7 @@ class Box:
         return self.corners()[:, [2, 3, 7, 6]]
 
     def render(self, axis: Axes, view: np.ndarray=np.eye(3), normalize: bool=False, colors: Tuple=('b', 'r', 'k'),
-               linewidth:float=2):
+               linewidth: float=2):
         """
         Renders the box in the provided Matplotlib axis.
         :param axis: Axis onto which the box should be drawn.

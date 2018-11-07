@@ -1,3 +1,8 @@
+"""
+Export fused point clouds of a scene to a Wavefront OBJ file.
+This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
+"""
+
 import os
 import os.path as osp
 import argparse
@@ -16,8 +21,6 @@ from nuscenes_utils.nuscenes import NuScenes
 def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
                             min_dist: float=3.0, max_dist: float=30.0, verbose: bool=True) -> None:
     """
-    Export fused point clouds of a scene to a Wavefront OBJ file.
-    This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
     :param nusc: NuScenes instance.
     :param out_path: Output path to write the point-cloud to.
     :param scene_token: Unique identifier of scene to render.
