@@ -22,7 +22,6 @@ class PointCloud:
         Class for manipulating and viewing point clouds.
         :param points: <np.float: 4, n>. Input point cloud matrix.
         """
-        assert points.shape[0] == 4, 'Error: Pointcloud points must have format: 4 x n'
         self.points = points
 
     @staticmethod
@@ -53,6 +52,57 @@ class PointCloud:
         VIEWPOINT 0 0 0 1 0 0 0
         POINTS 125
         DATA binary
+
+        Below some of the fields are explained in more detail:
+
+        invalid_state: state of Cluster validity state
+        (Invalid states)
+        0x01	invalid due to low RCS
+        0x02	invalid due to near-field artefact
+        0x03	invalid far range cluster because not confirmed in near range
+        0x05	reserved
+        0x06	invalid cluster due to high mirror probability
+        0x07	Invalid cluster because outside sensor field of view
+        0x0d	reserved
+        0x0e	invalid cluster because it is a harmonics
+        (Valid states)
+        0x00	valid
+        0x04	valid cluster with low RCS
+        0x08	valid cluster with azimuth correction due to elevation
+        0x09	valid cluster with high child probability
+        0x0a	valid cluster with high probability of being a 50 deg artefact
+        0x0b	valid cluster but no local maximum
+        0x0c	valid cluster with high artefact probability
+        0x0f	valid cluster with above 95m in near range
+        0x10	valid cluster with high multi-target probability
+        0x11	valid cluster with suspicious angle
+
+        ambig_state: State of Doppler (radial velocity) ambiguity solution
+        0: invalid
+        1: ambiguous
+        2: staggered ramp
+        3: unambiguous
+        4: stationary candidates
+
+        pdh0: False alarm probability of cluster (i.e. probability for being an artefact caused by multipath or similar)
+        0: invalid
+        1: <25%
+        2: 50%
+        3: 75%
+        4: 90%
+        5: 99%
+        6: 99.9%
+        7: <=100%
+
+        dynProp: Dynamic property of cluster to indicate if is moving or not
+        0: moving
+        1: stationary
+        2: oncoming
+        3: stationary candidate
+        4: unknown
+        5: crossing stationary
+        6: crossing moving
+        7: stopped
 
         :param file_name: The path of the pointcloud file.
         :return: <np.float: 18, n>. Point cloud matrix.
@@ -111,12 +161,16 @@ class PointCloud:
         # Convert to numpy matrix
         points = np.array(points).transpose()
 
+        # Filter points with an invalid states (see explanation above)
+        valid = [p in [0, 4, 8, 9, 10, 11, 12, 15, 16, 17] for p in points[-4, :]]
+        points = points[:, valid]
+
         return points
 
     @classmethod
     def from_file(cls, file_name: str): # -> PointCloud
         """
-        Instantiate from a .pcl, .pdc, .npy, or .bin file.
+        Instantiate from a .pcd (RADAR) or .bin (LIDAR) file.
         :param file_name: Path of the pointcloud file on disk.
         """
 
