@@ -8,6 +8,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Dataset download](#dataset-download)
 - [Devkit setup](#devkit-setup)
 - [Getting started](#getting-started)
+- [Frequently asked questions](#frequently-asked-questions)
 - [Setting up a new virtual environment](#setting-up-a-new-virtual-environment)
 
 ## Changelog
@@ -57,11 +58,13 @@ In case you want to avoid downloading and setting up the data, you can also take
 Github](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorial.ipynb). To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) or take a look at the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
 
 ## Frequently asked questions
-- *How come some objects visible in the camera images are not annotated?* In the [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md) we specify that an object should only be annotated if it is covered by at least one LIDAR point. This is done to have precise location annotations, speedup the annotation process and remove faraway objects.
+1) *How come some objects visible in the camera images are not annotated?* In the [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md) we specify that an object should only be annotated if it is covered by at least one LIDAR point. This is done to have precise location annotations, speedup the annotation process and remove faraway objects.
 
-- *I have found an incorrect annotation. Can you correct it?* Please make sure that the annotation is indeed incorrect according to the [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md). Then send an email to nuScenes@nutonomy.com. 
+2) *I have found an incorrect annotation. Can you correct it?* Please make sure that the annotation is indeed incorrect according to the [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md). Then send an email to nuScenes@nutonomy.com.
 
-- *How can I use the RADAR data?* We recently [added features to parse and visualize RADAR point-clouds](https://github.com/nutonomy/nuscenes-devkit/pull/6). More visualization tools will follow.
+3) *How can I use the RADAR data?* We recently [added features to parse and visualize RADAR point-clouds](https://github.com/nutonomy/nuscenes-devkit/pull/6). More visualization tools will follow.
+
+4) *Why are there less sample pointclouds than samples?* See [this issue](https://github.com/nutonomy/nuscenes-devkit/issues/8). Scenes 169 and 170 overlap and going forward we will remove scene 169.
 
 ## Setting up a new virtual environment
 
