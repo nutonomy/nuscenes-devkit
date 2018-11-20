@@ -10,8 +10,7 @@ from abc import ABC
 import cv2
 import numpy as np
 from pyquaternion import Quaternion
-import cv2 as Axes
-from matplotlib.axes._axes import Axes
+from matplotlib.axes import Axes
 
 from nuscenes_utils.geometry_utils import view_points
 
@@ -119,8 +118,8 @@ class PointCloud(ABC):
         """
         points = view_points(self.points[:3, :], view, normalize=False)
         ax.scatter(points[0, :], points[1, :], c=self.points[color_channel, :], s=marker_size)
-        ax.set_xlim(x_lim)
-        ax.set_ylim(y_lim)
+        ax.set_xlim(x_lim[0], x_lim[1])
+        ax.set_ylim(y_lim[0], y_lim[1])
 
 class LidarPointCloud(PointCloud):
 
@@ -177,6 +176,9 @@ class RadarPointCloud(PointCloud):
         DATA binary
 
         Below some of the fields are explained in more detail:
+
+        vx, vy are the velocities in m/s
+        vx_comp, vy_comp are the velocities in m/s compensated by the ego motion
 
         invalid_state: state of Cluster validity state
         (Invalid states)
@@ -339,24 +341,6 @@ class Box:
                                self.orientation.axis[2], self.orientation.degrees, self.orientation.radians,
                                self.velocity[0], self.velocity[1], self.velocity[2], self.name)
 
-    def encode(self) -> List[float]:
-        """
-        Encodes the box instance to a JSON-friendly vector representation.
-        :return: [<float>: 16]. List of floats encoding the box.
-        """
-        return self.center.tolist() + self.wlh.tolist() + self.orientation.elements.tolist() + [
-                self.label] + [self.score] + self.velocity.tolist() + [self.name]
-
-    @classmethod
-    def decode(cls, data: List[float]) -> Box:
-        """
-        Instantiates a Box instance from encoded vector representation.
-        :param data: [<float>: 16]. Output from encode.
-        :return: <Box>. The decoded box.
-        """
-        return Box(data[0:3], data[3:6], Quaternion(data[6:10]), label=data[10], score=data[11], velocity=data[12:15],
-                   name=data[15])
-
     @property
     def rotation_matrix(self) -> np.ndarray:
         """
@@ -415,7 +399,7 @@ class Box:
         return self.corners()[:, [2, 3, 7, 6]]
 
     def render(self, axis: Axes, view: np.ndarray=np.eye(3), normalize: bool=False, colors: Tuple=('b', 'r', 'k'),
-               linewidth:float=2):
+               linewidth: float=2):
         """
         Renders the box in the provided Matplotlib axis.
         :param axis: Axis onto which the box should be drawn.

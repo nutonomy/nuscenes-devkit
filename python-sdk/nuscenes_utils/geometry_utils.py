@@ -27,20 +27,20 @@ def quaternion_slerp(q0: np.ndarray, q1: np.ndarray, fraction: float) -> np.ndar
     :return: <np.array: 4>. Interpolated quaternion.
     """
 
-    _EPS = np.finfo(float).eps * 4.0
+    eps = np.finfo(float).eps * 4.0
     if fraction == 0.0:
         return q0
     elif fraction == 1.0:
         return q1
     d = np.dot(q0, q1)
-    if abs(abs(d) - 1.0) < _EPS:
+    if abs(abs(d) - 1.0) < eps:
         return q0
     if d < 0.0:
         # invert rotation
         d = -d
         np.negative(q1, q1)
     angle = math.acos(d)
-    if abs(angle) < _EPS:
+    if abs(angle) < eps:
         return q0
     is_in = 1.0 / math.sin(angle)
     q0 *= math.sin((1.0 - fraction) * angle) * is_in

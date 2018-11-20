@@ -1,3 +1,8 @@
+"""
+Export fused point clouds of a scene to a Wavefront OBJ file.
+This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
+"""
+
 import os
 import os.path as osp
 import argparse
@@ -8,17 +13,17 @@ from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from nuscenes_utils.data_classes import PointCloud
+from nuscenes_utils.data_classes import LidarPointCloud
 from nuscenes_utils.geometry_utils import view_points
-from nuscenes_utils.nuscenes import NuScenes, NuScenesExplorer
+from nuscenes_utils.nuscenes import NuScenes
 
 
-def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
+def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
                             min_dist: float=3.0, max_dist: float=30.0, verbose: bool=True) -> None:
     """
     Export fused point clouds of a scene to a Wavefront OBJ file.
     This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
-    :param explorer: NuScenesExplorer instance.
+    :param nusc: NuScenes instance.
     :param out_path: Output path to write the point-cloud to.
     :param scene_token: Unique identifier of scene to render.
     :param channel: Channel to render.
@@ -34,15 +39,15 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
     assert channel in valid_channels, 'Input channel {} not valid.'.format(channel)
 
     # Get records from DB.
-    scene_rec = explorer.nusc.get('scene', scene_token)
-    start_sample_rec = explorer.nusc.get('sample', scene_rec['first_sample_token'])
-    sd_rec = explorer.nusc.get('sample_data', start_sample_rec['data'][channel])
+    scene_rec = nusc.get('scene', scene_token)
+    start_sample_rec = nusc.get('sample', scene_rec['first_sample_token'])
+    sd_rec = nusc.get('sample_data', start_sample_rec['data'][channel])
 
     # Make list of frames
     cur_sd_rec = sd_rec
     sd_tokens = []
     while cur_sd_rec['next'] != '':
-        cur_sd_rec = explorer.nusc.get('sample_data', cur_sd_rec['next'])
+        cur_sd_rec = nusc.get('sample_data', cur_sd_rec['next'])
         sd_tokens.append(cur_sd_rec['token'])
 
     # Write point-cloud.
@@ -52,11 +57,11 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
         for sd_token in tqdm(sd_tokens):
             if verbose:
                 print('Processing {}'.format(sd_rec['filename']))
-            sc_rec = explorer.nusc.get('sample_data', sd_token)
-            sample_rec = explorer.nusc.get('sample', sc_rec['sample_token'])
+            sc_rec = nusc.get('sample_data', sd_token)
+            sample_rec = nusc.get('sample', sc_rec['sample_token'])
             lidar_token = sd_rec['token']
-            lidar_rec = explorer.nusc.get('sample_data', lidar_token)
-            pc = PointCloud.from_file(osp.join(explorer.nusc.dataroot, lidar_rec['filename']))
+            lidar_rec = nusc.get('sample_data', lidar_token)
+            pc = LidarPointCloud.from_file(osp.join(nusc.dataroot, lidar_rec['filename']))
 
             # Get point cloud colors.
             coloring = np.ones((3, pc.points.shape[1])) * -1
@@ -67,7 +72,7 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
 
             # Points live in their own reference frame. So they need to be transformed via global to the image plane.
             # First step: transform the point cloud to the ego vehicle frame for the timestamp of the sweep.
-            cs_record = explorer.nusc.get('calibrated_sensor', lidar_rec['calibrated_sensor_token'])
+            cs_record = nusc.get('calibrated_sensor', lidar_rec['calibrated_sensor_token'])
             pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
             pc.translate(np.array(cs_record['translation']))
 
@@ -80,7 +85,7 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
                 print('Distance filter: Keeping %d of %d points...' % (keep.sum(), len(keep)))
 
             # Second step: transform to the global frame.
-            poserecord = explorer.nusc.get('ego_pose', lidar_rec['ego_pose_token'])
+            poserecord = nusc.get('ego_pose', lidar_rec['ego_pose_token'])
             pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
             pc.translate(np.array(poserecord['translation']))
 
@@ -93,13 +98,14 @@ def export_scene_pointcloud(explorer: NuScenesExplorer, out_path: str, scene_tok
                     f.write("v {v[0]:.8f} {v[1]:.8f} {v[2]:.8f} {c[0]:.4f} {c[1]:.4f} {c[2]:.4f}\n".format(v=v, c=c/255.0))
 
             if not sd_rec['next'] == "":
-                sd_rec = explorer.nusc.get('sample_data', sd_rec['next'])
+                sd_rec = nusc.get('sample_data', sd_rec['next'])
 
 
-def pointcloud_color_from_image(nusc, pointsensor_token: str, camera_token: str) -> Tuple[np.array, np.array]:
+def pointcloud_color_from_image(nusc: NuScenes, pointsensor_token: str, camera_token: str) -> Tuple[np.array, np.array]:
     """
     Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
     plane, then retrieve the colors of the closest image pixels.
+    :param nusc: NuScenes instance.
     :param pointsensor_token: Lidar/radar sample_data token.
     :param camera_token: Camera sample data token.
     :return (coloring <np.float: 3, n>, mask <np.bool: m>). Returns the colors for n points that reproject into the
@@ -109,7 +115,7 @@ def pointcloud_color_from_image(nusc, pointsensor_token: str, camera_token: str)
     cam = nusc.get('sample_data', camera_token)
     pointsensor = nusc.get('sample_data', pointsensor_token)
 
-    pc = PointCloud.from_file(osp.join(nusc.dataroot, pointsensor['filename']))
+    pc = LidarPointCloud.from_file(osp.join(nusc.dataroot, pointsensor['filename']))
     im = Image.open(osp.join(nusc.dataroot, cam['filename']))
 
     # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
@@ -187,4 +193,4 @@ if __name__ == '__main__':
     scene_tokens = [s['token'] for s in nusc.scene if s['name'] == scene_name]
     assert len(scene_tokens) == 1, 'Error: Invalid scene %s' % scene_name
 
-    export_scene_pointcloud(nusc.explorer, out_path, scene_tokens[0], channel='LIDAR_TOP', verbose=verbose)
+    export_scene_pointcloud(nusc, out_path, scene_tokens[0], channel='LIDAR_TOP', verbose=verbose)
