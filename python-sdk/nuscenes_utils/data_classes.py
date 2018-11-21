@@ -281,7 +281,7 @@ class RadarPointCloud(PointCloud):
         # A NaN in the first point indicates an empty pointcloud
         point = np.array(points[0])
         if np.any(np.isnan(point)):
-            return np.zeros((feature_count, 0))
+            return RadarPointCloud(np.zeros((feature_count, 0)))
 
         # Convert to numpy matrix
         points = np.array(points).transpose()
