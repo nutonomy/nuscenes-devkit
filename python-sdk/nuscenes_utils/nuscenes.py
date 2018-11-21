@@ -21,7 +21,7 @@ import sklearn.metrics
 from tqdm import tqdm
 
 from nuscenes_utils.map_mask import MapMask
-from nuscenes_utils.data_classes import PointCloud, Box
+from nuscenes_utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes_utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
 
 
@@ -195,6 +195,7 @@ class NuScenes:
             Tuple[str, List[Box], np.array]:
         """
         Returns the data path as well as all annotations related to that sample_data.
+        Note that the boxes are transformed into the current sensor's coordinate frame.
         :param sample_data_token: <str>. Sample_data token.
         :param box_vis_level: <BoxVisibility>. If sample_data is an image, this sets required visibility for boxes.
         :param selected_anntokens: [<str>]. If provided only return the selected annotation.
@@ -328,7 +329,7 @@ class NuScenes:
         self.explorer.render_sample(sample_token, box_vis_level)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None) -> None:
+                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=None, ax: Axes=None) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax)
 
     def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
@@ -451,8 +452,11 @@ class NuScenesExplorer:
 
         cam = self.nusc.get('sample_data', camera_token)
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
-
-        pc = PointCloud.from_file(osp.join(self.nusc.dataroot, pointsensor['filename']))
+        pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
+        if pointsensor['sensor_modality'] == 'lidar':
+            pc = LidarPointCloud.from_file(pcl_path)
+        else:
+            pc = RadarPointCloud.from_file(pcl_path)
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
 
         # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
@@ -527,24 +531,38 @@ class NuScenesExplorer:
         """
         record = self.nusc.get('sample', token)
 
-        # RADAR rendering not implemented yet. So only keep LIDAR and vision.
-        selected_data = {}
+        # Separate RADAR from LIDAR and vision.
+        radar_data = {}
+        nonradar_data = {}
         for channel, token in record['data'].items():
             sd_record = self.nusc.get('sample_data', token)
             sensor_modality = sd_record['sensor_modality']
             if sensor_modality in ['lidar', 'camera']:
-                selected_data[channel] = token
+                nonradar_data[channel] = token
+            else:
+                radar_data[channel] = token
 
-        n = len(selected_data)
-        fig, axes = plt.subplots(int(np.ceil(n/2)), 2, figsize=(18, 27))
+        # Create plots.
+        n = 1 + len(nonradar_data)
+        cols = 2
+        fig, axes = plt.subplots(int(np.ceil(n/cols)), cols, figsize=(16, 24))
 
-        for (_, sd_token), ax in zip(selected_data.items(), axes.flatten()):
+        # Plot radar into a single subplot.
+        ax = axes[0, 0]
+        for i, (_, sd_token) in enumerate(radar_data.items()):
+            self.render_sample_data(sd_token, with_anns=i==0, box_vis_level=box_vis_level, ax=ax)
+        ax.set_title('Fused RADARs')
+
+        # Plot camera and lidar in separate subplots.
+        for (_, sd_token), ax in zip(nonradar_data.items(), axes.flatten()[1:]):
             self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax)
+
         axes.flatten()[-1].axis('off')
         plt.tight_layout()
+        fig.subplots_adjust(wspace=0, hspace=0)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None) -> None:
+            box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=None, ax: Axes=None) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -557,14 +575,69 @@ class NuScenesExplorer:
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
 
-        data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
-
         if sensor_modality == 'lidar':
-            data = PointCloud.from_file(data_path)
+            data_path, boxes, _ = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
+            pc = LidarPointCloud.from_file(data_path)
+
             if ax is None:
                 _, ax = plt.subplots(1, 1, figsize=(9, 9))
-            points = view_points(data.points[:3, :], np.eye(4), normalize=False)
-            ax.scatter(points[0, :], points[1, :], c=points[2, :], s=1)
+            if axes_limit is None:
+                axes_limit = 40
+            points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
+            dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
+            colors = np.minimum(1, dists/axes_limit/np.sqrt(2))
+            ax.scatter(points[0, :], points[1, :], c=colors, s=0.5)
+            ax.plot(0, 0, 'x', color='black') # Draw ego vehicle
+            if with_anns:
+                for box in boxes:
+                    c = np.array(self.get_color(box.name)) / 255.0
+                    box.render(ax, view=np.eye(4), colors=[c, c, c])
+            ax.set_xlim(-axes_limit, axes_limit)
+            ax.set_ylim(-axes_limit, axes_limit)
+
+        elif sensor_modality == 'radar':
+            # Get boxes in lidar frame
+            record = self.nusc.get('sample', sd_record['sample_token'])
+            lidar_token = record['data']['LIDAR_TOP']
+            _, boxes, _ = self.nusc.get_sample_data(lidar_token, box_vis_level=box_vis_level)
+
+            # Get radar point cloud in radar frame
+            data_path = self.nusc.get_sample_data_path(sample_data_token)
+            pc = RadarPointCloud.from_file(data_path)
+
+            # For comparison with lidar, we map the radar point cloud to the lidar frame
+            # Step 1: Map radar point cloud from radar to ego vehicle frame
+            radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
+            pc.rotate(Quaternion(radar_cs_record['rotation']).rotation_matrix)
+            pc.translate(np.array(radar_cs_record['translation']))
+
+            # Step 2: Map radar point cloud from ego vehicle to lidar frame
+            lidar_sd_record = self.nusc.get('sample_data', lidar_token)
+            lidar_cs_record = self.nusc.get('calibrated_sensor', lidar_sd_record['calibrated_sensor_token'])
+            pc.translate(-np.array(lidar_cs_record['translation']))
+            pc.rotate(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T)
+
+            # Transform radar velocities (x is front, y is left)
+            velocities = pc.points[8:10, :] # Compensated velocity
+            velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
+            velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
+            velocities = np.dot(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T, velocities)
+            velocities[2, :] = np.zeros(pc.points.shape[1])
+
+            if ax is None:
+                _, ax = plt.subplots(1, 1, figsize=(9, 9))
+            if axes_limit is None:
+                axes_limit = 40
+            points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
+            dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
+            colors = np.minimum(1, dists/axes_limit/np.sqrt(2))
+            points_vel = view_points(pc.points[:3, :] + velocities, np.eye(4), normalize=False)
+            deltas_vel = np.minimum((points_vel - points) * 3, 5)
+            sc = ax.scatter(points[0, :], points[1, :], c=colors, s=5)
+            colors_rgba = sc.to_rgba(colors)
+            for i in range(points.shape[1]):
+                ax.arrow(points[0, i], points[1, i], deltas_vel[0, i], deltas_vel[1, i], color=colors_rgba[i])
+            ax.plot(0, 0, 'x', color='black')  # Draw ego vehicle
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
@@ -573,6 +646,7 @@ class NuScenesExplorer:
             ax.set_ylim(-axes_limit, axes_limit)
 
         elif sensor_modality == 'camera':
+            data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
             data = Image.open(data_path)
             if ax is None:
                 _, ax = plt.subplots(1, 1, figsize=(9, 16))
@@ -585,7 +659,7 @@ class NuScenesExplorer:
             ax.set_ylim(data.size[1], 0)
 
         else:
-            raise ValueError("RADAR rendering not implemented yet.")
+            raise ValueError("Unknown sensor modality!")
 
         ax.axis('off')
         ax.set_title(sd_record['channel'])
@@ -624,8 +698,7 @@ class NuScenesExplorer:
         # Plot LIDAR view
         lidar = sample_record['data']['LIDAR_TOP']
         data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(lidar, selected_anntokens=[anntoken])
-
-        PointCloud.from_file(data_path).render_height(axes[0], view=view)
+        LidarPointCloud.from_file(data_path).render_height(axes[0], view=view)
         for box in boxes:
             c = np.array(self.get_color(box.name)) / 255.0
             box.render(axes[0], view=view, colors=[c, c, c])
@@ -692,7 +765,7 @@ class NuScenesExplorer:
 
         horizontal_flip = ['CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']  # Flip these for aesthetic reasons.
 
-        time_step = 1/freq * 1e6  # Time-stamps are measured in micro-seconds.
+        time_step = 1 / freq * 1e6  # Time-stamps are measured in micro-seconds.
 
         window_name = '{}'.format(scene_rec['name'])
         cv2.namedWindow(window_name)

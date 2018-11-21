@@ -177,8 +177,9 @@ class RadarPointCloud(PointCloud):
 
         Below some of the fields are explained in more detail:
 
-        vx, vy are the velocities in m/s
-        vx_comp, vy_comp are the velocities in m/s compensated by the ego motion
+        vx, vy are the velocities in m/s.
+        vx_comp, vy_comp are the velocities in m/s compensated by the ego motion.
+        We recommend using the compensated velocities.
 
         invalid_state: state of Cluster validity state
         (Invalid states)
