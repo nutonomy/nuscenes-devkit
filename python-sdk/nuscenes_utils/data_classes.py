@@ -434,7 +434,7 @@ class Box:
                   color=colors[0], linewidth=linewidth)
 
     def render_cv2(self, im: np.ndarray, view: np.ndarray=np.eye(3), normalize: bool=False,
-                   colors: Tuple=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth: float=2.0) -> None:
+                   colors: Tuple=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth: int=2) -> None:
         """
         Renders box using opencv2.
         :param im: <np.array: width, height, 3>. Image array. Channels are in BGR order.
