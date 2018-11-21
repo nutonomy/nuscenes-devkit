@@ -8,6 +8,7 @@ import math
 from enum import IntEnum
 
 import numpy as np
+from pyquaternion import Quaternion
 
 
 class BoxVisibility(IntEnum):
@@ -116,3 +117,26 @@ def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int], vis_level: int=
         return True
     else:
         raise ValueError("vis_level: {} not valid".format(vis_level))
+
+
+def transform_matrix(translation: np.ndarray=np.array([0, 0, 0]), rotation: Quaternion=Quaternion([1, 0, 0, 0]),
+                     inverse: bool=False) -> np.ndarray:
+    """
+    Convert pose to transformation matrix.
+    :param translation: <np.float32: 3>. Translation in x, y, z.
+    :param rotation: Rotation in quaternions (w ri rj rk).
+    :param inverse: Whether to compute inverse transform matrix.
+    :return: <np.float32: 4, 4>. Transformation matrix.
+    """
+    tm = np.eye(4)
+
+    if inverse:
+        rot_inv = rotation.rotation_matrix.T
+        trans = np.transpose(-np.array(translation))
+        tm[:3, :3] = rot_inv
+        tm[:3, 3] = rot_inv.dot(trans)
+    else:
+        tm[:3, :3] = rotation.rotation_matrix
+        tm[:3, 3] = np.transpose(np.array(translation))
+
+    return tm

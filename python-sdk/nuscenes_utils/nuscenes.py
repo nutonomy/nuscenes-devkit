@@ -186,7 +186,7 @@ class NuScenes:
         return matches
 
     def get_sample_data_path(self, sample_data_token: str) -> str:
-        """ Returns the path to a sample_data """
+        """ Returns the path to a sample_data. """
 
         sd_record = self.get('sample_data', sample_data_token)
         return osp.join(self.dataroot, sd_record['filename'])
@@ -329,7 +329,7 @@ class NuScenes:
         self.explorer.render_sample(sample_token, box_vis_level)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=None, ax: Axes=None) -> None:
+                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax)
 
     def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
@@ -562,99 +562,127 @@ class NuScenesExplorer:
         fig.subplots_adjust(wspace=0, hspace=0)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-            box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=None, ax: Axes=None) -> None:
+                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
+                           nsweeps: int=5) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
         :param with_anns: Whether to draw annotations.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
-        :param axes_limit: Axes limit for lidar data (measured in meters).
+        :param axes_limit: Axes limit for lidar and radar (measured in meters).
         :param ax: Axes onto which to render.
+        :param nsweeps: Number of sweeps for lidar and radar.
         """
 
+        # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
 
         if sensor_modality == 'lidar':
-            data_path, boxes, _ = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
-            pc = LidarPointCloud.from_file(data_path)
+            # Get boxes in lidar frame.
+            _, boxes, _ = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
 
+            # Get aggregated point cloud in lidar frame.
+            sample_rec = self.nusc.get('sample', sd_record['sample_token'])
+            chan = sd_record['channel']
+            ref_chan = 'LIDAR_TOP'
+            pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+
+            # Init axes.
             if ax is None:
                 _, ax = plt.subplots(1, 1, figsize=(9, 9))
-            if axes_limit is None:
-                axes_limit = 40
+
+            # Show point cloud.
             points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
             colors = np.minimum(1, dists/axes_limit/np.sqrt(2))
-            ax.scatter(points[0, :], points[1, :], c=colors, s=0.5)
-            ax.plot(0, 0, 'x', color='black') # Draw ego vehicle
+            ax.scatter(points[0, :], points[1, :], c=colors, s=0.2)
+
+            # Show ego vehicle.
+            ax.plot(0, 0, 'x', color='black')
+
+            # Show boxes.
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
                     box.render(ax, view=np.eye(4), colors=[c, c, c])
+
+            # Limit visible range.
             ax.set_xlim(-axes_limit, axes_limit)
             ax.set_ylim(-axes_limit, axes_limit)
 
         elif sensor_modality == 'radar':
-            # Get boxes in lidar frame
-            record = self.nusc.get('sample', sd_record['sample_token'])
-            lidar_token = record['data']['LIDAR_TOP']
+            # Get boxes in lidar frame.
+            sample_rec = self.nusc.get('sample', sd_record['sample_token'])
+            lidar_token = sample_rec['data']['LIDAR_TOP']
             _, boxes, _ = self.nusc.get_sample_data(lidar_token, box_vis_level=box_vis_level)
 
-            # Get radar point cloud in radar frame
-            data_path = self.nusc.get_sample_data_path(sample_data_token)
-            pc = RadarPointCloud.from_file(data_path)
+            # Get aggregated point cloud in lidar frame.
+            # The point cloud is transformed to the lidar frame for visualization purposes.
+            chan = sd_record['channel']
+            ref_chan = 'LIDAR_TOP'
+            pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
 
-            # For comparison with lidar, we map the radar point cloud to the lidar frame
-            # Step 1: Map radar point cloud from radar to ego vehicle frame
+            # Transform radar velocities (x is front, y is left), as these are not transformed when loading the point
+            # cloud.
             radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
-            pc.rotate(Quaternion(radar_cs_record['rotation']).rotation_matrix)
-            pc.translate(np.array(radar_cs_record['translation']))
-
-            # Step 2: Map radar point cloud from ego vehicle to lidar frame
             lidar_sd_record = self.nusc.get('sample_data', lidar_token)
             lidar_cs_record = self.nusc.get('calibrated_sensor', lidar_sd_record['calibrated_sensor_token'])
-            pc.translate(-np.array(lidar_cs_record['translation']))
-            pc.rotate(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T)
-
-            # Transform radar velocities (x is front, y is left)
             velocities = pc.points[8:10, :] # Compensated velocity
             velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
             velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
             velocities = np.dot(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T, velocities)
             velocities[2, :] = np.zeros(pc.points.shape[1])
 
+            # Init axes.
             if ax is None:
                 _, ax = plt.subplots(1, 1, figsize=(9, 9))
-            if axes_limit is None:
-                axes_limit = 40
+
+            # Show point cloud.
             points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
             colors = np.minimum(1, dists/axes_limit/np.sqrt(2))
+            sc = ax.scatter(points[0, :], points[1, :], c=colors, s=3)
+
+            # Show velocities.
             points_vel = view_points(pc.points[:3, :] + velocities, np.eye(4), normalize=False)
             deltas_vel = np.minimum((points_vel - points) * 3, 5)
-            sc = ax.scatter(points[0, :], points[1, :], c=colors, s=5)
             colors_rgba = sc.to_rgba(colors)
             for i in range(points.shape[1]):
                 ax.arrow(points[0, i], points[1, i], deltas_vel[0, i], deltas_vel[1, i], color=colors_rgba[i])
-            ax.plot(0, 0, 'x', color='black')  # Draw ego vehicle
+
+            # Show ego vehicle.
+            ax.plot(0, 0, 'x', color='black')
+
+            # Show boxes.
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
                     box.render(ax, view=np.eye(4), colors=[c, c, c])
+
+            # Limit visible range.
             ax.set_xlim(-axes_limit, axes_limit)
             ax.set_ylim(-axes_limit, axes_limit)
 
         elif sensor_modality == 'camera':
+            # Load boxes and image.
             data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
             data = Image.open(data_path)
+
+            # Init axes.
             if ax is None:
                 _, ax = plt.subplots(1, 1, figsize=(9, 16))
+
+            # Show image.
             ax.imshow(data)
+
+            # Show boxes.
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
                     box.render(ax, view=camera_intrinsic, normalize=True, colors=[c, c, c])
+
+            # Limit visible range.
             ax.set_xlim(0, data.size[0])
             ax.set_ylim(data.size[1], 0)
 
@@ -677,7 +705,6 @@ class NuScenesExplorer:
 
         ann_record = self.nusc.get('sample_annotation', anntoken)
         sample_record = self.nusc.get('sample', ann_record['sample_token'])
-
         assert 'LIDAR_TOP' in sample_record['data'].keys(), 'No LIDAR_TOP in data, cant render'
 
         fig, axes = plt.subplots(1, 2, figsize=(18, 9))
@@ -722,13 +749,14 @@ class NuScenesExplorer:
     def render_instance(self, instance_token: str) -> None:
         """
         Finds the annotation of the given instance that is closest to the vehicle, and then renders it.
+        :param instance_token: The instance token.
         """
         ann_tokens = self.nusc.field2token('sample_annotation', 'instance_token', instance_token)
         closest = [np.inf, None]
         for ann_token in ann_tokens:
             ann_record = self.nusc.get('sample_annotation', ann_token)
             sample_record = self.nusc.get('sample', ann_record['sample_token'])
-            sample_data_record = self.nusc.get('sample_data', sample_record['data']['lidar'])
+            sample_data_record = self.nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
             pose_record = self.nusc.get('ego_pose', sample_data_record['ego_pose_token'])
             dist = np.linalg.norm(np.array(pose_record['translation']) - np.array(ann_record['translation']))
             if dist < closest[0]:

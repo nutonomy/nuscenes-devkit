@@ -3,26 +3,108 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from __future__ import annotations
+from functools import reduce
 import struct
 from typing import Tuple, List
 from abc import ABC
+import os.path as osp
 
 import cv2
 import numpy as np
 from pyquaternion import Quaternion
 from matplotlib.axes import Axes
 
-from nuscenes_utils.geometry_utils import view_points
+from nuscenes_utils.geometry_utils import view_points, transform_matrix
 
 
 class PointCloud(ABC):
+    """
+    Abstract class for manipulating and viewing point clouds.
+    Every point cloud (lidar and radar) consists of points where:
+    - Dimensions 0, 1, 2 represent x, y, z coordinates. These are modified when the point cloud is rotated or translated.
+    - All other dimensions are optional. Hence these have to be manually modified if the reference frame changes.
+    """
 
     def __init__(self, points: np.ndarray):
         """
-        Class for manipulating and viewing point clouds.
+        Initialize a point cloud and check it has the correct dimensions.
         :param points: <np.float: d, n>. d-dimensional input point cloud matrix.
         """
+        assert points.shape[0] == self.nbr_dims(), 'Error: Pointcloud points must have format: %d x n' % self.nbr_dims()
         self.points = points
+
+    @classmethod
+    def from_file_multisweep(cls, nusc, sample_rec: str, chan: str, ref_chan: str, nsweeps: int=26,
+                              min_distance: float=1.0) -> Tuple[PointCloud, np.ndarray]:
+        """
+        Return a point cloud that aggregates multiple sweeps.
+        As every sweep is in a different coordinate frame, we need to map the coordinates to a single reference frame.
+        As every sweep has a different timestamp, we need to account for that in the transformations and timestamps.
+        :param nusc: A NuScenes instance.
+        :param sample_rec: The current sample.
+        :param chan: The radar channel from which we track back n sweeps to aggregate the point cloud.
+        :param ref_chan: The reference channel of the current sample_rec that the point clouds are mapped to.
+        :param nsweeps: Number of sweeps to aggregated.
+        :param min_distance: Distance below which points are discarded.
+        :return: (all_pc, all_times). The aggregated point cloud and timestamps.
+        """
+
+        # Init
+        points = np.zeros((cls.nbr_dims(), 0))
+        all_pc = cls(points)
+        all_times = np.zeros((1, 0))
+
+        # Get reference pose and timestamp
+        ref_sd_token = sample_rec['data'][ref_chan]
+        ref_sd_rec = nusc.get('sample_data', ref_sd_token)
+        ref_pose_rec = nusc.get('ego_pose', ref_sd_rec['ego_pose_token'])
+        ref_cs_rec = nusc.get('calibrated_sensor', ref_sd_rec['calibrated_sensor_token'])
+        ref_time = 1e-6 * ref_sd_rec['timestamp']
+
+        # Homogeneous transform from ego car frame to reference frame
+        ref_from_car = transform_matrix(ref_cs_rec['translation'], Quaternion(ref_cs_rec['rotation']), inverse=True)
+
+        # Homogeneous transformation matrix from global to _current_ ego car frame
+        car_from_global = transform_matrix(ref_pose_rec['translation'], Quaternion(ref_pose_rec['rotation']),
+                                           inverse=True)
+
+        # Aggregate current and previous sweeps.
+        sample_data_token = sample_rec['data'][chan]
+        current_sd_rec = nusc.get('sample_data', sample_data_token)
+        for _ in range(nsweeps):
+            # Load up the pointcloud.
+            current_pc = cls.from_file(osp.join(nusc.dataroot, current_sd_rec['filename']))
+
+            # Get past pose.
+            current_pose_rec = nusc.get('ego_pose', current_sd_rec['ego_pose_token'])
+            global_from_car = transform_matrix(current_pose_rec['translation'], Quaternion(current_pose_rec['rotation']),
+                                               inverse=False)
+
+            # Homogeneous transformation matrix from radar to ego car frame.
+            current_cs_rec = nusc.get('calibrated_sensor', current_sd_rec['calibrated_sensor_token'])
+            car_from_current = transform_matrix(current_cs_rec['translation'], Quaternion(current_cs_rec['rotation']),
+                                                inverse=False)
+
+            # Fuse four transformation matrices into one and perform transform.
+            trans_matrix = reduce(np.dot, [ref_from_car, car_from_global, global_from_car, car_from_current])
+            current_pc.transform(trans_matrix)
+
+            # Remove close points and add timevector.
+            current_pc.remove_close(min_distance)
+            time_lag = ref_time - 1e-6 * current_sd_rec['timestamp']  # positive difference
+            times = time_lag * np.ones((1, current_pc.nbr_points()))
+            all_times = np.hstack((all_times, times))
+
+            # Merge with key pc.
+            all_pc.points = np.hstack((all_pc.points, current_pc.points))
+
+            # Abort if there are no previous sweeps.
+            if current_sd_rec['prev'] == '':
+                break
+            else:
+                current_sd_rec = nusc.get('sample_data', current_sd_rec['prev'])
+
+        return all_pc, all_times
 
     @classmethod
     def from_file(cls, file_name: str) -> PointCloud:
@@ -39,6 +121,14 @@ class PointCloud(ABC):
         :return: Number of points.
         """
         return self.points.shape[1]
+
+    @staticmethod
+    def nbr_dims() -> int:
+        """
+        Returns the number of dimensions.
+        :return: Number of dimensions.
+        """
+        raise NotImplementedError
 
     def subsample(self, ratio: float) -> None:
         """
@@ -123,13 +213,13 @@ class PointCloud(ABC):
 
 class LidarPointCloud(PointCloud):
 
-    def __init__(self, points: np.ndarray):
+    @staticmethod
+    def nbr_dims() -> int:
         """
-        Class for manipulating and viewing point clouds.
-        :param points: <np.float: 4, n>. Input point cloud matrix.
+        Returns the number of dimensions.
+        :return: Number of dimensions.
         """
-        assert points.shape[0] == 4, 'Error: Pointcloud points must have format: 4 x n'
-        super().__init__(points)
+        return 4
 
     @classmethod
     def from_file(cls, file_name: str) -> LidarPointCloud:
@@ -142,25 +232,17 @@ class LidarPointCloud(PointCloud):
         assert file_name.endswith('.bin'), 'Unsupported filetype {}'.format(file_name)
 
         scan = np.fromfile(file_name, dtype=np.float32)
-        points = scan.reshape((-1, 5))[:, :4]
-        return LidarPointCloud(points.T)
+        points = scan.reshape((-1, 5))[:, :cls.nbr_dims()]
+        return cls(points.T)
 
 class RadarPointCloud(PointCloud):
-
-    def __init__(self, points: np.ndarray):
-        """
-        Class for manipulating and viewing point clouds.
-        :param points: <np.float: 18, n>. Input point cloud matrix.
-        """
-        assert points.shape[0] == 18, 'Error: Pointcloud points must have format: 18 x n'
-        super().__init__(points)
 
     @classmethod
     def from_file(cls, file_name: str) -> RadarPointCloud:
         """
         Loads RADAR data from a Point Cloud Data file. See details below.
         :param file_name: The path of the pointcloud file.
-        :return: <np.float: 18, n>. Point cloud matrix.
+        :return: <np.float: d, n>. Point cloud matrix with d dimensions and n points.
 
         Example of the header fields:
         # .PCD v0.7 - Point Cloud Data file format
@@ -176,6 +258,8 @@ class RadarPointCloud(PointCloud):
         DATA binary
 
         Below some of the fields are explained in more detail:
+
+        x is front, y is left
 
         vx, vy are the velocities in m/s.
         vx_comp, vy_comp are the velocities in m/s compensated by the ego motion.
@@ -282,7 +366,7 @@ class RadarPointCloud(PointCloud):
         # A NaN in the first point indicates an empty pointcloud
         point = np.array(points[0])
         if np.any(np.isnan(point)):
-            return RadarPointCloud(np.zeros((feature_count, 0)))
+            return cls(np.zeros((feature_count, 0)))
 
         # Convert to numpy matrix
         points = np.array(points).transpose()
@@ -291,7 +375,15 @@ class RadarPointCloud(PointCloud):
         valid = [p in [0, 4, 8, 9, 10, 11, 12, 15, 16, 17] for p in points[-4, :]]
         points = points[:, valid]
 
-        return RadarPointCloud(points)
+        return cls(points)
+
+    @staticmethod
+    def nbr_dims() -> int:
+        """
+        Returns the number of dimensions.
+        :return: Number of dimensions.
+        """
+        return 18
 
 class Box:
     """ Simple data class representing a 3d box including, label, score and velocity. """
