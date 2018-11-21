@@ -36,10 +36,9 @@ Download the devkit to your home directory using:
 ```
 cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
-The devkit is tested for Python 3.7. 
-We may add backward compatibility in future releases.
-To install the required packages, run the following command in your favourite virtual environment. If you need help in 
-installing Python 3.7 or in setting up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment):
+The devkit is tested for Python 3.7.
+To install Python 3.7 and set up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment).
+To install the required packages, run the following command in your favourite virtual environment. 
 ```
 pip install -r requirements.txt
 ```
