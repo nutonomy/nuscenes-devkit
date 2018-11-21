@@ -996,3 +996,4 @@ class NuScenesExplorer:
         plt.rcParams['figure.facecolor'] = 'black'
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
         plt.setp(color_bar_ticklabels, color='w')
+        plt.rcParams['figure.facecolor'] = 'white' # Reset for future plots

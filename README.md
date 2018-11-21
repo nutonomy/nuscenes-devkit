@@ -12,8 +12,9 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Setting up a new virtual environment](#setting-up-a-new-virtual-environment)
 
 ## Changelog
-- Oct. 4, 2018: Code to parse RADAR data released
-- Sep. 12, 2018: Devkit for teaser dataset released
+- Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
+- Oct. 4, 2018: Code to parse RADAR data released.
+- Sep. 12, 2018: Devkit for teaser dataset released.
 
 ## Dataset download
 To download nuScenes you need to go to the [Download page](https://www.nuscenes.org/download), 
@@ -24,10 +25,10 @@ Please unpack the archives to the `/data/nuscenes` folder \*without\* overwritin
 Eventually you should have the following folder structure:
 ```
 /data/nuscenes
-    maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene
-    samples	-	Sensor data for keyframes
-    sweeps	-	Sensor data for intermediate frames
-    v0.1	-	JSON tables that include all the meta data and annotations
+    maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene.
+    samples	-	Sensor data for keyframes.
+    sweeps	-	Sensor data for intermediate frames.
+    v0.1	-	JSON tables that include all the meta data and annotations.
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class below.
 
@@ -38,7 +39,7 @@ cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
 The devkit is tested for Python 3.7.
 To install Python 3.7 and set up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment).
-To install the required packages, run the following command in your favourite virtual environment. 
+To install the required packages, run the following command in your favourite virtual environment:
 ```
 pip install -r requirements.txt
 ```
