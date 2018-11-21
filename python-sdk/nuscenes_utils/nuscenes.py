@@ -641,12 +641,15 @@ class NuScenesExplorer:
             # Show point cloud.
             points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-            colors = np.minimum(1, dists/axes_limit/np.sqrt(2))
+            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
             sc = ax.scatter(points[0, :], points[1, :], c=colors, s=3)
 
             # Show velocities.
             points_vel = view_points(pc.points[:3, :] + velocities, np.eye(4), normalize=False)
-            deltas_vel = np.minimum((points_vel - points) * 3, 5)
+            max_delta = 10
+            deltas_vel = points_vel - points
+            deltas_vel = 3 * deltas_vel # Arbitrary scaling
+            deltas_vel = np.clip(deltas_vel, -max_delta, max_delta) # Arbitrary clipping
             colors_rgba = sc.to_rgba(colors)
             for i in range(points.shape[1]):
                 ax.arrow(points[0, i], points[1, i], deltas_vel[0, i], deltas_vel[1, i], color=colors_rgba[i])

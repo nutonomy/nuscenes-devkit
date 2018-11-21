@@ -238,10 +238,14 @@ class LidarPointCloud(PointCloud):
 class RadarPointCloud(PointCloud):
 
     @classmethod
-    def from_file(cls, file_name: str) -> RadarPointCloud:
+    def from_file(cls, file_name: str, invalid_states: List[int]=[0], dynprop_states: List[int]=range(7),
+                  ambig_states: List[int]=[3]) -> RadarPointCloud:
         """
         Loads RADAR data from a Point Cloud Data file. See details below.
         :param file_name: The path of the pointcloud file.
+        :param invalid_states: Radar states to be kept. See details below.
+        :param dynprop_states: Radar states to be kept. Use [0, 2, 6] for moving objects only. See details below.
+        :param ambig_states: Radar states to be kept. See details below.
         :return: <np.float: d, n>. Point cloud matrix with d dimensions and n points.
 
         Example of the header fields:
@@ -265,7 +269,7 @@ class RadarPointCloud(PointCloud):
         vx_comp, vy_comp are the velocities in m/s compensated by the ego motion.
         We recommend using the compensated velocities.
 
-        invalid_state: state of Cluster validity state
+        invalid_state: state of Cluster validity state.
         (Invalid states)
         0x01	invalid due to low RCS
         0x02	invalid due to near-field artefact
@@ -287,14 +291,14 @@ class RadarPointCloud(PointCloud):
         0x10	valid cluster with high multi-target probability
         0x11	valid cluster with suspicious angle
 
-        ambig_state: State of Doppler (radial velocity) ambiguity solution
+        ambig_state: State of Doppler (radial velocity) ambiguity solution.
         0: invalid
         1: ambiguous
         2: staggered ramp
         3: unambiguous
         4: stationary candidates
 
-        pdh0: False alarm probability of cluster (i.e. probability for being an artefact caused by multipath or similar)
+        pdh0: False alarm probability of cluster (i.e. probability for being an artefact caused by multipath or similar).
         0: invalid
         1: <25%
         2: 50%
@@ -304,7 +308,7 @@ class RadarPointCloud(PointCloud):
         6: 99.9%
         7: <=100%
 
-        dynProp: Dynamic property of cluster to indicate if is moving or not
+        dynProp: Dynamic property of cluster to indicate if is moving or not.
         0: moving
         1: stationary
         2: oncoming
@@ -342,13 +346,13 @@ class RadarPointCloud(PointCloud):
         assert height == 1, 'Error: height != 0 not supported!'
         assert data == 'binary'
 
-        # Lookup table for how to decode the binaries
+        # Lookup table for how to decode the binaries.
         unpacking_lut = {'F': {2: 'e', 4: 'f', 8: 'd'},
                          'I': {1: 'b', 2: 'h', 4: 'i', 8: 'q'},
                          'U': {1: 'B', 2: 'H', 4: 'I', 8: 'Q'}}
         types_str = ''.join([unpacking_lut[t][int(s)] for t, s in zip(types, sizes)])
 
-        # Decode each point
+        # Decode each point.
         offset = 0
         point_count = width
         points = []
@@ -363,16 +367,24 @@ class RadarPointCloud(PointCloud):
                 offset = end_p
             points.append(point)
 
-        # A NaN in the first point indicates an empty pointcloud
+        # A NaN in the first point indicates an empty pointcloud.
         point = np.array(points[0])
         if np.any(np.isnan(point)):
             return cls(np.zeros((feature_count, 0)))
 
-        # Convert to numpy matrix
+        # Convert to numpy matrix.
         points = np.array(points).transpose()
 
-        # Filter points with an invalid states (see explanation above)
-        valid = [p in [0, 4, 8, 9, 10, 11, 12, 15, 16, 17] for p in points[-4, :]]
+        # Filter points with an invalid state.
+        valid = [p in invalid_states for p in points[-4, :]]
+        points = points[:, valid]
+
+        # Filter by dynProp.
+        valid = [p in dynprop_states for p in points[3, :]]
+        points = points[:, valid]
+
+        # Filter by ambig_state.
+        valid = [p in ambig_states for p in points[11, :]]
         points = points[:, valid]
 
         return cls(points)
