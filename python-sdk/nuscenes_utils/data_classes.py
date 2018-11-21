@@ -512,8 +512,9 @@ class Box:
 
         # Draw the sides
         for i in range(4):
-            axis.plot([corners.T[i][0], corners.T[i + 4][0]], [corners.T[i][1], corners.T[i + 4][1]], color=colors[2],
-                      linewidth=linewidth)
+            axis.plot([corners.T[i][0], corners.T[i + 4][0]],
+                      [corners.T[i][1], corners.T[i + 4][1]],
+                      color=colors[2], linewidth=linewidth)
 
         # Draw front (first 4 corners) and rear (last 4 corners) rectangles(3d)/lines(2d)
         draw_rect(corners.T[:4], colors[0])
@@ -529,26 +530,30 @@ class Box:
     def render_cv2(self, im: np.ndarray, view: np.ndarray=np.eye(3), normalize: bool=False,
                    colors: Tuple=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth: int=2) -> None:
         """
-        Renders box using opencv2.
+        Renders box using OpenCV2.
         :param im: <np.array: width, height, 3>. Image array. Channels are in BGR order.
         :param view: <np.array: 3, 3>. Define a projection if needed (e.g. for drawing projection in an image).
         :param normalize: Whether to normalize the remaining coordinate.
         :param colors: ((R, G, B), (R, G, B), (R, G, B)). Colors for front, side & rear.
         :param linewidth: Linewidth for plot.
         """
-
         corners = view_points(self.corners(), view, normalize=normalize)[:2, :]
 
         def draw_rect(selected_corners, color):
             prev = selected_corners[-1]
             for corner in selected_corners:
-                cv2.line(im, (int(prev[0]), int(prev[1])), (int(corner[0]), int(corner[1])), color, linewidth)
+                cv2.line(im,
+                         (int(prev[0]), int(prev[1])),
+                         (int(corner[0]), int(corner[1])),
+                         color, linewidth)
                 prev = corner
 
         # Draw the sides
         for i in range(4):
-            cv2.line(im, (int(corners.T[i][0]), int(corners.T[i][1])),
-                     (int(corners.T[i + 4][0]), int(corners.T[i + 4][1])), colors[2][::-1], linewidth)
+            cv2.line(im,
+                     (int(corners.T[i][0]), int(corners.T[i][1])),
+                     (int(corners.T[i + 4][0]), int(corners.T[i + 4][1])),
+                     colors[2][::-1], linewidth)
 
         # Draw front (first 4 corners) and rear (last 4 corners) rectangles(3d)/lines(2d)
         draw_rect(corners.T[:4], colors[0][::-1])
@@ -557,5 +562,7 @@ class Box:
         # Draw line indicating the front
         center_bottom_forward = np.mean(corners.T[2:4], axis=0)
         center_bottom = np.mean(corners.T[[2, 3, 7, 6]], axis=0)
-        cv2.line(im, (int(center_bottom[0]), int(center_bottom[1])),
-                 (int(center_bottom_forward[0]), int(center_bottom_forward[1])), colors[0][::-1], linewidth)
+        cv2.line(im,
+                 (int(center_bottom[0]), int(center_bottom[1])),
+                 (int(center_bottom_forward[0]), int(center_bottom_forward[1])),
+                 colors[0][::-1], linewidth)
