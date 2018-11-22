@@ -80,7 +80,7 @@ class PointCloud(ABC):
             global_from_car = transform_matrix(current_pose_rec['translation'], Quaternion(current_pose_rec['rotation']),
                                                inverse=False)
 
-            # Homogeneous transformation matrix from radar to ego car frame.
+            # Homogeneous transformation matrix from sensor coordinate frame to ego car frame.
             current_cs_rec = nusc.get('calibrated_sensor', current_sd_rec['calibrated_sensor_token'])
             car_from_current = transform_matrix(current_cs_rec['translation'], Quaternion(current_cs_rec['rotation']),
                                                 inverse=False)
@@ -211,6 +211,7 @@ class PointCloud(ABC):
         ax.set_xlim(x_lim[0], x_lim[1])
         ax.set_ylim(y_lim[0], y_lim[1])
 
+
 class LidarPointCloud(PointCloud):
 
     @staticmethod
@@ -234,6 +235,7 @@ class LidarPointCloud(PointCloud):
         scan = np.fromfile(file_name, dtype=np.float32)
         points = scan.reshape((-1, 5))[:, :cls.nbr_dims()]
         return cls(points.T)
+
 
 class RadarPointCloud(PointCloud):
 
@@ -396,6 +398,7 @@ class RadarPointCloud(PointCloud):
         :return: Number of dimensions.
         """
         return 18
+
 
 class Box:
     """ Simple data class representing a 3d box including, label, score and velocity. """

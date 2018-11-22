@@ -325,12 +325,13 @@ class NuScenes:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel)
 
-    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
-        self.explorer.render_sample(sample_token, box_vis_level)
+    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY, nsweeps: int=1) -> None:
+        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None) -> None:
-        self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax)
+                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
+                           nsweeps: int=1) -> None:
+        self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps)
 
     def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
                           box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
@@ -523,11 +524,12 @@ class NuScenesExplorer:
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
         plt.axis('off')
 
-    def render_sample(self, token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
+    def render_sample(self, token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY, nsweeps: int=1) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
+        :param nsweeps: Number of sweeps for lidar and radar.
         """
         record = self.nusc.get('sample', token)
 
@@ -550,12 +552,12 @@ class NuScenesExplorer:
         # Plot radar into a single subplot.
         ax = axes[0, 0]
         for i, (_, sd_token) in enumerate(radar_data.items()):
-            self.render_sample_data(sd_token, with_anns=i==0, box_vis_level=box_vis_level, ax=ax)
+            self.render_sample_data(sd_token, with_anns=i==0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
         ax.set_title('Fused RADARs')
 
         # Plot camera and lidar in separate subplots.
         for (_, sd_token), ax in zip(nonradar_data.items(), axes.flatten()[1:]):
-            self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax)
+            self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
 
         axes.flatten()[-1].axis('off')
         plt.tight_layout()
@@ -563,7 +565,7 @@ class NuScenesExplorer:
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
                            box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
-                           nsweeps: int=5) -> None:
+                           nsweeps: int=1) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
