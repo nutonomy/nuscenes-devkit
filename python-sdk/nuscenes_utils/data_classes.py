@@ -6,7 +6,7 @@ from __future__ import annotations
 from functools import reduce
 import struct
 from typing import Tuple, List
-from abc import ABC
+from abc import ABC, abstractmethod
 import os.path as osp
 
 import cv2
@@ -32,6 +32,25 @@ class PointCloud(ABC):
         """
         assert points.shape[0] == self.nbr_dims(), 'Error: Pointcloud points must have format: %d x n' % self.nbr_dims()
         self.points = points
+
+    @staticmethod
+    @abstractmethod
+    def nbr_dims() -> int:
+        """
+        Returns the number of dimensions.
+        :return: Number of dimensions.
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_file(cls, file_name: str) -> PointCloud:
+        """
+        Loads point cloud from disk.
+        :param file_name: Path of the pointcloud file on disk.
+        :return: PointCloud instance.
+        """
+        pass
 
     @classmethod
     def from_file_multisweep(cls, nusc, sample_rec: str, chan: str, ref_chan: str, nsweeps: int=26,
@@ -106,29 +125,12 @@ class PointCloud(ABC):
 
         return all_pc, all_times
 
-    @classmethod
-    def from_file(cls, file_name: str) -> PointCloud:
-        """
-        Loads point cloud from disk.
-        :param file_name: Path of the pointcloud file on disk.
-        :return: PointCloud instance.
-        """
-        raise NotImplementedError
-
     def nbr_points(self) -> int:
         """
         Returns the number of points.
         :return: Number of points.
         """
         return self.points.shape[1]
-
-    @staticmethod
-    def nbr_dims() -> int:
-        """
-        Returns the number of dimensions.
-        :return: Number of dimensions.
-        """
-        raise NotImplementedError
 
     def subsample(self, ratio: float) -> None:
         """
@@ -238,6 +240,14 @@ class LidarPointCloud(PointCloud):
 
 
 class RadarPointCloud(PointCloud):
+
+    @staticmethod
+    def nbr_dims() -> int:
+        """
+        Returns the number of dimensions.
+        :return: Number of dimensions.
+        """
+        return 18
 
     @classmethod
     def from_file(cls, file_name: str, invalid_states: List[int]=[0], dynprop_states: List[int]=range(7),
@@ -390,14 +400,6 @@ class RadarPointCloud(PointCloud):
         points = points[:, valid]
 
         return cls(points)
-
-    @staticmethod
-    def nbr_dims() -> int:
-        """
-        Returns the number of dimensions.
-        :return: Number of dimensions.
-        """
-        return 18
 
 
 class Box:
