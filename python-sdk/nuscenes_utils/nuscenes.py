@@ -779,7 +779,7 @@ class NuScenesExplorer:
         :param out_path: Optional path to write a video file of the rendered frames.
         """
 
-        assert imsize[0] / imsize[1] == 16/9, "Aspect ratio should be 16/9."
+        assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
 
         # Get records from DB.
         scene_rec = self.nusc.get('scene', scene_token)
