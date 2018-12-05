@@ -13,7 +13,7 @@ from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from nuscenes_utils.data_classes import PointCloud
+from nuscenes_utils.data_classes import LidarPointCloud
 from nuscenes_utils.geometry_utils import view_points
 from nuscenes_utils.nuscenes import NuScenes
 
@@ -21,6 +21,8 @@ from nuscenes_utils.nuscenes import NuScenes
 def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
                             min_dist: float=3.0, max_dist: float=30.0, verbose: bool=True) -> None:
     """
+    Export fused point clouds of a scene to a Wavefront OBJ file.
+    This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
     :param nusc: NuScenes instance.
     :param out_path: Output path to write the point-cloud to.
     :param scene_token: Unique identifier of scene to render.
@@ -59,7 +61,7 @@ def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, cha
             sample_rec = nusc.get('sample', sc_rec['sample_token'])
             lidar_token = sd_rec['token']
             lidar_rec = nusc.get('sample_data', lidar_token)
-            pc = PointCloud.from_file(osp.join(nusc.dataroot, lidar_rec['filename']))
+            pc = LidarPointCloud.from_file(osp.join(nusc.dataroot, lidar_rec['filename']))
 
             # Get point cloud colors.
             coloring = np.ones((3, pc.points.shape[1])) * -1
@@ -113,7 +115,7 @@ def pointcloud_color_from_image(nusc: NuScenes, pointsensor_token: str, camera_t
     cam = nusc.get('sample_data', camera_token)
     pointsensor = nusc.get('sample_data', pointsensor_token)
 
-    pc = PointCloud.from_file(osp.join(nusc.dataroot, pointsensor['filename']))
+    pc = LidarPointCloud.from_file(osp.join(nusc.dataroot, pointsensor['filename']))
     im = Image.open(osp.join(nusc.dataroot, cam['filename']))
 
     # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
