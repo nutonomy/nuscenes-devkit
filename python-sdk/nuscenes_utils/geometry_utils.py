@@ -89,12 +89,12 @@ def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.nda
     return points
 
 
-def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int], vis_level: int=BoxVisibility.ANY) -> bool:
+def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level: int=BoxVisibility.ANY) -> bool:
     """
     Check if a box is visible inside an image without accounting for occlusions.
     :param box: The box to be checked.
     :param intrinsic: <float: 3, 3>. Intrinsic camera matrix.
-    :param imsize: (width <int>, height <int>).
+    :param imsize: (width, height).
     :param vis_level: One of the enumerations of <BoxVisibility>.
     :return True if visibility condition is satisfied.
     """

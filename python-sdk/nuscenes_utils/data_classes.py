@@ -53,7 +53,7 @@ class PointCloud(ABC):
         pass
 
     @classmethod
-    def from_file_multisweep(cls, nusc, sample_rec: str, chan: str, ref_chan: str, nsweeps: int=26,
+    def from_file_multisweep(cls, nusc, sample_rec: Dict, chan: str, ref_chan: str, nsweeps: int=26,
                               min_distance: float=1.0) -> Tuple[PointCloud, np.ndarray]:
         """
         Return a point cloud that aggregates multiple sweeps.

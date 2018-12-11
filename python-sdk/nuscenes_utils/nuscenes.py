@@ -341,7 +341,7 @@ class NuScenes:
         self.explorer.render_instance(instance_token)
 
     def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
-                     out_path : str=None) -> None:
+                     out_path: str=None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
     def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
@@ -552,7 +552,7 @@ class NuScenesExplorer:
         # Plot radar into a single subplot.
         ax = axes[0, 0]
         for i, (_, sd_token) in enumerate(radar_data.items()):
-            self.render_sample_data(sd_token, with_anns=i==0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
+            self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
         ax.set_title('Fused RADARs')
 
         # Plot camera and lidar in separate subplots.
@@ -607,7 +607,7 @@ class NuScenesExplorer:
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
-                    box.render(ax, view=np.eye(4), colors=[c, c, c])
+                    box.render(ax, view=np.eye(4), colors=(c, c, c))
 
             # Limit visible range.
             ax.set_xlim(-axes_limit, axes_limit)
@@ -630,7 +630,7 @@ class NuScenesExplorer:
             radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
             lidar_sd_record = self.nusc.get('sample_data', lidar_token)
             lidar_cs_record = self.nusc.get('calibrated_sensor', lidar_sd_record['calibrated_sensor_token'])
-            velocities = pc.points[8:10, :] # Compensated velocity
+            velocities = pc.points[8:10, :]  # Compensated velocity
             velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
             velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
             velocities = np.dot(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T, velocities)
@@ -650,8 +650,8 @@ class NuScenesExplorer:
             points_vel = view_points(pc.points[:3, :] + velocities, np.eye(4), normalize=False)
             max_delta = 10
             deltas_vel = points_vel - points
-            deltas_vel = 3 * deltas_vel # Arbitrary scaling
-            deltas_vel = np.clip(deltas_vel, -max_delta, max_delta) # Arbitrary clipping
+            deltas_vel = 3 * deltas_vel  # Arbitrary scaling
+            deltas_vel = np.clip(deltas_vel, -max_delta, max_delta)  # Arbitrary clipping
             colors_rgba = sc.to_rgba(colors)
             for i in range(points.shape[1]):
                 ax.arrow(points[0, i], points[1, i], deltas_vel[0, i], deltas_vel[1, i], color=colors_rgba[i])
@@ -663,7 +663,7 @@ class NuScenesExplorer:
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
-                    box.render(ax, view=np.eye(4), colors=[c, c, c])
+                    box.render(ax, view=np.eye(4), colors=(c, c, c))
 
             # Limit visible range.
             ax.set_xlim(-axes_limit, axes_limit)
@@ -671,7 +671,8 @@ class NuScenesExplorer:
 
         elif sensor_modality == 'camera':
             # Load boxes and image.
-            data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level)
+            data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token,
+                                                                           box_vis_level=box_vis_level)
             data = Image.open(data_path)
 
             # Init axes.
@@ -685,7 +686,7 @@ class NuScenesExplorer:
             if with_anns:
                 for box in boxes:
                     c = np.array(self.get_color(box.name)) / 255.0
-                    box.render(ax, view=camera_intrinsic, normalize=True, colors=[c, c, c])
+                    box.render(ax, view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
             # Limit visible range.
             ax.set_xlim(0, data.size[0])
@@ -733,7 +734,7 @@ class NuScenesExplorer:
         LidarPointCloud.from_file(data_path).render_height(axes[0], view=view)
         for box in boxes:
             c = np.array(self.get_color(box.name)) / 255.0
-            box.render(axes[0], view=view, colors=[c, c, c])
+            box.render(axes[0], view=view, colors=(c, c, c))
             corners = view_points(boxes[0].corners(), view, False)[:2, :]
             axes[0].set_xlim([np.min(corners[0, :]) - margin, np.max(corners[0, :]) + margin])
             axes[0].set_ylim([np.min(corners[1, :]) - margin, np.max(corners[1, :]) + margin])
@@ -749,7 +750,7 @@ class NuScenesExplorer:
         axes[1].set_aspect('equal')
         for box in boxes:
             c = np.array(self.get_color(box.name)) / 255.0
-            box.render(axes[1], view=camera_intrinsic, normalize=True, colors=[c, c, c])
+            box.render(axes[1], view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
     def render_instance(self, instance_token: str) -> None:
         """
@@ -808,6 +809,8 @@ class NuScenesExplorer:
         if out_path is not None:
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(out_path, fourcc, freq, canvas.shape[1::-1])
+        else:
+            out = None
 
         # Load first sample_data record for each channel
         current_recs = {}  # Holds the current record to be displayed by channel.
@@ -844,7 +847,7 @@ class NuScenesExplorer:
                     im = cv2.imread(impath)
                     for box in boxes:
                         c = self.get_color(box.name)
-                        box.render_cv2(im, view=camera_intrinsic, normalize=True, colors=[c, c, c])
+                        box.render_cv2(im, view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
                     im = cv2.resize(im, imsize)
                     if channel in horizontal_flip:
@@ -911,7 +914,7 @@ class NuScenesExplorer:
             im = cv2.imread(impath)
             for box in boxes:
                 c = self.get_color(box.name)
-                box.render_cv2(im, view=camera_intrinsic, normalize=True, colors=[c, c, c])
+                box.render_cv2(im, view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
             # Render
             im = cv2.resize(im, imsize)
@@ -944,7 +947,7 @@ class NuScenesExplorer:
         # Settings
         close_dist = 100
         pixel_to_meter = 0.1
-        ignore_logfiles = ['n008-2018-05-21-11-06-59-0400'] # Exclude older logs with incompatible maps
+        ignore_logfiles = ['n008-2018-05-21-11-06-59-0400']  # Exclude older logs with incompatible maps
 
         # Get logs by location
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location
@@ -959,6 +962,7 @@ class NuScenesExplorer:
             print('Warning: Found 0 valid scenes for location %s!' % log_location)
 
         map_poses = []
+        map_mask = None
 
         for scene_token in tqdm(scene_tokens_location):
 
@@ -993,7 +997,9 @@ class NuScenesExplorer:
         # Plot.
         _, ax = plt.subplots(1, 1, figsize=(10, 10))
         mask = Image.fromarray(map_mask.mask)
-        ax.imshow(mask.resize((int(mask.size[0] / demo_ss_factor), int(mask.size[1] / demo_ss_factor)), resample=Image.NEAREST))
+        size_x = int(mask.size[0] / demo_ss_factor)
+        size_y = int(mask.size[1] / demo_ss_factor)
+        ax.imshow(mask.resize((size_x, size_y), resample=Image.NEAREST))
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
         ax.set_title(title, color='w')
         sc = ax.scatter(map_poses[:, 0] / demo_ss_factor, map_poses[:, 1] / demo_ss_factor, s=10, c=close_poses)
@@ -1001,4 +1007,4 @@ class NuScenesExplorer:
         plt.rcParams['figure.facecolor'] = 'black'
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
         plt.setp(color_bar_ticklabels, color='w')
-        plt.rcParams['figure.facecolor'] = 'white' # Reset for future plots
+        plt.rcParams['figure.facecolor'] = 'white'  # Reset for future plots
