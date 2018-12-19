@@ -308,6 +308,53 @@ class NuScenes:
                 boxes.append(box)
         return boxes
 
+    def box_velocity(self, sample_annotation_token: str, max_time_diff: float=1.5) -> np.ndarray:
+        """
+        Estimate the velocity for an annotation.
+        If possible, we compute the centered difference between the previous and next frame.
+        Otherwise we use the difference between the current and previous/next frame.
+        If the velocity cannot be estimated, values are set to np.nan.
+        :param sample_annotation_token: Unique sample_annotation identifier.
+        :param max_time_diff: Max allowed time diff between consecutive samples that are used to estimate velocities.
+        :return: <np.float: 3>. Velocity in x/y/z direction in m/s.
+        """
+
+        current = self.get('sample_annotation', sample_annotation_token)
+        has_prev = current['prev'] != ''
+        has_next = current['next'] != ''
+
+        # Cannot estimate velocity for a single annotation.
+        if not has_prev and not has_next:
+            return np.array([np.nan, np.nan, np.nan])
+
+        if has_prev:
+            first = self.get('sample_annotation', current['prev'])
+        else:
+            first = current
+
+        if has_next:
+            last = self.get('sample_annotation', current['next'])
+        else:
+            last = current
+
+        pos_last = np.array(last['translation'])
+        pos_first = np.array(first['translation'])
+        pos_diff = pos_last - pos_first
+
+        time_last = 1e-6 * self.get('sample', last['sample_token'])['timestamp']
+        time_first = 1e-6 * self.get('sample', first['sample_token'])['timestamp']
+        time_diff = time_last - time_first
+
+        if has_next and has_prev:
+            # If doing centered difference, allow for up to double the max_time_diff.
+            max_time_diff *= 2
+
+        if time_diff > max_time_diff:
+            # If time_diff is too big, don't return an estimate.
+            return np.array([np.nan, np.nan, np.nan])
+        else:
+            return pos_diff / time_diff
+
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
