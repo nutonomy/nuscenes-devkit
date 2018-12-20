@@ -1,6 +1,10 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 import numpy as np
 
-from nuscenes_utils.nuscenes import NuScenes
+from nuscenes.nuscenes import NuScenes
 
 
 def create_splits_logs(nusc: NuScenes, verbose: bool=False) -> dict:

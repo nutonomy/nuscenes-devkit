@@ -1,3 +1,7 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 import os
 import time
 import json
@@ -9,10 +13,10 @@ import numpy as np
 import tqdm
 import matplotlib.pyplot as plt
 
-from nuscenes_utils.nuscenes import NuScenes
-from eval.eval_utils import center_distance, category_to_detection_name, filter_boxes, \
+from nuscenes.nuscenes import NuScenes
+from nuscenes.eval.eval_utils import center_distance, category_to_detection_name, filter_boxes, \
     visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc
-from eval.create_splits_logs import create_splits_logs
+from nuscenes.eval.create_splits_logs import create_splits_logs
 
 
 class NuScenesEval:

@@ -1,12 +1,16 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 from typing import List, Dict, Tuple, Optional
 
 import numpy as np
 import matplotlib.pyplot as plt
 from pyquaternion import Quaternion
 
-from nuscenes_utils.data_classes import LidarPointCloud, Box
-from nuscenes_utils.geometry_utils import view_points
-from nuscenes_utils.nuscenes import NuScenes
+from nuscenes.utils.data_classes import LidarPointCloud, Box
+from nuscenes.utils.geometry_utils import view_points
+from nuscenes.nuscenes import NuScenes
 
 # Define constant
 IGNORE = -1

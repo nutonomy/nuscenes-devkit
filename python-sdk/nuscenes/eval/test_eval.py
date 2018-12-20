@@ -1,9 +1,13 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 import unittest
 
 import numpy as np
 from pyquaternion import Quaternion
 
-from eval.eval_utils import scale_iou, quaternion_yaw, yaw_diff
+from nuscenes.eval.eval_utils import scale_iou, quaternion_yaw, yaw_diff
 
 
 class TestEval(unittest.TestCase):
