@@ -1,3 +1,7 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 """
 Exports an image for each map location with all the ego poses drawn on the map.
 """
@@ -6,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nuscenes_utils.nuscenes import NuScenes
+from nuscenes.nuscenes import NuScenes
 
 # Load NuScenes class
 nusc = NuScenes()

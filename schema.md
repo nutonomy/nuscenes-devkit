@@ -1,6 +1,5 @@
 Database schema
 ==========
-*(this schema is copied from the [devkit](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and may be outdated)*
 
 category
 ---------

@@ -1,4 +1,4 @@
-# nuScenes dev-kit. Version 0.1
+# nuScenes dev-kit.
 # Code written by Qiang Xu, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
@@ -89,7 +89,7 @@ class MapMask:
 
         return self.mask[py, px] == self.foreground
 
-    def dist_to_mask(self, x: float, y:float) -> float:
+    def dist_to_mask(self, x: float, y: float) -> float:
         """
         Get the distance of a point to the nearest foreground in perception GT semantic prior mask (dilated).
         :param x: Global x.
@@ -103,13 +103,14 @@ class MapMask:
 
         return self.distance_mask[py, px]
 
-    def get_pixel(self, x: float, y: float) -> Tuple[int]:
+    def get_pixel(self, x: float, y: float) -> Tuple[int, int]:
         """
         Get the image coordinates given a x-y point.
         :param x: Global x.
         :param y: Global y.
         :return: (px <int>, py <int>). Pixel coordinates in map.
         """
-        px, py = int(x / self.precision), self.mask.shape[0] - int(y / self.precision)
+        px = int(x / self.precision)
+        py = self.mask.shape[0] - int(y / self.precision)
 
         return px, py

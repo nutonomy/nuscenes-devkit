@@ -1,8 +1,11 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 """
 Export fused point clouds of a scene to a Wavefront OBJ file.
 This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
 """
-
 import os
 import os.path as osp
 import argparse
@@ -13,9 +16,9 @@ from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from nuscenes_utils.data_classes import LidarPointCloud
-from nuscenes_utils.geometry_utils import view_points
-from nuscenes_utils.nuscenes import NuScenes
+from nuscenes.utils.data_classes import LidarPointCloud
+from nuscenes.utils.geometry_utils import view_points
+from nuscenes.utils.nuscenes import NuScenes
 
 
 def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
@@ -95,7 +98,8 @@ def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, cha
                     # Ignore points without a color.
                     pass
                 else:
-                    f.write("v {v[0]:.8f} {v[1]:.8f} {v[2]:.8f} {c[0]:.4f} {c[1]:.4f} {c[2]:.4f}\n".format(v=v, c=c/255.0))
+                    f.write("v {v[0]:.8f} {v[1]:.8f} {v[2]:.8f} {c[0]:.4f} {c[1]:.4f} {c[2]:.4f}\n"
+                            .format(v=v, c=c/255.0))
 
             if not sd_rec['next'] == "":
                 sd_rec = nusc.get('sample_data', sd_rec['next'])

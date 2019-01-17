@@ -1,9 +1,13 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2018.
+# Licensed under the Creative Commons [see licence.txt]
+
 """
 Exports a video of each scene (with annotations) to disk.
 """
 import os
 
-from nuscenes_utils.nuscenes import NuScenes
+from nuscenes.utils.nuscenes import NuScenes
 
 # Load NuScenes class
 nusc = NuScenes()
