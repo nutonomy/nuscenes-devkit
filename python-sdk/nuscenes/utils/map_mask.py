@@ -74,20 +74,40 @@ class MapMask:
         """
         cv2.imwrite(filename=filename, img=self.mask)
 
-    def is_on_mask(self, x: float, y: float) -> bool:
+    def is_on_mask(self, x, y) -> np.array:
         """
-        Determine whether a point is on the semantic_prior mask.
-        :param x: Global x.
-        :param y: Global y.
-        :return: Whether the points is on the mask.
+        Determine whether the points are on binary mask.
+        :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
+        :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
+        :return: <np.bool: x.shape>. Whether the points are on the mask.
         """
+
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not isinstance(y, np.ndarray):
+            y = np.array(y)
+
+        assert x.shape == y.shape
+
+        if x.ndim == 0:
+            x = np.atleast_1d(x)
+        if y.ndim == 0:
+            y = np.atleast_1d(y)
+
+        assert x.ndim == y.ndim == 1
 
         px, py = self.get_pixel(x, y)
 
-        if px < 0 or px >= self.mask.shape[1] or py < 0 or py >= self.mask.shape[0]:
-            return False
+        on_mask = np.ones(x.size, dtype=np.bool)
 
-        return self.mask[py, px] == self.foreground
+        on_mask[px < 0] = False
+        on_mask[px >= self.binary_mask.shape[1]] = False
+        on_mask[py < 0] = False
+        on_mask[py >= self.binary_mask.shape[0]] = False
+
+        on_mask[on_mask] = (self.binary_mask[py[on_mask], px[on_mask]] == self.foreground)
+
+        return on_mask
 
     def dist_to_mask(self, x: float, y: float) -> float:
         """
