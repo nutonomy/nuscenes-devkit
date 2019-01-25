@@ -143,9 +143,14 @@ class NuScenes:
             sample_record['anns'].append(ann_record['token'])
 
         # Add reverse indices from log records to map records.
+        if 'log_tokens' not in self.map.keys():
+            raise Exception('Error: log_tokens not in map table. Please download the nuScenes dataset v0.2 or later.')
+        log_to_map = dict()
+        for map_record in self.map:
+            for log_token in map_record['log_tokens']:
+                log_to_map[log_token] = map_record['token']
         for log_record in self.log:
-            map_token = self.field2token('map', 'log_token', log_record['token'])[0]
-            log_record['map_token'] = self.get('map', map_token)['token']
+            log_record['map_token'] = log_to_map[log_record['token']]
 
         if verbose:
             print("Done reverse indexing in {:.1f} seconds.\n======".format(time.time() - start_time))
@@ -172,7 +177,7 @@ class NuScenes:
 
     def field2token(self, table_name: str, field: str, query) -> List[str]:
         """
-        This function queries all record for a certain field value, and returns the tokens for the matching records.
+        This function queries all records for a certain field value, and returns the tokens for the matching records.
         Warning: this runs in linear time.
         :param table_name: Table name.
         :param field: Field name. See README.md for details.
@@ -740,7 +745,7 @@ class NuScenesExplorer:
             ax.set_ylim(data.size[1], 0)
 
         else:
-            raise ValueError("Unknown sensor modality!")
+            raise ValueError("Error: Unknown sensor modality!")
 
         ax.axis('off')
         ax.set_title(sd_record['channel'])

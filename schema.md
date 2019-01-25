@@ -178,7 +178,7 @@ Map data that is stored as binary semantic masks from a top-down view. As the ma
 ```
 map {
    "token":                   <str> -- Unique record identifier.
-   "log_token":               <str> -- Foreign key.
+   "log_tokens":              <str> [n] -- Foreign keys.
    "category":                <str> -- Map category, currently only semantic_prior for drivable surface and sidewalk
    "filename":                <str> -- Relative path to the file with the map mask.
 }
