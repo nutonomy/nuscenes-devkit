@@ -14,7 +14,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Backward compatibility](#backward-compatibility)
 
 ## Changelog
-- Dec. 20, 2018: Initial evaluation code released. See notes on [backward compatibility](#compatibility-notes).
+- Dec. 20, 2018: Initial evaluation code released. See notes on [backward compatibility](#backward-compatibility).
 - Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
 - Oct. 4, 2018: Code to parse RADAR data released.
 - Sep. 12, 2018: Devkit for teaser dataset released.
@@ -61,7 +61,7 @@ In case you want to avoid downloading and setting up the data, you can also take
 To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) or take a look at the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
 
 ## Object detection task
-For instructions related to the object detection task, the results format, classes and evaluation metrics, please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/tree/eval/python-sdk/nuscenes/eval).
+For instructions related to the object detection task, the results format, classes and evaluation metrics, please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/README.md).
 
 ## Frequently asked questions
 1) *How come some objects visible in the camera images are not annotated?* In the [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md) we specify that an object should only be annotated if it is covered by at least one LIDAR point. This is done to have precise location annotations, speedup the annotation process and remove faraway objects.
