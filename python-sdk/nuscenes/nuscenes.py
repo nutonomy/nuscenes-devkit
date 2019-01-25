@@ -143,7 +143,7 @@ class NuScenes:
             sample_record['anns'].append(ann_record['token'])
 
         # Add reverse indices from log records to map records.
-        if 'log_tokens' not in self.map.keys():
+        if 'log_tokens' not in self.map[0].keys():
             raise Exception('Error: log_tokens not in map table. Please download the nuScenes dataset v0.2 or later.')
         log_to_map = dict()
         for map_record in self.map:
