@@ -31,7 +31,7 @@ Eventually you should have the following folder structure:
     maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene.
     samples	-	Sensor data for keyframes.
     sweeps	-	Sensor data for intermediate frames.
-    v0.1	-	JSON tables that include all the meta data and annotations.
+    v*.*	-	JSON tables that include all the meta data and annotations.
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class below.
 
