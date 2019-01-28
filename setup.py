@@ -6,7 +6,6 @@ with open("README.md", "r") as fh:
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
-print(requirements)
 
 setuptools.setup(
     name='nuscenes-devkit',
