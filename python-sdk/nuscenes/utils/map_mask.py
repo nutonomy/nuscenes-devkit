@@ -10,22 +10,27 @@ import cv2
 
 
 class MapMask:
-    def __init__(self, img_file: str, precision: float=0.1, foreground: int=255, background: int=0):
+    def __init__(self, img_file: str, precision: float=0.1, foreground: int=255, background: int=0,
+                 dist_thresh: float=2.0):
         """
         Init a map mask object that contains the semantic prior (drivable surface and sidewalks) mask.
         :param img_file: File path to map png file.
         :param precision: Precision in meters.
         :param foreground: Foreground value.
         :param background: Background value.
+        :param dist_thresh: This parameter specifies the threshold on the distance from the semantic prior mask.
+            The semantic prior mask is dilated to include points which are within this distance from itself.
         """
         assert osp.exists(img_file), 'map mask {} does not exist'.format(img_file)
         self.img_file = img_file
         self.precision = precision
         self.foreground = foreground
         self.background = background
+        self.dist_thresh = dist_thresh
         self._mask = None
-        self._distance_mask = None  # Distance to semantic_prior. (lazy load).
-        self._transf_matrix = None  # Transformation matrix from global coords to map coords. (lazy load).
+        self._distance_mask = None  # Distance to semantic_prior (lazy load).
+        self._binary_mask = None  # Binary mask of semantic prior + dilation of dist_thresh (lazy load)
+        self._transf_matrix = None  # Transformation matrix from global coords to map coords (lazy load).
 
     @property
     def mask(self) -> np.ndarray:
@@ -61,11 +66,22 @@ class MapMask:
         :return: <np.float32: image.height, image.width>. The distance mask.
         """
         if self._distance_mask is None:
-            # distance to nearest foreground in mask
+            # Distance to nearest foreground in mask.
             self._distance_mask = cv2.distanceTransform((self.foreground - self.mask).astype(np.uint8), cv2.DIST_L2, 5)
             self._distance_mask = (self._distance_mask * self.precision).astype(np.float32)
 
         return self._distance_mask
+
+    @property
+    def binary_mask(self) -> np.array:
+        """
+        Create binary mask of semantic prior plus dilation.
+        :return: <np.uint8: image.height, image.width>. The binary mask.
+        """
+        if self._binary_mask is None:
+            self._binary_mask = (self.distance_mask < self.dist_thresh).astype(np.uint8) * self.foreground
+
+        return self._binary_mask
 
     def export_to_png(self, filename: str='mask.png') -> None:
         """
@@ -74,20 +90,40 @@ class MapMask:
         """
         cv2.imwrite(filename=filename, img=self.mask)
 
-    def is_on_mask(self, x: float, y: float) -> bool:
+    def is_on_mask(self, x, y) -> np.array:
         """
-        Determine whether a point is on the semantic_prior mask.
-        :param x: Global x.
-        :param y: Global y.
-        :return: Whether the points is on the mask.
+        Determine whether the points are on binary mask.
+        :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
+        :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
+        :return: <np.bool: x.shape>. Whether the points are on the mask.
         """
+
+        if not isinstance(x, np.ndarray):
+            x = np.array(x)
+        if not isinstance(y, np.ndarray):
+            y = np.array(y)
+
+        assert x.shape == y.shape
+
+        if x.ndim == 0:
+            x = np.atleast_1d(x)
+        if y.ndim == 0:
+            y = np.atleast_1d(y)
+
+        assert x.ndim == y.ndim == 1
 
         px, py = self.get_pixel(x, y)
 
-        if px < 0 or px >= self.mask.shape[1] or py < 0 or py >= self.mask.shape[0]:
-            return False
+        on_mask = np.ones(x.size, dtype=np.bool)
 
-        return self.mask[py, px] == self.foreground
+        on_mask[px < 0] = False
+        on_mask[px >= self.binary_mask.shape[1]] = False
+        on_mask[py < 0] = False
+        on_mask[py >= self.binary_mask.shape[0]] = False
+
+        on_mask[on_mask] = (self.binary_mask[py[on_mask], px[on_mask]] == self.foreground)
+
+        return on_mask
 
     def dist_to_mask(self, x: float, y: float) -> float:
         """
@@ -103,14 +139,25 @@ class MapMask:
 
         return self.distance_mask[py, px]
 
-    def get_pixel(self, x: float, y: float) -> Tuple[int, int]:
+    def get_pixel(self, x: np.array, y: np.array) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Get the image coordinates given a x-y point.
-        :param x: Global x.
-        :param y: Global y.
-        :return: (px <int>, py <int>). Pixel coordinates in map.
+        Get the image coordinates given the x-y coordinates of points.
+        :param x: Global x coordinates.
+        :param y: Global y coordinates.
+        :return: (px <np.uint8: x.shape>, py <np.uint8: y.shape>). Pixel coordinates in map.
         """
-        px = int(x / self.precision)
-        py = self.mask.shape[0] - int(y / self.precision)
+        px, py = (x / self.precision).astype(int), self.mask.shape[0] - (y / self.precision).astype(int)
 
         return px, py
+
+    def set_dist_thresh(self, dist_thresh: float) -> None:
+        """
+        This function sets self.dist_thresh to a new value. This method can be used to change the threshold multiple
+        times during an experiment without creating new NuScenes objects.
+        :param dist_thresh: The semantic prior mask is dilated to include points which are within this distance from
+            itself.
+        """
+        self.dist_thresh = dist_thresh
+
+        # Update the binary mask to None since the distance threshold was changed.
+        self._binary_mask = None
