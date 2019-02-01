@@ -7,6 +7,10 @@ from typing import Tuple
 
 import numpy as np
 import cv2
+from PIL import Image
+
+# Set the maximum loadable image size.
+Image.MAX_IMAGE_PIXELS = 400000 * 400000
 
 
 class MapMask:
@@ -39,7 +43,8 @@ class MapMask:
         :return: <np.int8: image.height, image.width>. The binary mask.
         """
         if self._mask is None:
-            img = cv2.imread(self.img_file, cv2.IMREAD_GRAYSCALE)
+            # Pillow allows us to specify the maximum image size above, whereas this is more difficult in OpenCV.
+            img = Image.open(self.img_file).convert('L')
             self._mask = np.array(img)
             self._mask[self._mask < 225] = self.background
             self._mask[self._mask >= 225] = self.foreground

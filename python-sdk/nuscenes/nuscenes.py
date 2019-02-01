@@ -991,7 +991,8 @@ class NuScenesExplorer:
             -> None:
         """
         Renders ego poses a the map. These can be filtered by location or scene.
-        :param log_location: Name of the location, e.g. "singapore-onenorth", "boston-seaport".
+        :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
+                             "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
         :param demo_ss_factor: Subsampling factor for rendering the map.
         """
@@ -1051,7 +1052,8 @@ class NuScenesExplorer:
         mask = Image.fromarray(map_mask.mask)
         size_x = int(mask.size[0] / demo_ss_factor)
         size_y = int(mask.size[1] / demo_ss_factor)
-        ax.imshow(mask.resize((size_x, size_y), resample=Image.NEAREST))
+        mask_small = np.asarray(mask.resize((size_x, size_y), resample=Image.NEAREST))
+        ax.imshow(mask_small)
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
         ax.set_title(title, color='w')
         sc = ax.scatter(map_poses[:, 0] / demo_ss_factor, map_poses[:, 1] / demo_ss_factor, s=10, c=close_poses)
