@@ -157,22 +157,41 @@ class NuScenesEval:
                 "Error: Only <= %d boxes per sample allowed!" % self.max_boxes_per_sample
 
         # Check that each result has the right format.
-        field_formats = {
-            'sample_token': (str, -1), 'translation': (list, 3), 'size': (list, 3), 'rotation': (list, 4),
-            'velocity': (list, 3), 'detection_name': (str, -1), 'detection_score': (float, -1),
-            'attribute_scores': (list, 8)
+        field_formats = {  # field_name: (field_type, field_len, allow_nan)
+            'sample_token': (str, -1, True),
+            'translation': (list, 3, False),
+            'size': (list, 3, False),
+            'rotation': (list, 4, False),
+            'velocity': (list, 3, True),
+            'detection_name': (str, -1, True),
+            'detection_score': (float, -1, False),
+            'attribute_scores': (list, 8, False)
         }
         for sample_token in sample_tokens:
             sample_results = all_results[sample_token]
             for sample_result in sample_results:
-                for field_name, (field_type, field_len) in field_formats.items():
+                for field_name, (field_type, field_len, allow_nan) in field_formats.items():
+                    # Check the type.
                     cur_type = type(sample_result[field_name])
                     assert cur_type == field_type, 'Error: Expected %s, got %s for field %s!' \
                                                    % (field_type, cur_type, field_name)
-                    if field_len != -1:  # Ignore the length of fields with -1 entries.
+
+                    # Check the length.
+                    if field_len != -1:  # Ignore the length of fields with "-1" entries.
                         cur_len = len(sample_result[field_name])
                         assert cur_len == field_len, 'Error: Expected %d values, got %d values for field %s!' \
                                                      % (field_len, cur_len, field_name)
+
+                    # Check if values are nan.
+                    if not allow_nan:
+                        if cur_type == 'list':
+                            for value in sample_result[field_name]:
+                                assert not any(np.isnan(value))
+                        elif cur_type == 'float':
+                            value = sample_result[field_name]
+                            assert not any(np.isnan(value))
+                        else:
+                            pass
 
         # Load annotations and filter predictions and annotations.
         for sample_token in tqdm.tqdm(sample_tokens):
