@@ -284,7 +284,7 @@ class NuScenesEval:
             'weighted_sum': weighted_sum,
             'eval_time': eval_time
         }
-        with open(os.path.join(output_dir, 'metrics.json'), 'w') as f:
+        with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(all_metrics, f, indent=2)
 
         return all_metrics
