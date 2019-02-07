@@ -125,7 +125,7 @@ class NuScenesEval:
                 print('Loading annotations...')
 
         # Read sample_tokens.
-        splits = create_splits_logs(nusc)
+        splits = create_splits_logs(self.nusc)
         sample_tokens_all = [s['token'] for s in self.nusc.sample]
         assert len(sample_tokens_all) > 0, 'Error: Results file is empty!'
 
@@ -528,6 +528,8 @@ if __name__ == "__main__":
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='teaser',
                         help='Which dataset split to evaluate on, e.g. teaser, train, val, test.')
+    parser.add_argument('--dataroot', type=str, default='/data/nuscenes',
+                        help='Default nuScenes data directory.')
     parser.add_argument('--eval_limit', type=int, default=-1,
                         help='Number of images to evaluate or -1 to evaluate all images in the split.')
     parser.add_argument('--plot_examples', type=int, default=0,
@@ -538,13 +540,14 @@ if __name__ == "__main__":
     result_path = os.path.expanduser(args.result_path)
     output_dir = os.path.expanduser(args.output_dir)
     eval_set = args.eval_set
+    dataroot = args.dataroot
     eval_limit = args.eval_limit
     plot_examples = bool(args.plot_examples)
     verbose = bool(args.verbose)
 
     # Init.
     random.seed(43)
-    nusc = NuScenes(verbose=verbose)
+    nusc = NuScenes(verbose=verbose, dataroot=dataroot)
     nusc_eval = NuScenesEval(nusc, result_path, eval_set=eval_set, output_dir=output_dir, verbose=verbose,
                              eval_limit=eval_limit)
 
