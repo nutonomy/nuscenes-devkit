@@ -195,7 +195,7 @@ def attr_acc(sample_annotation: Dict, sample_result: Dict, attributes: List[str]
     gt_class = sample_annotation['detection_name']
     if gt_class in ['pedestrian']:
         rel_attributes = ['pedestrian.moving', 'pedestrian.sitting_lying_down', 'pedestrian.standing']
-    elif gt_class in ['bicycle', 'motorcyle']:
+    elif gt_class in ['bicycle', 'motorcycle']:
         rel_attributes = ['cycle.with_rider', 'cycle.without_rider']
     elif gt_class in ['car', 'bus', 'construction_vehicle', 'trailer', 'truck']:
         rel_attributes = ['vehicle.moving', 'vehicle.parked', 'vehicle.stopped']
