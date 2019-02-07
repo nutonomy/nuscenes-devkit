@@ -200,12 +200,16 @@ def attr_acc(sample_annotation: Dict, sample_result: Dict, attributes: List[str]
     elif gt_class in ['car', 'bus', 'construction_vehicle', 'trailer', 'truck']:
         rel_attributes = ['vehicle.moving', 'vehicle.parked', 'vehicle.stopped']
     else:
+        # Classes without attributes: barrier, traffic_cone.
         rel_attributes = []
 
     # Map labels to indices and compute accuracy; nan if no attributes are relevant.
     if len(rel_attributes) == 0:
         # If a class has no attributes, we return nan.
         acc = np.nan
+    elif any(np.isnan(res_scores)):
+        # Catch errors and abort early if any score is nan.
+        raise Exception('Error: attribute_score is nan. Set to -1 to ignore!')
     elif any(res_scores == IGNORE):
         # If attributes scores are set to ignore, we return an accuracy of 0.
         acc = 0
