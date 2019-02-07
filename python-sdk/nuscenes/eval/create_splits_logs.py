@@ -10,40 +10,28 @@ from nuscenes.nuscenes import NuScenes
 def create_splits_logs(nusc: NuScenes, verbose: bool=False) -> dict:
     """
     Returns the dataset splits of nuScenes.
-    Note: Currently the splits only cover the initial teaser release of nuScenes.
-          This script will be completed upon release of the full dataset.
+    Note:
+    - Previously this script included the teaser dataset splits. Since new scenes from those logs were added in the full
+      dataset, that code is incompatible and was removed.
+    - Currently the splits only cover the initial teaser release of nuScenes.
+      This script will be completed upon release of the full dataset.
     :param nusc: NuScenes instance.
     :param verbose: Whether to print out statistics on a scene level.
     :return: A mapping from split name to a list of logs in that split.
     """
 
     # Manually define splits.
-    teaser_train_logs = \
+    train = \
         ['n008-2018-05-21-11-06-59-0400', 'n015-2018-07-18-11-18-34+0800', 'n015-2018-07-18-11-50-34+0800',
          'n015-2018-07-24-10-42-41+0800', 'n015-2018-07-24-11-03-52+0800', 'n015-2018-07-24-11-13-19+0800',
          'n015-2018-07-24-11-22-45+0800', 'n015-2018-08-01-16-32-59+0800', 'n015-2018-08-01-16-41-59+0800']
-    teaser_val_logs = \
+    val = \
         ['n008-2018-08-01-15-16-36-0400', 'n015-2018-07-18-11-41-49+0800', 'n015-2018-07-18-11-07-57+0800']
-
-    # Define splits.
-    nusc_logs = [record['logfile'] for record in nusc.log]
-    teaser_train = teaser_train_logs
-    teaser_val = teaser_val_logs
-    teaser_test = []
-    noteaser_train = []
-    noteaser_val = []
-    noteaser_test = []
+    test = []
 
     # Check for duplicates.
-    all_check = np.concatenate((teaser_train, teaser_val, teaser_test, noteaser_train, noteaser_val, noteaser_test))
-    assert len(all_check) == len(np.unique(all_check)), 'Error: Duplicate logs found in different splits!'
-
-    # Assemble combined splits.
-    train = sorted(teaser_train + noteaser_train)
-    val = sorted(teaser_val + noteaser_val)
-    test = sorted(teaser_test + noteaser_test)
-    teaser = sorted(teaser_train + teaser_val + teaser_test)
-    all = sorted(train + val + test)
+    all = np.concatenate((train, val, test))
+    assert len(all) == len(np.unique(all)), 'Error: Duplicate logs found in different splits!'
 
     # Optional: Print scene-level stats.
     if verbose:
@@ -57,14 +45,12 @@ def create_splits_logs(nusc: NuScenes, verbose: bool=False) -> dict:
             print('%s' % scene_lists[split])
 
     # Return splits.
-    splits = {'teaser_train': teaser_train,
-              'teaser_val': teaser_val,
-              'teaser_test': teaser_test,
-              'train': train,
-              'val': val,
-              'test': test,
-              'teaser': teaser,
-              'all': all}
+    splits = {
+        'train': train,
+        'val': val,
+        'test': test,
+        'all': all
+    }
     return splits
 
 
