@@ -1000,11 +1000,9 @@ class NuScenesExplorer:
         # Settings
         close_dist = 100
         pixel_to_meter = 0.1
-        ignore_logfiles = ['n008-2018-05-21-11-06-59-0400']  # Exclude older logs with incompatible maps
 
         # Get logs by location
-        log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location
-                      and l['logfile'] not in ignore_logfiles]
+        log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
         assert len(log_tokens) > 0
 
         # Filter scenes
