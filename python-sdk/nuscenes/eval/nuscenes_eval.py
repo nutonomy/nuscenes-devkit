@@ -45,7 +45,7 @@ class NuScenesEval:
         Initialize a NuScenesEval object.
         :param nusc: A NuScenes object.
         :param result_path: Path of the nuScenes JSON result file.
-        :param eval_set: The dataset split to evaluate on, e.g. teaser/train/val/test.
+        :param eval_set: The dataset split to evaluate on, e.g. train or val.
         :param class_names: List of classes to evaluate. If None, all detection classes are used.
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
@@ -550,8 +550,8 @@ if __name__ == "__main__":
                         help='The submission as a JSON file.')
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
                         help='Folder to store result metrics, graphs and example visualizations.')
-    parser.add_argument('--eval_set', type=str, default='teaser',
-                        help='Which dataset split to evaluate on, e.g. teaser, train, val, test.')
+    parser.add_argument('--eval_set', type=str, default='val',
+                        help='Which dataset split to evaluate on, e.g. train or val.')
     parser.add_argument('--dataroot', type=str, default='/data/nuscenes',
                         help='Default nuScenes data directory.')
     parser.add_argument('--eval_limit', type=int, default=-1,
