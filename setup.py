@@ -9,7 +9,7 @@ with open('requirements.txt') as f:
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='0.2.2',
+    version='0.2.5',
     author="Holger Caesar, Qiang Xu, Oscar Beijbom et al.",
     author_email="nuscenes@nutonomy.com",
     description="The official devkit of the nuScenes dataset",
@@ -24,4 +24,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent",
     ],
+
 )
