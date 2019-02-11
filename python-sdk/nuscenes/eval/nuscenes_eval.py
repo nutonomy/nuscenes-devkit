@@ -499,8 +499,9 @@ class NuScenesEval:
 
         for metric_name in {key: [] for key in self.metric_names}:
             # If no box was predicted for this class, no raw metrics exist and we set secondary metrics to 1.
+            # Likewise if all predicted boxes are false positives.
             metric_vals = raw_metrics[metric_name]
-            if len(metric_vals) == 0:
+            if len(metric_vals) == 0 or all(np.isnan(metric_vals)):
                 tp_metrics[metric_name] = 1
                 continue
 
@@ -510,7 +511,6 @@ class NuScenesEval:
 
             # Normalize and clip metric errors.
             metric_bound = self.metric_bounds[metric_name]
-            assert np.nanmin(metric_vals) >= 0
             metric_vals = np.array(metric_vals) / metric_bound  # Normalize.
             metric_vals = np.minimum(1, metric_vals)  # Clip.
 
