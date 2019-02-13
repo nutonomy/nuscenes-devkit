@@ -55,12 +55,11 @@ class MapMask:
                                             [0, 0, 1, 0], [0, 0, 0, 1]])
         return self._transf_matrix
 
-    def dilate_mask(self, dist_thresh: float = 2.0):
+    def dilate_mask(self, dist_thresh: float = 2.0) -> None:
         """
         Dilates the mask by a distance threshold.
         :param dist_thresh: This parameter specifies the threshold on the distance from the semantic prior mask.
             The semantic prior mask is dilated to include points which are within this distance from itself.
-        :return:
         """
         # Distance to nearest foreground in mask.
         distance_mask = cv2.distanceTransform((self.foreground - self.mask).astype(np.uint8), cv2.DIST_L2, 5)
