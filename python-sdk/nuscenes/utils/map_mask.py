@@ -14,26 +14,17 @@ Image.MAX_IMAGE_PIXELS = 400000 * 400000
 
 
 class MapMask:
-    def __init__(self, img_file: str, precision: float=0.1, foreground: int=255, background: int=0,
-                 dist_thresh: float=2.0):
+    def __init__(self, img_file: str):
         """
         Init a map mask object that contains the semantic prior (drivable surface and sidewalks) mask.
         :param img_file: File path to map png file.
-        :param precision: Precision in meters.
-        :param foreground: Foreground value.
-        :param background: Background value.
-        :param dist_thresh: This parameter specifies the threshold on the distance from the semantic prior mask.
-            The semantic prior mask is dilated to include points which are within this distance from itself.
         """
         assert osp.exists(img_file), 'map mask {} does not exist'.format(img_file)
         self.img_file = img_file
-        self.precision = precision
-        self.foreground = foreground
-        self.background = background
-        self.dist_thresh = dist_thresh
-        self._mask = None
-        self._distance_mask = None  # Distance to semantic_prior (lazy load).
-        self._binary_mask = None  # Binary mask of semantic prior + dilation of dist_thresh (lazy load)
+        self.precision = 0.1    # Precision in meters.
+        self.foreground = 255
+        self.background = 0
+        self._mask = None   # Binary map mask (lazy load).
         self._transf_matrix = None  # Transformation matrix from global coords to map coords (lazy load).
 
     @property
@@ -64,29 +55,18 @@ class MapMask:
                                             [0, 0, 1, 0], [0, 0, 0, 1]])
         return self._transf_matrix
 
-    @property
-    def distance_mask(self) -> np.ndarray:
+    def dilate_mask(self, dist_thresh: float = 2.0):
         """
-        Generate distance mask from self.mask which is the original mask from the png file.
-        :return: <np.float32: image.height, image.width>. The distance mask.
+        Dilates the mask by a distance threshold.
+        :param dist_thresh: This parameter specifies the threshold on the distance from the semantic prior mask.
+            The semantic prior mask is dilated to include points which are within this distance from itself.
+        :return:
         """
-        if self._distance_mask is None:
-            # Distance to nearest foreground in mask.
-            self._distance_mask = cv2.distanceTransform((self.foreground - self.mask).astype(np.uint8), cv2.DIST_L2, 5)
-            self._distance_mask = (self._distance_mask * self.precision).astype(np.float32)
+        # Distance to nearest foreground in mask.
+        distance_mask = cv2.distanceTransform((self.foreground - self.mask).astype(np.uint8), cv2.DIST_L2, 5)
+        distance_mask = (distance_mask * self.precision).astype(np.float32)
 
-        return self._distance_mask
-
-    @property
-    def binary_mask(self) -> np.array:
-        """
-        Create binary mask of semantic prior plus dilation.
-        :return: <np.uint8: image.height, image.width>. The binary mask.
-        """
-        if self._binary_mask is None:
-            self._binary_mask = (self.distance_mask < self.dist_thresh).astype(np.uint8) * self.foreground
-
-        return self._binary_mask
+        self._mask = (distance_mask < dist_thresh).astype(np.uint8) * self.foreground
 
     def export_to_png(self, filename: str='mask.png') -> None:
         """
@@ -122,27 +102,13 @@ class MapMask:
         on_mask = np.ones(x.size, dtype=np.bool)
 
         on_mask[px < 0] = False
-        on_mask[px >= self.binary_mask.shape[1]] = False
+        on_mask[px >= self.mask.shape[1]] = False
         on_mask[py < 0] = False
-        on_mask[py >= self.binary_mask.shape[0]] = False
+        on_mask[py >= self.mask.shape[0]] = False
 
-        on_mask[on_mask] = (self.binary_mask[py[on_mask], px[on_mask]] == self.foreground)
+        on_mask[on_mask] = (self.mask[py[on_mask], px[on_mask]] == self.foreground)
 
         return on_mask
-
-    def dist_to_mask(self, x: float, y: float) -> float:
-        """
-        Get the distance of a point to the nearest foreground in perception GT semantic prior mask (dilated).
-        :param x: Global x.
-        :param y: Global y.
-        :return: Distance to nearest foreground, if not in distance mask, return -1.
-        """
-        px, py = self.get_pixel(x, y)
-
-        if px < 0 or px >= self.distance_mask.shape[1] or py < 0 or py >= self.distance_mask.shape[0]:
-            return -1
-
-        return self.distance_mask[py, px]
 
     def get_pixel(self, x: np.array, y: np.array) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -155,14 +121,3 @@ class MapMask:
 
         return px, py
 
-    def set_dist_thresh(self, dist_thresh: float) -> None:
-        """
-        This function sets self.dist_thresh to a new value. This method can be used to change the threshold multiple
-        times during an experiment without creating new NuScenes objects.
-        :param dist_thresh: The semantic prior mask is dilated to include points which are within this distance from
-            itself.
-        """
-        self.dist_thresh = dist_thresh
-
-        # Update the binary mask to None since the distance threshold was changed.
-        self._binary_mask = None
