@@ -5,7 +5,7 @@
 from __future__ import annotations
 from functools import reduce
 import struct
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from abc import ABC, abstractmethod
 import os.path as osp
 
@@ -44,7 +44,7 @@ class PointCloud(ABC):
 
     @classmethod
     @abstractmethod
-    def from_file(cls, file_name: str) -> PointCloud:
+    def from_file(cls, file_name: str) -> 'PointCloud':
         """
         Loads point cloud from disk.
         :param file_name: Path of the pointcloud file on disk.
@@ -54,7 +54,7 @@ class PointCloud(ABC):
 
     @classmethod
     def from_file_multisweep(cls, nusc, sample_rec: Dict, chan: str, ref_chan: str, nsweeps: int=26,
-                              min_distance: float=1.0) -> Tuple[PointCloud, np.ndarray]:
+                              min_distance: float=1.0) -> Tuple['PointCloud', np.ndarray]:
         """
         Return a point cloud that aggregates multiple sweeps.
         As every sweep is in a different coordinate frame, we need to map the coordinates to a single reference frame.
@@ -225,7 +225,7 @@ class LidarPointCloud(PointCloud):
         return 4
 
     @classmethod
-    def from_file(cls, file_name: str) -> LidarPointCloud:
+    def from_file(cls, file_name: str) -> 'LidarPointCloud':
         """
         Loads LIDAR data from binary numpy format. Data is stored as (x, y, z, intensity, ring index).
         :param file_name: Path of the pointcloud file on disk.
@@ -251,7 +251,7 @@ class RadarPointCloud(PointCloud):
 
     @classmethod
     def from_file(cls, file_name: str, invalid_states: List[int]=[0], dynprop_states: List[int]=range(7),
-                  ambig_states: List[int]=[3]) -> RadarPointCloud:
+                  ambig_states: List[int]=[3]) -> 'RadarPointCloud':
         """
         Loads RADAR data from a Point Cloud Data file. See details below.
         :param file_name: The path of the pointcloud file.
