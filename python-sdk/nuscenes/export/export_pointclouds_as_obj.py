@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.utils.nuscenes import NuScenes
+from nuscenes.nuscenes import NuScenes
 
 
 def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
