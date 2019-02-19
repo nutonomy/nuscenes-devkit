@@ -5,7 +5,7 @@
 from __future__ import annotations
 from functools import reduce
 import struct
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from abc import ABC, abstractmethod
 import os.path as osp
 
