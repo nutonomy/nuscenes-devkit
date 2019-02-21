@@ -125,7 +125,7 @@ class NuScenesEval:
                 print('Loading annotations...')
 
         # Read sample_tokens.
-        splits = create_splits_logs(nusc)
+        splits = create_splits_logs(self.nusc)
         sample_tokens_all = [s['token'] for s in self.nusc.sample]
         assert len(sample_tokens_all) > 0, 'Error: Results file is empty!'
 
