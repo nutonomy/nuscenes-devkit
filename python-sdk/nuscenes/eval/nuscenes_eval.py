@@ -466,11 +466,12 @@ class NuScenesEval:
             count_vals = np.cumsum(~np.isnan(x))  # Number of non-nans up to each position.
             return np.divide(sum_vals, count_vals, out=np.zeros_like(sum_vals), where=count_vals != 0)
 
+        # Init each metric as nan.
+        tp_metrics = {key: np.nan for key in self.metric_names}
+
         # If raw_metrics are empty, this means that no GT samples exist for this class.
         # Then we set the metrics to nan and ignore their contribution later on.
-        tp_metrics = dict()
         if len(raw_metrics) == 0:
-            tp_metrics = {key: np.nan for key in self.metric_names}
             return tp_metrics
 
         for metric_name in {key: [] for key in self.metric_names}:
@@ -479,6 +480,10 @@ class NuScenesEval:
             metric_vals = raw_metrics[metric_name]
             if len(metric_vals) == 0 or all(np.isnan(metric_vals)):
                 tp_metrics[metric_name] = 1
+                continue
+
+            # Certain classes do not have attributes. In this case keep nan and continue.
+            if metric_name == 'attr_err' and class_name in ['barrier', 'traffic_cone']:
                 continue
 
             # Normalize and clip metric errors.
