@@ -43,7 +43,7 @@ class NuScenes:
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
         """
-        if version not in ['v0.2']:
+        if version not in ['v0.2', 'v0.3', 'v0.4', 'v1.0']:
             raise ValueError('Invalid DB version: {}'.format(version))
 
         self.version = version
