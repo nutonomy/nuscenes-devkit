@@ -173,9 +173,9 @@ def yaw_diff(sample_annotation: Dict, sample_result: Dict) -> float:
     yaw_result = quaternion_yaw(Quaternion(sample_result['rotation']))
 
     # Compute smallest angle between two yaw values.
-    angle_diff = np.maximum(yaw_annotation - yaw_result, yaw_result - yaw_annotation)
+    angle_diff = abs(yaw_annotation - yaw_result)
     if angle_diff > np.pi:
-        angle_diff = angle_diff - np.pi  # Shift (pi, 2*pi] to (0, pi].
+        angle_diff = 2 * np.pi - angle_diff  # Shift (pi, 2*pi] to (0, pi].
     return angle_diff
 
 
