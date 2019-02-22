@@ -36,7 +36,7 @@ class NuScenes:
     Database class for nuScenes to help query and retrieve information from the database.
     """
 
-    def __init__(self, version: str='v0.2', dataroot: str='/data/nuscenes', verbose: bool=True):
+    def __init__(self, version: str='v0.4', dataroot: str='/data/nuscenes', verbose: bool=True):
         """
         Loads database and creates reverse indexes and shortcuts.
         :param version: Version to load (e.g. "v0.2", ...).
