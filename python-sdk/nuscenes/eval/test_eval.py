@@ -121,3 +121,9 @@ class TestEval(unittest.TestCase):
             if yaw_true > np.pi:
                 yaw_true = 2 * np.pi - yaw_true
             self.assertAlmostEqual(diff, yaw_true)
+
+        # Rotation beyond pi.
+        sa = {'rotation': Quaternion(axis=(0, 0, 1), angle=1.1 * np.pi).elements}
+        sr = {'rotation': Quaternion(axis=(0, 0, 1), angle=0.9 * np.pi).elements}
+        diff = yaw_diff(sa, sr)
+        self.assertAlmostEqual(diff, 0.2 * np.pi)
