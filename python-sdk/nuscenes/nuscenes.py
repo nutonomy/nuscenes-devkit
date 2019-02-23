@@ -91,7 +91,7 @@ class NuScenes:
         """ Returns the folder where the tables are stored for the relevant version. """
         return osp.join(self.dataroot, self.version)
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         """ Lazy loading for selected database tables. """
         if name == 'ego_pose':
             if 'ego_pose' not in self.tables:
@@ -133,7 +133,7 @@ class NuScenes:
             return self.tables['sample_annotation']
         else:
             # Default behaviour
-            return object.__getattribute__(self, name)
+            return object.__getattr__(self, name)
 
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
