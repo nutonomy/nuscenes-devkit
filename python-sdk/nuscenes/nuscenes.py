@@ -36,21 +36,24 @@ class NuScenes:
     Database class for nuScenes to help query and retrieve information from the database.
     """
 
-    def __init__(self, version: str='v0.4', dataroot: str='/data/nuscenes', verbose: bool=True):
+    def __init__(self, version: str='v0.4', dataroot: str='/data/nuscenes', verbose: bool=True, lazy: bool=True):
         """
         Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v0.2", ...).
+        :param version: Version to load (e.g. "v0.4", ...).
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
+        :param lazy: Whether to use lazy loading for large tables ('ego_pose', 'sample_data', 'sample_annotation').
         """
         if version not in ['v0.2', 'v0.3', 'v0.4', 'v1.0']:
             raise ValueError('Invalid DB version: {}'.format(version))
 
         self.version = version
         self.dataroot = dataroot
+        self.verbose = verbose
+        self.lazy = lazy
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
                             'ego_pose', 'log', 'scene', 'sample', 'map', 'sample_data', 'sample_annotation']
-        self.lazy_tables = ['ego_pose', 'sample_data', 'sample_annotation']
+        self.lazy_tables = ['ego_pose', 'sample_data', 'sample_annotation'] if lazy else []
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
@@ -70,7 +73,7 @@ class NuScenes:
             map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']))
 
         if verbose:
-            for table in self.table_names:
+            for table_name in self.table_names:
                 if not table_name in self.lazy_tables:
                     print("{} {},".format(len(self.__getattribute__(table)), table))
                 else:
@@ -150,14 +153,14 @@ class NuScenes:
 
         # Store the mapping from token to table index for each table.
         self._token2ind = dict()
-        for table in self.table_names:
-            if not table in self.lazy_tables:
-                self._token2ind[table] = dict()
+        for table_name in self.table_names:
+            if not table_name in self.lazy_tables:
+                self._token2ind[table_name] = dict()
 
-                for ind, member in enumerate(self.__getattribute__(table)):
-                    self._token2ind[table][member['token']] = ind
+                for ind, member in enumerate(self.__getattribute__(table_name)):
+                    self._token2ind[table_name][member['token']] = ind
 
-        # Prepare samples for reverse-indexing (done lazily). # TODO: clean this up
+        # Prepare samples for reverse-indexing (done lazily).
         for record in self.sample:
             record['data'] = {}
             record['anns'] = []
