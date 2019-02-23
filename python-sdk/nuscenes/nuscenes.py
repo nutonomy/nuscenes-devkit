@@ -91,49 +91,49 @@ class NuScenes:
         """ Returns the folder where the tables are stored for the relevant version. """
         return osp.join(self.dataroot, self.version)
 
-    def ego_pose(self) -> dict:
-        """ Lazy loading of ego_pose"""
-        if 'ego_pose' not in self.tables:
-            self.tables['ego_pose'] = self.__load_table__('ego_pose')
-        return self.tables['ego_pose']
+    def __getattribute__(self, name):
+        """ Lazy loading for selected database tables. """
+        if name == 'ego_pose':
+            if 'ego_pose' not in self.tables:
+                self.tables['ego_pose'] = self.__load_table__('ego_pose')
+            return self.tables['ego_pose']
+        elif name == 'sample_data':
+            if 'sample_data' not in self.tables:
+                self.tables['sample_data'] = self.__load_table__('sample_data')
+                sd = self.tables['sample_data']
 
-    def sample_data(self) -> dict:
-        """ Lazy loading of sample_data"""
-        if 'sample_data' not in self.tables:
-            self.tables['sample_data'] = self.__load_table__('sample_data')
-            sd = self.tables['sample_data']
+                # Decorate (adds short-cut) sample_data with sensor information.
+                for record in sd:
+                    cs_record = self.get('calibrated_sensor', record['calibrated_sensor_token'])
+                    sensor_record = self.get('sensor', cs_record['sensor_token'])
+                    record['sensor_modality'] = sensor_record['modality']
+                    record['channel'] = sensor_record['channel']
 
-            # Decorate (adds short-cut) sample_data with sensor information.
-            for record in sd:
-                cs_record = self.get('calibrated_sensor', record['calibrated_sensor_token'])
-                sensor_record = self.get('sensor', cs_record['sensor_token'])
-                record['sensor_modality'] = sensor_record['modality']
-                record['channel'] = sensor_record['channel']
+                # Reverse-index samples with annotations
+                for record in sd:
+                    if record['is_key_frame']:
+                        sample_record = self.get('sample', record['sample_token'])
+                        sample_record['data'][record['channel']] = record['token']
 
-            # Reverse-index samples with annotations
-            for record in sd:
-                if record['is_key_frame']:
-                    sample_record = self.get('sample', record['sample_token'])
-                    sample_record['data'][record['channel']] = record['token']
+            return self.tables['sample_data']
+        elif name == 'sample_annnotation':
+            if 'sample_annotation' not in self.tables:
+                self.tables['sample_annotation'] = self.__load_table__('sample_annotation')
+                sa = self.tables['sample_annotation']
 
-        return self.tables['sample_data']
+                # Decorate (adds short-cut) sample_annotation table with for category name.
+                for record in sa:
+                    inst = self.get('instance', record['instance_token'])
+                    record['category_name'] = self.get('category', inst['category_token'])['name']
 
-    def sample_annotation(self) -> dict:
-        """ Lazy loading of sample_annotation"""
-        if 'sample_annotation' not in self.tables:
-            self.tables['sample_annotation'] = self.__load_table__('sample_annotation')
-            sa = self.tables['sample_annotation']
+                for ann_record in sa:
+                    sample_record = self.get('sample', ann_record['sample_token'])
+                    sample_record['anns'].append(ann_record['token'])
 
-            # Decorate (adds short-cut) sample_annotation table with for category name.
-            for record in sa:
-                inst = self.get('instance', record['instance_token'])
-                record['category_name'] = self.get('category', inst['category_token'])['name']
-
-            for ann_record in sa:
-                sample_record = self.get('sample', ann_record['sample_token'])
-                sample_record['anns'].append(ann_record['token'])
-
-        return self.tables['sample_annotation']
+            return self.tables['sample_annotation']
+        else:
+            # Default behaviour
+            return object.__getattribute__(self, name)
 
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
