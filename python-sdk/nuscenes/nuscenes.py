@@ -49,8 +49,8 @@ class NuScenes:
         self.version = version
         self.dataroot = dataroot
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
-                            'log', 'scene', 'sample', 'map']
-        # TODO: exclude lazy tables for now:  'ego_pose', 'sample_data', 'sample_annotation'
+                            'ego_pose', 'log', 'scene', 'sample', 'map', 'sample_data', 'sample_annotation']
+        self.lazy_tables = ['ego_pose', 'sample_data', 'sample_annotation']
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
@@ -58,17 +58,11 @@ class NuScenes:
         if verbose:
             print("======\nLoading NuScenes tables for version {} ...".format(self.version))
 
-        # Explicitly assign tables to help the IDE determine valid class members.
-        self.category = self.__load_table__('category')
-        self.attribute = self.__load_table__('attribute')
-        self.visibility = self.__load_table__('visibility')
-        self.instance = self.__load_table__('instance')
-        self.sensor = self.__load_table__('sensor')
-        self.calibrated_sensor = self.__load_table__('calibrated_sensor')
-        self.log = self.__load_table__('log')
-        self.scene = self.__load_table__('scene')
-        self.sample = self.__load_table__('sample')
-        self.map = self.__load_table__('map')
+        # Load tables that do not use lazy loading.
+        for table_name in self.table_names:
+            if not table_name in self.lazy_tables:
+                table_content = self.__load_table__(table_name)
+                self.__setattr__(table_name, table_content)
         self.tables = dict()
 
         # Initialize map mask for each map record.
@@ -77,7 +71,10 @@ class NuScenes:
 
         if verbose:
             for table in self.table_names:
-                print("{} {},".format(len(self.__getattribute__(table)), table))
+                if not table_name in self.lazy_tables:
+                    print("{} {},".format(len(self.__getattribute__(table)), table))
+                else:
+                    print("x {} (lazy loading),".format(table))
             print("Done loading in {:.1f} seconds.\n======".format(time.time() - start_time))
 
         # Make reverse indexes for common lookups.
@@ -154,10 +151,11 @@ class NuScenes:
         # Store the mapping from token to table index for each table.
         self._token2ind = dict()
         for table in self.table_names:
-            self._token2ind[table] = dict()
+            if not table in self.lazy_tables:
+                self._token2ind[table] = dict()
 
-            for ind, member in enumerate(self.__getattribute__(table)):
-                self._token2ind[table][member['token']] = ind
+                for ind, member in enumerate(self.__getattribute__(table)):
+                    self._token2ind[table][member['token']] = ind
 
         # Prepare samples for reverse-indexing (done lazily). # TODO: clean this up
         for record in self.sample:
