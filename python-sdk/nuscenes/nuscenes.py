@@ -49,7 +49,8 @@ class NuScenes:
         self.version = version
         self.dataroot = dataroot
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
-                            'ego_pose', 'log', 'scene', 'sample', 'sample_data', 'sample_annotation', 'map']
+                            'log', 'scene', 'sample', 'map']
+        # TODO: exclude lazy tables for now:  'ego_pose', 'sample_data', 'sample_annotation'
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
