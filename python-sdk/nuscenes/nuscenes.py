@@ -77,7 +77,7 @@ class NuScenes:
 
         if verbose:
             for table in self.table_names:
-                print("{} {},".format(len(getattr(self, table)), table))
+                print("{} {},".format(len(self.__getattribute__(self, table)), table))
             print("Done loading in {:.1f} seconds.\n======".format(time.time() - start_time))
 
         # Make reverse indexes for common lookups.
@@ -91,7 +91,7 @@ class NuScenes:
         """ Returns the folder where the tables are stored for the relevant version. """
         return osp.join(self.dataroot, self.version)
 
-    def __getattr__(self, name):
+    def __getattribute__(self, name):
         """ Lazy loading for selected database tables. """
         if name == 'ego_pose':
             if 'ego_pose' not in self.tables:
@@ -116,7 +116,7 @@ class NuScenes:
                         sample_record['data'][record['channel']] = record['token']
 
             return self.tables['sample_data']
-        elif name == 'sample_annotation':
+        elif name == 'sample_annnotation':
             if 'sample_annotation' not in self.tables:
                 self.tables['sample_annotation'] = self.__load_table__('sample_annotation')
                 sa = self.tables['sample_annotation']
@@ -133,7 +133,7 @@ class NuScenes:
             return self.tables['sample_annotation']
         else:
             # Default behaviour
-            return object.__getattr__(self, name)
+            return object.__getattribute__(self, name)
 
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
@@ -156,7 +156,7 @@ class NuScenes:
         for table in self.table_names:
             self._token2ind[table] = dict()
 
-            for ind, member in enumerate(getattr(self, table)):
+            for ind, member in enumerate(self.__getattribute__(self, table)):
                 self._token2ind[table][member['token']] = ind
 
         # Prepare samples for reverse-indexing (done lazily). # TODO: clean this up
@@ -186,7 +186,7 @@ class NuScenes:
         """
         assert table_name in self.table_names, "Table {} not found".format(table_name)
 
-        return getattr(self, table_name)[self.getind(table_name, token)]
+        return self.__getattribute__(self, table_name)[self.getind(table_name, token)]
 
     def getind(self, table_name: str, token: str) -> int:
         """
@@ -207,7 +207,7 @@ class NuScenes:
         :return: List of tokens for the matching records.
         """
         matches = []
-        for member in getattr(self, table_name):
+        for member in self.__getattribute__(self, table_name):
             if member[field] == query:
                 matches.append(member['token'])
         return matches
