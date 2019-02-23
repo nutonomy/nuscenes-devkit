@@ -64,13 +64,11 @@ class NuScenes:
         self.instance = self.__load_table__('instance')
         self.sensor = self.__load_table__('sensor')
         self.calibrated_sensor = self.__load_table__('calibrated_sensor')
-        self.ego_pose = self.__load_table__('ego_pose')
         self.log = self.__load_table__('log')
         self.scene = self.__load_table__('scene')
         self.sample = self.__load_table__('sample')
-        self.sample_data = self.__load_table__('sample_data')
-        self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
+        self.tables = dict()
 
         # Initialize map mask for each map record.
         for map_record in self.map:
@@ -91,6 +89,50 @@ class NuScenes:
     def table_root(self) -> str:
         """ Returns the folder where the tables are stored for the relevant version. """
         return osp.join(self.dataroot, self.version)
+
+    def ego_pose(self) -> dict:
+        """ Lazy loading of ego_pose"""
+        if 'ego_pose' not in self.tables:
+            self.tables['ego_pose'] = self.__load_table__('ego_pose')
+        return self.tables['ego_pose']
+
+    def sample_data(self) -> dict:
+        """ Lazy loading of sample_data"""
+        if 'sample_data' not in self.tables:
+            self.tables['sample_data'] = self.__load_table__('sample_data')
+            sd = self.tables['sample_data']
+
+            # Decorate (adds short-cut) sample_data with sensor information.
+            for record in sd:
+                cs_record = self.get('calibrated_sensor', record['calibrated_sensor_token'])
+                sensor_record = self.get('sensor', cs_record['sensor_token'])
+                record['sensor_modality'] = sensor_record['modality']
+                record['channel'] = sensor_record['channel']
+
+            # Reverse-index samples with annotations
+            for record in sd:
+                if record['is_key_frame']:
+                    sample_record = self.get('sample', record['sample_token'])
+                    sample_record['data'][record['channel']] = record['token']
+
+        return self.tables['sample_data']
+
+    def sample_annotation(self) -> dict:
+        """ Lazy loading of sample_annotation"""
+        if 'sample_annotation' not in self.tables:
+            self.tables['sample_annotation'] = self.__load_table__('sample_annotation')
+            sa = self.tables['sample_annotation']
+
+            # Decorate (adds short-cut) sample_annotation table with for category name.
+            for record in sa:
+                inst = self.get('instance', record['instance_token'])
+                record['category_name'] = self.get('category', inst['category_token'])['name']
+
+            for ann_record in sa:
+                sample_record = self.get('sample', ann_record['sample_token'])
+                sample_record['anns'].append(ann_record['token'])
+
+        return self.tables['sample_annotation']
 
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
@@ -116,31 +158,10 @@ class NuScenes:
             for ind, member in enumerate(getattr(self, table)):
                 self._token2ind[table][member['token']] = ind
 
-        # Decorate (adds short-cut) sample_annotation table with for category name.
-        for record in self.sample_annotation:
-            inst = self.get('instance', record['instance_token'])
-            record['category_name'] = self.get('category', inst['category_token'])['name']
-
-        # Decorate (adds short-cut) sample_data with sensor information.
-        for record in self.sample_data:
-            cs_record = self.get('calibrated_sensor', record['calibrated_sensor_token'])
-            sensor_record = self.get('sensor', cs_record['sensor_token'])
-            record['sensor_modality'] = sensor_record['modality']
-            record['channel'] = sensor_record['channel']
-
-        # Reverse-index samples with sample_data and annotations.
+        # Prepare samples for reverse-indexing (done lazily). # TODO: clean this up
         for record in self.sample:
             record['data'] = {}
             record['anns'] = []
-
-        for record in self.sample_data:
-            if record['is_key_frame']:
-                sample_record = self.get('sample', record['sample_token'])
-                sample_record['data'][record['channel']] = record['token']
-
-        for ann_record in self.sample_annotation:
-            sample_record = self.get('sample', ann_record['sample_token'])
-            sample_record['anns'].append(ann_record['token'])
 
         # Add reverse indices from log records to map records.
         if 'log_tokens' not in self.map[0].keys():
