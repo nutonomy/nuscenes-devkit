@@ -116,7 +116,7 @@ class NuScenes:
                         sample_record['data'][record['channel']] = record['token']
 
             return self.tables['sample_data']
-        elif name == 'sample_annnotation':
+        elif name == 'sample_annotation':
             if 'sample_annotation' not in self.tables:
                 self.tables['sample_annotation'] = self.__load_table__('sample_annotation')
                 sa = self.tables['sample_annotation']
