@@ -75,9 +75,9 @@ class NuScenes:
         if verbose:
             for table_name in self.table_names:
                 if not table_name in self.lazy_tables:
-                    print("{} {},".format(len(self.__getattribute__(table)), table))
+                    print("{} {},".format(len(self.__getattribute__(table_name)), table_name))
                 else:
-                    print("x {} (lazy loading),".format(table))
+                    print("x {} (lazy loading),".format(table_name))
             print("Done loading in {:.1f} seconds.\n======".format(time.time() - start_time))
 
         # Make reverse indexes for common lookups.
