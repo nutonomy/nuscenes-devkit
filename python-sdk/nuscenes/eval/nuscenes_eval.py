@@ -441,6 +441,7 @@ class NuScenesEval:
         rec_interp = np.linspace(score_range[0], score_range[1], thresh_count)
         threshold_inds = np.searchsorted(rec, rec_interp, side='left').astype(np.float32)
         threshold_inds[threshold_inds == len(rec)] = np.nan  # Mark unachieved recall values as such.
+        assert np.nanmax(threshold_inds) < len(sortind)  # Check that threshold indices are not out of bounds.
         metrics['threshold_inds'] = threshold_inds
 
         # Interpolation of precisions to the nearest lower recall threshold.

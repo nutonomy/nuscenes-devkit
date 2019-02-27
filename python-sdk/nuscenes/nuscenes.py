@@ -36,15 +36,16 @@ class NuScenes:
     Database class for nuScenes to help query and retrieve information from the database.
     """
 
-    def __init__(self, version: str='v0.4', dataroot: str='/data/nuscenes', verbose: bool=False, lazy: bool=True):
+
+    def __init__(self, version: str='v0.5', dataroot: str='/data/nuscenes', verbose: bool=True, lazy: bool=True):
         """
         Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v0.4", ...).
+        :param version: Version to load (e.g. "v0.5", ...).
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
         :param lazy: Whether to use lazy loading for large tables ('ego_pose', 'sample_data', 'sample_annotation').
         """
-        if version not in ['v0.2', 'v0.3', 'v0.4', 'v1.0']:
+        if version not in ['v0.2', 'v0.3', 'v0.4', 'v0.5', 'v1.0']:
             raise ValueError('Invalid DB version: {}'.format(version))
 
         self.version = version
