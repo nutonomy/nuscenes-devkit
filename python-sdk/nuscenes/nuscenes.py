@@ -36,7 +36,7 @@ class NuScenes:
     Database class for nuScenes to help query and retrieve information from the database.
     """
 
-    def __init__(self, version: str='v0.4', dataroot: str='/data/nuscenes', verbose: bool=True, lazy: bool=True):
+    def __init__(self, version: str='v0.4', dataroot: str='/data/nuscenes', verbose: bool=False, lazy: bool=True):
         """
         Loads database and creates reverse indexes and shortcuts.
         :param version: Version to load (e.g. "v0.4", ...).
@@ -63,7 +63,7 @@ class NuScenes:
 
         # Load tables that do not use lazy loading.
         for table_name in self.table_names:
-            if not table_name in self.lazy_tables:
+            if table_name not in self.lazy_tables:
                 table_content = self.__load_table__(table_name)
                 self.__setattr__(table_name, table_content)
         self.tables = dict()
@@ -74,7 +74,7 @@ class NuScenes:
 
         if verbose:
             for table_name in self.table_names:
-                if not table_name in self.lazy_tables:
+                if table_name not in self.lazy_tables:
                     print("{} {},".format(len(self.__getattribute__(table_name)), table_name))
                 else:
                     print("x {} (lazy loading),".format(table_name))
@@ -154,7 +154,7 @@ class NuScenes:
         # Store the mapping from token to table index for each table.
         self._token2ind = dict()
         for table_name in self.table_names:
-            if not table_name in self.lazy_tables:
+            if table_name not in self.lazy_tables:
                 self._token2ind[table_name] = dict()
 
                 for ind, member in enumerate(self.__getattribute__(table_name)):
