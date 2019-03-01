@@ -1,9 +1,11 @@
 # nuScenes dev-kit.
-# Code written by Qiang Xu, 2018.
+# Code written by Qiang Xu, Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
 import os.path as osp
 from typing import Tuple
+
+from cachetools import cached, LRUCache
 
 import numpy as np
 import cv2
@@ -14,33 +16,32 @@ Image.MAX_IMAGE_PIXELS = 400000 * 400000
 
 
 class MapMask:
-    def __init__(self, img_file: str):
+    def __init__(self, img_file: str, resolution: float = 0.1):
         """
         Init a map mask object that contains the semantic prior (drivable surface and sidewalks) mask.
         :param img_file: File path to map png file.
+        :param resolution: Map resolution in meters.
         """
         assert osp.exists(img_file), 'map mask {} does not exist'.format(img_file)
+        assert resolution >= 0.1, "Only supports down to 0.1 meter resolution."
         self.img_file = img_file
-        self.precision = 0.1    # Precision in meters.
+        self.resolution = resolution
         self.foreground = 255
         self.background = 0
-        self._mask = None   # Binary map mask (lazy load).
-        self._transf_matrix = None  # Transformation matrix from global coords to map coords (lazy load).
 
-    @property
-    def mask(self) -> np.ndarray:
+    @cached(cache=LRUCache(maxsize=3))
+    def mask(self, dilation: float = 0.0) -> np.ndarray:
         """
-        Create binary mask from the png file.
-        :return: <np.int8: image.height, image.width>. The binary mask.
+        Returns the map mask, optionally dilated.
+        :param dilation: <float>. Dilation in meters.
+        :return: <np.ndarray>
         """
-        if self._mask is None:
-            # Pillow allows us to specify the maximum image size above, whereas this is more difficult in OpenCV.
-            img = Image.open(self.img_file).convert('L')
-            self._mask = np.array(img)
-            self._mask[self._mask < 225] = self.background
-            self._mask[self._mask >= 225] = self.foreground
-
-        return self._mask
+        if dilation == 0:
+            return self._base_mask
+        else:
+            distance_mask = cv2.distanceTransform((self.foreground - self._base_mask).astype(np.uint8), cv2.DIST_L2, 5)
+            distance_mask = (distance_mask * self.resolution).astype(np.float32)
+            return (distance_mask <= dilation).astype(np.uint8) * self.foreground
 
     @property
     def transform_matrix(self) -> np.ndarray:
@@ -48,75 +49,70 @@ class MapMask:
         Generate transform matrix for this map mask.
         :return: <np.array: 4, 4>. The transformation matrix.
         """
-        if self._transf_matrix is None:
-            mask_shape = self.mask.shape
-            self._transf_matrix = np.array([[1.0 / self.precision, 0, 0, 0],
-                                            [0, -1.0 / self.precision, 0, mask_shape[0]],
-                                            [0, 0, 1, 0], [0, 0, 0, 1]])
-        return self._transf_matrix
+        return np.array([[1.0 / self.resolution, 0, 0, 0],
+                         [0, -1.0 / self.resolution, 0, self._base_mask.shape[0]],
+                         [0, 0, 1, 0], [0, 0, 0, 1]])
 
-    def dilate_mask(self, dist_thresh: float = 2.0) -> None:
+    def is_on_mask(self, x, y, dilation=0) -> np.array:
         """
-        Dilates the mask by a distance threshold.
-        :param dist_thresh: This parameter specifies the threshold on the distance from the semantic prior mask.
-            The semantic prior mask is dilated to include points which are within this distance from itself.
-        """
-        # Distance to nearest foreground in mask.
-        distance_mask = cv2.distanceTransform((self.foreground - self.mask).astype(np.uint8), cv2.DIST_L2, 5)
-        distance_mask = (distance_mask * self.precision).astype(np.float32)
-
-        self._mask = (distance_mask < dist_thresh).astype(np.uint8) * self.foreground
-
-    def export_to_png(self, filename: str='mask.png') -> None:
-        """
-        Export mask to png file.
-        :param filename: Path to the png file.
-        """
-        cv2.imwrite(filename=filename, img=self.mask)
-
-    def is_on_mask(self, x, y) -> np.array:
-        """
-        Determine whether the points are on binary mask.
+        Determine whether the given coordinates are on the (optionally dilated) map mask.
         :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
+        :param dilation: <float>. Optional dilation of map mask.
         :return: <np.bool: x.shape>. Whether the points are on the mask.
         """
+        px, py = self.to_pixel_coords(x, y)
 
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
-        if not isinstance(y, np.ndarray):
-            y = np.array(y)
-
-        assert x.shape == y.shape
-
-        if x.ndim == 0:
-            x = np.atleast_1d(x)
-        if y.ndim == 0:
-            y = np.atleast_1d(y)
-
-        assert x.ndim == y.ndim == 1
-
-        px, py = self.get_pixel(x, y)
-
-        on_mask = np.ones(x.size, dtype=np.bool)
+        on_mask = np.ones(px.size, dtype=np.bool)
+        this_mask = self.mask(dilation)
 
         on_mask[px < 0] = False
-        on_mask[px >= self.mask.shape[1]] = False
+        on_mask[px >= this_mask.shape[1]] = False
         on_mask[py < 0] = False
-        on_mask[py >= self.mask.shape[0]] = False
+        on_mask[py >= this_mask.shape[0]] = False
 
-        on_mask[on_mask] = (self.mask[py[on_mask], px[on_mask]] == self.foreground)
+        on_mask[on_mask] = this_mask[py[on_mask], px[on_mask]] == self.foreground
 
         return on_mask
 
-    def get_pixel(self, x: np.array, y: np.array) -> Tuple[np.ndarray, np.ndarray]:
+    def to_pixel_coords(self, x, y) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Get the image coordinates given the x-y coordinates of points.
-        :param x: Global x coordinates.
-        :param y: Global y coordinates.
+        Maps x, y location in global map coordinates to the map image coordinates.
+        :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
+        :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :return: (px <np.uint8: x.shape>, py <np.uint8: y.shape>). Pixel coordinates in map.
         """
-        px, py = (x / self.precision).astype(int), self.mask.shape[0] - (y / self.precision).astype(int)
+        x = np.array(x)
+        y = np.array(y)
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
 
-        return px, py
+        assert x.shape == y.shape
+        assert x.ndim == y.ndim == 1
 
+        pts = np.stack([x, y, np.zeros(x.shape), np.ones(x.shape)])
+        pixel_coords = np.round(np.dot(self.transform_matrix, pts)).astype(np.int32)
+
+        return pixel_coords[0, :], pixel_coords[1, :]
+
+    @property
+    @cached(cache=LRUCache(maxsize=1))
+    def _base_mask(self) -> np.ndarray:
+        """
+        Returns the original binary mask stored in map png file.
+        :return: <np.int8: image.height, image.width>. The binary mask.
+        """
+        # Pillow allows us to specify the maximum image size above, whereas this is more difficult in OpenCV.
+        img = Image.open(self.img_file)
+
+        # Resize map mask to desired resolution.
+        native_resolution = 0.1
+        size_x = int(img.size[0] / self.resolution * native_resolution)
+        size_y = int(img.size[1] / self.resolution * native_resolution)
+        img = img.resize((size_x, size_y), resample=Image.NEAREST)
+
+        # Convert to numpy and binarize.
+        raw_mask = np.array(img)
+        raw_mask[raw_mask < 225] = self.background
+        raw_mask[raw_mask >= 225] = self.foreground
+        return raw_mask
