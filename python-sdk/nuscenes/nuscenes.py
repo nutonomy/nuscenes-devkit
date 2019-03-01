@@ -37,7 +37,7 @@ class NuScenes:
     """
 
     def __init__(self,
-                 version: str = 'v0.4',
+                 version: str = 'v0.5',
                  dataroot: str = '/data/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1):
@@ -48,7 +48,7 @@ class NuScenes:
         :param verbose: Whether to print status messages during load.
         :param map_resolution: Resolution of maps (meters).
         """
-        if version not in ['v0.2', 'v0.3', 'v0.4', 'v1.0']:
+        if version not in ['v0.2', 'v0.3', 'v0.4', 'v0.5', 'v1.0']:
             raise ValueError('Invalid DB version: {}'.format(version))
 
         self.version = version
