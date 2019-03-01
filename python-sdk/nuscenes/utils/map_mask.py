@@ -29,6 +29,31 @@ class MapMask:
         self.foreground = 255
         self.background = 0
 
+    @cached(cache=LRUCache(maxsize=3))
+    def mask(self, dilation: float = 0.0) -> np.ndarray:
+        """
+        Returns the map mask, optionally dilated.
+        :param dilation: <float>. Dilation in meters.
+        :return: <np.ndarray>
+        """
+        if dilation == 0:
+            return self._base_mask
+        else:
+            distance_mask = cv2.distanceTransform((self.foreground - self._base_mask).astype(np.uint8), cv2.DIST_L2,
+                                                  5)
+            distance_mask = (distance_mask * self.resolution).astype(np.float32)
+            return (distance_mask < dilation).astype(np.uint8) * self.foreground
+
+    @property
+    def transform_matrix(self) -> np.ndarray:
+        """
+        Generate transform matrix for this map mask.
+        :return: <np.array: 4, 4>. The transformation matrix.
+        """
+        return np.array([[1.0 / self.resolution, 0, 0, 0],
+                         [0, -1.0 / self.resolution, 0, self._base_mask.shape[0]],
+                         [0, 0, 1, 0], [0, 0, 0, 1]])
+
     def is_on_mask(self, x, y, dilation=0) -> np.array:
         """
         Determine whether the given coordinates are on the (optionally dilated) map mask.
@@ -72,29 +97,8 @@ class MapMask:
         return pixel_coords[0, :], pixel_coords[1, :]
 
     @property
-    def transform_matrix(self) -> np.ndarray:
-        """
-        Generate transform matrix for this map mask.
-        :return: <np.array: 4, 4>. The transformation matrix.
-        """
-        return np.array([[1.0 / self.resolution, 0, 0, 0],
-                         [0, -1.0 / self.resolution, 0, self.base_mask.shape[0]],
-                         [0, 0, 1, 0], [0, 0, 0, 1]])
-
-    @cached(cache=LRUCache(maxsize=3))
-    def mask(self, dilation: float = 2.0) -> np.ndarray:
-        """
-        Sometimes it is convenient to dilate the drivable surface mask a bit. This method does that for you.
-        :param dilation: <float>. Dilation in meters.
-        :return: <np.ndarray>
-        """
-        distance_mask = cv2.distanceTransform((self.foreground - self.base_mask).astype(np.uint8), cv2.DIST_L2, 5)
-        distance_mask = (distance_mask * self.resolution).astype(np.float32)
-        return (distance_mask < dilation).astype(np.uint8) * self.foreground
-
-    @property
     @cached(cache=LRUCache(maxsize=1))
-    def base_mask(self) -> np.ndarray:
+    def _base_mask(self) -> np.ndarray:
         """
         Returns the original binary mask stored in map png file.
         :return: <np.int8: image.height, image.width>. The binary mask.
@@ -112,5 +116,4 @@ class MapMask:
         raw_mask = np.array(img)
         raw_mask[raw_mask < 225] = self.background
         raw_mask[raw_mask >= 225] = self.foreground
-
         return raw_mask
