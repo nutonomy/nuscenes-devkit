@@ -1036,7 +1036,7 @@ class NuScenesExplorer:
 
                 # Calculate the pose on the map and append
                 map_poses.append(np.concatenate(
-                    map_mask.to_map_coord(pose_record['translation'][0], pose_record['translation'][1])))
+                    map_mask.to_pixel_coords(pose_record['translation'][0], pose_record['translation'][1])))
 
         # Compute number of close ego poses.
         map_poses = np.vstack(map_poses)

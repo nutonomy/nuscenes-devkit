@@ -39,10 +39,9 @@ class MapMask:
         if dilation == 0:
             return self._base_mask
         else:
-            distance_mask = cv2.distanceTransform((self.foreground - self._base_mask).astype(np.uint8), cv2.DIST_L2,
-                                                  5)
+            distance_mask = cv2.distanceTransform((self.foreground - self._base_mask).astype(np.uint8), cv2.DIST_L2, 5)
             distance_mask = (distance_mask * self.resolution).astype(np.float32)
-            return (distance_mask < dilation).astype(np.uint8) * self.foreground
+            return (distance_mask <= dilation).astype(np.uint8) * self.foreground
 
     @property
     def transform_matrix(self) -> np.ndarray:
@@ -62,7 +61,7 @@ class MapMask:
         :param dilation: <float>. Optional dilation of map mask.
         :return: <np.bool: x.shape>. Whether the points are on the mask.
         """
-        px, py = self.to_map_coord(x, y)
+        px, py = self.to_pixel_coords(x, y)
 
         on_mask = np.ones(px.size, dtype=np.bool)
         this_mask = self.mask(dilation)
@@ -76,9 +75,9 @@ class MapMask:
 
         return on_mask
 
-    def to_map_coord(self, x, y) -> Tuple[np.ndarray, np.ndarray]:
+    def to_pixel_coords(self, x, y) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Maps x, y location in global coordinates to the map coordinates.
+        Maps x, y location in global map coordinates to the map image coordinates.
         :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :return: (px <np.uint8: x.shape>, py <np.uint8: y.shape>). Pixel coordinates in map.
