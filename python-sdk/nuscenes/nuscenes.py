@@ -1045,7 +1045,7 @@ class NuScenesExplorer:
 
         # Plot.
         _, ax = plt.subplots(1, 1, figsize=(10, 10))
-        ax.imshow(map_mask.mask)
+        ax.imshow(map_mask.mask())
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
         ax.set_title(title, color='w')
         sc = ax.scatter(map_poses[:, 0], map_poses[:, 1], s=10, c=close_poses)

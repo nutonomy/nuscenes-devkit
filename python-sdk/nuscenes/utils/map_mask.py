@@ -40,7 +40,7 @@ class MapMask:
         px, py = self.to_map_coord(x, y)
 
         on_mask = np.ones(px.size, dtype=np.bool)
-        this_mask = self.dilated_mask(dilation)
+        this_mask = self.mask(dilation)
 
         on_mask[px < 0] = False
         on_mask[px >= this_mask.shape[1]] = False
@@ -82,7 +82,7 @@ class MapMask:
                          [0, 0, 1, 0], [0, 0, 0, 1]])
 
     @cached(cache=LRUCache(maxsize=3))
-    def dilated_mask(self, dilation: float = 2.0) -> np.ndarray:
+    def mask(self, dilation: float = 2.0) -> np.ndarray:
         """
         Sometimes it is convenient to dilate the drivable surface mask a bit. This method does that for you.
         :param dilation: <float>. Dilation in meters.
