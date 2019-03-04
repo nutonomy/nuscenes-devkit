@@ -53,35 +53,12 @@ class NuScenes:
         self.lazy = lazy
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
                             'ego_pose', 'log', 'scene', 'sample', 'map', 'sample_data', 'sample_annotation']
-        self.lazy_tables = ['ego_pose', 'sample_data', 'sample_annotation'] if lazy else []
+        self.lazy_table_names = ['ego_pose', 'sample_data', 'sample_annotation'] if lazy else []
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
-        start_time = time.time()
-        if verbose:
-            print("======\nLoading NuScenes tables for version {} ...".format(self.version))
-
         # Load tables that do not use lazy loading.
-        for table_name in self.table_names:
-            if table_name not in self.lazy_tables:
-                table_content = self.__load_table__(table_name)
-                self.__setattr__(table_name, table_content)
-        self.tables = dict()
-
-        # Initialize map mask for each map record.
-        for map_record in self.map:
-            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']))
-
-        if verbose:
-            for table_name in self.table_names:
-                if table_name not in self.lazy_tables:
-                    print("{} {},".format(len(self.__getattribute__(table_name)), table_name))
-                else:
-                    print("x {} (lazy loading),".format(table_name))
-            print("Done loading in {:.1f} seconds.\n======".format(time.time() - start_time))
-
-        # Make reverse indexes for common lookups.
-        self.__make_reverse_index__(verbose)
+        self._load_tables()
 
         # Initialize NuScenesExplorer class
         self.explorer = NuScenesExplorer(self)
@@ -91,73 +68,102 @@ class NuScenes:
         """ Returns the folder where the tables are stored for the relevant version. """
         return osp.join(self.dataroot, self.version)
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         """ Lazy loading for selected database tables. """
-        if name == 'ego_pose':
-            if 'ego_pose' not in self.tables:
-                self.tables['ego_pose'] = self.__load_table__('ego_pose')
-            return self.tables['ego_pose']
-        elif name == 'sample_data':
-            if 'sample_data' not in self.tables:
-                self.tables['sample_data'] = self.__load_table__('sample_data')
-                sd = self.tables['sample_data']
+        if name in self.lazy_table_names:
+            if name not in self.tables:
+                # Load table.
+                self.tables[name] = self._load_table(name)
+                table = self.tables[name]
 
-                # Decorate (adds short-cut) sample_data with sensor information.
-                for record in sd:
-                    cs_record = self.get('calibrated_sensor', record['calibrated_sensor_token'])
-                    sensor_record = self.get('sensor', cs_record['sensor_token'])
-                    record['sensor_modality'] = sensor_record['modality']
-                    record['channel'] = sensor_record['channel']
+                # Reverse indexing and decoration.
+                if name == 'ego_pose':
+                    pass
 
-                # Reverse-index samples with annotations
-                for record in sd:
-                    if record['is_key_frame']:
-                        sample_record = self.get('sample', record['sample_token'])
-                        sample_record['data'][record['channel']] = record['token']
+                elif name == 'sample_data':
 
-            return self.tables['sample_data']
-        elif name == 'sample_annotation':
-            if 'sample_annotation' not in self.tables:
-                self.tables['sample_annotation'] = self.__load_table__('sample_annotation')
-                sa = self.tables['sample_annotation']
+                    # Decorate sample_data with sensor information.
+                    for record in table:
+                        cs_record = self.get('calibrated_sensor', record['calibrated_sensor_token'])
+                        sensor_record = self.get('sensor', cs_record['sensor_token'])
+                        record['sensor_modality'] = sensor_record['modality']
+                        record['channel'] = sensor_record['channel']
 
-                # Decorate (adds short-cut) sample_annotation table with for category name.
-                for record in sa:
-                    inst = self.get('instance', record['instance_token'])
-                    record['category_name'] = self.get('category', inst['category_token'])['name']
+                    # Reverse-index samples with annotations.
+                    for record in table:
+                        if record['is_key_frame']:
+                            sample_record = self.get('sample', record['sample_token'])
+                            sample_record['data'][record['channel']] = record['token']
 
-                for ann_record in sa:
-                    sample_record = self.get('sample', ann_record['sample_token'])
-                    sample_record['anns'].append(ann_record['token'])
+                elif name == 'sample_annotation':
 
-            return self.tables['sample_annotation']
+                    # Decorate sample_annotation table with for category name.
+                    for record in table:
+                        inst = self.get('instance', record['instance_token'])
+                        record['category_name'] = self.get('category', inst['category_token'])['name']
+
+                    # Decorate sample with a list of annotation tokens.
+                    for ann_record in table:
+                        sample_record = self.get('sample', ann_record['sample_token'])
+                        sample_record['anns'].append(ann_record['token'])
+
+                # Populate token2ind.
+                self._token2ind[name] = dict()
+                for ind, member in enumerate(table):
+                    self._token2ind[name][member['token']] = ind
+
+            return self.tables[name]
         else:
-            # Default behaviour
-            return object.__getattribute__(self, name)
+            # Default behaviour: call __getattribute__
+            return self.__getattribute__(name)
 
-    def __load_table__(self, table_name) -> dict:
+    def _load_table(self, table_name) -> dict:
         """ Loads a table. """
         with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
             table = json.load(f)
         return table
 
-    def __make_reverse_index__(self, verbose: bool) -> None:
+    def _load_tables(self) -> None:
         """
-        De-normalizes database to create reverse indices for common cases.
-        :param verbose: Whether to print outputs.
+        Loads dataset tables and performs reverse indexing.
+        If lazy loading is used, certain tables will be loaded when they are accessed.
         """
 
-        start_time = time.time()
-        if verbose:
+        load_time = time.time()
+        if self.verbose:
+            print("======\nLoading NuScenes tables for version {} ...".format(self.version))
+
+        # Load tables that do not use lazy loading.
+        for table_name in self.table_names:
+            if table_name not in self.lazy_table_names:
+                table_content = self._load_table(table_name)
+                self.__setattr__(table_name, table_content)
+        self.tables = dict()
+
+        # Initialize map mask for each map record.
+        for map_record in self.map:
+            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']))
+
+        if self.verbose:
+            for table_name in self.table_names:
+                if table_name not in self.lazy_table_names:
+                    print("{} {},".format(len(self.__getattr__(table_name)), table_name))
+                else:
+                    print("x {} (lazy loading),".format(table_name))
+            print("Done loading in {:.1f} seconds.\n======".format(time.time() - load_time))
+
+        # Make reverse indexes for common lookups.
+        index_time = time.time()
+        if self.verbose:
             print("Reverse indexing ...")
 
         # Store the mapping from token to table index for each table.
         self._token2ind = dict()
         for table_name in self.table_names:
-            if table_name not in self.lazy_tables:
+            if table_name not in self.lazy_table_names:
                 self._token2ind[table_name] = dict()
 
-                for ind, member in enumerate(self.__getattribute__(table_name)):
+                for ind, member in enumerate(self.__getattr__(table_name)):
                     self._token2ind[table_name][member['token']] = ind
 
         # Prepare samples for reverse-indexing (done lazily).
@@ -175,8 +181,8 @@ class NuScenes:
         for log_record in self.log:
             log_record['map_token'] = log_to_map[log_record['token']]
 
-        if verbose:
-            print("Done reverse indexing in {:.1f} seconds.\n======".format(time.time() - start_time))
+        if self.verbose:
+            print("Done reverse indexing in {:.1f} seconds.\n======".format(time.time() - index_time))
 
     def get(self, table_name: str, token: str) -> dict:
         """
@@ -187,7 +193,7 @@ class NuScenes:
         """
         assert table_name in self.table_names, "Table {} not found".format(table_name)
 
-        return self.__getattribute__(table_name)[self.getind(table_name, token)]
+        return self.__getattr__(table_name)[self.getind(table_name, token)]
 
     def getind(self, table_name: str, token: str) -> int:
         """
@@ -208,7 +214,7 @@ class NuScenes:
         :return: List of tokens for the matching records.
         """
         matches = []
-        for member in self.__getattribute__(table_name):
+        for member in self.__getattr__(table_name):
             if member[field] == query:
                 matches.append(member['token'])
         return matches
