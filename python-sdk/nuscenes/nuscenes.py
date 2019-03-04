@@ -36,7 +36,6 @@ class NuScenes:
     Database class for nuScenes to help query and retrieve information from the database.
     """
 
-
     def __init__(self, version: str='v0.5', dataroot: str='/data/nuscenes', verbose: bool=True, lazy: bool=True):
         """
         Loads database and creates reverse indexes and shortcuts.
