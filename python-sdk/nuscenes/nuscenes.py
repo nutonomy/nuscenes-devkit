@@ -52,7 +52,7 @@ class NuScenes:
         self.verbose = verbose
         self.lazy = lazy
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
-                            'ego_pose', 'log', 'scene', 'sample', 'map', 'sample_data', 'sample_annotation']
+                            'log', 'scene', 'sample', 'map', 'ego_pose', 'sample_data', 'sample_annotation']
         self.lazy_table_names = ['ego_pose', 'sample_data', 'sample_annotation'] if lazy else []
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
@@ -149,7 +149,7 @@ class NuScenes:
                 if table_name not in self.lazy_table_names:
                     print("{} {},".format(len(self.__getattr__(table_name)), table_name))
                 else:
-                    print("x {} (lazy loading),".format(table_name))
+                    print("? {} (lazy loading),".format(table_name))
             print("Done loading in {:.1f} seconds.\n======".format(time.time() - load_time))
 
         # Make reverse indexes for common lookups.
