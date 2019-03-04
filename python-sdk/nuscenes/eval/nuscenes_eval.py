@@ -112,7 +112,7 @@ class NuScenesEval:
         attribute_map = {a['name']: a['token'] for a in self.nusc.attribute}
 
         if self.verbose:
-            print('## Loading annotations and results...')
+            print('# Loading annotations and results...')
 
         # Load results.
         with open(self.result_path) as f:
@@ -573,6 +573,8 @@ if __name__ == "__main__":
                         help='Which dataset split to evaluate on, e.g. train or val.')
     parser.add_argument('--dataroot', type=str, default='/data/nuscenes',
                         help='Default nuScenes data directory.')
+    parser.add_argument('--version', type=str, default='v0.5',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
     parser.add_argument('--eval_limit', type=int, default=-1,
                         help='Number of images to evaluate or -1 to evaluate all images in the split.')
     parser.add_argument('--plot_examples', type=int, default=0,
@@ -584,13 +586,14 @@ if __name__ == "__main__":
     output_dir = os.path.expanduser(args.output_dir)
     eval_set = args.eval_set
     dataroot = args.dataroot
+    version = args.version
     eval_limit = args.eval_limit
     plot_examples = bool(args.plot_examples)
     verbose = bool(args.verbose)
 
     # Init.
     random.seed(43)
-    nusc = NuScenes(verbose=verbose, dataroot=dataroot)
+    nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
     nusc_eval = NuScenesEval(nusc, result_path, eval_set=eval_set, output_dir=output_dir, verbose=verbose,
                              eval_limit=eval_limit)
 
