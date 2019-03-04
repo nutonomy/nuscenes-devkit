@@ -130,7 +130,7 @@ def filter_boxes(sample_boxes: List[Dict], pose_record: Dict, cs_record: Dict, e
     result = []
     ego_dists = []
     for box_sensor, box_global in zip(sample_boxes_sensor, sample_boxes):
-        dist = np.sqrt(np.sum(box_sensor.center ** 2))
+        dist = np.sqrt(np.sum(box_sensor.center[:2] ** 2))
         if dist <= eval_range:
             result.append(box_global)  # Add the sample_box, not the box.
             ego_dists.append(dist)
