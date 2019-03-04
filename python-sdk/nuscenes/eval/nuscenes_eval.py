@@ -444,6 +444,10 @@ class NuScenesEval:
         # Store modified rec and prec values.
         metrics['rec'] = rec
         metrics['prec'] = prec
+        
+        # If the max recall is below the minimum recall range, return the maximum error
+        if max(rec) < min(score_range):
+            return np.nan, dict()
 
         # Find indices of rec that are close to the interpolated recall thresholds.
         assert all(rec == sorted(rec))  # np.searchsorted requires sorted inputs.
