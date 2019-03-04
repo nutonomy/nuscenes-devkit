@@ -112,7 +112,7 @@ class NuScenesEval:
         attribute_map = {a['name']: a['token'] for a in self.nusc.attribute}
 
         if self.verbose:
-            print('## Loading annotations and results...')
+            print('# Loading annotations and results...')
 
         # Load results.
         with open(self.result_path) as f:
@@ -421,10 +421,6 @@ class NuScenesEval:
         else:
             rec = 0 * tp
 
-        # Store original values.
-        metrics['rec'] = rec
-        metrics['prec'] = prec
-
         # IF there are no data points, add a point at (rec, prec) of (0.01, 0) such that the AP equals 0.
         if len(prec) == 0:
             rec = np.array([0.01])
@@ -434,6 +430,24 @@ class NuScenesEval:
         if rec[0] != 0:
             rec = np.append(0.0, rec)
             prec = np.append(prec[0], prec)
+            metrics['trans_err'].insert(0, np.nan)
+            metrics['vel_err'].insert(0, np.nan)
+            metrics['scale_err'].insert(0, np.nan)
+            metrics['orient_err'].insert(0, np.nan)
+            metrics['attr_err'].insert(0, np.nan)
+            metrics['conf'].insert(0, 1)
+
+            # For debugging only.
+            metrics['ego_dist'].insert(0, np.nan)
+            metrics['vel_magn'].insert(0, np.nan)
+
+        # Store modified rec and prec values.
+        metrics['rec'] = rec
+        metrics['prec'] = prec
+        
+        # If the max recall is below the minimum recall range, return the maximum error
+        if max(rec) < min(score_range):
+            return np.nan, dict()
 
         # Find indices of rec that are close to the interpolated recall thresholds.
         assert all(rec == sorted(rec))  # np.searchsorted requires sorted inputs.
@@ -441,7 +455,7 @@ class NuScenesEval:
         rec_interp = np.linspace(score_range[0], score_range[1], thresh_count)
         threshold_inds = np.searchsorted(rec, rec_interp, side='left').astype(np.float32)
         threshold_inds[threshold_inds == len(rec)] = np.nan  # Mark unachieved recall values as such.
-        assert np.nanmax(threshold_inds) < len(sortind)  # Check that threshold indices are not out of bounds.
+        assert np.nanmax(threshold_inds) < len(rec)  # Check that threshold indices are not out of bounds.
         metrics['threshold_inds'] = threshold_inds
 
         # Interpolation of precisions to the nearest lower recall threshold.
@@ -559,6 +573,8 @@ if __name__ == "__main__":
                         help='Which dataset split to evaluate on, e.g. train or val.')
     parser.add_argument('--dataroot', type=str, default='/data/nuscenes',
                         help='Default nuScenes data directory.')
+    parser.add_argument('--version', type=str, default='v0.5',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
     parser.add_argument('--eval_limit', type=int, default=-1,
                         help='Number of images to evaluate or -1 to evaluate all images in the split.')
     parser.add_argument('--plot_examples', type=int, default=0,
@@ -570,13 +586,14 @@ if __name__ == "__main__":
     output_dir = os.path.expanduser(args.output_dir)
     eval_set = args.eval_set
     dataroot = args.dataroot
+    version = args.version
     eval_limit = args.eval_limit
     plot_examples = bool(args.plot_examples)
     verbose = bool(args.verbose)
 
     # Init.
     random.seed(43)
-    nusc = NuScenes(verbose=verbose, dataroot=dataroot)
+    nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
     nusc_eval = NuScenesEval(nusc, result_path, eval_set=eval_set, output_dir=output_dir, verbose=verbose,
                              eval_limit=eval_limit)
 

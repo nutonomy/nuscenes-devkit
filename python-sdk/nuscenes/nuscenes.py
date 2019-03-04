@@ -36,13 +36,19 @@ class NuScenes:
     Database class for nuScenes to help query and retrieve information from the database.
     """
 
-    def __init__(self, version: str='v0.5', dataroot: str='/data/nuscenes', verbose: bool=True, lazy: bool=True):
+    def __init__(self,
+                 version: str = 'v0.5',
+                 dataroot: str = '/data/nuscenes',
+                 verbose: bool = True,
+                 lazy: bool=True,
+                 map_resolution: float = 0.1):
         """
         Loads database and creates reverse indexes and shortcuts.
         :param version: Version to load (e.g. "v0.5", ...).
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
         :param lazy: Whether to use lazy loading for large tables ('ego_pose', 'sample_data', 'sample_annotation').
+        :param map_resolution: Resolution of maps (meters).
         """
         if version not in ['v0.2', 'v0.3', 'v0.4', 'v0.5', 'v1.0']:
             raise ValueError('Invalid DB version: {}'.format(version))
@@ -51,6 +57,7 @@ class NuScenes:
         self.dataroot = dataroot
         self.verbose = verbose
         self.lazy = lazy
+        self.map_resolution = map_resolution
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
                             'log', 'scene', 'sample', 'map', 'ego_pose', 'sample_data', 'sample_annotation']
         self.lazy_table_names = ['ego_pose', 'sample_data', 'sample_annotation'] if lazy else []
@@ -60,7 +67,7 @@ class NuScenes:
         # Load tables that do not use lazy loading.
         self._load_tables()
 
-        # Initialize NuScenesExplorer class
+        # Initialize NuScenesExplorer class.
         self.explorer = NuScenesExplorer(self)
 
     @property
@@ -142,7 +149,7 @@ class NuScenes:
 
         # Initialize map mask for each map record.
         for map_record in self.map:
-            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']))
+            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']), resolution=self.map_resolution)
 
         if self.verbose:
             for table_name in self.table_names:
@@ -428,8 +435,8 @@ class NuScenes:
     def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
         self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
-    def render_egoposes_on_map(self, log_location: str, scene_tokens: List=None, demo_ss_factor: float=2.0) -> None:
-        self.explorer.render_egoposes_on_map(log_location, scene_tokens, demo_ss_factor)
+    def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
+        self.explorer.render_egoposes_on_map(log_location, scene_tokens)
 
 
 class NuScenesExplorer:
@@ -1016,19 +1023,16 @@ class NuScenesExplorer:
 
         cv2.destroyAllWindows()
 
-    def render_egoposes_on_map(self, log_location: str, scene_tokens: List=None, demo_ss_factor: float=2.0) \
-            -> None:
+    def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
         """
         Renders ego poses a the map. These can be filtered by location or scene.
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
-        :param demo_ss_factor: Subsampling factor for rendering the map.
         """
 
         # Settings
         close_dist = 100
-        pixel_to_meter = 0.1
 
         # Get logs by location
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
@@ -1061,29 +1065,21 @@ class NuScenesExplorer:
                 sample_data_record = self.nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
                 pose_record = self.nusc.get('ego_pose', sample_data_record['ego_pose_token'])
 
-                # Recover the ego pose. A 1 is added at the end to make it homogenous coordinates.
-                pose = np.array(pose_record['translation'] + [1])
-
-                # Calculate the pose on the map.
-                map_pose = np.dot(map_mask.transform_matrix, pose)
-                map_pose = map_pose[:2]
-                map_poses.append(map_pose)
+                # Calculate the pose on the map and append
+                map_poses.append(np.concatenate(
+                    map_mask.to_pixel_coords(pose_record['translation'][0], pose_record['translation'][1])))
 
         # Compute number of close ego poses.
         map_poses = np.vstack(map_poses)
-        dists = sklearn.metrics.pairwise.euclidean_distances(map_poses * pixel_to_meter)
+        dists = sklearn.metrics.pairwise.euclidean_distances(map_poses * map_mask.resolution)
         close_poses = np.sum(dists < close_dist, axis=0)
 
         # Plot.
         _, ax = plt.subplots(1, 1, figsize=(10, 10))
-        mask = Image.fromarray(map_mask.mask)
-        size_x = int(mask.size[0] / demo_ss_factor)
-        size_y = int(mask.size[1] / demo_ss_factor)
-        mask_small = np.asarray(mask.resize((size_x, size_y), resample=Image.NEAREST))
-        ax.imshow(mask_small)
+        ax.imshow(map_mask.mask())
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
         ax.set_title(title, color='w')
-        sc = ax.scatter(map_poses[:, 0] / demo_ss_factor, map_poses[:, 1] / demo_ss_factor, s=10, c=close_poses)
+        sc = ax.scatter(map_poses[:, 0], map_poses[:, 1], s=10, c=close_poses)
         color_bar = plt.colorbar(sc, fraction=0.025, pad=0.04)
         plt.rcParams['figure.facecolor'] = 'black'
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
