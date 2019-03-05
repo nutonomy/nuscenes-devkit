@@ -80,6 +80,8 @@ class NuScenes:
         if name in self.lazy_table_names:
             if name not in self.tables:
                 # Load table.
+                if self.verbose:
+                    print('Lazily loading table: %s' % name)
                 self.tables[name] = self._load_table(name)
                 table = self.tables[name]
 
@@ -149,7 +151,8 @@ class NuScenes:
 
         # Initialize map mask for each map record.
         for map_record in self.map:
-            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']), resolution=self.map_resolution)
+            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']),
+                                         resolution=self.map_resolution)
 
         if self.verbose:
             for table_name in self.table_names:
