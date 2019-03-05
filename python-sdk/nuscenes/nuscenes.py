@@ -40,7 +40,7 @@ class NuScenes:
                  version: str = 'v0.5',
                  dataroot: str = '/data/nuscenes',
                  verbose: bool = True,
-                 lazy: bool=True,
+                 lazy: bool = True,
                  map_resolution: float = 0.1):
         """
         Loads database and creates reverse indexes and shortcuts.
