@@ -4,6 +4,7 @@
 
 import numpy as np
 from typing import Dict, List
+import argparse
 
 from nuscenes.nuscenes import NuScenes
 
@@ -147,6 +148,22 @@ def create_splits_scenes(nusc: NuScenes, verbose: bool = False) -> Dict[str, Lis
 
 
 if __name__ == '__main__':
-    # Run this to print the stats to stdout.
-    nusc = NuScenes()
+    # Settings.
+    parser = argparse.ArgumentParser(description='Prints out the scenes for each split.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--dataroot', type=str, default='/data/exp/nuScenes-blurring-data/nuscenes-v0.5',
+                        help='Default nuScenes data directory.')
+    parser.add_argument('--version', type=str, default='v0.5',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+    parser.add_argument('--verbose', type=int, default=1,
+                        help='Whether to print to stdout.')
+    args = parser.parse_args()
+    dataroot = args.dataroot
+    version = args.version
+    verbose = bool(args.verbose)
+
+    # Init.
+    nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
+
+    # Print the stats to stdout.
     create_splits_scenes(nusc, verbose=True)

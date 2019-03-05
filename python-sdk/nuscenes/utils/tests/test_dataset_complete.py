@@ -30,7 +30,7 @@ def test_dataset_complete(nusc: NuScenes):
 
 if __name__ == "__main__":
     # Settings.
-    parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
+    parser = argparse.ArgumentParser(description='Test that the installed dataset is complete.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dataroot', type=str, default='/data/exp/nuScenes-blurring-data/nuscenes-v0.5',
                         help='Default nuScenes data directory.')
