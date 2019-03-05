@@ -78,12 +78,12 @@ class NuScenes:
     def __getattr__(self, name):
         """ Lazy loading for selected database tables. """
         if name in self.lazy_table_names:
-            if name not in self.tables:
+            if name not in self.lazy_tables:
                 # Load table.
                 if self.verbose:
                     print('Lazily loading table: %s' % name)
-                self.tables[name] = self._load_table(name)
-                table = self.tables[name]
+                table = self._load_table(name)
+                self.lazy_tables[name] = table
 
                 # Reverse indexing and decoration.
                 if name == 'ego_pose':
@@ -121,7 +121,7 @@ class NuScenes:
                 for ind, member in enumerate(table):
                     self._token2ind[name][member['token']] = ind
 
-            return self.tables[name]
+            return self.lazy_tables[name]
         else:
             # Default behaviour: call __getattribute__
             return self.__getattribute__(name)
@@ -147,7 +147,7 @@ class NuScenes:
             if table_name not in self.lazy_table_names:
                 table_content = self._load_table(table_name)
                 self.__setattr__(table_name, table_content)
-        self.tables = dict()
+        self.lazy_tables = dict()
 
         # Initialize map mask for each map record.
         for map_record in self.map:
@@ -212,7 +212,7 @@ class NuScenes:
         :param token: Token of the record.
         :return: The index of the record in table, table is an array.
         """
-        assert table_name in self.tables
+        assert table_name in self.table_names, "Table {} not found".format(table_name)
 
         return self._token2ind[table_name][token]
 
