@@ -203,15 +203,17 @@ class NuScenes:
         """
         assert table_name in self.table_names, "Table {} not found".format(table_name)
 
-        return self.__getattr__(table_name)[self.getind(table_name, token)]
+        return self.__getattr__(table_name)[self._get_ind(table_name, token)]
 
-    def getind(self, table_name: str, token: str) -> int:
+    def _get_ind(self, table_name: str, token: str) -> int:
         """
         This returns the index of the record in a table in constant runtime.
         :param table_name: Table name.
         :param token: Token of the record.
         :return: The index of the record in table, table is an array.
         """
+        assert table_name in self.tables
+
         return self._token2ind[table_name][token]
 
     def field2token(self, table_name: str, field: str, query) -> List[str]:
