@@ -3,6 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import numpy as np
+from typing import Dict, List
 
 from nuscenes.nuscenes import NuScenes
 
@@ -94,14 +95,11 @@ split_map = {
 }
 
 
-def create_splits_logs(nusc: NuScenes, verbose: bool=False) -> dict:
+def create_splits_logs() -> Dict[str, List[str]]:
     """
-    Returns the dataset splits of nuScenes.
-    Note:
-    - Previously this script included the teaser dataset splits. Since new scenes from those logs were added in the full
-      dataset, that code is incompatible and was removed.
-    :param nusc: NuScenes instance.
-    :param verbose: Whether to print out statistics on a scene level.
+    Returns the logs in each dataset split of nuScenes.
+    Note: Previously this script included the teaser dataset splits. Since new scenes from those logs were added in the
+          full dataset, that code is incompatible and was removed.
     :return: A mapping from split name to a list of logs in that split.
     """
 
@@ -115,24 +113,40 @@ def create_splits_logs(nusc: NuScenes, verbose: bool=False) -> dict:
         splits[split].append(log)
 
     # Check for duplicates.
-    all = np.concatenate(tuple(splits.values()))
-    assert len(all) == len(np.unique(all)), 'Error: Duplicate logs found in different splits!'
-    splits['all'] = all
-
-    # Optional: Print scene-level stats.
-    if verbose:
-        scene_lists = {'train': [], 'val': [], 'test': []}
-        for split in scene_lists.keys():
-            for scene in nusc.scene:
-                if nusc.get('log', scene['log_token'])['logfile'] in splits[split]:
-                    scene_lists[split].append(scene['name'])
-            print('%s: %d' % (split, len(scene_lists[split])))
-            print('%s' % scene_lists[split])
+    all_logs = np.concatenate(tuple(splits.values()))
+    assert len(all_logs) == len(np.unique(all_logs)), 'Error: Duplicate logs found in different splits!'
+    splits['all'] = all_logs
 
     return splits
+
+
+def create_splits_scenes(nusc: NuScenes, verbose: bool = False) -> Dict[str, List[str]]:
+    """
+    Similar to create_splits_logs, but returns a mapping to scene names, rather than log names.
+    :param nusc: NuScenes instance.
+    :param verbose: Whether to print out statistics on a scene level.
+    :return: A mapping from split name to a list of logs in that split.
+    """
+    # Get log splits
+    log_splits = create_splits_logs()
+
+    # Map logs to scene names.
+    scene_splits = {'train': [], 'val': [], 'test': []}
+    for split in scene_splits.keys():
+        for scene in nusc.scene:
+            logfile = nusc.get('log', scene['log_token'])['logfile']
+            if logfile in log_splits[split]:
+                scene_splits[split].append(scene['name'])
+
+        # Optional: Print scene-level stats.
+        if verbose:
+            print('%s: %d' % (split, len(scene_splits[split])))
+            print('%s' % scene_splits[split])
+
+    return scene_splits
 
 
 if __name__ == '__main__':
     # Run this to print the stats to stdout.
     nusc = NuScenes()
-    create_splits_logs(nusc, verbose=True)
+    create_splits_scenes(nusc, verbose=True)
