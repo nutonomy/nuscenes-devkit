@@ -54,7 +54,7 @@ pipeline {
             docker build -t $TEST_IMAGE .
             docker run --name $TEST_CONTAINER_NAME \
 	      $TEST_IMAGE \
-              bash -c "source activate nuenv && python -m unittest"
+              bash -c "source activate nuenv && cd python-sdk && python -m unittest"
           """
         } // container
 
