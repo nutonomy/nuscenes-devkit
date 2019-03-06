@@ -13,7 +13,7 @@ class TestNuScenes(unittest.TestCase):
     def test_load(self):
         """
         Loads up NuScenes.
-        This is intended to simply run the NuScenes class to check for import errors, tyops, etc.
+        This is intended to simply run the NuScenes class to check for import errors, typos, etc.
         """
 
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
