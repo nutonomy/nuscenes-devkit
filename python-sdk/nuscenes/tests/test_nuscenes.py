@@ -12,13 +12,14 @@ class TestNuScenes(unittest.TestCase):
 
     def test_load(self):
         """
-        Creates a dummy result file and runs NuScenesEval.
-        This is intended to simply exersize a large part of the code to catch typos and syntax errors.
+        Loads up NuScenes.
+        This is intended to simply run the NuScenes class to check for import errors, tyops, etc.
         """
 
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
         nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
 
+        # Trivial assert statement
         self.assertEqual(nusc.table_root, os.path.join(os.environ['NUSCENES'], 'v0.2'))
 
 

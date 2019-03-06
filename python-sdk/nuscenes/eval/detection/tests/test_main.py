@@ -13,7 +13,7 @@ from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 
 
-class TestMini(unittest.TestCase):
+class TestEndToEnd(unittest.TestCase):
 
     def test_simple(self):
         """
@@ -58,6 +58,9 @@ class TestMini(unittest.TestCase):
 
         nusc_eval = NuScenesEval(nusc, res_mockup, eval_set='val', output_dir=res_eval_folder, verbose=True)
         nusc_eval.run_eval()
+
+        # Trivial assert statement
+        self.assertEqual(nusc_eval.output_dir, res_eval_folder)
 
         os.remove(res_mockup)
         shutil.rmtree(res_eval_folder)
