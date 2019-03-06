@@ -9,10 +9,9 @@ from tqdm import tqdm
 from nuscenes.nuscenes import NuScenes
 
 
-def test_dataset_complete(nusc: NuScenes):
+def verify_setup(nusc: NuScenes):
     """
     Script to verify that the nuScenes installation is complete.
-    Note: This script is not a unit test, as the dataset may be stored in another folder.
     """
 
     # Check that each sample_data file exists.
@@ -29,6 +28,7 @@ def test_dataset_complete(nusc: NuScenes):
 
 
 if __name__ == "__main__":
+
     # Settings.
     parser = argparse.ArgumentParser(description='Test that the installed dataset is complete.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -47,4 +47,4 @@ if __name__ == "__main__":
     nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
 
     # Run tests.
-    test_dataset_complete(nusc)
+    verify_setup(nusc)

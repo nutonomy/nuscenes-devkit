@@ -14,9 +14,9 @@ import tqdm
 import matplotlib.pyplot as plt
 
 from nuscenes.nuscenes import NuScenes
-from nuscenes.eval.eval_utils import center_distance, category_to_detection_name, filter_boxes, \
+from nuscenes.eval.detection.utils import center_distance, category_to_detection_name, filter_boxes, \
     visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc
-from nuscenes.eval.create_splits_logs import create_splits_logs
+from nuscenes.utils.splits import create_splits_logs
 
 
 class NuScenesEval:
@@ -125,7 +125,7 @@ class NuScenesEval:
                 print('Loading annotations...')
 
         # Read sample_tokens.
-        splits = create_splits_logs(self.nusc)
+        splits = create_splits_logs()
         sample_tokens_all = [s['token'] for s in self.nusc.sample]
         assert len(sample_tokens_all) > 0, 'Error: Results file is empty!'
 

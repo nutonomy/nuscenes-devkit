@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 from pyquaternion import Quaternion
 
-from nuscenes.eval.eval_utils import scale_iou, quaternion_yaw, yaw_diff
+from nuscenes.eval.detection.utils import scale_iou, quaternion_yaw, yaw_diff
 
 
 class TestEval(unittest.TestCase):
@@ -127,3 +127,7 @@ class TestEval(unittest.TestCase):
         sr = {'rotation': Quaternion(axis=(0, 0, 1), angle=0.9 * np.pi).elements}
         diff = yaw_diff(sa, sr)
         self.assertAlmostEqual(diff, 0.2 * np.pi)
+
+
+if __name__ == '__main__':
+    unittest.main()
