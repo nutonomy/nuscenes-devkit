@@ -8,7 +8,7 @@ import json
 import os
 import shutil
 
-from nuscenes.eval.detection.nuscenes_eval import NuScenesEval
+from nuscenes.eval.detection.main import NuScenesEval
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 
