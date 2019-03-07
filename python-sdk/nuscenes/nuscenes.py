@@ -38,7 +38,7 @@ class NuScenes:
 
     def __init__(self,
                  version: str = 'v0.5',
-                 dataroot: str = '/data/nuscenes',
+                 dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1):
         """
