@@ -111,8 +111,6 @@ pipeline {
           withCredentials([[
               $class: 'AmazonWebServicesCredentialsBinding',
               credentialsId: 'aws-ecr-staging',
-              accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-              secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
           ]]){
               sh """#!/bin/bash
               echo 'Tagging docker image as ready for production.  For now, this stage of the pipeline does nothing.'
