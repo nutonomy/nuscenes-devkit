@@ -218,6 +218,8 @@ def attr_acc(sample_annotation: Dict, sample_result: Dict, attributes: List[str]
         attr_inds = np.array([i for (i, a) in enumerate(attributes) if a in rel_attributes])
         ann_label = attr_inds[gt_attr_vec[attr_inds] == 1]
         res_label = attr_inds[np.argmax(res_scores[attr_inds])]
+        assert ann_label.size > 0, 'Database error: Sample %s is missing required attributes!' \
+                                   % sample_annotation['token']
         acc = float(ann_label == res_label)
 
     return acc

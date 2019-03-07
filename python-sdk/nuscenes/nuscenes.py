@@ -933,7 +933,8 @@ class NuScenesExplorer:
         if out_path is not None:
             out.release()
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
+    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)) \
+            -> None:
         """
         Renders a full scene for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.

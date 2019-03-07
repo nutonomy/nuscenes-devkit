@@ -34,7 +34,7 @@ class MapMask:
         """
         Returns the map mask, optionally dilated.
         :param dilation: <float>. Dilation in meters.
-        :return: <np.ndarray>
+        :return: <np.ndarray>. The dilated map mask.
         """
         if dilation == 0:
             return self._base_mask
@@ -58,7 +58,7 @@ class MapMask:
         Determine whether the given coordinates are on the (optionally dilated) map mask.
         :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
-        :param dilation: <float>. Optional dilation of map mask.
+        :param dilation: Optional dilation of map mask.
         :return: <np.bool: x.shape>. Whether the points are on the mask.
         """
         px, py = self.to_pixel_coords(x, y)

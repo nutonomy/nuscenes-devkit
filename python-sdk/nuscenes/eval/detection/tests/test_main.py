@@ -7,9 +7,10 @@ import random
 import json
 import os
 import shutil
-import numpy as np
+from typing import Dict
 
 from tqdm import tqdm
+import numpy as np
 
 from nuscenes.eval.detection.main import NuScenesEval
 from nuscenes.eval.detection.utils import category_to_detection_name
@@ -22,15 +23,15 @@ class TestEndToEnd(unittest.TestCase):
     res_eval_folder = 'tmp'
 
     def tearDown(self):
-        os.remove(self.res_mockup)
+        if os.path.exists(self.res_mockup):
+            os.remove(self.res_mockup)
         shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
-    def _mock_results(nusc):
+    def _mock_results(nusc) -> Dict[str, list]:
         """
         Creates "reasonable" results by looping through the full val-set, and adding 1 prediction per GT.
         Predictions will be permuted randomly along all axis.
-        :return:
         """
 
         def random_class(category_name):
