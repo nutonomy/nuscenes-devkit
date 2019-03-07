@@ -56,7 +56,7 @@ Finally, set NUSCENES env. variable that points to your data folder
 export NUSCENES="/data/sets/nuscenes"
 ```
 
-### Verify instll
+### Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder. 
 You can also run `assert_download.py` in the `nuscenes/scrips` folder.
 
