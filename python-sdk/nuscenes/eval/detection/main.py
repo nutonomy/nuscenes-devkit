@@ -214,10 +214,10 @@ class NuScenesEval:
                 sample_annotation['detection_name'] = detection_name
 
                 # Get attribute_labels.
-                attribute_labels = np.zeros((len(self.attributes),))
+                attribute_labels = np.zeros((len(self.attributes),), dtype=bool)
                 for i, attribute in enumerate(self.attributes):
                     if attribute_map[attribute] in sample_annotation['attribute_tokens']:
-                        attribute_labels[i] = 1.0
+                        attribute_labels[i] = True
                 sample_annotation['attribute_labels'] = attribute_labels.tolist()
 
                 # Compute object velocity.

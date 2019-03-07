@@ -205,11 +205,15 @@ def attr_acc(sample_annotation: Dict, sample_result: Dict, attributes: List[str]
 
     # Map labels to indices and compute accuracy; nan if no attributes are relevant.
     if len(rel_attributes) == 0:
-        # If a class has no attributes, we return nan.
+        # If a class has no attributes we return nan, which is ignored later.
         acc = np.nan
     elif any(np.isnan(res_scores)):
         # Catch errors and abort early if any score is nan.
         raise Exception('Error: attribute_score is nan. Set to -1 to ignore!')
+    elif not(any(gt_attr_vec)):
+        # About 0.4% of the sample_annotations have no attributes, although they should.
+        # We return nan, which is ignored later.
+        acc = np.nan
     elif any(res_scores == IGNORE):
         # If attributes scores are set to ignore, we return an accuracy of 0.
         acc = 0
@@ -218,8 +222,6 @@ def attr_acc(sample_annotation: Dict, sample_result: Dict, attributes: List[str]
         attr_inds = np.array([i for (i, a) in enumerate(attributes) if a in rel_attributes])
         ann_label = attr_inds[gt_attr_vec[attr_inds] == 1]
         res_label = attr_inds[np.argmax(res_scores[attr_inds])]
-        assert ann_label.size > 0, 'Database error: Sample %s is missing required attributes!' \
-                                   % sample_annotation['token']
         acc = float(ann_label == res_label)
 
     return acc

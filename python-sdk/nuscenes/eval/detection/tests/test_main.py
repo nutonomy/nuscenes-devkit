@@ -118,9 +118,9 @@ class TestEndToEnd(unittest.TestCase):
 
     def test_delta(self):
         """
-        This tests evalutes the score of a plausibe, arbitrary and random set of predictions.
-        The goal is to get some reasonble score.
-        This score is then captured in this very test such that if we change the eval-code,
+        This tests evaluates the score of a plausible, arbitrary and random set of predictions.
+        The goal is to get some reasonable score.
+        This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         """
 
