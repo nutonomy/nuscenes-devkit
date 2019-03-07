@@ -9,10 +9,9 @@ from tqdm import tqdm
 from nuscenes.nuscenes import NuScenes
 
 
-def test_dataset_complete(nusc: NuScenes):
+def verify_setup(nusc: NuScenes):
     """
     Script to verify that the nuScenes installation is complete.
-    Note: This script is not a unit test, as the dataset may be stored in another folder.
     """
 
     # Check that each sample_data file exists.
@@ -29,13 +28,14 @@ def test_dataset_complete(nusc: NuScenes):
 
 
 if __name__ == "__main__":
+
     # Settings.
     parser = argparse.ArgumentParser(description='Test that the installed dataset is complete.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--dataroot', type=str, default='/data/exp/nuScenes-blurring-data/nuscenes-v0.5',
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
-    parser.add_argument('--version', type=str, default='v0.5',
-                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+    parser.add_argument('--version', type=str, default='full',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. full.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     args = parser.parse_args()
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     verbose = bool(args.verbose)
 
     # Init.
-    nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
+    nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
 
-    # Run tests.
-    test_dataset_complete(nusc)
+    # Verify data blobs.
+    verify_setup(nusc_)

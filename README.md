@@ -24,10 +24,10 @@ To download nuScenes you need to go to the [Download page](https://www.nuscenes.
 create an account and confirm the nuScenes [Terms of Use](https://www.nuscenes.org/terms-of-use).
 After logging in you will see multiple archives for images, pointclouds and meta data. 
 For the devkit to work you will need to download *all* archives.
-Please unpack the archives to the `/data/nuscenes` folder \*without\* overwriting folders that occur in multiple archives.
+Please unpack the archives to the `/data/sets/nuscenes` folder \*without\* overwriting folders that occur in multiple archives.
 Eventually you should have the following folder structure:
 ```
-/data/nuscenes
+/data/sets/nuscenes
     maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene.
     samples	-	Sensor data for keyframes.
     sweeps	-	Sensor data for intermediate frames.
@@ -50,6 +50,10 @@ Also add the `python-sdk` directory to your `PYTHONPATH` environmental variable,
 following to your `~/.virtualenvs/nuscenes/bin/postactivate` (virtual environment) or `~/.bashrc` (global):
 ```
 export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
+```
+Finally, set NUSCENES env. variable that points to your data folder
+```
+export NUSCENES="/data/sets/nuscenes"
 ```
 
 ## Tutorial
