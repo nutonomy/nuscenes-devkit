@@ -14,6 +14,7 @@ import numpy as np
 
 from nuscenes.eval.detection.main import NuScenesEval
 from nuscenes.eval.detection.utils import category_to_detection_name
+from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 
@@ -23,9 +24,11 @@ class TestEndToEnd(unittest.TestCase):
     res_eval_folder = 'tmp'
 
     def tearDown(self):
-        if os.path.exists(self.res_mockup):
-            os.remove(self.res_mockup)
-        shutil.rmtree(self.res_eval_folder)
+        # if os.path.exists(self.res_mockup):
+        #     os.remove(self.res_mockup)
+        # if os.path.exists(self.res_eval_folder):
+        #     shutil.rmtree(self.res_eval_folder)
+        pass
 
     @staticmethod
     def _mock_results(nusc) -> Dict[str, list]:
@@ -79,12 +82,14 @@ class TestEndToEnd(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
+        cfg = DetectionConfig('../config.json')
         nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
             json.dump(self._mock_results(nusc), f, indent=2)
 
-        nusc_eval = NuScenesEval(nusc, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder, verbose=True)
+        nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
+                                 verbose=True)
         metrics = nusc_eval.run_eval()
 
         # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.

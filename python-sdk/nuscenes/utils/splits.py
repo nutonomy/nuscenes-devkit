@@ -126,7 +126,7 @@ def create_splits_scenes(nusc: NuScenes, verbose: bool = False) -> Dict[str, Lis
     Similar to create_splits_logs, but returns a mapping to scene names, rather than log names.
     :param nusc: NuScenes instance.
     :param verbose: Whether to print out statistics on a scene level.
-    :return: A mapping from split name to a list of logs in that split.
+    :return: A mapping from split name to a list of scene names in that split.
     """
     # Get log splits
     log_splits = create_splits_logs()

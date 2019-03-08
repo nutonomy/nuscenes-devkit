@@ -4,16 +4,18 @@
   "dist_ths": [0.5, 1.0, 2.0, 4.0],
   "dist_th_tp": 2.0,
   "metric_bounds": {
-    "trans": 0.5,
-    "vel": 1.5,
-    "scale": 0.5,
-    "orientation": 1.570796,
-    "attr_err": 1,
+    "trans_err": 0.5,
+    "vel_err": 1.5,
+    "scale_err": 0.5,
+    "orient_err": 1.570796,
+    "attr_err": 1
   },
   "attributes": ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving", "pedestrian.sitting_lying_down",
     "pedestrian.standing", "vehicle.moving", "vehicle.parked", "vehicle.stopped"],
   "recall_range": [0.1, 1],
   "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
   "max_boxes_per_sample": 500,
-  "mean_ap_weight": 5
+  "mean_ap_weight": 5,
+  "class_names": ["barrier", "bicycle", "bus", "car", "construction_vehicle", "motorcycle", "pedestrian",
+    "traffic_cone", "trailer", "truck"]
 }

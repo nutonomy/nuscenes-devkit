@@ -14,9 +14,10 @@ import tqdm
 import matplotlib.pyplot as plt
 
 from nuscenes.nuscenes import NuScenes
-from nuscenes.eval.detection.utils import center_distance, category_to_detection_name, filter_boxes, \
-    visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc, DetectionConfig
-from nuscenes.utils.splits import create_splits_logs
+from nuscenes.eval.detection.utils import center_distance, category_to_detection_name, \
+    visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc, load_prediction, load_gt, filter_eval_boxes, add_center_dist
+from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox
+from nuscenes.utils.splits import create_splits_scenes
 
 
 class NuScenesEval:
@@ -50,9 +51,9 @@ class NuScenesEval:
         """
         Initialize a NuScenesEval object.
         :param nusc: A NuScenes object.
+        :param config: A DetectionConfig object.
         :param result_path: Path of the nuScenes JSON result file.
         :param eval_set: The dataset split to evaluate on, e.g. train or val.
-        :param class_names: List of classes to evaluate. If None, all detection classes are used.
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
         :param eval_limit: Number of images to evaluate or -1 to evaluate all images.
@@ -72,8 +73,16 @@ class NuScenesEval:
         if not os.path.isdir(self.plot_dir):
             os.makedirs(self.plot_dir)
 
-        # Load and store GT and predictions.
-        self.sample_tokens, self.all_annotations, self.all_results = self.load_boxes()
+        self.all_results = load_prediction(self.result_path, self.cfg.max_boxes_per_sample)
+        self.all_annotations = load_gt(self.nusc, self.eval_set, self.cfg)
+
+        self.all_results = add_center_dist(nusc, self.all_results)
+        self.all_annotations = add_center_dist(nusc, self.all_annotations)
+
+        self.all_results = filter_eval_boxes(nusc, self.all_results, self.cfg.range)
+        self.all_annotations = filter_eval_boxes(nusc, self.all_annotations, self.cfg.range)
+
+        self.sample_tokens = self.all_annotations.sample_tokens
 
     def load_boxes(self) -> Tuple[List[str], Dict[str, List[Dict]], Dict[str, List[Dict]]]:
         """
@@ -89,28 +98,17 @@ class NuScenesEval:
         if self.verbose:
             print('# Loading annotations and results...')
 
-        # Load results.
-        with open(self.result_path) as f:
-            start_time = time.time()
-            all_results = json.load(f)
-            end_time = time.time()
-
-            if self.verbose:
-                print('Loading results for %d samples in %.1fs.' % (len(all_results), end_time - start_time))
-                print('Loading annotations...')
-
         # Read sample_tokens.
-        splits = create_splits_logs()
         sample_tokens_all = [s['token'] for s in self.nusc.sample]
-        assert len(sample_tokens_all) > 0, 'Error: Results file is empty!'
+        assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
 
         # Only keep samples from this split.
+        splits = create_splits_scenes(self.nusc)
         sample_tokens = []
         for sample_token in sample_tokens_all:
             scene_token = self.nusc.get('sample', sample_token)['scene_token']
-            log_token = self.nusc.get('scene', scene_token)['log_token']
-            logfile = self.nusc.get('log', log_token)['logfile']
-            if logfile in splits[self.eval_set]:
+            scene_record = self.nusc.get('scene', scene_token)
+            if scene_record['name'] in splits[self.eval_set]:
                 sample_tokens.append(sample_token)
 
         # Limit number of images for debugging.
@@ -129,11 +127,6 @@ class NuScenesEval:
 
             # Workaround to ignore missing tokens
             sample_tokens = result_sample_tokens
-
-        # Check that each sample has no more than x predicted boxes.
-        for sample_token in sample_tokens:
-            assert len(all_results[sample_token]) <= self.cfg.max_boxes_per_sample, \
-                "Error: Only <= %d boxes per sample allowed!" % self.cfg.max_boxes_per_sample
 
         # Check that each result has the right format.
         field_formats = {  # field_name: (field_type, field_len, allow_nan)
@@ -189,8 +182,8 @@ class NuScenesEval:
                 sample_annotation['detection_name'] = detection_name
 
                 # Get attribute_labels.
-                attribute_labels = np.zeros((len(self.attributes),), dtype=bool)
-                for i, attribute in enumerate(self.attributes):
+                attribute_labels = np.zeros((len(self.cfg.attributes),), dtype=bool)
+                for i, attribute in enumerate(self.cfg.attributes):
                     if attribute_map[attribute] in sample_annotation['attribute_tokens']:
                         attribute_labels[i] = True
                 sample_annotation['attribute_labels'] = attribute_labels.tolist()
@@ -206,8 +199,9 @@ class NuScenesEval:
             cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
             pose_record = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
             sample_results = all_results[sample_token]
-            sample_annotations, dists_annotations = filter_boxes(sample_annotations, pose_record, cs_record, self.eval_range)
-            sample_results, dists_results = filter_boxes(sample_results, pose_record, cs_record, self.eval_range)
+            sample_annotations, dists_annotations = filter_boxes(sample_annotations, pose_record, cs_record,
+                                                                 self.cfg.range)
+            sample_results, dists_results = filter_boxes(sample_results, pose_record, cs_record, self.cfg.range)
 
             # Store the distances to the ego vehicle.
             for sample_annotation, dist in zip(sample_annotations, dists_annotations):
@@ -234,34 +228,39 @@ class NuScenesEval:
         assert self.all_annotations is not None
 
         # Compute metrics.
-        raw_metrics = {label: [] for label in self.class_names}
-        label_aps = {label: [] for label in self.class_names}
-        label_tp_metrics = {label: [] for label in self.class_names}
-        for class_name in self.class_names:
+        raw_metrics = {label: [] for label in self.cfg.class_names}
+        label_aps = {label: [] for label in self.cfg.class_names}
+        label_tp_metrics = {label: [] for label in self.cfg.class_names}
+
+        dist_fcn_map = {
+            'center_distance': center_distance
+        }
+        for class_name in self.cfg.class_names:
             if self.verbose:
                 print('\n# Computing stats for class %s' % class_name)
 
             # Compute AP and to get the confidence thresholds used for TP metrics.
-            dist_th_count = len(self.dist_ths)
+            dist_th_count = len(self.cfg.dist_ths)
             label_aps[class_name] = np.zeros((dist_th_count,))
             raw_metrics[class_name] = [None] * dist_th_count
-            for d, dist_th in enumerate(self.dist_ths):
+            for d, dist_th in enumerate(self.cfg.dist_ths):
                 label_aps[class_name][d], raw_metrics[class_name][d] = \
-                    self.average_precision(self.all_annotations, self.all_results, class_name, dist_fcn=self.dist_fcn,
-                                           dist_th=dist_th, score_range=self.score_range)
+                    self.average_precision(self.all_annotations, self.all_results, class_name,
+                                           dist_fcn=dist_fcn_map[self.cfg.dist_fcn], dist_th=dist_th,
+                                           score_range=self.cfg.recall_range)
 
             # Given the raw metrics, compute the TP metrics.
-            tp_ind = [i for i, dist_th in enumerate(self.dist_ths) if dist_th == self.dist_th_tp][0]
+            tp_ind = [i for i, dist_th in enumerate(self.cfg.dist_ths) if dist_th == self.cfg.dist_th_tp][0]
             label_tp_metrics[class_name] = self.tp_metrics(raw_metrics[class_name][tp_ind], class_name)
 
         # Compute stats.
         mean_ap = np.nanmean(np.vstack(list(label_aps.values())))  # Nan APs are ignored.
         tp_metrics = dict()
-        for metric in self.metric_names:
-            tp_metrics[metric] = np.nanmean([label_tp_metrics[label][metric] for label in self.class_names])
-        tp_metrics_neg = [1 - tp_metrics[m] for m in self.weighted_sum_tp_metrics]
-        weighted_sum = np.sum([self.mean_ap_weight * mean_ap] + tp_metrics_neg)  # Sum with special weight for mAP.
-        weighted_sum /= (self.mean_ap_weight + len(tp_metrics_neg))  # Normalize by total weight.
+        for metric in self.cfg.metric_names:
+            tp_metrics[metric] = np.nanmean([label_tp_metrics[label][metric] for label in self.cfg.class_names])
+        tp_metrics_neg = [1 - tp_metrics[m] for m in self.cfg.weighted_sum_tp_metrics]
+        weighted_sum = np.sum([self.cfg.mean_ap_weight * mean_ap] + tp_metrics_neg)  # Sum with special weight for mAP.
+        weighted_sum /= (self.cfg.mean_ap_weight + len(tp_metrics_neg))  # Normalize by total weight.
         end_time = time.time()
         eval_time = end_time - start_time
 
@@ -287,9 +286,14 @@ class NuScenesEval:
 
         return all_metrics
 
-    def average_precision(self, all_annotations: dict, all_results: dict, class_name: str,
-                          dist_fcn: Callable=center_distance, dist_th: float=2.0,
-                          score_range: Tuple[float, float]=(0.1, 1.0)) -> Tuple[float, dict]:
+    def average_precision(self,
+                          all_annotations: EvalBoxes,
+                          all_results: dict,
+                          class_name: str,
+                          dist_fcn: Callable = center_distance,
+                          dist_th: float = 2.0,
+                          score_range: Tuple[float, float] = (0.1, 1.0))\
+            -> Tuple[float, dict]:
         """
         Average Precision over predefined different recall thresholds for a single distance threshold.
         The recall/conf thresholds and other raw metrics will be used in secondary metrics.
@@ -306,7 +310,7 @@ class NuScenesEval:
         npos = 0
         for sample_token in self.sample_tokens:
             for sa_idx, sample_annotation in enumerate(all_annotations[sample_token]):
-                if sample_annotation['detection_name'] == class_name:
+                if sample_annotation.detection_name == class_name:
                     npos += 1
         if self.verbose:
             print('Class %s, dist_th: %.1fm, npos: %d' % (class_name, dist_th, npos))
@@ -319,9 +323,9 @@ class NuScenesEval:
         all_results_list, all_confs_list = [], []
         for sample_token in self.sample_tokens:
             for sample_result in all_results[sample_token]:
-                if sample_result['detection_name'] == class_name:
+                if sample_result.detection_name == class_name:
                     all_results_list.append(sample_result)
-                    all_confs_list.append(sample_result['detection_score'])
+                    all_confs_list.append(sample_result.detection_score)
         assert len(all_results_list) == len(all_confs_list)
 
         # Sort by confidence.
@@ -329,17 +333,17 @@ class NuScenesEval:
 
         # Do the actual matching.
         tp, fp = [], []
-        metrics = {key: [] for key in self.metric_names}
+        metrics = {key: [] for key in self.cfg.metric_names}
         metrics.update({'conf': [], 'ego_dist': [], 'vel_magn': []})
         taken = set()  # Initially no gt bounding box is matched.
         for ind in sortind:
             sample_result = all_results_list[ind]
-            sample_token = sample_result['sample_token']
+            sample_token = sample_result.sample_token
             min_dist = np.inf
             min_sa_idx = None
 
             for sa_idx, sample_annotation in enumerate(all_annotations[sample_token]):
-                if sample_annotation['detection_name'] == class_name and not (sample_token, sa_idx) in taken:
+                if sample_annotation.detection_name == class_name and not (sample_token, sa_idx) in taken:
                     this_distance = dist_fcn(sample_annotation, sample_result)
                     if this_distance < min_dist:
                         min_dist = this_distance
@@ -357,10 +361,10 @@ class NuScenesEval:
                 vel_err = velocity_l2(min_sa, sample_result)
                 scale_err = 1 - scale_iou(min_sa, sample_result)
                 orient_err = yaw_diff(min_sa, sample_result)
-                attr_err = 1 - attr_acc(min_sa, sample_result, self.attributes)
+                attr_err = 1 - attr_acc(min_sa, sample_result, self.cfg.attributes)
 
-                ego_dist = min_sa['ego_dist']
-                vel_magn = np.sqrt(np.sum(np.array(min_sa['velocity']) ** 2))
+                ego_dist = min_sa.ego_dist
+                vel_magn = np.sqrt(np.sum(np.array(min_sa.velocity) ** 2))
             else:
                 tp.append(0)
                 fp.append(1)
@@ -480,14 +484,14 @@ class NuScenesEval:
             return np.divide(sum_vals, count_vals, out=np.zeros_like(sum_vals), where=count_vals != 0)
 
         # Init each metric as nan.
-        tp_metrics = {key: np.nan for key in self.metric_names}
+        tp_metrics = {key: np.nan for key in self.cfg.metric_names}
 
         # If raw_metrics are empty, this means that no GT samples exist for this class.
         # Then we set the metrics to nan and ignore their contribution later on.
         if len(raw_metrics) == 0:
             return tp_metrics
 
-        for metric_name in {key: [] for key in self.metric_names}:
+        for metric_name in {key: [] for key in self.cfg.metric_names}:
             # If no box was predicted for this class, no raw metrics exist and we set secondary metrics to 1.
             # Likewise if all predicted boxes are false positives.
             metric_vals = raw_metrics[metric_name]
@@ -500,7 +504,7 @@ class NuScenesEval:
                 continue
 
             # Normalize and clip metric errors.
-            metric_bound = self.metric_bounds[metric_name]
+            metric_bound = self.cfg.metric_bounds[metric_name]
             metric_vals = np.array(metric_vals) / metric_bound  # Normalize.
             metric_vals = np.minimum(1, metric_vals)  # Clip.
 
@@ -574,10 +578,10 @@ if __name__ == "__main__":
 
     # Visualize samples.
     if plot_examples:
-        sample_tokens = list(nusc_eval.all_annotations.keys())
-        random.shuffle(sample_tokens)
-        for sample_token in sample_tokens:
-            visualize_sample(nusc, sample_token, nusc_eval.all_annotations, nusc_eval.all_results,
+        sample_tokens_ = list(nusc_eval.all_annotations.keys())
+        random.shuffle(sample_tokens_)
+        for sample_token_ in sample_tokens_:
+            visualize_sample(nusc, sample_token_, nusc_eval.all_annotations, nusc_eval.all_results,
                              eval_range=nusc_eval.eval_range)
 
     # Run evaluation.
