@@ -4,6 +4,8 @@
 
 from typing import List, Dict, Tuple, Optional
 
+import json
+
 import numpy as np
 import matplotlib.pyplot as plt
 from pyquaternion import Quaternion
@@ -15,6 +17,18 @@ from nuscenes.nuscenes import NuScenes
 # Define constant
 IGNORE = -1
 
+
+class DetectionConfig:
+
+    def __init__(self, config_path):
+        with open(config_path) as f:
+            raw = json.load(f)
+
+        # TODO: Do type checks.
+        for key, value in raw.items():
+            setattr(self, key, value)
+
+        self.metric_names = self.metric_bounds.keys()
 
 def category_to_detection_name(category_name: str) -> Optional[str]:
     """

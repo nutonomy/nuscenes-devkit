@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.eval.detection.utils import center_distance, category_to_detection_name, filter_boxes, \
-    visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc
+    visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc, DetectionConfig
 from nuscenes.utils.splits import create_splits_logs
 
 
@@ -39,8 +39,14 @@ class NuScenesEval:
 
     Please see https://github.com/nutonomy/nuscenes-devkit for more details.
     """
-    def __init__(self, nusc: NuScenes, result_path: str, eval_set: str, class_names: List[str]=None,
-                 output_dir: str=None, verbose: bool=True, eval_limit: int=-1):
+    def __init__(self,
+                 nusc: NuScenes,
+                 config: DetectionConfig,
+                 result_path: str,
+                 eval_set: str,
+                 output_dir: str = None,
+                 verbose: bool = True,
+                 eval_limit: int = -1):
         """
         Initialize a NuScenesEval object.
         :param nusc: A NuScenes object.
@@ -54,36 +60,10 @@ class NuScenesEval:
         self.nusc = nusc
         self.result_path = result_path
         self.eval_set = eval_set
-        self.class_names = class_names
         self.output_dir = output_dir
         self.verbose = verbose
         self.eval_limit = eval_limit
-
-        # Define evaluation classes and criterion.
-        if self.class_names is None:
-            self.class_names = ['barrier', 'bicycle', 'bus', 'car', 'construction_vehicle', 'motorcycle', 'pedestrian',
-                                'traffic_cone', 'trailer', 'truck']
-        self.eval_range = 40  # Range in meters beyond which boxes are ignored.
-        self.dist_fcn = center_distance
-        self.dist_ths = [0.5, 1.0, 2.0, 4.0]  # mAP distance thresholds.
-        self.dist_th_tp = 2.0  # TP metric distance threshold.
-        assert self.dist_th_tp in self.dist_ths
-        self.metric_bounds = {  # Arbitrary upper bounds for each metric.
-            'trans_err': 0.5,
-            'vel_err': 1.5,
-            'scale_err': 0.5,
-            'orient_err': np.pi / 2,
-            'attr_err': 1
-        }
-        self.attributes = ['cycle.with_rider', 'cycle.without_rider',
-                           'pedestrian.moving', 'pedestrian.sitting_lying_down', 'pedestrian.standing',
-                           'vehicle.moving', 'vehicle.parked', 'vehicle.stopped']
-        self.score_range = (0.1, 1.0)  # Do not include low recall thresholds as they are very noisy.
-        self.weighted_sum_tp_metrics = ['trans_err', 'scale_err', 'orient_err']  # Which metrics to include by default.
-        self.max_boxes_per_sample = 500  # Abort if there are more boxes in any sample.
-        self.mean_ap_weight = 5  # The relative weight of mAP in the weighted sum metric.
-
-        self.metric_names = self.metric_bounds.keys()
+        self.cfg = config
 
         # Make dirs.
         self.plot_dir = os.path.join(self.output_dir, 'plots')
@@ -91,11 +71,6 @@ class NuScenesEval:
             os.makedirs(self.output_dir)
         if not os.path.isdir(self.plot_dir):
             os.makedirs(self.plot_dir)
-
-        # Dummy init.
-        self.sample_tokens = None
-        self.all_annotations = None
-        self.all_results = None
 
         # Load and store GT and predictions.
         self.sample_tokens, self.all_annotations, self.all_results = self.load_boxes()
@@ -157,8 +132,8 @@ class NuScenesEval:
 
         # Check that each sample has no more than x predicted boxes.
         for sample_token in sample_tokens:
-            assert len(all_results[sample_token]) <= self.max_boxes_per_sample, \
-                "Error: Only <= %d boxes per sample allowed!" % self.max_boxes_per_sample
+            assert len(all_results[sample_token]) <= self.cfg.max_boxes_per_sample, \
+                "Error: Only <= %d boxes per sample allowed!" % self.cfg.max_boxes_per_sample
 
         # Check that each result has the right format.
         field_formats = {  # field_name: (field_type, field_len, allow_nan)
