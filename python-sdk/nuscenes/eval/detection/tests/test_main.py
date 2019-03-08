@@ -43,7 +43,6 @@ class TestEndToEnd(unittest.TestCase):
             else:
                 return class_names[np.random.randint(0, 9)]
 
-        random.seed(43)
         mock_results = {}
         splits = create_splits_scenes(nusc)
         val_samples = []
@@ -59,7 +58,7 @@ class TestEndToEnd(unittest.TestCase):
                 sample_res.append(
                     {
                         'sample_token': sample['token'],
-                        'translation': list(np.array(ann['translation']) + 10 * (np.random.rand(3) - 0.5)),
+                        'translation': list(np.array(ann['translation']) + 5 * (np.random.rand(3) - 0.5)),
                         'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
                         'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
                         'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
@@ -71,59 +70,14 @@ class TestEndToEnd(unittest.TestCase):
             mock_results[sample['token']] = sample_res
         return mock_results
 
-    @unittest.skip("TODO unskip once done with the others")
-    def test_simple(self):
-        """
-        Creates a dummy result file and runs NuScenesEval.
-        This is intended to simply exersize a large part of the code to catch typos and syntax errors.
-        """
-
-        random.seed(43)
-        assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
-        nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
-
-        splits = create_splits_scenes(nusc)
-        one_scene_token = nusc.field2token('scene', 'name', splits['val'][0])
-        one_scene = nusc.get('scene', one_scene_token[0])
-
-        def make_mock_entry(sample_token):
-            return {
-                'sample_token': sample_token,
-                'translation': [1.0, 2.0, 3.0],
-                'size': [1.0, 2.0, 3.0],
-                'rotation': [1.0, 2.0, 2.0, 3.0],
-                'velocity': [1.0, 2.0, 3.0],
-                'detection_name': 'vehicle.car',
-                'detection_score': random.random(),
-                'attribute_scores': [.1, .2, .3, .4, .5, .6, .7, .8]
-            }
-
-        pred = {
-            one_scene['first_sample_token']: [
-                make_mock_entry(one_scene['first_sample_token']),
-                make_mock_entry(one_scene['first_sample_token'])],
-            one_scene['last_sample_token']: [
-                make_mock_entry(one_scene['last_sample_token']),
-                make_mock_entry(one_scene['last_sample_token'])],
-        }
-
-        with open(self.res_mockup, 'w') as f:
-            json.dump(pred, f)
-
-        nusc_eval = NuScenesEval(nusc, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder, verbose=True)
-        nusc_eval.run_eval()
-
-        # Trivial assert statement
-        self.assertEqual(nusc_eval.output_dir, self.res_eval_folder)
-
     def test_delta(self):
         """
-        This tests evaluates the score of a plausible, arbitrary and random set of predictions.
-        The goal is to get some reasonable score.
+        This tests runs the evaluation for an arbitrary random set of predictions.
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         """
-
+        random.seed(42)
+        np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
         nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
 
@@ -131,10 +85,10 @@ class TestEndToEnd(unittest.TestCase):
             json.dump(self._mock_results(nusc), f, indent=2)
 
         nusc_eval = NuScenesEval(nusc, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder, verbose=True)
-        nusc_eval.run_eval()
+        metrics = nusc_eval.run_eval()
 
-        # Trivial assert statement
-        self.assertEqual(nusc_eval.output_dir, self.res_eval_folder)
+        # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
+        self.assertAlmostEqual(metrics['weighted_sum'], 0.22082865720221012)
 
 
 if __name__ == '__main__':
