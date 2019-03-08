@@ -24,11 +24,10 @@ class TestEndToEnd(unittest.TestCase):
     res_eval_folder = 'tmp'
 
     def tearDown(self):
-        # if os.path.exists(self.res_mockup):
-        #     os.remove(self.res_mockup)
-        # if os.path.exists(self.res_eval_folder):
-        #     shutil.rmtree(self.res_eval_folder)
-        pass
+        if os.path.exists(self.res_mockup):
+            os.remove(self.res_mockup)
+        if os.path.exists(self.res_eval_folder):
+            shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
     def _mock_results(nusc) -> Dict[str, list]:
@@ -82,7 +81,30 @@ class TestEndToEnd(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
-        cfg = DetectionConfig('../config.json')
+
+        cfg = DetectionConfig({
+            "range": 40,
+            "dist_fcn": "center_distance",
+            "dist_ths": [0.5, 1.0, 2.0, 4.0],
+            "dist_th_tp": 2.0,
+            "metric_bounds": {
+                "trans_err": 0.5,
+                "vel_err": 1.5,
+                "scale_err": 0.5,
+                "orient_err": 1.570796,
+                "attr_err": 1
+            },
+            "attributes": ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
+                           "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
+                           "vehicle.parked", "vehicle.stopped"],
+            "recall_range": [0.1, 1],
+            "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
+            "max_boxes_per_sample": 500,
+            "mean_ap_weight": 5,
+            "class_names": ["barrier", "bicycle", "bus", "car", "construction_vehicle", "motorcycle",
+                            "pedestrian", "traffic_cone", "trailer", "truck"]
+        })
+
         nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:

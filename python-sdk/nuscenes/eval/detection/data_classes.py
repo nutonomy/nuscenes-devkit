@@ -1,24 +1,21 @@
-from typing import List
-import json
+from typing import List, Dict
 
 
 class DetectionConfig:
 
-    def __init__(self, config_path):
-        with open(config_path) as f:
-            raw = json.load(f)
+    def __init__(self, content: Dict):
 
-        self.range = raw['range']
-        self.dist_fcn = raw['dist_fcn']
-        self.dist_ths = raw['dist_ths']
-        self.dist_th_tp = raw['dist_th_tp']
-        self.metric_bounds = raw['metric_bounds']
-        self.attributes = raw['attributes']
-        self.recall_range = raw['recall_range']
-        self.weighted_sum_tp_metrics = raw['weighted_sum_tp_metrics']
-        self.max_boxes_per_sample = raw['max_boxes_per_sample']
-        self.mean_ap_weight = raw['mean_ap_weight']
-        self.class_names = raw['class_names']
+        self.range = content['range']
+        self.dist_fcn = content['dist_fcn']
+        self.dist_ths = content['dist_ths']
+        self.dist_th_tp = content['dist_th_tp']
+        self.metric_bounds = content['metric_bounds']
+        self.attributes = content['attributes']
+        self.recall_range = content['recall_range']
+        self.weighted_sum_tp_metrics = content['weighted_sum_tp_metrics']
+        self.max_boxes_per_sample = content['max_boxes_per_sample']
+        self.mean_ap_weight = content['mean_ap_weight']
+        self.class_names = content['class_names']
 
         self.metric_names = self.metric_bounds.keys()
 
