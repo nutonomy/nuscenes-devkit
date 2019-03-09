@@ -89,7 +89,7 @@ def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.nda
     return points
 
 
-def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level: int=BoxVisibility.ANY) -> bool:
+def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level: int = BoxVisibility.ANY) -> bool:
     """
     Check if a box is visible inside an image without accounting for occlusions.
     :param box: The box to be checked.
@@ -119,8 +119,9 @@ def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level:
         raise ValueError("vis_level: {} not valid".format(vis_level))
 
 
-def transform_matrix(translation: np.ndarray=np.array([0, 0, 0]), rotation: Quaternion=Quaternion([1, 0, 0, 0]),
-                     inverse: bool=False) -> np.ndarray:
+def transform_matrix(translation: np.ndarray = np.array([0, 0, 0]),
+                     rotation: Quaternion = Quaternion([1, 0, 0, 0]),
+                     inverse: bool = False) -> np.ndarray:
     """
     Convert pose to transformation matrix.
     :param translation: <np.float32: 3>. Translation in x, y, z.
