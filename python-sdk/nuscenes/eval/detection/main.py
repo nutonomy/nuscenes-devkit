@@ -1,23 +1,19 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar, 2018.
+# Code written by Holger Caesar & Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
 import os
 import time
 import json
-from typing import List, Tuple, Dict, Callable
-import random
-import argparse
+from typing import Dict
 
 import numpy as np
-import tqdm
-import matplotlib.pyplot as plt
 
 from nuscenes.nuscenes import NuScenes
-from nuscenes.eval.detection.utils import center_distance, category_to_detection_name, \
-    visualize_sample, scale_iou, yaw_diff, velocity_l2, attr_acc, load_prediction, load_gt, filter_eval_boxes, add_center_dist
-from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.eval.detection.utils import dist_fcn_map
+from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.detection.data_classes import DetectionConfig
+from nuscenes.eval.detection.algo import average_precision, calc_tp_metrics
 
 
 class NuScenesEval:
@@ -46,8 +42,7 @@ class NuScenesEval:
                  result_path: str,
                  eval_set: str,
                  output_dir: str = None,
-                 verbose: bool = True,
-                 eval_limit: int = -1):
+                 verbose: bool = True):
         """
         Initialize a NuScenesEval object.
         :param nusc: A NuScenes object.
@@ -56,167 +51,39 @@ class NuScenesEval:
         :param eval_set: The dataset split to evaluate on, e.g. train or val.
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
-        :param eval_limit: Number of images to evaluate or -1 to evaluate all images.
         """
         self.nusc = nusc
         self.result_path = result_path
         self.eval_set = eval_set
         self.output_dir = output_dir
         self.verbose = verbose
-        self.eval_limit = eval_limit
         self.cfg = config
 
-        # Make dirs.
+        # Make dirs
         self.plot_dir = os.path.join(self.output_dir, 'plots')
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         if not os.path.isdir(self.plot_dir):
             os.makedirs(self.plot_dir)
 
-        self.all_results = load_prediction(self.result_path, self.cfg.max_boxes_per_sample)
-        self.all_annotations = load_gt(self.nusc, self.eval_set, self.cfg)
+        # Load data
+        self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, self.cfg)
 
-        self.all_results = add_center_dist(nusc, self.all_results)
-        self.all_annotations = add_center_dist(nusc, self.all_annotations)
+        assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
+            "Samples in split doesn't match samples in predictions."
 
-        self.all_results = filter_eval_boxes(nusc, self.all_results, self.cfg.range)
-        self.all_annotations = filter_eval_boxes(nusc, self.all_annotations, self.cfg.range)
+        # Add center distances
+        self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
+        self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
 
-        self.sample_tokens = self.all_annotations.sample_tokens
+        # Filter boxes (distance, points per box, etc.)
+        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.range)
+        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.range)
 
-    def load_boxes(self) -> Tuple[List[str], Dict[str, List[Dict]], Dict[str, List[Dict]]]:
-        """
-        Loads the GT and EST boxes used in this class.
-        :return: (sample_tokens, all_annotations, all_results). The sample tokens and the mapping from token to GT and
-            predictions.
-        """
+        self.sample_tokens = self.gt_boxes.sample_tokens
 
-        # Init.
-        all_annotations = dict()
-        attribute_map = {a['name']: a['token'] for a in self.nusc.attribute}
-
-        if self.verbose:
-            print('# Loading annotations and results...')
-
-        # Read sample_tokens.
-        sample_tokens_all = [s['token'] for s in self.nusc.sample]
-        assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
-
-        # Only keep samples from this split.
-        splits = create_splits_scenes(self.nusc)
-        sample_tokens = []
-        for sample_token in sample_tokens_all:
-            scene_token = self.nusc.get('sample', sample_token)['scene_token']
-            scene_record = self.nusc.get('scene', scene_token)
-            if scene_record['name'] in splits[self.eval_set]:
-                sample_tokens.append(sample_token)
-
-        # Limit number of images for debugging.
-        if self.eval_limit != -1:
-            random.shuffle(sample_tokens)
-            sample_tokens = sample_tokens[:self.eval_limit]
-            sample_tokens = sorted(sample_tokens)
-
-        # Check completeness of the results.
-        result_sample_tokens = list(all_results.keys())
-        missing_bool = [x not in result_sample_tokens for x in sample_tokens]
-        if any(missing_bool):
-            # TODO: restore this once the dataset is complete
-            # missing_tokens = np.array(sample_tokens)[missing_bool]
-            # raise Exception('Error: GT sample(s) missing in results: %s' % missing_tokens)
-
-            # Workaround to ignore missing tokens
-            sample_tokens = result_sample_tokens
-
-        # Check that each result has the right format.
-        field_formats = {  # field_name: (field_type, field_len, allow_nan)
-            'sample_token': (str, -1, True),
-            'translation': (list, 3, False),
-            'size': (list, 3, False),
-            'rotation': (list, 4, False),
-            'velocity': (list, 3, True),
-            'detection_name': (str, -1, True),
-            'detection_score': (float, -1, False),
-            'attribute_scores': (list, 8, False)
-        }
-        for sample_token in sample_tokens:
-            sample_results = all_results[sample_token]
-            for sample_result in sample_results:
-                for field_name, (field_type, field_len, allow_nan) in field_formats.items():
-                    # Check the type.
-                    cur_type = type(sample_result[field_name])
-                    assert cur_type == field_type, 'Error: Expected %s, got %s for field %s!' \
-                                                   % (field_type, cur_type, field_name)
-
-                    # Check the length.
-                    if field_len != -1:  # Ignore the length of fields with "-1" entries.
-                        cur_len = len(sample_result[field_name])
-                        assert cur_len == field_len, 'Error: Expected %d values, got %d values for field %s!' \
-                                                     % (field_len, cur_len, field_name)
-
-                    # Check if values are nan.
-                    if not allow_nan:
-                        if cur_type == 'list':
-                            for value in sample_result[field_name]:
-                                assert not any(np.isnan(value))
-                        elif cur_type == 'float':
-                            value = sample_result[field_name]
-                            assert not any(np.isnan(value))
-                        else:
-                            pass
-
-        # Load annotations and filter predictions and annotations.
-        for sample_token in tqdm.tqdm(sample_tokens):
-            # Load GT.
-            sample = self.nusc.get('sample', sample_token)
-            sample_annotation_tokens = sample['anns']
-
-            # Augment with detection name and velocity and filter unused labels.
-            sample_annotations = []
-            for sample_annotation_token in sample_annotation_tokens:
-                # Get label name in detection task and filter unused labels.
-                sample_annotation = self.nusc.get('sample_annotation', sample_annotation_token)
-                detection_name = category_to_detection_name(sample_annotation['category_name'])
-                if detection_name is None:
-                    continue
-                sample_annotation['detection_name'] = detection_name
-
-                # Get attribute_labels.
-                attribute_labels = np.zeros((len(self.cfg.attributes),), dtype=bool)
-                for i, attribute in enumerate(self.cfg.attributes):
-                    if attribute_map[attribute] in sample_annotation['attribute_tokens']:
-                        attribute_labels[i] = True
-                sample_annotation['attribute_labels'] = attribute_labels.tolist()
-
-                # Compute object velocity.
-                sample_annotation['velocity'] = self.nusc.box_velocity(sample_annotation['token'])
-
-                sample_annotations.append(sample_annotation)
-
-            # Filter boxes > x meters away.
-            sample_rec = self.nusc.get('sample', sample_token)
-            sd_record = self.nusc.get('sample_data', sample_rec['data']['LIDAR_TOP'])
-            cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
-            pose_record = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
-            sample_results = all_results[sample_token]
-            sample_annotations, dists_annotations = filter_boxes(sample_annotations, pose_record, cs_record,
-                                                                 self.cfg.range)
-            sample_results, dists_results = filter_boxes(sample_results, pose_record, cs_record, self.cfg.range)
-
-            # Store the distances to the ego vehicle.
-            for sample_annotation, dist in zip(sample_annotations, dists_annotations):
-                sample_annotation['ego_dist'] = dist
-
-            for sample_result, dist in zip(sample_results, dists_results):
-                sample_result['ego_dist'] = dist
-
-            # Aggregate.
-            all_annotations[sample_token] = sample_annotations
-            all_results[sample_token] = sample_results
-
-        return sample_tokens, all_annotations, all_results
-
-    def run_eval(self) -> Dict:
+    def run(self) -> Dict:
         """
         Perform evaluation given the predictions and annotations stored in self.
         :return: All nuScenes detection metrics. These are also written to disk.
@@ -224,17 +91,11 @@ class NuScenesEval:
 
         start_time = time.time()
 
-        # Check that data has been loaded.
-        assert self.all_annotations is not None
-
         # Compute metrics.
         raw_metrics = {label: [] for label in self.cfg.class_names}
         label_aps = {label: [] for label in self.cfg.class_names}
         label_tp_metrics = {label: [] for label in self.cfg.class_names}
 
-        dist_fcn_map = {
-            'center_distance': center_distance
-        }
         for class_name in self.cfg.class_names:
             if self.verbose:
                 print('\n# Computing stats for class %s' % class_name)
@@ -245,13 +106,14 @@ class NuScenesEval:
             raw_metrics[class_name] = [None] * dist_th_count
             for d, dist_th in enumerate(self.cfg.dist_ths):
                 label_aps[class_name][d], raw_metrics[class_name][d] = \
-                    self.average_precision(self.all_annotations, self.all_results, class_name,
-                                           dist_fcn=dist_fcn_map[self.cfg.dist_fcn], dist_th=dist_th,
-                                           score_range=self.cfg.recall_range)
+                    average_precision(self.gt_boxes, self.pred_boxes, class_name, self.cfg,
+                                      dist_fcn=dist_fcn_map[self.cfg.dist_fcn], dist_th=dist_th,
+                                      score_range=self.cfg.recall_range, verbose=self.verbose)
 
             # Given the raw metrics, compute the TP metrics.
             tp_ind = [i for i, dist_th in enumerate(self.cfg.dist_ths) if dist_th == self.cfg.dist_th_tp][0]
-            label_tp_metrics[class_name] = self.tp_metrics(raw_metrics[class_name][tp_ind], class_name)
+            label_tp_metrics[class_name] = calc_tp_metrics(raw_metrics[class_name][tp_ind], self.cfg, class_name,
+                                                           self.verbose)
 
         # Compute stats.
         mean_ap = np.nanmean(np.vstack(list(label_aps.values())))  # Nan APs are ignored.
@@ -286,303 +148,48 @@ class NuScenesEval:
 
         return all_metrics
 
-    def average_precision(self,
-                          all_annotations: EvalBoxes,
-                          all_results: dict,
-                          class_name: str,
-                          dist_fcn: Callable = center_distance,
-                          dist_th: float = 2.0,
-                          score_range: Tuple[float, float] = (0.1, 1.0))\
-            -> Tuple[float, dict]:
-        """
-        Average Precision over predefined different recall thresholds for a single distance threshold.
-        The recall/conf thresholds and other raw metrics will be used in secondary metrics.
-        :param all_annotations: Maps every sample_token to a list of its sample_annotations.
-        :param all_results: Maps every sample_token to a list of its sample_results.
-        :param class_name: Class to compute AP on.
-        :param dist_fcn: Distance function used to match detections and ground truths.
-        :param dist_th: Distance threshold for a match.
-        :param score_range: Lower and upper score bound between which we compute the metrics.
-        :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
-        """
-
-        # Count the positives.
-        npos = 0
-        for sample_token in self.sample_tokens:
-            for sa_idx, sample_annotation in enumerate(all_annotations[sample_token]):
-                if sample_annotation.detection_name == class_name:
-                    npos += 1
-        if self.verbose:
-            print('Class %s, dist_th: %.1fm, npos: %d' % (class_name, dist_th, npos))
-
-        # For missing classes in the GT, return nan mAP.
-        if npos == 0:
-            return np.nan, dict()
-
-        # Organize the estimated bbs in a single list.
-        all_results_list, all_confs_list = [], []
-        for sample_token in self.sample_tokens:
-            for sample_result in all_results[sample_token]:
-                if sample_result.detection_name == class_name:
-                    all_results_list.append(sample_result)
-                    all_confs_list.append(sample_result.detection_score)
-        assert len(all_results_list) == len(all_confs_list)
-
-        # Sort by confidence.
-        sortind = [i for (v, i) in sorted((v, i) for (i, v) in enumerate(all_confs_list))][::-1]
-
-        # Do the actual matching.
-        tp, fp = [], []
-        metrics = {key: [] for key in self.cfg.metric_names}
-        metrics.update({'conf': [], 'ego_dist': [], 'vel_magn': []})
-        taken = set()  # Initially no gt bounding box is matched.
-        for ind in sortind:
-            sample_result = all_results_list[ind]
-            sample_token = sample_result.sample_token
-            min_dist = np.inf
-            min_sa_idx = None
-
-            for sa_idx, sample_annotation in enumerate(all_annotations[sample_token]):
-                if sample_annotation.detection_name == class_name and not (sample_token, sa_idx) in taken:
-                    this_distance = dist_fcn(sample_annotation, sample_result)
-                    if this_distance < min_dist:
-                        min_dist = this_distance
-                        min_sa_idx = sa_idx
-
-            # Update TP / FP and raw metrics and mark matched GT boxes.
-            if min_dist < dist_th:
-                assert min_sa_idx is not None
-                taken.add((sample_token, min_sa_idx))
-                tp.append(1)
-                fp.append(0)
-
-                min_sa = all_annotations[sample_token][min_sa_idx]
-                trans_err = center_distance(min_sa, sample_result)
-                vel_err = velocity_l2(min_sa, sample_result)
-                scale_err = 1 - scale_iou(min_sa, sample_result)
-                orient_err = yaw_diff(min_sa, sample_result)
-                attr_err = 1 - attr_acc(min_sa, sample_result, self.cfg.attributes)
-
-                ego_dist = min_sa.ego_dist
-                vel_magn = np.sqrt(np.sum(np.array(min_sa.velocity) ** 2))
-            else:
-                tp.append(0)
-                fp.append(1)
-
-                trans_err = np.nan
-                vel_err = np.nan
-                scale_err = np.nan
-                orient_err = np.nan
-                attr_err = np.nan
-
-                ego_dist = np.nan
-                vel_magn = np.nan
-
-            metrics['trans_err'].append(trans_err)
-            metrics['vel_err'].append(vel_err)
-            metrics['scale_err'].append(scale_err)
-            metrics['orient_err'].append(orient_err)
-            metrics['attr_err'].append(attr_err)
-            metrics['conf'].append(all_confs_list[ind])
-
-            # For debugging only.
-            metrics['ego_dist'].append(ego_dist)
-            metrics['vel_magn'].append(vel_magn)
-
-        # Accumulate.
-        tp, fp = np.cumsum(tp), np.cumsum(fp)
-        tp, fp = tp.astype(np.float), fp.astype(np.float)
-
-        # Calculate precision and recall.
-        prec = tp / (fp + tp)
-        if npos > 0:
-            rec = tp / float(npos)
-        else:
-            rec = 0 * tp
-
-        # IF there are no data points, add a point at (rec, prec) of (0.01, 0) such that the AP equals 0.
-        if len(prec) == 0:
-            rec = np.array([0.01])
-            prec = np.array([0])
-
-        # If there is no precision value for recall == 0, we add a conservative estimate.
-        if rec[0] != 0:
-            rec = np.append(0.0, rec)
-            prec = np.append(prec[0], prec)
-            metrics['trans_err'].insert(0, np.nan)
-            metrics['vel_err'].insert(0, np.nan)
-            metrics['scale_err'].insert(0, np.nan)
-            metrics['orient_err'].insert(0, np.nan)
-            metrics['attr_err'].insert(0, np.nan)
-            metrics['conf'].insert(0, 1)
-
-            # For debugging only.
-            metrics['ego_dist'].insert(0, np.nan)
-            metrics['vel_magn'].insert(0, np.nan)
-
-        # Store modified rec and prec values.
-        metrics['rec'] = rec
-        metrics['prec'] = prec
-        
-        # If the max recall is below the minimum recall range, return the maximum error
-        if max(rec) < min(score_range):
-            return np.nan, dict()
-
-        # Find indices of rec that are close to the interpolated recall thresholds.
-        assert all(rec == sorted(rec))  # np.searchsorted requires sorted inputs.
-        thresh_count = int((score_range[1] - score_range[0]) * 100 + 1)
-        rec_interp = np.linspace(score_range[0], score_range[1], thresh_count)
-        threshold_inds = np.searchsorted(rec, rec_interp, side='left').astype(np.float32)
-        threshold_inds[threshold_inds == len(rec)] = np.nan  # Mark unachieved recall values as such.
-        assert np.nanmax(threshold_inds) < len(rec)  # Check that threshold indices are not out of bounds.
-        metrics['threshold_inds'] = threshold_inds
-
-        # Interpolation of precisions to the nearest lower recall threshold.
-        # For unachieved high recall values the precision is set to 0.
-        prec_interp = np.interp(rec_interp, rec, prec, right=0)
-        metrics['rec_interp'] = rec_interp
-        metrics['prec_interp'] = prec_interp
-
-        # Compute average precision over predefined thresholds.
-        average_prec = prec_interp.mean()
-
-        # Plot PR curve.
-        if self.plot_dir is not None:
-            plt.clf()
-            plt.plot(metrics['rec'], metrics['prec'])
-            plt.plot(metrics['rec'], metrics['conf'])
-            plt.xlabel('Recall')
-            plt.ylabel('Precision (blue), Conf (orange)')
-            plt.ylim([0.0, 1.05])
-            plt.xlim([0.0, 1.0])
-            plt.title('Precision-Recall curve: class %s, dist_th=%.1fm, AP=%.4f' % (class_name, dist_th, average_prec))
-            save_path = os.path.join(self.plot_dir, '%s-recall-precision-%.1f.png' % (class_name, dist_th))
-            plt.savefig(save_path)
-
-        # Print stats.
-        if self.verbose:
-            tp_count = tp[-1] if len(tp) > 0 else 0
-            fp_count = fp[-1] if len(fp) > 0 else 0
-            print('AP is %.4f, tp: %d, fp: %d' % (average_prec, tp_count, fp_count))
-
-        return average_prec, metrics
-
-    def tp_metrics(self, raw_metrics: Dict, class_name: str) -> Dict:
-        """
-        True Positive metrics for a single class and distance threshold.
-        For each metric and recall threshold we compute the mean for all matches with a lower recall.
-        The raw_metrics are computed in average_precision() to avoid redundant computation.
-        :param raw_metrics: Raw data for a number of metrics.
-        :param class_name: Class to compute AP on.
-        :return: Maps each metric name to its average metric error.
-        """
-
-        def cummean(x):
-            """ Computes the cumulative mean up to each position. """
-            sum_vals = np.nancumsum(x)  # Cumulative sum ignoring nans.
-            count_vals = np.cumsum(~np.isnan(x))  # Number of non-nans up to each position.
-            return np.divide(sum_vals, count_vals, out=np.zeros_like(sum_vals), where=count_vals != 0)
-
-        # Init each metric as nan.
-        tp_metrics = {key: np.nan for key in self.cfg.metric_names}
-
-        # If raw_metrics are empty, this means that no GT samples exist for this class.
-        # Then we set the metrics to nan and ignore their contribution later on.
-        if len(raw_metrics) == 0:
-            return tp_metrics
-
-        for metric_name in {key: [] for key in self.cfg.metric_names}:
-            # If no box was predicted for this class, no raw metrics exist and we set secondary metrics to 1.
-            # Likewise if all predicted boxes are false positives.
-            metric_vals = raw_metrics[metric_name]
-            if len(metric_vals) == 0 or all(np.isnan(metric_vals)):
-                tp_metrics[metric_name] = 1
-                continue
-
-            # Certain classes do not have attributes. In this case keep nan and continue.
-            if metric_name == 'attr_err' and class_name in ['barrier', 'traffic_cone']:
-                continue
-
-            # Normalize and clip metric errors.
-            metric_bound = self.cfg.metric_bounds[metric_name]
-            metric_vals = np.array(metric_vals) / metric_bound  # Normalize.
-            metric_vals = np.minimum(1, metric_vals)  # Clip.
-
-            # Compute mean metric error for every sample (sorted by conf).
-            metric_cummeans = cummean(metric_vals)
-
-            # Average over predefined recall thresholds.
-            # Note: For unachieved recall values this assigns the maximum possible error (1). This punishes methods that
-            # do not achieve these recall values and users that intentionally submit less boxes.
-            metric_errs = np.ones((len(raw_metrics['threshold_inds']),))
-            valid = np.where(np.logical_not(np.isnan(raw_metrics['threshold_inds'])))[0]
-            valid_thresholds = raw_metrics['threshold_inds'][valid].astype(np.int32)
-            metric_errs[valid] = metric_cummeans[valid_thresholds]
-            tp_metrics[metric_name] = metric_errs.mean()
-
-            # Write plot to disk.
-            if self.plot_dir is not None:
-                plt.clf()
-                plt.plot(raw_metrics['rec_interp'], metric_errs)
-                plt.xlabel('Recall r')
-                plt.ylabel('%s of matches with recall <= r' % metric_name)
-                plt.xlim([0.0, 1.0])
-                plt.ylim([0.0, 1.05])
-                plt.title('%s curve: class %s, avg=%.4f' % (metric_name, class_name, tp_metrics[metric_name]))
-                save_path = os.path.join(self.plot_dir, '%s-recall-%s.png' % (class_name, metric_name))
-                plt.savefig(save_path)
-
-            # Print stats.
-            if self.verbose:
-                clip_ratio: float = np.mean(metric_vals == 1)
-                print('%s: %.4f, %.1f%% values clipped' % (metric_name, tp_metrics[metric_name], clip_ratio * 100))
-
-        return tp_metrics
-
 
 if __name__ == "__main__":
+    pass
     # Settings.
-    parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--result_path', type=str, default='~/nuscenes-metrics/results.json',
-                        help='The submission as a JSON file.')
-    parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
-                        help='Folder to store result metrics, graphs and example visualizations.')
-    parser.add_argument('--eval_set', type=str, default='val',
-                        help='Which dataset split to evaluate on, e.g. train or val.')
-    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
-                        help='Default nuScenes data directory.')
-    parser.add_argument('--version', type=str, default='v0.5',
-                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
-    parser.add_argument('--eval_limit', type=int, default=-1,
-                        help='Number of images to evaluate or -1 to evaluate all images in the split.')
-    parser.add_argument('--plot_examples', type=int, default=0,
-                        help='Whether to plot example visualizations to disk.')
-    parser.add_argument('--verbose', type=int, default=1,
-                        help='Whether to print to stdout.')
-    args = parser.parse_args()
-    result_path = os.path.expanduser(args.result_path)
-    output_dir = os.path.expanduser(args.output_dir)
-    eval_set = args.eval_set
-    dataroot = args.dataroot
-    version = args.version
-    eval_limit = args.eval_limit
-    plot_examples = bool(args.plot_examples)
-    verbose = bool(args.verbose)
-
+    # parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
+    #                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # parser.add_argument('--result_path', type=str, default='~/nuscenes-metrics/results.json',
+    #                     help='The submission as a JSON file.')
+    # parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
+    #                     help='Folder to store result metrics, graphs and example visualizations.')
+    # parser.add_argument('--eval_set', type=str, default='val',
+    #                     help='Which dataset split to evaluate on, e.g. train or val.')
+    # parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
+    #                     help='Default nuScenes data directory.')
+    # parser.add_argument('--version', type=str, default='v0.5',
+    #                     help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+    # parser.add_argument('--plot_examples', type=int, default=0,
+    #                     help='Whether to plot example visualizations to disk.')
+    # parser.add_argument('--verbose', type=int, default=1,
+    #                     help='Whether to print to stdout.')
+    # args = parser.parse_args()
+    # result_path = os.path.expanduser(args.result_path)
+    # output_dir = os.path.expanduser(args.output_dir)
+    # eval_set = args.eval_set
+    # dataroot = args.dataroot
+    # version = args.version
+    # eval_limit = args.eval_limit
+    # plot_examples = bool(args.plot_examples)
+    # verbose = bool(args.verbose)
+    #
     # Init.
-    random.seed(43)
-    nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
-    nusc_eval = NuScenesEval(nusc, result_path, eval_set=eval_set, output_dir=output_dir, verbose=verbose,
-                             eval_limit=eval_limit)
-
+    # random.seed(43)
+    # nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
+    # nusc_eval = NuScenesEval(nusc_, result_path, eval_set=eval_set, output_dir=output_dir, verbose=verbose)
+    #
     # Visualize samples.
-    if plot_examples:
-        sample_tokens_ = list(nusc_eval.all_annotations.keys())
-        random.shuffle(sample_tokens_)
-        for sample_token_ in sample_tokens_:
-            visualize_sample(nusc, sample_token_, nusc_eval.all_annotations, nusc_eval.all_results,
-                             eval_range=nusc_eval.eval_range)
-
+    # if plot_examples:
+    #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
+    #     random.shuffle(sample_tokens_)
+    #     for sample_token_ in sample_tokens_:
+    #         visualize_sample(nusc, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
+    #                          eval_range=nusc_eval.cfg.eval_range)
+    #
     # Run evaluation.
-    nusc_eval.run_eval()
+    # nusc_eval.run()

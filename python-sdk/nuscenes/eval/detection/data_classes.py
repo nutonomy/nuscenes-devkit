@@ -78,11 +78,21 @@ class EvalBoxes:
         return self.boxes[item]
 
     @property
+    def all(self):
+        ab = []
+        for sample_token in self.sample_tokens:
+            ab.extend(self[sample_token])
+        return ab
+
+    @property
     def sample_tokens(self):
         return list(self.boxes.keys())
 
     def add_boxes(self, sample_token, boxes):
         self.boxes[sample_token] = boxes
+
+    def serialize(self):
+        pass  # TODO: write
 
     @classmethod
     def deserialize(cls, content):

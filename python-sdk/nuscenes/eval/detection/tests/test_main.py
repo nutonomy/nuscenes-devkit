@@ -111,8 +111,8 @@ class TestEndToEnd(unittest.TestCase):
             json.dump(self._mock_results(nusc), f, indent=2)
 
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
-                                 verbose=True)
-        metrics = nusc_eval.run_eval()
+                                 verbose=False)
+        metrics = nusc_eval.run()
 
         # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
         self.assertAlmostEqual(metrics['weighted_sum'], 0.22082865720221012)
