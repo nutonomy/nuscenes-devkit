@@ -37,13 +37,13 @@ class NuScenes:
     """
 
     def __init__(self,
-                 version: str = 'v0.5',
-                 dataroot: str = '/data/nuscenes',
+                 version: str = 'v1.0',
+                 dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1):
         """
         Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v0.2", ...).
+        :param version: Version to load (e.g. "v1.0", ...).
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
         :param map_resolution: Resolution of maps (meters).
@@ -149,7 +149,7 @@ class NuScenes:
 
         # Add reverse indices from log records to map records.
         if 'log_tokens' not in self.map[0].keys():
-            raise Exception('Error: log_tokens not in map table. Please download the nuScenes dataset v0.2 or later.')
+            raise Exception('Error: log_tokens not in map table. This code is not compatible with the teaser dataset.')
         log_to_map = dict()
         for map_record in self.map:
             for log_token in map_record['log_tokens']:

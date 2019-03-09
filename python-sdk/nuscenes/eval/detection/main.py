@@ -571,10 +571,10 @@ if __name__ == "__main__":
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='val',
                         help='Which dataset split to evaluate on, e.g. train or val.')
-    parser.add_argument('--dataroot', type=str, default='/data/nuscenes',
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
-    parser.add_argument('--version', type=str, default='v0.5',
-                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+    parser.add_argument('--version', type=str, default='v1.0',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0.')
     parser.add_argument('--eval_limit', type=int, default=-1,
                         help='Number of images to evaluate or -1 to evaluate all images in the split.')
     parser.add_argument('--plot_examples', type=int, default=0,

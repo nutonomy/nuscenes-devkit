@@ -151,10 +151,10 @@ if __name__ == '__main__':
     # Settings.
     parser = argparse.ArgumentParser(description='Prints out the scenes for each split.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--dataroot', type=str, default='/data/exp/nuScenes-blurring-data/nuscenes-v0.5',
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
-    parser.add_argument('--version', type=str, default='v0.5',
-                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+    parser.add_argument('--version', type=str, default='v1.0',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     args = parser.parse_args()
