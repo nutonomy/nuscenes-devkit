@@ -15,6 +15,7 @@ from pyquaternion import Quaternion
 from matplotlib.axes import Axes
 
 from nuscenes.utils.geometry_utils import view_points, transform_matrix
+from nuscenes.nuscenes import NuScenes
 
 
 class PointCloud(ABC):
@@ -53,8 +54,13 @@ class PointCloud(ABC):
         pass
 
     @classmethod
-    def from_file_multisweep(cls, nusc, sample_rec: Dict, chan: str, ref_chan: str, nsweeps: int=26,
-                              min_distance: float=1.0) -> Tuple['PointCloud', np.ndarray]:
+    def from_file_multisweep(cls,
+                             nusc: NuScenes,
+                             sample_rec: Dict,
+                             chan: str,
+                             ref_chan: str,
+                             nsweeps: int = 26,
+                             min_distance: float = 1.0) -> Tuple['PointCloud', np.ndarray]:
         """
         Return a point cloud that aggregates multiple sweeps.
         As every sweep is in a different coordinate frame, we need to map the coordinates to a single reference frame.
@@ -173,8 +179,12 @@ class PointCloud(ABC):
         """
         self.points[:3, :] = transf_matrix.dot(np.vstack((self.points[:3, :], np.ones(self.nbr_points()))))[:3, :]
 
-    def render_height(self, ax: Axes, view: np.ndarray=np.eye(4), x_lim: Tuple=(-20, 20), y_lim: Tuple=(-20, 20),
-                      marker_size: float=1) -> None:
+    def render_height(self,
+                      ax: Axes,
+                      view: np.ndarray = np.eye(4),
+                      x_lim: Tuple = (-20, 20),
+                      y_lim: Tuple = (-20, 20),
+                      marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by height (z-value).
         :param ax: Axes on which to render the points.
@@ -185,8 +195,12 @@ class PointCloud(ABC):
         """
         self._render_helper(2, ax, view, x_lim, y_lim, marker_size)
 
-    def render_intensity(self, ax: Axes, view: np.ndarray=np.eye(4), x_lim: Tuple=(-20, 20), y_lim: Tuple=(-20, 20),
-                         marker_size: float=1) -> None:
+    def render_intensity(self,
+                         ax: Axes,
+                         view: np.ndarray = np.eye(4),
+                         x_lim: Tuple = (-20, 20),
+                         y_lim: Tuple = (-20, 20),
+                         marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by intensity.
         :param ax: Axes on which to render the points.
@@ -197,7 +211,12 @@ class PointCloud(ABC):
         """
         self._render_helper(3, ax, view, x_lim, y_lim, marker_size)
 
-    def _render_helper(self, color_channel: int, ax: Axes, view: np.ndarray, x_lim: Tuple, y_lim: Tuple,
+    def _render_helper(self,
+                       color_channel: int,
+                       ax: Axes,
+                       view: np.ndarray,
+                       x_lim: Tuple,
+                       y_lim: Tuple,
                        marker_size: float) -> None:
         """
         Helper function for rendering.
@@ -241,6 +260,11 @@ class LidarPointCloud(PointCloud):
 
 class RadarPointCloud(PointCloud):
 
+    # Class-level settings for radar pointclouds, see from_file().
+    invalid_states: List[int] = [0]
+    dynprop_states: List[int] = range(8)  # Use [0, 2, 6] for moving objects only.
+    ambig_states: List[int] = [3]
+
     @staticmethod
     def nbr_dims() -> int:
         """
@@ -250,8 +274,11 @@ class RadarPointCloud(PointCloud):
         return 18
 
     @classmethod
-    def from_file(cls, file_name: str, invalid_states: List[int]=[0], dynprop_states: List[int]=range(7),
-                  ambig_states: List[int]=[3]) -> 'RadarPointCloud':
+    def from_file(cls,
+                  file_name: str,
+                  invalid_states: List[int] = None,
+                  dynprop_states: List[int] = None,
+                  ambig_states: List[int] = None) -> 'RadarPointCloud':
         """
         Loads RADAR data from a Point Cloud Data file. See details below.
         :param file_name: The path of the pointcloud file.
@@ -310,7 +337,7 @@ class RadarPointCloud(PointCloud):
         3: unambiguous
         4: stationary candidates
 
-        pdh0: False alarm probability of cluster (i.e. probability for being an artefact caused by multipath or similar).
+        pdh0: False alarm probability of cluster (i.e. probability of being an artefact caused by multipath or similar).
         0: invalid
         1: <25%
         2: 50%
@@ -387,6 +414,11 @@ class RadarPointCloud(PointCloud):
         # Convert to numpy matrix.
         points = np.array(points).transpose()
 
+        # If no parameters are provided, use default settings.
+        invalid_states = cls.invalid_states if invalid_states is None else invalid_states
+        dynprop_states = cls.dynprop_states if dynprop_states is None else dynprop_states
+        ambig_states = cls.ambig_states if ambig_states is None else ambig_states
+
         # Filter points with an invalid state.
         valid = [p in invalid_states for p in points[-4, :]]
         points = points[:, valid]
@@ -405,8 +437,14 @@ class RadarPointCloud(PointCloud):
 class Box:
     """ Simple data class representing a 3d box including, label, score and velocity. """
 
-    def __init__(self, center: List[float], size: List[float], orientation: Quaternion, label: int=np.nan,
-                 score: float=np.nan, velocity: Tuple=(np.nan, np.nan, np.nan), name: str=None):
+    def __init__(self,
+                 center: List[float],
+                 size: List[float],
+                 orientation: Quaternion,
+                 label: int = np.nan,
+                 score: float = np.nan,
+                 velocity: Tuple = (np.nan, np.nan, np.nan),
+                 name: str = None):
         """
         :param center: Center of box given as x, y, z.
         :param size: Size of box in width, length, height.
@@ -475,7 +513,7 @@ class Box:
         self.orientation = quaternion * self.orientation
         self.velocity = np.dot(quaternion.rotation_matrix, self.velocity)
 
-    def corners(self, wlh_factor: float=1.0) -> np.ndarray:
+    def corners(self, wlh_factor: float = 1.0) -> np.ndarray:
         """
         Returns the bounding box corners.
         :param wlh_factor: Multiply w, l, h by a factor to scale the box.
@@ -508,8 +546,12 @@ class Box:
         """
         return self.corners()[:, [2, 3, 7, 6]]
 
-    def render(self, axis: Axes, view: np.ndarray=np.eye(3), normalize: bool=False, colors: Tuple=('b', 'r', 'k'),
-               linewidth: float=2):
+    def render(self,
+               axis: Axes,
+               view: np.ndarray = np.eye(3),
+               normalize: bool = False,
+               colors: Tuple = ('b', 'r', 'k'),
+               linewidth: float = 2):
         """
         Renders the box in the provided Matplotlib axis.
         :param axis: Axis onto which the box should be drawn.
@@ -544,8 +586,12 @@ class Box:
                   [center_bottom[1], center_bottom_forward[1]],
                   color=colors[0], linewidth=linewidth)
 
-    def render_cv2(self, im: np.ndarray, view: np.ndarray=np.eye(3), normalize: bool=False,
-                   colors: Tuple=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth: int=2) -> None:
+    def render_cv2(self,
+                   im: np.ndarray,
+                   view: np.ndarray = np.eye(3),
+                   normalize: bool = False,
+                   colors: Tuple = ((0, 0, 255), (255, 0, 0), (155, 155, 155)),
+                   linewidth: int = 2) -> None:
         """
         Renders box using OpenCV2.
         :param im: <np.array: width, height, 3>. Image array. Channels are in BGR order.
