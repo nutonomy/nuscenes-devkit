@@ -8,6 +8,7 @@ import json
 from typing import List, Tuple, Dict, Callable
 import random
 import argparse
+import warnings
 
 import numpy as np
 import tqdm
@@ -99,6 +100,9 @@ class NuScenesEval:
 
         # Load and store GT and predictions.
         self.sample_tokens, self.all_annotations, self.all_results = self.load_boxes()
+
+        # Print a warning that the evaluation protocol is not finalized.
+        warnings.warn("Warning: Please note the evaluation protocol is not finalized and may be subject to change in the future.")
 
     def load_boxes(self) -> Tuple[List[str], Dict[str, List[Dict]], Dict[str, List[Dict]]]:
         """
