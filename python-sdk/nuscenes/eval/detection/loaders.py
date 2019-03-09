@@ -1,10 +1,10 @@
 import json
-from typing import List, Dict
+import tqdm
 
 import numpy as np
-import tqdm
+
 from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox
-from nuscenes.eval.detection.utils import category_to_detection_name, boxes_to_sensor
+from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -81,39 +81,19 @@ def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
 
 
 def add_center_dist(nusc, eval_boxes: EvalBoxes):
-    """ Appends the center distance from ego vehicle to each box. """
+    """ Adds the center distance from ego vehicle to each box. """
 
     for sample_token in eval_boxes.sample_tokens:
         sample_rec = nusc.get('sample', sample_token)
         sd_record = nusc.get('sample_data', sample_rec['data']['LIDAR_TOP'])
-        cs_record = nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
         pose_record = nusc.get('ego_pose', sd_record['ego_pose_token'])
 
-        eval_boxes.boxes[sample_token] = append_ego_dist_tmp(eval_boxes.boxes[sample_token], pose_record, cs_record)
+        for box in eval_boxes[sample_token]:
+            # Both boxes and ego pose are given in global coord system, so distance can be calculated directly.
+            diff = np.array(pose_record['translation'][:2]) - np.array(box.translation[:2])
+            box.ego_dist = np.sqrt(np.sum(diff ** 2))
 
     return eval_boxes
-
-
-def append_ego_dist_tmp(sample_boxes: List[EvalBox], pose_record: Dict, cs_record: Dict) -> List[EvalBox]:
-    """
-    Removes all boxes that are not within the valid eval_range of the LIDAR.
-    :param sample_boxes: A list of sample_annotation OR sample_result entries.
-    :param pose_record: An ego_pose entry stored as a dict.
-    :param cs_record: A calibrated_sensor entry stored as a dict.
-    :param eval_range: Range in meters beyond which boxes are ignored.
-    :return: The filtered sample_boxes and their distances to the sensor.
-    """
-    # TODO: remove this whole method. Once we move to the distance to ego vehicle frame, this becomes trivial.
-    # Moved boxes to lidar coordinate frame
-    sample_boxes_sensor = boxes_to_sensor(sample_boxes, pose_record, cs_record)
-
-    # Filter boxes outside the relevant area.
-    result = []
-    for box_sensor, box_global in zip(sample_boxes_sensor, sample_boxes):
-        box_global.ego_dist = np.sqrt(np.sum(box_sensor.center[:2] ** 2))
-        result.append(box_global)  # Add the sample_box, not the box.
-
-    return result
 
 
 def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: float):
