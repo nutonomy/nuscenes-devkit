@@ -79,7 +79,7 @@ class EvalBoxes:
         return self.boxes[item]
 
     @property
-    def all(self):
+    def all(self) -> List[EvalBox]:
         ab = []
         for sample_token in self.sample_tokens:
             ab.extend(self[sample_token])
