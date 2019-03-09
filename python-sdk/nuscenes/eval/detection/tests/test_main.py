@@ -33,7 +33,7 @@ class TestEndToEnd(unittest.TestCase):
     def _mock_results(nusc) -> Dict[str, list]:
         """
         Creates "reasonable" results by looping through the full val-set, and adding 1 prediction per GT.
-        Predictions will be permuted randomly along all axis.
+        Predictions will be permuted randomly along all axes.
         """
 
         def random_class(category_name):

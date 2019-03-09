@@ -1,9 +1,10 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 
 
 class DetectionConfig:
+    """ Data class that specifies the detection evaluation settings. """
 
-    def __init__(self, content: Dict):
+    def __init__(self, content: Dict[str, Any]):
 
         self.range = content['range']
         self.dist_fcn = content['dist_fcn']

@@ -138,7 +138,7 @@ def average_precision(gt_boxes: EvalBoxes,
     metrics['rec'] = rec
     metrics['prec'] = prec
 
-    # If the max recall is below the minimum recall range, return the maximum error
+    # If the max recall is below the minimum recall range, return the maximum error.
     if max(rec) < min(score_range):
         return np.nan, dict()
 
@@ -181,7 +181,7 @@ def average_precision(gt_boxes: EvalBoxes,
     return average_prec, metrics
 
 
-def calc_tp_metrics(raw_metrics: Dict, cfg: DetectionConfig, class_name: str, verbose: bool) -> Dict:
+def calc_tp_metrics(raw_metrics: Dict, cfg: DetectionConfig, class_name: str, verbose: bool) -> Dict[str, float]:
     """
     True Positive metrics for a single class and distance threshold.
     For each metric and recall threshold we compute the mean for all matches with a lower recall.
@@ -190,7 +190,7 @@ def calc_tp_metrics(raw_metrics: Dict, cfg: DetectionConfig, class_name: str, ve
     :param cfg: Config.
     :param class_name: Class to compute AP on.
     :param verbose: Whether to print outputs to console.
-    :return: Maps each metric name to its average metric error.
+    :return: Maps each metric name to its average metric error or nan to be ignored.
     """
 
     def cummean(x):
