@@ -6,8 +6,6 @@ import numpy as np
 from typing import Dict, List
 import argparse
 
-from nuscenes.nuscenes import NuScenes
-
 split_map = {
     'n008-2018-05-21-11-06-59-0400': 'train',
     'n008-2018-07-20-13-54-16-0400': 'val',
@@ -121,7 +119,7 @@ def create_splits_logs() -> Dict[str, List[str]]:
     return splits
 
 
-def create_splits_scenes(nusc: NuScenes, verbose: bool = False) -> Dict[str, List[str]]:
+def create_splits_scenes(nusc: 'NuScenes', verbose: bool = False) -> Dict[str, List[str]]:
     """
     Similar to create_splits_logs, but returns a mapping to scene names, rather than log names.
     :param nusc: NuScenes instance.

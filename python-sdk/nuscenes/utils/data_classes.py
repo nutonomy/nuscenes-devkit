@@ -15,7 +15,6 @@ from pyquaternion import Quaternion
 from matplotlib.axes import Axes
 
 from nuscenes.utils.geometry_utils import view_points, transform_matrix
-from nuscenes.nuscenes import NuScenes
 
 
 class PointCloud(ABC):
@@ -55,7 +54,7 @@ class PointCloud(ABC):
 
     @classmethod
     def from_file_multisweep(cls,
-                             nusc: NuScenes,
+                             nusc: 'NuScenes',
                              sample_rec: Dict,
                              chan: str,
                              ref_chan: str,
