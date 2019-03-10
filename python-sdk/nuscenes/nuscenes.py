@@ -201,15 +201,17 @@ class NuScenes:
         sd_record = self.get('sample_data', sample_data_token)
         return osp.join(self.dataroot, sd_record['filename'])
 
-    def get_sample_data(self, sample_data_token, box_vis_level=BoxVisibility.ANY, selected_anntokens=None) -> \
+    def get_sample_data(self, sample_data_token: str,
+                        box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                        selected_anntokens: List[str] = None) -> \
             Tuple[str, List[Box], np.array]:
         """
         Returns the data path as well as all annotations related to that sample_data.
         Note that the boxes are transformed into the current sensor's coordinate frame.
-        :param sample_data_token: <str>. Sample_data token.
-        :param box_vis_level: <BoxVisibility>. If sample_data is an image, this sets required visibility for boxes.
-        :param selected_anntokens: [<str>]. If provided only return the selected annotation.
-        :return: (data_path <str>, boxes [<Box>], camera_intrinsic <np.array: 3, 3>)
+        :param sample_data_token: Sample_data token.
+        :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
+        :param selected_anntokens: If provided only return the selected annotation.
+        :return: (data_path, boxes, camera_intrinsic <np.array: 3, 3>)
         """
 
         # Retrieve sensor & pose records
@@ -318,7 +320,7 @@ class NuScenes:
                 boxes.append(box)
         return boxes
 
-    def box_velocity(self, sample_annotation_token: str, max_time_diff: float=1.5) -> np.ndarray:
+    def box_velocity(self, sample_annotation_token: str, max_time_diff: float = 1.5) -> np.ndarray:
         """
         Estimate the velocity for an annotation.
         If possible, we compute the centered difference between the previous and next frame.
@@ -401,7 +403,8 @@ class NuScenes:
                      out_path: str=None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
+    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)) \
+            -> None:
         self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
@@ -560,8 +563,11 @@ class NuScenesExplorer:
 
         return points, coloring, im
 
-    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5, pointsensor_channel: str='LIDAR_TOP',
-                                   camera_channel: str='CAM_FRONT') -> None:
+    def render_pointcloud_in_image(self,
+                                   sample_token: str,
+                                   dot_size: int = 5,
+                                   pointsensor_channel: str = 'LIDAR_TOP',
+                                   camera_channel: str = 'CAM_FRONT') -> None:
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -581,7 +587,10 @@ class NuScenesExplorer:
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
         plt.axis('off')
 
-    def render_sample(self, token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY, nsweeps: int=1) -> None:
+    def render_sample(self,
+                      token: str,
+                      box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                      nsweeps: int = 1) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
@@ -620,9 +629,13 @@ class NuScenesExplorer:
         plt.tight_layout()
         fig.subplots_adjust(wspace=0, hspace=0)
 
-    def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
-                           nsweeps: int=1) -> None:
+    def render_sample_data(self,
+                           sample_data_token: str,
+                           with_anns: bool = True,
+                           box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                           axes_limit: float = 40,
+                           ax: Axes = None,
+                           nsweeps: int = 1) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -756,8 +769,11 @@ class NuScenesExplorer:
         ax.set_title(sd_record['channel'])
         ax.set_aspect('equal')
 
-    def render_annotation(self, anntoken: str, margin: float=10, view: np.ndarray=np.eye(4),
-                          box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
+    def render_annotation(self,
+                          anntoken: str,
+                          margin: float = 10,
+                          view:np.ndarray = np.eye(4),
+                          box_vis_level: BoxVisibility = BoxVisibility.ANY) -> None:
         """
         Render selected annotation.
         :param anntoken: Sample_annotation token.
@@ -780,7 +796,7 @@ class NuScenesExplorer:
                                                     selected_anntokens=[anntoken])
             if len(boxes) > 0:
                 break  # We found an image that matches. Let's abort.
-        assert len(boxes) > 0, "Could not find image where annotation if visible. Try using e.g. BoxVisibility.ANY."
+        assert len(boxes) > 0, "Could not find image where annotation is visible. Try using e.g. BoxVisibility.ANY."
         assert len(boxes) < 2, "Found multiple annotations. Something is wrong!"
 
         cam = sample_record['data'][cam]
@@ -827,8 +843,11 @@ class NuScenesExplorer:
                 closest[1] = ann_token
         self.render_annotation(closest[1])
 
-    def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
-                     out_path: str=None) -> None:
+    def render_scene(self,
+                     scene_token: str,
+                     freq: float = 10,
+                     imsize: Tuple[float, float] = (640, 360),
+                     out_path: str = None) -> None:
         """
         Renders a full scene with all camera channels.
         :param scene_token: Unique identifier of scene to render.
@@ -933,13 +952,15 @@ class NuScenesExplorer:
         if out_path is not None:
             out.release()
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
+    def render_scene_channel(self,
+                             scene_token: str,
+                             channel: str = 'CAM_FRONT',
+                             imsize: Tuple[float, float] = (640, 360)) -> None:
         """
         Renders a full scene for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.
         :param channel: Channel to render.
         :param imsize: Size of image to render. The larger the slower this will run.
-        :return:
         """
 
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
