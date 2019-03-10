@@ -780,7 +780,7 @@ class NuScenesExplorer:
                                                     selected_anntokens=[anntoken])
             if len(boxes) > 0:
                 break  # We found an image that matches. Let's abort.
-        assert len(boxes) > 0, "Could not find image where annotation if visible. Try using e.g. BoxVisibility.ANY."
+        assert len(boxes) > 0, "Could not find image where annotation is visible. Try using e.g. BoxVisibility.ANY."
         assert len(boxes) < 2, "Found multiple annotations. Something is wrong!"
 
         cam = sample_record['data'][cam]

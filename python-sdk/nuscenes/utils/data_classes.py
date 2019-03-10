@@ -262,7 +262,7 @@ class RadarPointCloud(PointCloud):
 
     # Class-level settings for radar pointclouds, see from_file().
     invalid_states: List[int] = [0]
-    dynprop_states: List[int] = range(8)  # Use [0, 2, 6] for moving objects only.
+    dynprop_states: List[int] = range(7)  # Use [0, 2, 6] for moving objects only.
     ambig_states: List[int] = [3]
 
     @staticmethod
