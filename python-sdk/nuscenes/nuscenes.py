@@ -201,15 +201,17 @@ class NuScenes:
         sd_record = self.get('sample_data', sample_data_token)
         return osp.join(self.dataroot, sd_record['filename'])
 
-    def get_sample_data(self, sample_data_token, box_vis_level=BoxVisibility.ANY, selected_anntokens=None) -> \
+    def get_sample_data(self, sample_data_token: str,
+                        box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                        selected_anntokens:List[str] = None) -> \
             Tuple[str, List[Box], np.array]:
         """
         Returns the data path as well as all annotations related to that sample_data.
         Note that the boxes are transformed into the current sensor's coordinate frame.
-        :param sample_data_token: <str>. Sample_data token.
-        :param box_vis_level: <BoxVisibility>. If sample_data is an image, this sets required visibility for boxes.
-        :param selected_anntokens: [<str>]. If provided only return the selected annotation.
-        :return: (data_path <str>, boxes [<Box>], camera_intrinsic <np.array: 3, 3>)
+        :param sample_data_token: Sample_data token.
+        :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
+        :param selected_anntokens: If provided only return the selected annotation.
+        :return: (data_path, boxes, camera_intrinsic <np.array: 3, 3>)
         """
 
         # Retrieve sensor & pose records
@@ -318,7 +320,7 @@ class NuScenes:
                 boxes.append(box)
         return boxes
 
-    def box_velocity(self, sample_annotation_token: str, max_time_diff: float=1.5) -> np.ndarray:
+    def box_velocity(self, sample_annotation_token: str, max_time_diff: float = 1.5) -> np.ndarray:
         """
         Estimate the velocity for an annotation.
         If possible, we compute the centered difference between the previous and next frame.
@@ -401,7 +403,8 @@ class NuScenes:
                      out_path: str=None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)):
+    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)) \
+            -> None:
         self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
