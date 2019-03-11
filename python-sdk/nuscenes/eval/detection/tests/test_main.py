@@ -128,7 +128,8 @@ class TestEndToEnd(unittest.TestCase):
 
         # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
         # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
-        self.assertAlmostEqual(metrics['weighted_sum'], 0.2199307290627096)
+        # After replacing attribute scores with single attribute, changed to 0.2147663200815183.
+        self.assertAlmostEqual(metrics['weighted_sum'], 0.2147663200815183)
 
 
 if __name__ == '__main__':
