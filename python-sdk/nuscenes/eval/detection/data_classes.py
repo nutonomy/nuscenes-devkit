@@ -71,7 +71,7 @@ class EvalBoxes:
         self.boxes = {}
 
     def __repr__(self):
-        return "{} boxes across {} samples".format(123, len(self.boxes))
+        return "EvalBoxes with {} boxes across {} samples".format(len(self.all), len(self.sample_tokens))
 
     def __getitem__(self, item):
         return self.boxes[item]
