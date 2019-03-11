@@ -46,6 +46,10 @@ class TestEndToEnd(unittest.TestCase):
                 return class_names[np.random.randint(0, 9)]
 
         def random_attr(detection_name):
+            """
+            This is the most straight-forward way to generate a random attribute.
+            Not currently used b/c we want the test fixture to be back-wards compatible.
+            """
             # Get relevant attributes.
             rel_attributes = detection_name_to_rel_attributes(detection_name)
 
@@ -57,6 +61,7 @@ class TestEndToEnd(unittest.TestCase):
                 return rel_attributes[np.random.randint(0, len(rel_attributes))]
 
         def attr_backport(probs, detection_name_):
+            """ This is to make the random attribute assignment backwards compatible with previous attr. format """
             attr_list = ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
                          "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
                          "vehicle.parked", "vehicle.stopped"]
