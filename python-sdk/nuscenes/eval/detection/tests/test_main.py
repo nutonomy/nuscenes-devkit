@@ -56,6 +56,20 @@ class TestEndToEnd(unittest.TestCase):
                 # Pick a random attribute otherwise.
                 return rel_attributes[np.random.randint(0, len(rel_attributes))]
 
+        def attr_backport(probs, detection_name_):
+            attr_list = ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
+                         "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
+                         "vehicle.parked", "vehicle.stopped"]
+            rel_attributes = detection_name_to_rel_attributes(detection_name_)
+            if len(rel_attributes) == 0:
+                return ""
+
+            probs_subset = []
+            for attr in rel_attributes:
+                probs_subset.append(probs[attr_list.index(attr)])
+
+            return rel_attributes[int(np.argmax(probs_subset))]
+
         mock_results = {}
         splits = create_splits_scenes(nusc)
         val_samples = []
@@ -78,7 +92,7 @@ class TestEndToEnd(unittest.TestCase):
                         'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
                         'detection_name': detection_name,
                         'detection_score': random.random(),
-                        'attribute_name': random_attr(detection_name)
+                        'attribute_name': attr_backport(list(np.random.rand(8)), detection_name)
                     }
                 )
             mock_results[sample['token']] = sample_res

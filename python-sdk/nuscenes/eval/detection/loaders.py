@@ -50,6 +50,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
 
         sample_boxes = []
         for sample_annotation_token in sample_annotation_tokens:
+
             # Get label name in detection task and filter unused labels.
             sample_annotation = nusc.get('sample_annotation', sample_annotation_token)
             detection_name = category_to_detection_name(sample_annotation['category_name'])
