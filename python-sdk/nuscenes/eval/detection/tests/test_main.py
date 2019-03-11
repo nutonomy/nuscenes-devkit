@@ -98,6 +98,7 @@ class TestEndToEnd(unittest.TestCase):
                         'detection_score': random.random(),
                         'attribute_name': list(np.random.rand(8))
                     })
+                # Convert to new attribute format
                 last = sample_res[-1]
                 last['attribute_name'] = attr_backport(last['attribute_name'], last['detection_name'])
                 sample_res[-1] = last
