@@ -25,7 +25,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
     """ Loads ground truth boxes from DB. """
 
     # Init.
-    attribute_map = {a['name']: a['token'] for a in nusc.attribute}
+    attribute_map = {a['token']: a['name'] for a in nusc.attribute}
 
     # Read out all sample_tokens in DB.
     sample_tokens_all = [s['token'] for s in nusc.sample]
@@ -62,8 +62,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
             if attr_count == 0:
                 attribute_name = ''
             elif attr_count == 1:
-                attr_token = attr_tokens[attr_tokens == 1][0]
-                attribute_name = attribute_map[attr_token]
+                attribute_name = attribute_map[attr_tokens[0]]
             else:
                 raise Exception('Error: GT annotations must not have more than one attribute!')
 
@@ -75,7 +74,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
                     rotation=sample_annotation['rotation'],
                     velocity=list(nusc.box_velocity(sample_annotation['token'])),
                     detection_name=detection_name,
-                    detection_score=0,
+                    detection_score=np.nan,  # GT samples do not have a score.
                     attribute_name=attribute_name
                 )
             )
