@@ -1,7 +1,6 @@
-import setuptools
-import re
 import os
-from glob import glob
+
+import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -23,12 +22,12 @@ def get_dirlist(_rootdir):
 
 
 # Get subfolders recursively
-rootdir = 'python-sdk/nuscenes'
-packages = [d.replace('/', '.').replace('python-sdk.', '') for d in get_dirlist(rootdir)]
+rootdir = 'python-sdk'
+packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_dirlist(rootdir)]
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='0.2.10',
+    version='0.3.2',
     author="Holger Caesar, Qiang Xu, Oscar Beijbom et al.",
     author_email="nuscenes@nutonomy.com",
     description="The official devkit of the nuScenes dataset",
