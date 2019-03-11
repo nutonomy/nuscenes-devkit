@@ -13,7 +13,7 @@ from tqdm import tqdm
 import numpy as np
 
 from nuscenes.eval.detection.main import NuScenesEval
-from nuscenes.eval.detection.utils import category_to_detection_name
+from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
@@ -45,6 +45,36 @@ class TestEndToEnd(unittest.TestCase):
             else:
                 return class_names[np.random.randint(0, 9)]
 
+        def random_attr(detection_name):
+            """
+            This is the most straight-forward way to generate a random attribute.
+            Not currently used b/c we want the test fixture to be back-wards compatible.
+            """
+            # Get relevant attributes.
+            rel_attributes = detection_name_to_rel_attributes(detection_name)
+
+            if len(rel_attributes) == 0:
+                # Empty string for classes without attributes.
+                return ''
+            else:
+                # Pick a random attribute otherwise.
+                return rel_attributes[np.random.randint(0, len(rel_attributes))]
+
+        def attr_backport(probs, detection_name_):
+            """ This is to make the random attribute assignment backwards compatible with previous attr. format """
+            attr_list = ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
+                         "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
+                         "vehicle.parked", "vehicle.stopped"]
+            rel_attributes = detection_name_to_rel_attributes(detection_name_)
+            if len(rel_attributes) == 0:
+                return ""
+
+            probs_subset = []
+            for attr in rel_attributes:
+                probs_subset.append(probs[attr_list.index(attr)])
+
+            return rel_attributes[int(np.argmax(probs_subset))]
+
         mock_results = {}
         splits = create_splits_scenes(nusc)
         val_samples = []
@@ -66,9 +96,13 @@ class TestEndToEnd(unittest.TestCase):
                         'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
                         'detection_name': random_class(ann['category_name']),
                         'detection_score': random.random(),
-                        'attribute_scores': list(np.random.rand(8))
-                    }
-                )
+                        'attribute_name': list(np.random.rand(8))
+                    })
+                # Convert to new attribute format
+                last = sample_res[-1]
+                last['attribute_name'] = attr_backport(last['attribute_name'], last['detection_name'])
+                sample_res[-1] = last
+
             mock_results[sample['token']] = sample_res
         return mock_results
 

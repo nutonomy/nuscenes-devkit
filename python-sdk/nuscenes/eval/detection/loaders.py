@@ -21,11 +21,11 @@ def load_prediction(result_path: str, max_boxes_per_sample: int) -> EvalBoxes:
     return all_results
 
 
-def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
+def load_gt(nusc, eval_split: str) -> EvalBoxes:
     """ Loads ground truth boxes from DB. """
 
     # Init.
-    attribute_map = {a['name']: a['token'] for a in nusc.attribute}
+    attribute_map = {a['token']: a['name'] for a in nusc.attribute}
 
     # Read out all sample_tokens in DB.
     sample_tokens_all = [s['token'] for s in nusc.sample]
@@ -50,17 +50,22 @@ def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
 
         sample_boxes = []
         for sample_annotation_token in sample_annotation_tokens:
+
             # Get label name in detection task and filter unused labels.
             sample_annotation = nusc.get('sample_annotation', sample_annotation_token)
             detection_name = category_to_detection_name(sample_annotation['category_name'])
             if detection_name is None:
                 continue
 
-            # Get attribute_labels.
-            attribute_labels = np.zeros((len(cfg.attributes),), dtype=bool)
-            for i, attribute in enumerate(cfg.attributes):
-                if attribute_map[attribute] in sample_annotation['attribute_tokens']:
-                    attribute_labels[i] = True
+            # Get attribute_name.
+            attr_tokens = sample_annotation['attribute_tokens']
+            attr_count = len(attr_tokens)
+            if attr_count == 0:
+                attribute_name = ''
+            elif attr_count == 1:
+                attribute_name = attribute_map[attr_tokens[0]]
+            else:
+                raise Exception('Error: GT annotations must not have more than one attribute!')
 
             sample_boxes.append(
                 EvalBox(
@@ -70,9 +75,8 @@ def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
                     rotation=sample_annotation['rotation'],
                     velocity=list(nusc.box_velocity(sample_annotation['token'])),
                     detection_name=detection_name,
-                    detection_score=0,
-                    attribute_scores=list(attribute_labels.tolist()),
-                    attribute_labels=list(attribute_labels)
+                    detection_score=np.nan,  # GT samples do not have a score.
+                    attribute_name=attribute_name
                 )
             )
         all_annotations.add_boxes(sample_token, sample_boxes)

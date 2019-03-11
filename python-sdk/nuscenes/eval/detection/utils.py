@@ -10,9 +10,6 @@ from pyquaternion import Quaternion
 from nuscenes.utils.data_classes import Box
 from nuscenes.eval.detection.data_classes import EvalBox
 
-# Define constant
-IGNORE = -1
-
 
 def category_to_detection_name(category_name: str) -> Optional[str]:
     """
@@ -42,6 +39,27 @@ def category_to_detection_name(category_name: str) -> Optional[str]:
         return detection_mapping[category_name]
     else:
         return None
+
+
+def detection_name_to_rel_attributes(detection_name: str) -> List[str]:
+    """
+    Returns a list of relevant attributes for a given detection class.
+    :param detection_name: The detection classs.
+    :return: List of relevant attributes.
+    """
+    if detection_name in ['pedestrian']:
+        rel_attributes = ['pedestrian.moving', 'pedestrian.sitting_lying_down', 'pedestrian.standing']
+    elif detection_name in ['bicycle', 'motorcycle']:
+        rel_attributes = ['cycle.with_rider', 'cycle.without_rider']
+    elif detection_name in ['car', 'bus', 'construction_vehicle', 'trailer', 'truck']:
+        rel_attributes = ['vehicle.moving', 'vehicle.parked', 'vehicle.stopped']
+    elif detection_name in ['barrier', 'traffic_cone']:
+        # Classes without attributes: barrier, traffic_cone.
+        rel_attributes = []
+    else:
+        raise Exception('Error: %s is not a valid detection class.' % detection_name)
+
+    return rel_attributes
 
 
 def center_distance(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
@@ -85,50 +103,22 @@ def yaw_diff(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
     return angle_diff
 
 
-def attr_acc(sample_annotation: EvalBox, sample_result: EvalBox, attributes: List[str]) -> float:
+def attr_acc(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
     """
     Computes the classification accuracy for the attribute of this class (if any).
-    If the GT class has no attributes, we assign an accuracy of nan, which is ignored later on.
-    If any attribute_scores are set to ignore, we assign an accuracy of 0.
+    If the GT class has no attributes or the annotation is missing attributes, we assign an accuracy of nan, which is
+    ignored later on.
     :param sample_annotation: GT annotation sample.
     :param sample_result: Predicted sample.
-    :param attributes: Names of attributes in the same order as attribute_scores below.
-    :return: Attribute classification accuracy or nan if no GT class does not have any attributes.
+    :return: Attribute classification accuracy (0 or 1) or nan if GT annotation does not have any attributes.
     """
-    # Specify the relevant attributes for the current GT class.
-    gt_attr_vec = np.array(sample_annotation.attribute_labels)
-    res_scores = np.array(sample_result.attribute_scores)
-    gt_class = sample_annotation.detection_name
-    if gt_class in ['pedestrian']:
-        rel_attributes = ['pedestrian.moving', 'pedestrian.sitting_lying_down', 'pedestrian.standing']
-    elif gt_class in ['bicycle', 'motorcycle']:
-        rel_attributes = ['cycle.with_rider', 'cycle.without_rider']
-    elif gt_class in ['car', 'bus', 'construction_vehicle', 'trailer', 'truck']:
-        rel_attributes = ['vehicle.moving', 'vehicle.parked', 'vehicle.stopped']
-    else:
-        # Classes without attributes: barrier, traffic_cone.
-        rel_attributes = []
-
-    # Map labels to indices and compute accuracy; nan if no attributes are relevant.
-    if len(rel_attributes) == 0:
-        # If a class has no attributes we return nan, which is ignored later.
+    if sample_annotation.attribute_name == '':
+        # If the class does not have attributes or this particular sample is missing attributes, return nan, which is
+        # ignored later. Note that about 0.4% of the sample_annotations have no attributes, although they should.
         acc = np.nan
-    elif any(np.isnan(res_scores)):
-        # Catch errors and abort early if any score is nan.
-        raise Exception('Error: attribute_score is nan. Set to -1 to ignore!')
-    elif not(any(gt_attr_vec)):
-        # About 0.4% of the sample_annotations have no attributes, although they should.
-        # We return nan, which is ignored later.
-        acc = np.nan
-    elif any(res_scores == IGNORE):
-        # If attributes scores are set to ignore, we return an accuracy of 0.
-        acc = 0
     else:
-        # Otherwise compute accuracy.
-        attr_inds = np.array([i for (i, a) in enumerate(attributes) if a in rel_attributes])
-        ann_label = attr_inds[gt_attr_vec[attr_inds] == 1]
-        res_label = attr_inds[np.argmax(res_scores[attr_inds])]
-        acc = float(ann_label == res_label)
+        # Check that label is correct.
+        return float(sample_annotation.detection_name == sample_result.detection_name)
 
     return acc
 

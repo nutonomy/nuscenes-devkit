@@ -75,7 +75,7 @@ def average_precision(gt_boxes: EvalBoxes,
             vel_err = velocity_l2(gt_box_match, pred_box)
             scale_err = 1 - scale_iou(gt_box_match, pred_box)
             orient_err = yaw_diff(gt_box_match, pred_box)
-            attr_err = 1 - attr_acc(gt_box_match, pred_box, cfg.attributes)
+            attr_err = 1 - attr_acc(gt_box_match, pred_box)
 
             ego_dist = gt_box_match.ego_dist
             vel_magn = np.sqrt(np.sum(np.array(gt_box_match.velocity) ** 2))

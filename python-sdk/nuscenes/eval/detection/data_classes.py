@@ -32,8 +32,7 @@ class EvalBox:
                  velocity: List[float] = None,
                  detection_name: str = None,
                  detection_score: float = None,
-                 attribute_scores: List[float] = None,
-                 attribute_labels: List[float] = None,
+                 attribute_name: str = None,
                  ego_dist: float = None):
 
         self.sample_token = sample_token
@@ -43,8 +42,7 @@ class EvalBox:
         self.velocity = velocity
         self.detection_name = detection_name
         self.detection_score = detection_score
-        self.attribute_scores = attribute_scores
-        self.attribute_labels = attribute_labels
+        self.attribute_name = attribute_name
         self.ego_dist = ego_dist
 
     def __repr__(self):
@@ -63,7 +61,7 @@ class EvalBox:
                    content['velocity'],
                    content['detection_name'],
                    content['detection_score'],
-                   content['attribute_scores'])
+                   content['attribute_name'])
 
 
 class EvalBoxes:

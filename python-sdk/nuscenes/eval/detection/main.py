@@ -68,7 +68,7 @@ class NuScenesEval:
 
         # Load data
         self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, self.cfg)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."
