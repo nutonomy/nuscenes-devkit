@@ -118,7 +118,7 @@ def attr_acc(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
         acc = np.nan
     else:
         # Check that label is correct.
-        return float(sample_annotation.detection_name == sample_result.detection_name)
+        acc = float(sample_annotation.detection_name == sample_result.detection_name)
 
     return acc
 
