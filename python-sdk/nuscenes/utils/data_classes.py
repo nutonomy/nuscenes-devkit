@@ -284,6 +284,7 @@ class RadarPointCloud(PointCloud):
         :param invalid_states: Radar states to be kept. See details below.
         :param dynprop_states: Radar states to be kept. Use [0, 2, 6] for moving objects only. See details below.
         :param ambig_states: Radar states to be kept. See details below.
+        To keep all radar returns, set each state filter to range(18).
         :return: <np.float: d, n>. Point cloud matrix with d dimensions and n points.
 
         Example of the header fields:
@@ -329,6 +330,16 @@ class RadarPointCloud(PointCloud):
         0x10	valid cluster with high multi-target probability
         0x11	valid cluster with suspicious angle
 
+        dynProp: Dynamic property of cluster to indicate if is moving or not.
+        0: moving
+        1: stationary
+        2: oncoming
+        3: stationary candidate
+        4: unknown
+        5: crossing stationary
+        6: crossing moving
+        7: stopped
+
         ambig_state: State of Doppler (radial velocity) ambiguity solution.
         0: invalid
         1: ambiguous
@@ -345,16 +356,6 @@ class RadarPointCloud(PointCloud):
         5: 99%
         6: 99.9%
         7: <=100%
-
-        dynProp: Dynamic property of cluster to indicate if is moving or not.
-        0: moving
-        1: stationary
-        2: oncoming
-        3: stationary candidate
-        4: unknown
-        5: crossing stationary
-        6: crossing moving
-        7: stopped
         """
 
         assert file_name.endswith('.pcd'), 'Unsupported filetype {}'.format(file_name)
