@@ -81,7 +81,6 @@ class TestEndToEnd(unittest.TestCase):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)
-                detection_name = random_class(ann['category_name'])
 
                 sample_res.append(
                     {
@@ -90,11 +89,14 @@ class TestEndToEnd(unittest.TestCase):
                         'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
                         'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
                         'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
-                        'detection_name': detection_name,
+                        'detection_name': random_class(ann['category_name']),
                         'detection_score': random.random(),
-                        'attribute_name': attr_backport(list(np.random.rand(8)), detection_name)
-                    }
-                )
+                        'attribute_name': list(np.random.rand(8))
+                    })
+                last = sample_res[-1]
+                last['attribute_name'] = attr_backport(last['attribute_name'], last['detection_name'])
+                sample_res[-1] = last
+
             mock_results[sample['token']] = sample_res
         return mock_results
 
@@ -142,8 +144,7 @@ class TestEndToEnd(unittest.TestCase):
 
         # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
         # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
-        # After replacing attribute scores with single attribute, changed to 0.2147663200815183.
-        self.assertAlmostEqual(metrics['weighted_sum'], 0.2147663200815183)
+        self.assertAlmostEqual(metrics['weighted_sum'], 0.2199307290627096)
 
 
 if __name__ == '__main__':
