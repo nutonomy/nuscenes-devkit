@@ -13,7 +13,7 @@ from tqdm import tqdm
 import numpy as np
 
 from nuscenes.eval.detection.main import NuScenesEval
-from nuscenes.eval.detection.utils import category_to_detection_name
+from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
@@ -45,6 +45,17 @@ class TestEndToEnd(unittest.TestCase):
             else:
                 return class_names[np.random.randint(0, 9)]
 
+        def random_attr(detection_name):
+            # Get relevant attributes.
+            rel_attributes = detection_name_to_rel_attributes(detection_name)
+
+            if len(rel_attributes) == 0:
+                # Empty string for classes without attributes.
+                return ''
+            else:
+                # Pick a random attribute otherwise.
+                return rel_attributes[np.random.randint(0, len(rel_attributes))]
+
         mock_results = {}
         splits = create_splits_scenes(nusc)
         val_samples = []
@@ -56,6 +67,7 @@ class TestEndToEnd(unittest.TestCase):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)
+                detection_name = random_class(ann['category_name'])
 
                 sample_res.append(
                     {
@@ -64,9 +76,9 @@ class TestEndToEnd(unittest.TestCase):
                         'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
                         'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
                         'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
-                        'detection_name': random_class(ann['category_name']),
+                        'detection_name': detection_name,
                         'detection_score': random.random(),
-                        'attribute_scores': list(np.random.rand(8))
+                        'attribute_name': random_attr(detection_name)
                     }
                 )
             mock_results[sample['token']] = sample_res

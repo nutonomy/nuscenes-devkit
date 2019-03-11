@@ -21,7 +21,7 @@ def load_prediction(result_path: str, max_boxes_per_sample: int) -> EvalBoxes:
     return all_results
 
 
-def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
+def load_gt(nusc, eval_split: str) -> EvalBoxes:
     """ Loads ground truth boxes from DB. """
 
     # Init.
@@ -56,11 +56,16 @@ def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
             if detection_name is None:
                 continue
 
-            # Get attribute_labels.
-            attribute_labels = np.zeros((len(cfg.attributes),), dtype=bool)
-            for i, attribute in enumerate(cfg.attributes):
-                if attribute_map[attribute] in sample_annotation['attribute_tokens']:
-                    attribute_labels[i] = True
+            # Get attribute_name.
+            attr_tokens = sample_annotation['attribute_tokens']
+            attr_count = len(attr_tokens)
+            if attr_count == 0:
+                attribute_name = ''
+            elif attr_count == 1:
+                attr_token = attr_tokens[attr_tokens == 1][0]
+                attribute_name = attribute_map[attr_token]
+            else:
+                raise Exception('Error: GT annotations must not have more than one attribute!')
 
             sample_boxes.append(
                 EvalBox(
@@ -71,8 +76,7 @@ def load_gt(nusc, eval_split, cfg) -> EvalBoxes:
                     velocity=list(nusc.box_velocity(sample_annotation['token'])),
                     detection_name=detection_name,
                     detection_score=0,
-                    attribute_scores=list(attribute_labels.tolist()),
-                    attribute_labels=list(attribute_labels)
+                    attribute_name=attribute_name
                 )
             )
         all_annotations.add_boxes(sample_token, sample_boxes)
