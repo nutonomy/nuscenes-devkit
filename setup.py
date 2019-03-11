@@ -10,10 +10,10 @@ with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 
-def get_dirlist(rootdir):
+def get_dirlist(_rootdir):
     dirlist = []
 
-    with os.scandir(rootdir) as rit:
+    with os.scandir(_rootdir) as rit:
         for entry in rit:
             if not entry.name.startswith('.') and entry.is_dir():
                 dirlist.append(entry.path)
@@ -21,12 +21,10 @@ def get_dirlist(rootdir):
 
     return dirlist
 
+
 # Get subfolders recursively
-packages = []
 rootdir = 'python-sdk/nuscenes'
 packages = [d.replace('/', '.').replace('python-sdk.', '') for d in get_dirlist(rootdir)]
-
-print(packages)
 
 setuptools.setup(
     name='nuscenes-devkit',
