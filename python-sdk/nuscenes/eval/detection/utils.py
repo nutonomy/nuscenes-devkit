@@ -210,6 +210,10 @@ def attr_acc(sample_annotation: Dict, sample_result: Dict, attributes: List[str]
     elif any(np.isnan(res_scores)):
         # Catch errors and abort early if any score is nan.
         raise Exception('Error: attribute_score is nan. Set to -1 to ignore!')
+    elif not(any(gt_attr_vec)):
+        # About 0.4% of the sample_annotations have no attributes, although they should.
+        # We return nan, which is ignored later.
+        acc = np.nan
     elif any(res_scores == IGNORE):
         # If attributes scores are set to ignore, we return an accuracy of 0.
         acc = 0
