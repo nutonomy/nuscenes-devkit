@@ -188,7 +188,7 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     all_scenes = list(set(train + val + test))
     assert len(all_scenes) == 1000, 'Error: Scenes incomplete!'
     scene_splits = {'train': train, 'val': val, 'test': test, 'all': all_scenes,
-                    'mini-train': mini_train, 'mini-val': mini_val}
+                    'mini_train': mini_train, 'mini_val': mini_val}
 
     # Optional: Print scene-level stats.
     if verbose:
