@@ -6,6 +6,8 @@ import numpy as np
 from typing import Dict, List
 import argparse
 
+from nuscenes.nuscenes import NuScenes
+
 split_map = {
     'n008-2018-05-21-11-06-59-0400': 'train',
     'n008-2018-07-20-13-54-16-0400': 'val',

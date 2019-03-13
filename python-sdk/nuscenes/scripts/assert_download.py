@@ -34,7 +34,7 @@ if __name__ == "__main__":
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
-    parser.add_argument('--version', type=str, default='full',
+    parser.add_argument('--version', type=str, default='v1.0',
                         help='Which version of the nuScenes dataset to evaluate on, e.g. full.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
