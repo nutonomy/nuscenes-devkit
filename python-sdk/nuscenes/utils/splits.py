@@ -163,6 +163,8 @@ def create_splits_logs(nusc: 'NuScenes', verbose: bool = False) -> Dict[str, Lis
 
     # Check that split includes all logs.
     all_logs = list(set(log_splits['train'] + log_splits['val'] + log_splits['test']))
+    assert len(log_splits['train']) + len(log_splits['val']) + len(log_splits['test']) == len(all_logs), \
+        'Error: Logs included in multiple splits!'
     assert len(all_logs) == 83, 'Error: Logs incomplete!'
 
     # Optional: Print log-level stats.
