@@ -147,6 +147,8 @@ def create_splits_logs(nusc: 'NuScenes', verbose: bool = False) -> Dict[str, Lis
     Returns the logs in each dataset split of nuScenes.
     Note: Previously this script included the teaser dataset splits. Since new scenes from those logs were added and
           others removed in the full dataset, that code is incompatible and was removed.
+    :param nusc: NuScenes instance.
+    :param verbose: Whether to print out statistics on a scene level.
     :return: A mapping from split name to a list of logs in that split.
     """
     # Load splits on a scene-level.
@@ -179,9 +181,8 @@ def create_splits_logs(nusc: 'NuScenes', verbose: bool = False) -> Dict[str, Lis
 def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     """
     Similar to create_splits_logs, but returns a mapping to scene names, rather than log names.
-    :param nusc: NuScenes instance.
     :param verbose: Whether to print out statistics on a scene level.
-    :return: A mapping from split name to a list of logs in that split.
+    :return: A mapping from split name to a list of scenes in that split.
     """
     # Use hard-coded splits.
     all_scenes = list(set(train + val + test))
