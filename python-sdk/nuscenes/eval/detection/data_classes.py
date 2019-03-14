@@ -10,7 +10,7 @@ class DetectionConfig:
                  class_range: Dict[str, int],
                  dist_fcn: str,
                  dist_ths: List[float],
-                 dist_th_fp: str,
+                 dist_th_tp: str,
                  min_recall: float,
                  min_precision: float,
                  tp_metrics: List[str],
@@ -21,12 +21,13 @@ class DetectionConfig:
         self.class_range = class_range
         self.dist_fcn = dist_fcn
         self.dist_ths = dist_ths
-        self.dist_th_tp = dist_th_fp
+        self.dist_th_tp = dist_th_tp
         self.min_recall = min_recall
         self.min_precision = min_precision
         self.tp_metrics = tp_metrics
         self.max_boxes_per_sample = max_boxes_per_sample
         self.mean_ap_weight = mean_ap_weight
+
         self.class_names = self.class_range.keys()
         self.metric_names = ["trans_err", "scale_err", "orient_err", "vel_err", "attr_err"]
 
@@ -40,12 +41,13 @@ class DetectionConfig:
         return cls(content['class_range'],
                    content['dist_fcn'],
                    content['dist_ths'],
-                   content['dist_th_fp'],
+                   content['dist_th_tp'],
                    content['min_recall'],
                    content['min_precision'],
                    content['tp_metrics'],
                    content['max_boxes_per_sample'],
                    content['mean_ap_weight'])
+
 
 class EvalBox:
     """ Data class used during detection evaluation. Can be a prediction or ground truth."""
@@ -280,9 +282,9 @@ class DetectionMetrics:
     @property
     def weighted_sum(self):
         weighted_sum = self.cfg.mean_ap_weight * self.mean_ap
-        for metric_name in self.cfg.weighted_sum_tp_metrics:
+        for metric_name in self.cfg.tp_metrics:
             weighted_sum += self.tp_metrics[metric_name]
-        return weighted_sum / (self.cfg.mean_ap_weight + len(self.cfg.weighted_sum_tp_metrics))
+        return weighted_sum / (self.cfg.mean_ap_weight + len(self.cfg.tp_metrics))
 
     def serialize(self):
         return {'label_aps': self.label_aps,

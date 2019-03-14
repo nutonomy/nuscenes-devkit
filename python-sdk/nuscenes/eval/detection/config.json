@@ -1,5 +1,5 @@
 {
-  "range": {
+  "class_range": {
     "car": 50,
     "truck": 50,
     "bus": 50,

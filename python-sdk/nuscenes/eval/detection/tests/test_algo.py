@@ -4,7 +4,10 @@
 
 import unittest
 import random
+import os
+import json
 import numpy as np
+
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
@@ -13,29 +16,8 @@ from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, Eva
 
 class TestEndToEnd(unittest.TestCase):
 
-    cfg = DetectionConfig({
-        "range": 40,
-        "dist_fcn": "center_distance",
-        "dist_ths": [2.0, 4.0],
-        "dist_th_tp": 2.0,
-        "metric_bounds": {
-            "trans_err": 0.5,
-            "vel_err": 1.5,
-            "scale_err": 0.5,
-            "orient_err": 1.570796,
-            "attr_err": 1
-        },
-        "attributes": ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
-                       "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
-                       "vehicle.parked", "vehicle.stopped"],
-        "min_recall": 0.1,
-        "min_precision": 0.0,
-        "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
-        "max_boxes_per_sample": 500,
-        "mean_ap_weight": 5,
-        "class_names": ["barrier", "bicycle", "bus", "car", "construction_vehicle", "motorcycle",
-                        "pedestrian", "traffic_cone", "trailer", "truck"]
-    })
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg = DetectionConfig.deserialize(json.load(open(os.path.join(this_dir, '../config.json'))))
 
     @staticmethod
     def _mock_results(nsamples, ngt, npred, detection_name):
@@ -109,7 +91,7 @@ class TestEndToEnd(unittest.TestCase):
         gt, pred = self._mock_results(100, 3, 250, detection_name)
         metrics = accumulate(gt, pred, detection_name, 'center_distance', 2)
         ap = calc_ap(metrics, self.cfg.min_recall, self.cfg.min_precision)
-        self.assertEqual(ap, 0.03790748135861538)
+        self.assertEqual(ap, 7.794866035607614e-06)
 
     def test_weighted_sum(self):
         """
