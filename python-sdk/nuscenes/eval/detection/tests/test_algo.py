@@ -12,6 +12,7 @@ import numpy as np
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox, MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.constants import TP_METRICS
 
 
 class TestAlgo(unittest.TestCase):
@@ -113,7 +114,7 @@ class TestAlgo(unittest.TestCase):
                 ap = calc_ap(mdl[(class_name, dist_th)], self.cfg.min_recall, self.cfg.min_precision)
                 metrics.add_label_ap(class_name, ap)
 
-            for metric_name in self.cfg.metric_names:
+            for metric_name in TP_METRICS:
                 tp = calc_tp(mdl[(class_name, self.cfg.dist_th_tp)], self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 

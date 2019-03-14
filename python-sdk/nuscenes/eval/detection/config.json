@@ -16,7 +16,6 @@
   "dist_th_tp": 2.0,
   "min_recall": 0.1,
   "min_precision": 0.1,
-  "tp_metrics": ["trans_err", "scale_err", "orient_err", "vel_err", "attr_err"],
   "max_boxes_per_sample": 500,
   "mean_ap_weight": 5
 }
