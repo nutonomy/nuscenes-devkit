@@ -19,7 +19,7 @@ from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 
 
-class TestEndToEnd(unittest.TestCase):
+class TestMain(unittest.TestCase):
     res_mockup = 'nsc_eval.json'
     res_eval_folder = 'tmp'
 
@@ -97,29 +97,8 @@ class TestEndToEnd(unittest.TestCase):
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
 
-        cfg = DetectionConfig({
-            "range": 40,
-            "dist_fcn": "center_distance",
-            "dist_ths": [2.0, 4.0],
-            "dist_th_tp": 2.0,
-            "metric_bounds": {
-                "trans_err": 0.5,
-                "vel_err": 1.5,
-                "scale_err": 0.5,
-                "orient_err": 1.570796,
-                "attr_err": 1
-            },
-            "attributes": ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
-                           "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
-                           "vehicle.parked", "vehicle.stopped"],
-            "min_recall": 0.1,
-            "min_precision": 0.0,
-            "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
-            "max_boxes_per_sample": 500,
-            "mean_ap_weight": 5,
-            "class_names": ["barrier", "bicycle", "bus", "car", "construction_vehicle", "motorcycle",
-                            "pedestrian", "traffic_cone", "trailer", "truck"]
-        })
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg = DetectionConfig.deserialize(json.load(open(os.path.join(this_dir, '../config.json'))))
 
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 

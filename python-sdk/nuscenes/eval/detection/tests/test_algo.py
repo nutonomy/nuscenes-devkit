@@ -14,7 +14,7 @@ from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox, MetricDataList, DetectionMetrics
 
 
-class TestEndToEnd(unittest.TestCase):
+class TestAlgo(unittest.TestCase):
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
     cfg = DetectionConfig.deserialize(json.load(open(os.path.join(this_dir, '../config.json'))))
