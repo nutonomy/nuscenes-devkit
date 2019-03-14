@@ -27,7 +27,7 @@ The results will be presented at the Workshop on Autonomous Driving ([wad.ai](ht
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
 * Users apply their method on the test set and submit their results to our evaluation server, which returns the metrics listed below.
-* We do not use strata (cf. easy / medium / hard in KITTI). We only filter annotations and predictions beyond 40m distance.
+* We do not use strata (cf. easy / medium / hard in KITTI). We only filter annotations and predictions beyond a class specific distance.
 * Every submission has to provide information on the method and any external / map data used. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
 * The maximum time window of past sensor data that may be used is 0.5s.
@@ -64,7 +64,7 @@ sample_result {
 ```
 Note that the detection classes may differ from the general nuScenes classes, as detailed below.
 
-## Classes and attributes
+## Classes, attributes, and detection ranges
 The nuScenes dataset comes with annotations for 25 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove classes that have less than 1000 samples in the teaser dataset.
@@ -102,18 +102,24 @@ Double quotes (") indicate that a cell has the same class as the cell above.
 Below we list which nuScenes classes can have which attributes.
 Note that some annotations are missing attributes (0.4% of all sample_annotations).
 
-|   Attributes                                          |   nuScenes detection class    |
-|   ---                                                 |   ---                         |
-|   void                                                |   barrier                     |
-|   void                                                |   traffic_cone                |
-|   cycle.{with_rider, without_rider}                   |   bicycle                     |
-|   cycle.{with_rider, without_rider}                   |   motorcycle                  |
-|   pedestrian.{moving, standing, sitting_lying_down}   |   pedestrian                  |
-|   vehicle.{moving, parked, stopped}                   |   car                         |
-|   vehicle.{moving, parked, stopped}                   |   bus                         |
-|   vehicle.{moving, parked, stopped}                   |   construction_vehicle        |
-|   vehicle.{moving, parked, stopped}                   |   trailer                     |
-|   vehicle.{moving, parked, stopped}                   |   truck                       |
+For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle 
+but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
+detection radius.
+
+Below we list nuScene class specific rules for annotation and detection ranges. 
+
+|   nuScenes detection class    |   Attributes                                          | Detection Range (meters)  |
+|   ---                         |   ---                                                 |   ---                     |
+|   barrier                     |   void                                                |   30                      |
+|   traffic_cone                |   void                                                |   30                      |
+|   bicycle                     |   cycle.{with_rider, without_rider}                   |   40                      |
+|   motorcycle                  |   cycle.{with_rider, without_rider}                   |   40                      |
+|   pedestrian                  |   pedestrian.{moving, standing, sitting_lying_down}   |   40                      |
+|   car                         |   vehicle.{moving, parked, stopped}                   |   50                      |
+|   bus                         |   vehicle.{moving, parked, stopped}                   |   50                      |
+|   construction_vehicle        |   vehicle.{moving, parked, stopped}                   |   50                      |
+|   trailer                     |   vehicle.{moving, parked, stopped}                   |   50                      |
+|   truck                       |   vehicle.{moving, parked, stopped}                   |   50                      |
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes detection task.
@@ -142,7 +148,7 @@ Finally we compute the mean over classes.
 * **mean Average Velocity Error (mAVE)**: For each match we compute the absolute velocity error as the L2 norm of the velocity differences in 2D in m/s.
 * **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. The attribute error is ignored for annotations without attributes.
 
-All errors are >0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
+All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
 
 
 ### Weighted sum metric
@@ -172,4 +178,3 @@ No external data or map data is allowed.
 * **OPEN detection track**: 
 This is where users can go wild.
 We allow any combination of sensors, map and external data as long as these are reported. 
-
