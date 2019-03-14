@@ -2,7 +2,7 @@
 ## Advanced Installation
 We provide step-by-step instructions to install from source. 
 - [Source Download](#source-download)
-- [Install Python](#installing-python)
+- [Install Python](#install-python)
 - [Setup a new virtual environment](#setup-a-new-virtual-environment)
 - [Setup PYTHONPATH](#setup-pythonpath)
 - [Install required packages](#install-required-packages)
