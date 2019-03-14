@@ -36,10 +36,10 @@ The results will be presented at the Workshop on Autonomous Driving ([wad.ai](ht
 ## Results format
 We define a standardized detection results format to allow users to submit results to our evaluation server.
 Users need to create single JSON file for the evaluation set, zip the file and upload it to our evaluation server.
-The submission JSON includes a dictionary that maps each sample to its result boxes:
+The submission JSON includes a dictionary that maps each sample_token to a list of `sample_result` entries.
 ```
 submission {
-    "all_sample_results": <dict>      -- Maps each sample_token to a list of sample_results.
+    sample_token <str>: [sample_result] -- Maps each sample_token to a list of sample_results.
 }
 ```
 For the result box we create a new database table called `sample_result`.
@@ -48,16 +48,18 @@ This allows for processing of results and annotations using the same tools.
 A `sample_result` is defined as follows:
 ```
 sample_result {
-    "sample_token":       <str>       -- Foreign key. Identifies the sample/keyframe for which objects are detected.
-    "translation":        <float> [3] -- Estimated bounding box location in m in the global frame: center_x, center_y, center_z.
-    "size":               <float> [3] -- Estimated bounding box size in m: width, length, height.
-    "rotation":           <float> [4] -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
-    "velocity":           <float> [3] -- Estimated bounding box velocity in m/s in the global frame: vx, vy, vz. Set values to nan to ignore.
-    "detection_name":     <str>       -- The predicted class for this sample_result, e.g. car, pedestrian.
-    "detection_score":    <float>     -- Object prediction score between 0 and 1 for the class identified by detection_name.
-    "attribute_name":     <str>       -- Name of the predicted attribute or empty string for classes without attributes.
-                                         See table below for valid attributes for each class, e.g. cycle.with_rider.
-                                         Attributes are ignored for classes without attributes or samples where no attributes were annotated.
+    "sample_token":       <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
+    "translation":        <float> [3]   -- Estimated bounding box location in m in the global frame: center_x, center_y, center_z.
+    "size":               <float> [3]   -- Estimated bounding box size in m: width, length, height.
+    "rotation":           <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
+    "velocity":           <float> [3]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy, vz.
+    "detection_name":     <str>         -- The predicted class for this sample_result, e.g. car, pedestrian.
+    "detection_score":    <float>       -- Object prediction score between 0 and 1 for the class identified by detection_name.
+    "attribute_name":     <str>         -- Name of the predicted attribute or empty string for classes without attributes.
+                                           See table below for valid attributes for each class, e.g. cycle.with_rider.
+                                           Attributes are ignored for classes without attributes.
+                                           There are a few cases (0.4%) where attributes are missing also for classes
+                                           that should have them. We ignore the predicted attributes for these cases.
 }
 ```
 Note that the detection classes may differ from the general nuScenes classes, as detailed below.
@@ -122,51 +124,52 @@ Our final score is a weighted sum of mean Average Precision (mAP) and several Tr
 We use the well-known Average Precision metric as in KITTI,
 but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
 Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
-For a given match threshold we calculate average precision (AP) by integrating recall between 0.1 and 1.
-Note that we pick *0.1* as the lowest recall threshold, as precision values at recall < 0.1 tends to be noisy.  
-If a recall value is not achieved, its precision is set to 0.
+For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for 
+recalls and precisions > 0.1. We thus exclude operating points with recall or precision < 0.1 from the calculation.  
 We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
 
-### True Positive metrics
-Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors.
+### True Positive errors
+Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
 All true positive metrics use a fixed matching threshold of 2m center distance and the matching and scoring happen independently per class.
-The metric is averaged over the same recall thresholds as for mAP.
-To bring all TP metrics into a similar range, we bound each metric to be below an arbitrarily selected metric bound and then normalize to be in *[0, 1]*.
-The metric bound is *0.5* for mATE, *0.5* for mASE, *π/2* for mAOE, *1.5* for mAVE, *1.0* for mAAE.
-If a recall value is not achieved for a certain range, the error is set to 1 in that range.
-This mechanism enforces that submitting only the top *k* boxes does not result in a lower error.
-This is particularly important as some TP metrics may decrease with increasing recall values. 
+The metric is averaged over the same recall thresholds as for mAP. 
+If a recall value > 0.1 is not achieved, the TP error for that class is set to 1.
+
 Finally we compute the mean over classes.
+
 * **mean Average Translation Error (mATE)**: For each match we compute the translation error as the Euclidean center distance in 2D in meters.
 * **mean Average Scale Error (mASE)**: For each match we compute the 3D IOU after aligning orientation and translation.
 * **mean Average Orientation Error (mAOE)**: For each match we compute the orientation error as the smallest yaw angle difference between prediction and ground-truth in radians.
 * **mean Average Velocity Error (mAVE)**: For each match we compute the absolute velocity error as the L2 norm of the velocity differences in 2D in m/s.
 * **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. The attribute error is ignored for annotations without attributes.
 
+All errors are >0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
+
+
 ### Weighted sum metric
 * **Weighted sum**: We compute the weighted sum of the above metrics: mAP, mATE, mASE, mAOE, mAVE and mAAE.
-For each error metric x (excl. mAP), we use *1 - x*.
-We assign a weight of *5* to mAP and *1* to the 5 TP metrics.
-Then we normalize by 10.
+As a first step we convert the TP errors to TP scores as *x_score = max(1 - x_err, 0.0)*.
+We then assign a weight of *5* to mAP and *1* to the 5 TP scores, sum and normalize by 10.
+
 
 ## Leaderboard & challenge tracks
 Compared to other datasets and challenges, nuScenes will have a single leaderboard for the detection task.
 For each submission the leaderboard will list method aspects and evaluation metrics.
 Method aspects include input modalities (lidar, radar, vision), use of map data and use of external data.
 To enable a fair comparison between methods, the user will be able to filter the methods by method aspects.
-The user can also filter the metrics that should be taken into account for the weighted sum metric. 
-
-We define two such filters here.
+ 
+We define three such filters here.
 These filters correspond to the tracks in the nuScenes detection challenge.
 Methods will be compared within these tracks and the winners will be decided for each track separately:
 
 * **LIDAR detection track**: 
 This track allows only lidar sensor data as input.
-It is supposed to be easy to setup and support legacy lidar methods.
 No external data or map data is allowed.
 
-* **Open detection track**: 
+* **VISION detection track**: 
+This track allows only camera sensor data (images) as input.
+No external data or map data is allowed.
+
+* **OPEN detection track**: 
 This is where users can go wild.
 We allow any combination of sensors, map and external data as long as these are reported. 
 
-Note that for both tracks mAVE and mAAE will have 0 weight.
