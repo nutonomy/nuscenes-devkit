@@ -8,7 +8,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.utils.data_classes import Box
-from nuscenes.eval.detection.data_classes import EvalBox, MetricData, DetectionConfig
+from nuscenes.eval.detection.data_classes import EvalBox
 
 
 def category_to_detection_name(category_name: str) -> Optional[str]:

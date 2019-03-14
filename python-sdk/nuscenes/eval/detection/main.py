@@ -111,6 +111,8 @@ class NuScenesEval:
 
         metrics.add_runtime(time.time() - start_time)
 
+        # TODO: call rendering methods here
+
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics.serialize(), f, indent=2)
 
@@ -121,7 +123,7 @@ class NuScenesEval:
 
 
 if __name__ == "__main__":
-    pass
+
     # Settings.
     # parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
     #                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)

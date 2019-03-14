@@ -76,7 +76,8 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
                     velocity=list(nusc.box_velocity(sample_annotation['token'])),
                     detection_name=detection_name,
                     detection_score=np.nan,  # GT samples do not have a score.
-                    attribute_name=attribute_name
+                    attribute_name=attribute_name,
+                    num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_lidar_pts']
                 )
             )
         all_annotations.add_boxes(sample_token, sample_boxes)
@@ -103,9 +104,15 @@ def add_center_dist(nusc, eval_boxes: EvalBoxes):
 def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: dict):
     """ Applies filtering to boxes. Distance, bike-racks and point per box. """
 
-    # TODO: add the other filtering here
     for sample_token in eval_boxes.sample_tokens:
+
+        # Filter on distance first
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
                                           box.ego_dist < max_dist[box.detection_name]]
+
+        # Then remove boxes with zero points in them. Eval boxes have -1 points by default.
+        eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if not box.num_pts == 0]
+
+        # TODO: add bike-rack filtering
 
     return eval_boxes

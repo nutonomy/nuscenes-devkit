@@ -1,6 +1,8 @@
-from typing import List, Dict, Any
+from typing import List, Dict
 import numpy as np
+
 from collections import defaultdict
+from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES
 
 
 class DetectionConfig:
@@ -59,9 +61,21 @@ class EvalBox:
                  rotation: List[float] = None,
                  velocity: List[float] = None,
                  detection_name: str = None,
-                 detection_score: float = None,
-                 attribute_name: str = None,
-                 ego_dist: float = None):
+                 detection_score: float = None,  # Only applies to predictions.
+                 attribute_name: str = None,     # Box attribute. Each box can have at most 1 attribute.
+                 ego_dist: float = None,         # Distance to ego vehicle in meters.
+                 num_pts: int = -1):             # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+
+        assert type(sample_token) == str
+        assert len(translation) == 3
+        assert len(size) == 3
+        assert len(rotation) == 4
+        assert len(velocity) == 3
+        assert detection_name in DETECTION_NAMES
+        assert type(detection_score) == float
+        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ""
+        assert type(ego_dist) == float
+        assert type(num_pts) == int
 
         self.sample_token = sample_token
         self.translation = translation
@@ -72,6 +86,7 @@ class EvalBox:
         self.detection_score = detection_score
         self.attribute_name = attribute_name
         self.ego_dist = ego_dist
+        self.num_pts = num_pts
 
     def __repr__(self):
         return self.detection_name
@@ -91,7 +106,9 @@ class EvalBox:
                    content['velocity'],
                    content['detection_name'],
                    content['detection_score'],
-                   content['attribute_name'])
+                   content['attribute_name'],
+                   content['ego_dist'],
+                   content['num_pts'])
 
 
 class EvalBoxes:
@@ -277,7 +294,14 @@ class DetectionMetrics:
             for detection_name in self.cfg.class_names:
                 if detection_name in ['barrier', 'traffic_cone'] and metric_name == 'attr_err':
                     continue  # There are no attributes for these classes, so don't count them.
-                scores.append(1 - min(self.label_tp_metrics[detection_name][metric_name], 1))
+
+                # We convert the true positive errors to "scores" by 1-error
+                score = 1 - self.label_tp_metrics[detection_name][metric_name]
+
+                # Some of the true positive errors are unbounded, so we bound the scores to min 0.
+                score = max(0.0, score)
+
+                scores.append(score)
             tp_metrics[metric_name] = np.mean(scores)
         return tp_metrics
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, MetricData, MetricDataList
+from nuscenes.eval.detection.data_classes import EvalBoxes, MetricData
 from nuscenes.eval.detection.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc
 
 
