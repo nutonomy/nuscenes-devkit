@@ -25,7 +25,7 @@ class TestEndToEnd(unittest.TestCase):
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
         nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
 
-        splits = create_splits_scenes(nusc)
+        splits = create_splits_scenes()
         one_scene_token = nusc.field2token('scene', 'name', splits['val'][0])
         one_scene = nusc.get('scene', one_scene_token[0])
 
