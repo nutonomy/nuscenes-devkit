@@ -3,7 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import os.path as osp
-from typing import Tuple
+from typing import Tuple, Any
 
 from cachetools import cached, LRUCache
 
@@ -53,7 +53,7 @@ class MapMask:
                          [0, -1.0 / self.resolution, 0, self._base_mask.shape[0]],
                          [0, 0, 1, 0], [0, 0, 0, 1]])
 
-    def is_on_mask(self, x, y, dilation=0) -> np.array:
+    def is_on_mask(self, x: Any, y: Any, dilation: float = 0) -> np.array:
         """
         Determine whether the given coordinates are on the (optionally dilated) map mask.
         :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
@@ -75,7 +75,7 @@ class MapMask:
 
         return on_mask
 
-    def to_pixel_coords(self, x, y) -> Tuple[np.ndarray, np.ndarray]:
+    def to_pixel_coords(self, x: Any, y: Any) -> Tuple[np.ndarray, np.ndarray]:
         """
         Maps x, y location in global map coordinates to the map image coordinates.
         :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
