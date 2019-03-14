@@ -32,7 +32,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
     assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
 
     # Only keep samples from this split.
-    splits = create_splits_scenes(nusc)
+    splits = create_splits_scenes()
     sample_tokens = []
     for sample_token in sample_tokens_all:
         scene_token = nusc.get('sample', sample_token)['scene_token']

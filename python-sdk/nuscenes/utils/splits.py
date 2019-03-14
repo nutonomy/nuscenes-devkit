@@ -194,8 +194,8 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     # Optional: Print scene-level stats.
     if verbose:
         for split, scenes in scene_splits.items():
-                print('%s: %d' % (split, len(scenes)))
-                print('%s' % scenes)
+            print('%s: %d' % (split, len(scenes)))
+            print('%s' % scenes)
 
     return scene_splits
 
@@ -213,13 +213,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dataroot = args.dataroot
     version = args.version
-    verbose = bool(args.verbose)
+    verbose_ = bool(args.verbose)
 
     # Init.
-    nusc = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
+    nusc = NuScenes(version=version, verbose=verbose_, dataroot=dataroot)
 
     # Print the scene-level stats.
-    create_splits_scenes(verbose=True)
+    # create_splits_scenes(verbose=True)
 
     # Print the log-level stats.
-    create_splits_logs(nusc, verbose=True)
+    # create_splits_logs(nusc, verbose=True)

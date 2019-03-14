@@ -10,6 +10,7 @@ from nuscenes.nuscenes import NuScenes
 
 class TestNuScenes(unittest.TestCase):
 
+    @unittest.skip
     def test_load(self):
         """
         Loads up NuScenes.
@@ -17,10 +18,10 @@ class TestNuScenes(unittest.TestCase):
         """
 
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
-        nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
+        nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         # Trivial assert statement
-        self.assertEqual(nusc.table_root, os.path.join(os.environ['NUSCENES'], 'v0.2'))
+        self.assertEqual(nusc.table_root, os.path.join(os.environ['NUSCENES'], 'v1.0-mini'))
 
 
 if __name__ == '__main__':
