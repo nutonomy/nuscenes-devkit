@@ -68,17 +68,36 @@ class EvalBox:
                  detection_score: float = -1.0,  # Only applies to predictions.
                  num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
 
+        # Assert data for shape and NaNs.
         assert type(sample_token) == str
+
         assert len(translation) == 3
+        assert not np.any(np.isnan(translation))
+
         assert len(size) == 3
+        assert not np.any(np.isnan(size))
+
         assert len(rotation) == 4
+        assert not np.any(np.isnan(rotation))
+
         assert len(velocity) == 3
+        assert not np.any(np.isnan(velocity))
+
         assert detection_name in DETECTION_NAMES
+
         assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ""
+
         assert type(ego_dist) == float
+        assert not np.any(np.isnan(ego_dist))
+
         assert type(detection_score) == float
+        assert not np.any(np.isnan(detection_score))
+
         assert type(num_pts) == int
 
+        assert not np.any(np.isnan(num_pts))
+
+        # Assign
         self.sample_token = sample_token
         self.translation = translation
         self.size = size
@@ -100,7 +119,6 @@ class EvalBox:
     @classmethod
     def deserialize(cls, content):
         """ Initialize from serialized content """
-        # TODO type-checking
         return cls(content['sample_token'],
                    content['translation'],
                    content['size'],
@@ -290,36 +308,49 @@ class DetectionMetrics:
         return np.mean([np.mean(aps) for aps in self.label_aps.values()])
 
     @property
-    def tp_scores(self):
-        """ Calculates the mean true positive score across all classes for each metric. """
-        tp_scores = {}
+    def tp_errors(self):
+        """ Calculates the mean true positive error across all classes for each metric. """
+        tp_errors = {}
         for metric_name in TP_METRICS:
-            scores = []
+            errors = []
             for detection_name in self.cfg.class_names:
-                if detection_name in ['barrier', 'traffic_cone'] and metric_name == 'attr_err':
-                    continue  # There are no attributes for these classes, so don't count them.
+                if detection_name in ['traffic_cone'] and metric_name in ['attr_err', 'orientation', 'velocity']:
+                    # We don't include this in mean since:
+                    # - We dont have attributes for cones.
+                    # - Orientation of a cone is ill-defined.
+                    # - Cones are stationary.
+                    continue
 
-                # We convert the true positive errors to "scores" by 1-error
-                score = 1.0 - self.label_tp_errors[detection_name][metric_name]
+                if detection_name in ['barrier'] and metric_name in ['attr_err', 'velocity']:
+                    # We don't include this in mean since:
+                    # - We dont have attributes for cones.
+                    # - Barriers are stationary.
+                    continue
 
-                # Some of the true positive errors are unbounded, so we bound the scores to min 0.
-                score = max(0.0, score)
+                errors.append(self.label_tp_errors[detection_name][metric_name])
 
-                scores.append(score)
-            tp_scores[metric_name] = np.mean(scores)
-        return tp_scores
+            tp_errors[metric_name] = float(np.mean(errors))
+        return tp_errors
 
     @property
     def weighted_sum(self):
         weighted_sum = self.cfg.mean_ap_weight * self.mean_ap
         for metric_name in TP_METRICS:
-            weighted_sum += self.tp_scores[metric_name]
+
+            # We convert the true positive errors to "scores" by 1-error
+            score = 1.0 - self.tp_errors[metric_name]
+
+            # Some of the true positive errors are unbounded, so we bound the scores to min 0.
+            score = max(0.0, score)
+
+            # Accumulate
+            weighted_sum += score
         return weighted_sum / float(self.cfg.mean_ap_weight + len(TP_METRICS))
 
     def serialize(self):
         return {'label_aps': self.label_aps,
-                'label_tp_errors': self.label_tp_errors,
+                'label_tp_metrics': self.label_tp_errors,
                 'mean_ap': self.mean_ap,
-                'tp_scores': self.tp_scores,
+                'tp_metrics': self.tp_errors,
                 'weighted_sum': self.weighted_sum,
                 'eval_time': self.eval_time}
