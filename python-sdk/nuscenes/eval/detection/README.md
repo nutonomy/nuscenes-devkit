@@ -50,9 +50,9 @@ sample_result {
     "velocity":           <float> [3] -- Estimated bounding box velocity in m/s in the global frame: vx, vy, vz. Set values to nan to ignore.
     "detection_name":     <str>       -- The predicted class for this sample_result, e.g. car, pedestrian.
     "detection_score":    <float>     -- Object prediction score between 0 and 1 for the class identified by detection_name.
-    "attribute_scores":   <float> [8] -- Attribute prediction scores between 0 and 1 for the attributes: 
-        cycle.with_rider, cycle.without_rider, pedestrian.moving, pedestrian.sitting_lying_down, pedestrian.standing, vehicle.moving, vehicle.parked, vehicle.stopped. 
-        If any score is set to -1, the attribute error is 1.
+    "attribute_name":     <str>       -- Name of the predicted attribute or empty string for classes without attributes.
+                                         See table below for valid attributes for each class, e.g. cycle.with_rider.
+                                         Attributes are ignored for classes without attributes or samples where no attributes were annotated.
 }
 ```
 Note that the detection classes may differ from the general nuScenes classes, as detailed below.
@@ -93,7 +93,7 @@ Double quotes (") indicate that a cell has the same class as the cell above.
 |   truck                   |   vehicle.truck                           |   8,243               |
 
 Below we list which nuScenes classes can have which attributes.
-Note that for classes with attributes exactly one attribute must be active.
+Note that some annotations are missing attributes (0.4% of all sample_annotations).
 
 |   Attributes                                          |   nuScenes detection class    |
 |   ---                                                 |   ---                         |
@@ -136,7 +136,7 @@ Finally we compute the mean over classes.
 * **mean Average Scale Error (mASE)**: For each match we compute the 3D IOU after aligning orientation and translation.
 * **mean Average Orientation Error (mAOE)**: For each match we compute the orientation error as the smallest yaw angle difference between prediction and ground-truth in radians.
 * **mean Average Velocity Error (mAVE)**: For each match we compute the absolute velocity error as the L2 norm of the velocity differences in 2D in m/s.
-* **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. The attribute error is ignored for classes without attributes.
+* **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. The attribute error is ignored for annotations without attributes.
 
 ### Weighted sum metric
 * **Weighted sum**: We compute the weighted sum of the above metrics: mAP, mATE, mASE, mAOE, mAVE and mAAE.

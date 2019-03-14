@@ -182,7 +182,8 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     """
     Similar to create_splits_logs, but returns a mapping to scene names, rather than log names.
     :param verbose: Whether to print out statistics on a scene level.
-    :return: A mapping from split name to a list of scenes in that split.
+    :return: A mapping from split name to a list of scenes names in that split.
+
     """
     # Use hard-coded splits.
     all_scenes = list(set(train + val + test))
