@@ -70,55 +70,6 @@ For instructions related to the object detection task, the results format, class
 
 4) *Why are there less sample pointclouds than samples?* See [this issue](https://github.com/nutonomy/nuscenes-devkit/issues/8). Scenes 169 and 170 overlap and going forward we will remove scene 169.
 
-## Setting up a new virtual environment
-
-It is recommended to install the devkit in a new virtual environment. Here are the steps you can follow to create one:
-
-### Python 3.7 installation
-
-If you don't have Python 3.7 on your system, you can use the following steps to install it.
-
-Ubuntu:
-```
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt-get update
-sudo apt-get install python3.7
-```
-
-Mac OS: Download from `https://www.python.org/downloads/mac-osx/` and install.
-
-### Install virtualenvwrapper
-```
-pip install virtualenvwrapper
-```
-Add these two lines to `~/.bashrc` (`~/.bash_profile` on MAC OS) to set the location where the virtual environments 
-should live and the location of the script installed with this package:
-```
-export WORKON_HOME=$HOME/.virtualenvs
-source [VIRTUAL_ENV_LOCATION]
-```
-Replace `[VIRTUAL_ENV_LOCATION]` with either `/usr/local/bin/virtualenvwrapper.sh` or `~/.local/bin/virtualenvwrapper.sh` 
-depending on where it is installed on your system.
-
-After editing it, reload the shell startup file by running e.g. `source ~/.bashrc`.
-
-### Create the virtual environment
-```
-mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
-```
-PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.
-
-### Activating the virtual environment
-If you are inside the virtual environment, your shell prompt should look like: `(nuscenes) user@computer:~$`
-If that is not the case, you can enable the virtual environment using:
-```
-workon nuscenes
-```
-To deactivate the virtual environment, use:
-```
-deactivate
-```
-
 ## Backward compatibility
 - Dec. 20, 2018: We restructured the nuscenes-devkit code, which breaks backward compatibility.
   The new structure has a top-level package `nuscenes` which contains packages `eval`, `export` and `utils`.
