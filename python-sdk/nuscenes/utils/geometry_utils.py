@@ -3,12 +3,11 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from __future__ import annotations
-from typing import Tuple
-import math
-from enum import IntEnum
 
 import numpy as np
+from enum import IntEnum
 from pyquaternion import Quaternion
+from typing import Tuple
 
 
 class BoxVisibility(IntEnum):
@@ -16,38 +15,6 @@ class BoxVisibility(IntEnum):
     ALL = 0  # Requires all corners are inside the image.
     ANY = 1  # Requires at least one corner visible in the image.
     NONE = 2  # Requires no corners to be inside, i.e. box can be fully outside the image.
-
-
-def quaternion_slerp(q0: np.ndarray, q1: np.ndarray, fraction: float) -> np.ndarray:
-    """
-    Does interpolation between two quaternions. This code is modified from
-    https://www.lfd.uci.edu/~gohlke/code/transformations.py.html
-    :param q0: <np.array: 4>. First quaternion.
-    :param q1: <np.array: 4>. Second quaternion.
-    :param fraction: Interpolation fraction between 0 and 1.
-    :return: <np.array: 4>. Interpolated quaternion.
-    """
-
-    eps = np.finfo(float).eps * 4.0
-    if fraction == 0.0:
-        return q0
-    elif fraction == 1.0:
-        return q1
-    d = np.dot(q0, q1)
-    if abs(abs(d) - 1.0) < eps:
-        return q0
-    if d < 0.0:
-        # invert rotation
-        d = -d
-        np.negative(q1, q1)
-    angle = math.acos(d)
-    if abs(angle) < eps:
-        return q0
-    is_in = 1.0 / math.sin(angle)
-    q0 *= math.sin((1.0 - fraction) * angle) * is_in
-    q1 *= math.sin(fraction * angle) * is_in
-    q0 += q1
-    return q0
 
 
 def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.ndarray:
@@ -141,3 +108,21 @@ def transform_matrix(translation: np.ndarray = np.array([0, 0, 0]),
         tm[:3, 3] = np.transpose(np.array(translation))
 
     return tm
+
+
+def quaternion_yaw(q: Quaternion) -> float:
+    """
+    Calculate the yaw angle from a quaternion.
+    Note that this only works for a quaternion that represents a box in lidar or global coordinate frame.
+    It does not work for a box in the camera frame.
+    :param q: Quaternion of interest.
+    :return: Yaw angle in radians.
+    """
+
+    # Project into xy plane.
+    v = np.dot(q.rotation_matrix, np.array([1, 0, 0]))
+
+    # Measure yaw using arctan.
+    yaw = np.arctan2(v[1], v[0])
+
+    return yaw

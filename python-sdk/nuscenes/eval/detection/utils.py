@@ -2,13 +2,13 @@
 # Code written by Holger Caesar, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from typing import List, Dict, Optional
-
 import numpy as np
 from pyquaternion import Quaternion
+from typing import List, Dict, Optional
 
-from nuscenes.utils.data_classes import Box
 from nuscenes.eval.detection.data_classes import EvalBox
+from nuscenes.utils.data_classes import Box
+from nuscenes.utils.geometry_utils import quaternion_yaw
 
 
 def category_to_detection_name(category_name: str) -> Optional[str]:
@@ -147,24 +147,6 @@ def scale_iou(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
     iou = intersection / union
 
     return iou
-
-
-def quaternion_yaw(q: Quaternion) -> float:
-    """
-    Calculate the yaw angle from a quaternion.
-    Note that this only works for a quaternion that represents a box in lidar or global coordinate frame.
-    It does not work for a box in the camera frame.
-    :param q: Quaternion of interest.
-    :return: Yaw angle in radians.
-    """
-
-    # Project into xy plane.
-    v = np.dot(q.rotation_matrix, np.array([1, 0, 0]))
-
-    # Measure yaw using arctan.
-    yaw = np.arctan2(v[1], v[0])
-
-    return yaw
 
 
 def boxes_to_sensor(boxes: List[EvalBox], pose_record: Dict, cs_record: Dict):
