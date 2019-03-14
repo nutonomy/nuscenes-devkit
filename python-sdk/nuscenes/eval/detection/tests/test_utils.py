@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 from pyquaternion import Quaternion
 
-from nuscenes.eval.detection.utils import scale_iou, quaternion_yaw, yaw_diff
+from nuscenes.eval.detection.utils import scale_iou, quaternion_yaw, yaw_diff, angle_diff
 from nuscenes.eval.detection.data_classes import EvalBox
 
 
@@ -128,6 +128,46 @@ class TestEval(unittest.TestCase):
         sr = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=0.9 * np.pi).elements)
         diff = yaw_diff(sa, sr)
         self.assertAlmostEqual(diff, 0.2 * np.pi)
+
+    def test_angle_diff(self):
+
+        def rad(x):
+            return x/180*np.pi
+
+        a = 90.0
+        b = 0.0
+        period = 360
+        self.assertAlmostEqual(rad(90), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+        a = 90.0
+        b = 0.0
+        period = 180
+        self.assertAlmostEqual(rad(90), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+        a = 90.0
+        b = 0.0
+        period = 90
+        self.assertAlmostEqual(rad(0), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+        a = 0.0
+        b = 90.0
+        period = 90
+        self.assertAlmostEqual(rad(0), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+        a = 0.0
+        b = 180.0
+        period = 180
+        self.assertAlmostEqual(rad(0), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+        a = 0.0
+        b = 180.0
+        period = 360
+        self.assertAlmostEqual(rad(180), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+        a = 0.0
+        b = 180.0 + 360*200
+        period = 360
+        self.assertAlmostEqual(rad(180), abs(angle_diff(rad(a), rad(b), rad(period))))
 
 
 if __name__ == '__main__':
