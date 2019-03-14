@@ -10,6 +10,7 @@ from nuscenes.nuscenes import NuScenes
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
+from nuscenes.eval.detection.constants import TP_METRICS
 
 
 class NuScenesEval:
@@ -104,7 +105,7 @@ class NuScenesEval:
                 ap = calc_ap(metric_data, self.cfg.min_recall, self.cfg.min_precision)
                 metrics.add_label_ap(class_name, ap)
 
-            for metric_name in self.cfg.metric_names:
+            for metric_name in TP_METRICS:
                 metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
                 tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)

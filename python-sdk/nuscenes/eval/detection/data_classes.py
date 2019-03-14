@@ -6,7 +6,7 @@ from typing import List, Dict
 import numpy as np
 
 from collections import defaultdict
-from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES
+from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES, TP_METRICS
 
 
 class DetectionConfig:
@@ -19,10 +19,11 @@ class DetectionConfig:
                  dist_th_tp: str,
                  min_recall: float,
                  min_precision: float,
-                 tp_metrics: List[str],
                  max_boxes_per_sample: float,
                  mean_ap_weight: int
                  ):
+
+        assert set(class_range.keys()) == set(DETECTION_NAMES)
 
         self.class_range = class_range
         self.dist_fcn = dist_fcn
@@ -30,12 +31,10 @@ class DetectionConfig:
         self.dist_th_tp = dist_th_tp
         self.min_recall = min_recall
         self.min_precision = min_precision
-        self.tp_metrics = tp_metrics
         self.max_boxes_per_sample = max_boxes_per_sample
         self.mean_ap_weight = mean_ap_weight
 
         self.class_names = self.class_range.keys()
-        self.metric_names = ["trans_err", "scale_err", "orient_err", "vel_err", "attr_err"]
 
     def serialize(self):
         """ Serialize instance into json-friendly format """
@@ -50,7 +49,6 @@ class DetectionConfig:
                    content['dist_th_tp'],
                    content['min_recall'],
                    content['min_precision'],
-                   content['tp_metrics'],
                    content['max_boxes_per_sample'],
                    content['mean_ap_weight'])
 
@@ -275,14 +273,14 @@ class DetectionMetrics:
 
         self.cfg = cfg
         self.label_aps = defaultdict(list)
-        self.label_tp_metrics = defaultdict(lambda: defaultdict(float))
+        self.label_tp_errors = defaultdict(lambda: defaultdict(float))
         self.eval_time = None
 
     def add_label_ap(self, detection_name: str, ap: float):
         self.label_aps[detection_name].append(ap)
 
     def add_label_tp(self, detection_name: str, metric_name: str, tp: float):
-        self.label_tp_metrics[detection_name][metric_name] = tp
+        self.label_tp_errors[detection_name][metric_name] = tp
 
     def add_runtime(self, eval_time: float):
         self.eval_time = eval_time
@@ -292,35 +290,36 @@ class DetectionMetrics:
         return np.mean([np.mean(aps) for aps in self.label_aps.values()])
 
     @property
-    def tp_metrics(self):
-        tp_metrics = {}
-        for metric_name in self.cfg.metric_names:
+    def tp_scores(self):
+        """ Calculates the mean true positive score across all classes for each metric. """
+        tp_scores = {}
+        for metric_name in TP_METRICS:
             scores = []
             for detection_name in self.cfg.class_names:
                 if detection_name in ['barrier', 'traffic_cone'] and metric_name == 'attr_err':
                     continue  # There are no attributes for these classes, so don't count them.
 
                 # We convert the true positive errors to "scores" by 1-error
-                score = 1 - self.label_tp_metrics[detection_name][metric_name]
+                score = 1.0 - self.label_tp_errors[detection_name][metric_name]
 
                 # Some of the true positive errors are unbounded, so we bound the scores to min 0.
                 score = max(0.0, score)
 
                 scores.append(score)
-            tp_metrics[metric_name] = np.mean(scores)
-        return tp_metrics
+            tp_scores[metric_name] = np.mean(scores)
+        return tp_scores
 
     @property
     def weighted_sum(self):
         weighted_sum = self.cfg.mean_ap_weight * self.mean_ap
-        for metric_name in self.cfg.tp_metrics:
-            weighted_sum += self.tp_metrics[metric_name]
-        return weighted_sum / (self.cfg.mean_ap_weight + len(self.cfg.tp_metrics))
+        for metric_name in TP_METRICS:
+            weighted_sum += self.tp_scores[metric_name]
+        return weighted_sum / float(self.cfg.mean_ap_weight + len(TP_METRICS))
 
     def serialize(self):
         return {'label_aps': self.label_aps,
-                'label_tp_metrics': self.label_tp_metrics,
+                'label_tp_errors': self.label_tp_errors,
                 'mean_ap': self.mean_ap,
-                'tp_metrics': self.tp_metrics,
+                'tp_scores': self.tp_scores,
                 'weighted_sum': self.weighted_sum,
                 'eval_time': self.eval_time}
