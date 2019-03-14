@@ -190,8 +190,3 @@ def boxes_to_sensor(boxes: List[EvalBox], pose_record: Dict, cs_record: Dict):
         boxes_out.append(box)
 
     return boxes_out
-
-
-dist_fcn_map = {
-    'center_distance': center_distance
-}

@@ -21,7 +21,7 @@ class DetectionConfig:
                  min_precision: float,
                  tp_metrics: List[str],
                  max_boxes_per_sample: float,
-                 mean_ap_weight: 5
+                 mean_ap_weight: int
                  ):
 
         self.class_range = class_range
@@ -60,15 +60,15 @@ class EvalBox:
 
     def __init__(self,
                  sample_token: str = "",
-                 translation: List[float] = None,
-                 size: List[float] = None,
-                 rotation: List[float] = None,
-                 velocity: List[float] = None,
-                 detection_name: str = None,
-                 detection_score: float = None,  # Only applies to predictions.
-                 attribute_name: str = None,     # Box attribute. Each box can have at most 1 attribute.
-                 ego_dist: float = None,         # Distance to ego vehicle in meters.
-                 num_pts: int = -1):             # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+                 translation: List[float] = (0, 0, 0),
+                 size: List[float] = (0, 0, 0),
+                 rotation: List[float] = (0, 0, 0, 0),
+                 velocity: List[float] = (0, 0, 0),
+                 detection_name: str = "car",
+                 attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
+                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
+                 detection_score: float = -1.0,  # Only applies to predictions.
+                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
 
         assert type(sample_token) == str
         assert len(translation) == 3
@@ -76,9 +76,9 @@ class EvalBox:
         assert len(rotation) == 4
         assert len(velocity) == 3
         assert detection_name in DETECTION_NAMES
-        assert type(detection_score) == float
         assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ""
         assert type(ego_dist) == float
+        assert type(detection_score) == float
         assert type(num_pts) == int
 
         self.sample_token = sample_token

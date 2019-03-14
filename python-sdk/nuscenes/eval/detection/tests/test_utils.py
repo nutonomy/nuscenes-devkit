@@ -100,14 +100,14 @@ class TestEval(unittest.TestCase):
         """Test valid and invalid inputs for yaw_diff()."""
 
         # Identical rotation.
-        sa = EvalBox(rotation= Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
-        sr = EvalBox(rotation= Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
+        sa = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
+        sr = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
         diff = yaw_diff(sa, sr)
         self.assertAlmostEqual(diff, 0)
 
         # Rotation around another axis.
-        sa = EvalBox(rotation= Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
-        sr = EvalBox(rotation= Quaternion(axis=(0, 1, 0), angle=np.pi/8).elements)
+        sa = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
+        sr = EvalBox(rotation=Quaternion(axis=(0, 1, 0), angle=np.pi/8).elements)
         diff = yaw_diff(sa, sr)
         self.assertAlmostEqual(diff, np.pi/8)
 
@@ -124,8 +124,8 @@ class TestEval(unittest.TestCase):
             self.assertAlmostEqual(diff, yaw_true)
 
         # Rotation beyond pi.
-        sa = EvalBox(rotation= Quaternion(axis=(0, 0, 1), angle=1.1 * np.pi).elements)
-        sr = EvalBox(rotation= Quaternion(axis=(0, 0, 1), angle=0.9 * np.pi).elements)
+        sa = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=1.1 * np.pi).elements)
+        sr = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=0.9 * np.pi).elements)
         diff = yaw_diff(sa, sr)
         self.assertAlmostEqual(diff, 0.2 * np.pi)
 

@@ -123,7 +123,7 @@ class NuScenesEval:
 
 
 if __name__ == "__main__":
-
+    pass
     # Settings.
     # parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
     #                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
