@@ -47,7 +47,6 @@ class DetectionConfig:
                    content['max_boxes_per_sample'],
                    content['mean_ap_weight'])
 
-
 class EvalBox:
     """ Data class used during detection evaluation. Can be a prediction or ground truth."""
 

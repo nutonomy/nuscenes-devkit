@@ -5,11 +5,23 @@
 import os
 import time
 import json
+<<<<<<< HEAD
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
+=======
+from typing import Dict
+
+import numpy as np
+
+from nuscenes.nuscenes import NuScenes
+from nuscenes.eval.detection.utils import dist_fcn_map
+from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.detection.data_classes import DetectionConfig
+from nuscenes.eval.detection.algo import average_precision, calc_tp_metrics
+>>>>>>> origin/v0.2_cleanup
 
 
 class NuScenesEval:
@@ -65,6 +77,7 @@ class NuScenesEval:
         # Load data
         self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample)
         self.gt_boxes = load_gt(self.nusc, self.eval_set)
+<<<<<<< HEAD
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."
@@ -108,16 +121,80 @@ class NuScenesEval:
                 metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
                 tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
+=======
+
+        assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
+            "Samples in split doesn't match samples in predictions."
+
+        # Add center distances
+        self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
+        self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
+
+        # Filter boxes (distance, points per box, etc.)
+        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.range)
+        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.range)
+
+        self.sample_tokens = self.gt_boxes.sample_tokens
+
+    def run(self) -> Dict:
+        """
+        Perform evaluation given the predictions and annotations stored in self.
+        :return: All nuScenes detection metrics. These are also written to disk.
+        """
+
+        start_time = time.time()
+
+        # Compute metrics.
+        raw_metrics = {label: [] for label in self.cfg.class_names}
+        label_aps = {label: [] for label in self.cfg.class_names}
+        label_tp_metrics = {label: [] for label in self.cfg.class_names}
+
+        for class_name in self.cfg.class_names:
+            if self.verbose:
+                print('\n# Computing stats for class %s' % class_name)
+
+            # Compute AP and to get the confidence thresholds used for TP metrics.
+            dist_th_count = len(self.cfg.dist_ths)
+            label_aps[class_name] = np.zeros((dist_th_count,))
+            raw_metrics[class_name] = [None] * dist_th_count
+            for d, dist_th in enumerate(self.cfg.dist_ths):
+                label_aps[class_name][d], raw_metrics[class_name][d] = \
+                    average_precision(self.gt_boxes, self.pred_boxes, class_name, self.cfg,
+                                      dist_fcn=dist_fcn_map[self.cfg.dist_fcn], dist_th=dist_th,
+                                      score_range=self.cfg.recall_range, verbose=self.verbose)
+
+            # Given the raw metrics, compute the TP metrics.
+            tp_ind = [i for i, dist_th in enumerate(self.cfg.dist_ths) if dist_th == self.cfg.dist_th_tp][0]
+            label_tp_metrics[class_name] = calc_tp_metrics(raw_metrics[class_name][tp_ind], self.cfg, class_name,
+                                                           self.verbose)
+
+        # Compute stats.
+        mean_ap = np.nanmean(np.vstack(list(label_aps.values())))  # Nan APs are ignored.
+        tp_metrics = dict()
+        for metric in self.cfg.metric_names:
+            tp_metrics[metric] = np.nanmean([label_tp_metrics[label][metric] for label in self.cfg.class_names])
+        tp_metrics_neg = [1 - tp_metrics[m] for m in self.cfg.weighted_sum_tp_metrics]
+        weighted_sum = np.sum([self.cfg.mean_ap_weight * mean_ap] + tp_metrics_neg)  # Sum with special weight for mAP.
+        weighted_sum /= (self.cfg.mean_ap_weight + len(tp_metrics_neg))  # Normalize by total weight.
+        end_time = time.time()
+        eval_time = end_time - start_time
+>>>>>>> origin/v0.2_cleanup
 
         metrics.add_runtime(time.time() - start_time)
 
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
+<<<<<<< HEAD
             json.dump(metrics.serialize(), f, indent=2)
 
         with open(os.path.join(self.output_dir, 'metric_data_list.json'), 'w') as f:
             json.dump(metric_data_list.serialize(), f, indent=2)
 
         return metrics
+=======
+            json.dump(all_metrics, f, indent=2)
+
+        return all_metrics
+>>>>>>> origin/v0.2_cleanup
 
 
 if __name__ == "__main__":

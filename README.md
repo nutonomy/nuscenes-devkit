@@ -58,7 +58,11 @@ export NUSCENES="/data/sets/nuscenes"
 
 ### Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder. 
+<<<<<<< HEAD
 You can also run `assert_download.py` in the `nuscenes/scrips` folder.
+=======
+You can also run `assert_download.py` in the `nuscenes/scripts` folder.
+>>>>>>> origin/v0.2_cleanup
 
 ## Tutorial
 To get started with the nuScenes devkit, please run the tutorial as an IPython notebook:

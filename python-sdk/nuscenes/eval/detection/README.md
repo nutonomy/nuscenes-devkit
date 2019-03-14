@@ -1,6 +1,11 @@
 # nuScenes detection task
 In this document we present the rules, results format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
 
+
+## Disclaimer
+Please note that the challenge design and evaluation protocol described in this document are an initial proposal to discuss our design choices with the community.
+The final design will be released once the community feedback has been taken into account.
+
 ## Overview
 - [Introduction](#introduction)
 - [General rules](#general-rules)
