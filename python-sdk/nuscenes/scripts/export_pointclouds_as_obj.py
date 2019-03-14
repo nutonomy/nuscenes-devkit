@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 
 def export_scene_pointcloud(nusc: NuScenes,
