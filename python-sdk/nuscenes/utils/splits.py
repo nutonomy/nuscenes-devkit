@@ -219,7 +219,7 @@ if __name__ == '__main__':
     nusc = NuScenes(version=version, verbose=verbose_, dataroot=dataroot)
 
     # Print the scene-level stats.
-    # create_splits_scenes(verbose=True)
+    create_splits_scenes(verbose=True)
 
     # Print the log-level stats.
-    # create_splits_logs(nusc, verbose=True)
+    create_splits_logs(nusc, verbose=True)
