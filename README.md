@@ -36,25 +36,15 @@ Eventually you should have the following folder structure:
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class below.
 
 ## Devkit setup
-Download the devkit to your home directory using:
+The devkit is tested for Python 3.6. To install python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md/#installing-python)
+To set-up a new virtual environment, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md/#setup-a-new-virtual-environment)
+Our devkit is available and can be installed via pip:
 ```
-cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
+pip install nuscenes-devkit
 ```
-The devkit is tested for Python 3.7.
-To install Python 3.7 and set up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment).
-To install the required packages, run the following command in your favourite virtual environment:
-```
-pip install -r requirements.txt
-```
-Also add the `python-sdk` directory to your `PYTHONPATH` environmental variable, e.g. by adding the 
-following to your `~/.virtualenvs/nuscenes/bin/postactivate` (virtual environment) or `~/.bashrc` (global):
-```
-export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
-```
-Finally, set NUSCENES env. variable that points to your data folder
-```
-export NUSCENES="/data/sets/nuscenes"
-```
+* If you don't have pip, please check [here](https://pip.pypa.io/en/stable/installing/) to install pip.
+
+* If you wish to install from source, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md) for detailed instructions.
 
 ### Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder. 
