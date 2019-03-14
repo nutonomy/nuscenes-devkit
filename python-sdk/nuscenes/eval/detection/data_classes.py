@@ -275,6 +275,8 @@ class DetectionMetrics:
         for metric_name in self.cfg.metric_names:
             scores = []
             for detection_name in self.cfg.class_names:
+                if detection_name in ['barrier', 'traffic_cone'] and metric_name == 'attr_err':
+                    continue  # There are no attributes for these classes, so don't count them.
                 scores.append(1 - min(self.label_tp_metrics[detection_name][metric_name], 1))
             tp_metrics[metric_name] = np.mean(scores)
         return tp_metrics
