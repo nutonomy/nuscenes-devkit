@@ -1,3 +1,7 @@
+# nuScenes dev-kit.
+# Code written by Oscar Beijbom, 2019.
+# Licensed under the Creative Commons [see licence.txt]
+
 import numpy as np
 
 from nuscenes.eval.detection.data_classes import EvalBoxes, MetricData

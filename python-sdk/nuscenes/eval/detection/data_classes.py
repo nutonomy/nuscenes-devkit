@@ -1,3 +1,7 @@
+# nuScenes dev-kit.
+# Code written by Oscar Beijbom, 2019.
+# Licensed under the Creative Commons [see licence.txt]
+
 from typing import List, Dict
 import numpy as np
 
@@ -235,6 +239,7 @@ class MetricData:
 
 
 class MetricDataList:
+    """ This stores a set of MetricData in a dict indexed by (detection-name, match-distance). """
 
     def __init__(self):
         self.md = {}
