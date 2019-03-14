@@ -3,9 +3,9 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
-import tqdm
 
 import numpy as np
+import tqdm
 
 from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox
 from nuscenes.eval.detection.utils import category_to_detection_name
@@ -90,7 +90,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
 
 
 def add_center_dist(nusc, eval_boxes: EvalBoxes):
-    """ Adds the center distance from ego vehicle to each box. """
+    """ Adds the cylindrical (xy) center distance from ego vehicle to each box. """
 
     for sample_token in eval_boxes.sample_tokens:
         sample_rec = nusc.get('sample', sample_token)
@@ -106,7 +106,7 @@ def add_center_dist(nusc, eval_boxes: EvalBoxes):
 
 
 def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: dict):
-    """ Applies filtering to boxes. Distance, bike-racks and point per box. """
+    """ Applies filtering to boxes. Distance, bike-racks and points per box. """
 
     for sample_token in eval_boxes.sample_tokens:
 

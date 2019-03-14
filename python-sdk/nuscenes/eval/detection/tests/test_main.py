@@ -2,19 +2,19 @@
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import unittest
-import random
 import json
 import os
+import random
 import shutil
+import unittest
 from typing import Dict
 
-from tqdm import tqdm
 import numpy as np
+from tqdm import tqdm
 
+from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.detection.main import NuScenesEval
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
-from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 

@@ -2,17 +2,17 @@
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import unittest
-import random
-import os
 import json
+import os
+import random
+import unittest
+
 import numpy as np
 
-
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
-from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
-from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.constants import TP_METRICS
+from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox, MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 
 
 class TestAlgo(unittest.TestCase):

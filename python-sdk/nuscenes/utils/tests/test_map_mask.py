@@ -3,10 +3,11 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import unittest
-import cv2
 import os
 
+import cv2
 import numpy as np
+
 from nuscenes.utils.map_mask import MapMask
 
 

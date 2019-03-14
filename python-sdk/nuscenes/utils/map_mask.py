@@ -6,7 +6,6 @@ import os.path as osp
 from typing import Tuple, Any
 
 from cachetools import cached, LRUCache
-
 import numpy as np
 import cv2
 from PIL import Image

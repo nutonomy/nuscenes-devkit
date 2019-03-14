@@ -52,7 +52,7 @@ def accumulate(gt_boxes: EvalBoxes,
     fp = []  # Accumulator of false positives
     confs = []  # Accumulator of confidences
 
-    # match_data holds the extra metrics we calcualte for each match.
+    # match_data holds the extra metrics we calculate for each match.
     match_data = {'trans_err': [],
                   'vel_err': [],
                   'scale_err': [],
@@ -169,7 +169,7 @@ def accumulate(gt_boxes: EvalBoxes,
 
     for key in match_data.keys():
         if key == "conf":
-            continue  # Confidence is used as reference to aligh with fp and tp. So skip in this step.
+            continue  # Confidence is used as reference to align with fp and tp. So skip in this step.
 
         # For each match_data, we first calculate the accumulated mean.
         tmp = cummean(match_data[key])
@@ -204,5 +204,5 @@ def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
     """ Calculates true positive metrics """
 
     first_ind = round(100 * min_recall)
-    last_ind = np.nonzero(md.confidence)[0][-1]  # First instance of confidence = 0 is index of max achived recall.
+    last_ind = np.nonzero(md.confidence)[0][-1]  # First instance of confidence = 0 is index of max achieved recall.
     return float(np.mean(getattr(md, metric_name)[first_ind: last_ind]))

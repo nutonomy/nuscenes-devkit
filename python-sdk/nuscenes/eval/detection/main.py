@@ -2,15 +2,15 @@
 # Code written by Holger Caesar & Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
+import json
 import os
 import time
-import json
 
-from nuscenes.nuscenes import NuScenes
-from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
+from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.nuscenes import NuScenes
 
 
 class NuScenesEval:
