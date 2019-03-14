@@ -8,7 +8,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.utils.data_classes import Box
-from nuscenes.eval.detection.data_classes import EvalBox
+from nuscenes.eval.detection.data_classes import EvalBox, MetricData, DetectionConfig
 
 
 def category_to_detection_name(category_name: str) -> Optional[str]:
@@ -62,28 +62,28 @@ def detection_name_to_rel_attributes(detection_name: str) -> List[str]:
     return rel_attributes
 
 
-def center_distance(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
+def center_distance(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
     L2 distance between the box centers (xy only).
-    :param sample_annotation: GT annotation sample.
-    :param sample_result: Predicted sample.
+    :param gt_box: GT annotation sample.
+    :param pred_box: Predicted sample.
     :return: L2 distance.
     """
-    return np.linalg.norm(np.array(sample_result.translation[:2]) - np.array(sample_annotation.translation[:2]))
+    return np.linalg.norm(np.array(pred_box.translation[:2]) - np.array(gt_box.translation[:2]))
 
 
-def velocity_l2(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
+def velocity_l2(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
     L2 distance between the velocity vectors (xy only).
     If the predicted velocities are nan, we return inf, which is subsequently clipped to 1.
-    :param sample_annotation: GT annotation sample.
-    :param sample_result: Predicted sample.
+    :param gt_box: GT annotation sample.
+    :param pred_box: Predicted sample.
     :return: L2 distance.
     """
-    if any(np.isnan(sample_result.velocity[:2])):
+    if any(np.isnan(pred_box.velocity[:2])):
         return np.inf
     else:
-        return np.linalg.norm(np.array(sample_result.velocity[:2]) - np.array(sample_annotation.velocity[:2]))
+        return np.linalg.norm(np.array(pred_box.velocity[:2]) - np.array(gt_box.velocity[:2]))
 
 
 def yaw_diff(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
@@ -103,22 +103,22 @@ def yaw_diff(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
     return angle_diff
 
 
-def attr_acc(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
+def attr_acc(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
     Computes the classification accuracy for the attribute of this class (if any).
     If the GT class has no attributes or the annotation is missing attributes, we assign an accuracy of nan, which is
     ignored later on.
-    :param sample_annotation: GT annotation sample.
-    :param sample_result: Predicted sample.
+    :param gt_box: GT annotation sample.
+    :param pred_box: Predicted sample.
     :return: Attribute classification accuracy (0 or 1) or nan if GT annotation does not have any attributes.
     """
-    if sample_annotation.attribute_name == '':
+    if gt_box.attribute_name == '':
         # If the class does not have attributes or this particular sample is missing attributes, return nan, which is
         # ignored later. Note that about 0.4% of the sample_annotations have no attributes, although they should.
         acc = np.nan
     else:
         # Check that label is correct.
-        acc = float(sample_annotation.detection_name == sample_result.detection_name)
+        acc = float(gt_box.attribute_name == pred_box.attribute_name)
 
     return acc
 
@@ -191,8 +191,3 @@ def boxes_to_sensor(boxes: List[EvalBox], pose_record: Dict, cs_record: Dict):
         boxes_out.append(box)
 
     return boxes_out
-
-
-dist_fcn_map = {
-    'center_distance': center_distance
-}

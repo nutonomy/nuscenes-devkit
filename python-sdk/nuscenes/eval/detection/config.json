@@ -10,7 +10,8 @@
     "orient_err": 1.570796,
     "attr_err": 1
   },
-  "recall_range": [0.1, 1],
+  "min_recall": 0,
+  "min_precision": 0,
   "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
   "max_boxes_per_sample": 500,
   "mean_ap_weight": 5,

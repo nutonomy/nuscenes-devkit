@@ -23,11 +23,11 @@ class TestEndToEnd(unittest.TestCase):
     res_mockup = 'nsc_eval.json'
     res_eval_folder = 'tmp'
 
-    def tearDown(self):
-        if os.path.exists(self.res_mockup):
-            os.remove(self.res_mockup)
-        if os.path.exists(self.res_eval_folder):
-            shutil.rmtree(self.res_eval_folder)
+    # def tearDown(self):
+    #     if os.path.exists(self.res_mockup):
+    #         os.remove(self.res_mockup)
+    #     if os.path.exists(self.res_eval_folder):
+    #         shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
     def _mock_results(nusc) -> Dict[str, list]:
@@ -119,7 +119,7 @@ class TestEndToEnd(unittest.TestCase):
         cfg = DetectionConfig({
             "range": 40,
             "dist_fcn": "center_distance",
-            "dist_ths": [0.5, 1.0, 2.0, 4.0],
+            "dist_ths": [2.0, 4.0],
             "dist_th_tp": 2.0,
             "metric_bounds": {
                 "trans_err": 0.5,
@@ -131,7 +131,8 @@ class TestEndToEnd(unittest.TestCase):
             "attributes": ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
                            "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
                            "vehicle.parked", "vehicle.stopped"],
-            "recall_range": [0.1, 1],
+            "min_recall": 0.1,
+            "min_precision": 0.0,
             "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
             "max_boxes_per_sample": 500,
             "mean_ap_weight": 5,
@@ -150,7 +151,7 @@ class TestEndToEnd(unittest.TestCase):
 
         # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
         # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
-        self.assertAlmostEqual(metrics['weighted_sum'], 0.2199307290627096)
+        self.assertAlmostEqual(metrics.weighted_sum, 0.2199307290627096)
 
 
 if __name__ == '__main__':
