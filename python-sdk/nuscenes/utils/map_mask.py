@@ -33,8 +33,8 @@ class MapMask:
     def mask(self, dilation: float = 0.0) -> np.ndarray:
         """
         Returns the map mask, optionally dilated.
-        :param dilation: <float>. Dilation in meters.
-        :return: <np.ndarray>. The dilated map mask.
+        :param dilation: Dilation in meters.
+        :return: Dilated map mask.
         """
         if dilation == 0:
             return self._base_mask
