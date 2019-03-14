@@ -314,14 +314,14 @@ class DetectionMetrics:
         for metric_name in TP_METRICS:
             errors = []
             for detection_name in self.cfg.class_names:
-                if detection_name in ['traffic_cone'] and metric_name in ['attr_err', 'orientation', 'velocity']:
+                if detection_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
                     # We don't include this in mean since:
                     # - We dont have attributes for cones.
-                    # - Orientation of a cone is ill-defined.
                     # - Cones are stationary.
+                    # - Orientation of a cone is ill-defined.
                     continue
 
-                if detection_name in ['barrier'] and metric_name in ['attr_err', 'velocity']:
+                if detection_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
                     # We don't include this in mean since:
                     # - We dont have attributes for cones.
                     # - Barriers are stationary.
