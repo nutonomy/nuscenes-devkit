@@ -45,13 +45,13 @@ class TestEndToEnd(unittest.TestCase):
             else:
                 return class_names[np.random.randint(0, 9)]
 
-        def random_attr(detection_name):
+        def random_attr(name):
             """
             This is the most straight-forward way to generate a random attribute.
             Not currently used b/c we want the test fixture to be back-wards compatible.
             """
             # Get relevant attributes.
-            rel_attributes = detection_name_to_rel_attributes(detection_name)
+            rel_attributes = detection_name_to_rel_attributes(name)
 
             if len(rel_attributes) == 0:
                 # Empty string for classes without attributes.
@@ -60,23 +60,8 @@ class TestEndToEnd(unittest.TestCase):
                 # Pick a random attribute otherwise.
                 return rel_attributes[np.random.randint(0, len(rel_attributes))]
 
-        def attr_backport(probs, detection_name_):
-            """ This is to make the random attribute assignment backwards compatible with previous attr. format """
-            attr_list = ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
-                         "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
-                         "vehicle.parked", "vehicle.stopped"]
-            rel_attributes = detection_name_to_rel_attributes(detection_name_)
-            if len(rel_attributes) == 0:
-                return ""
-
-            probs_subset = []
-            for attr in rel_attributes:
-                probs_subset.append(probs[attr_list.index(attr)])
-
-            return rel_attributes[int(np.argmax(probs_subset))]
-
         mock_results = {}
-        splits = create_splits_scenes(nusc)
+        splits = create_splits_scenes()
         val_samples = []
         for sample in nusc.sample:
             if nusc.get('scene', sample['scene_token'])['name'] in splits['val']:
@@ -86,7 +71,7 @@ class TestEndToEnd(unittest.TestCase):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)
-
+                detection_name = random_class(ann['category_name'])
                 sample_res.append(
                     {
                         'sample_token': sample['token'],
@@ -94,18 +79,15 @@ class TestEndToEnd(unittest.TestCase):
                         'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
                         'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
                         'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
-                        'detection_name': random_class(ann['category_name']),
+                        'detection_name': detection_name,
                         'detection_score': random.random(),
-                        'attribute_name': list(np.random.rand(8))
+                        'attribute_name': random_attr(detection_name)
                     })
-                # Convert to new attribute format
-                last = sample_res[-1]
-                last['attribute_name'] = attr_backport(last['attribute_name'], last['detection_name'])
-                sample_res[-1] = last
 
             mock_results[sample['token']] = sample_res
         return mock_results
 
+    @unittest.skip
     def test_delta(self):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
@@ -139,7 +121,7 @@ class TestEndToEnd(unittest.TestCase):
                             "pedestrian", "traffic_cone", "trailer", "truck"]
         })
 
-        nusc = NuScenes(version='v0.2', dataroot=os.environ['NUSCENES'], verbose=False)
+        nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
             json.dump(self._mock_results(nusc), f, indent=2)
@@ -150,7 +132,8 @@ class TestEndToEnd(unittest.TestCase):
 
         # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
         # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
-        self.assertAlmostEqual(metrics['weighted_sum'], 0.2199307290627096)
+        # Changed to 1.0-mini. Cleaned up build script. So new basline at 0.24954451673961747
+        self.assertAlmostEqual(metrics['weighted_sum'], 0.24954451673961747)
 
 
 if __name__ == '__main__':
