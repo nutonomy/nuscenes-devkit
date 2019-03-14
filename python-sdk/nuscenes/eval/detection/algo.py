@@ -144,10 +144,10 @@ def accumulate(gt_boxes: EvalBoxes,
 
     # ---------------------------------------------
     # Step3: Re-sample recall, precision and confidences such that we have one data point for each
-    # recall fraction between 1 and 100
+    # recall percentage between 0 and 1.
     # ---------------------------------------------
 
-    rec_interp = np.linspace(0, 1, 101)  # 101 steps, from 0% to 100% recall.
+    rec_interp = np.linspace(0, 1,  MetricData.nelem)  # 101 steps, from 0% to 100% recall.
     prec = np.interp(rec_interp, rec, prec, right=0)
     conf = np.interp(rec_interp, rec, confs, right=0)
     rec = rec_interp
@@ -169,12 +169,12 @@ def accumulate(gt_boxes: EvalBoxes,
 
     for key in match_data.keys():
         if key == "conf":
-            continue  # Confidence is used to align with recall, so needs to be done last.
+            continue  # Confidence is used as reference to aligh with fp and tp. So skip in this step.
 
         # For each match_data, we first calculate the accumulated mean.
         tmp = cummean(match_data[key])
 
-        # Interpolate
+        # Then interpolate based on the confidences. (Note reversing since np.interp needs increasing arrays)
         match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp)
 
     # ---------------------------------------------

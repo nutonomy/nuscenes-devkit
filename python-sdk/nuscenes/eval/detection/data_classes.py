@@ -269,7 +269,7 @@ class MetricDataList:
 
 
 class DetectionMetrics:
-    """ Stores average precisino and true positife metrics. Provides properties to summarize. """
+    """ Stores average precision and true positive metrics. Provides properties to summarize. """
 
     def __init__(self, cfg: DetectionConfig):
 
