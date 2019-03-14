@@ -6,22 +6,46 @@ from collections import defaultdict
 class DetectionConfig:
     """ Data class that specifies the detection evaluation settings. """
 
-    def __init__(self, content: Dict[str, Any]):
+    def __init__(self,
+                 class_range: Dict[str, int],
+                 dist_fcn: str,
+                 dist_ths: List[float],
+                 dist_th_fp: str,
+                 min_recall: float,
+                 min_precision: float,
+                 tp_metrics: List[str],
+                 max_boxes_per_sample: float,
+                 mean_ap_weight: 5
+                 ):
 
-        self.range = content['range']
-        self.dist_fcn = content['dist_fcn']
-        self.dist_ths = content['dist_ths']
-        self.dist_th_tp = content['dist_th_tp']
-        self.metric_bounds = content['metric_bounds']
-        self.attributes = content['attributes']
-        self.min_recall = content['min_recall']
-        self.min_precision = content['min_precision']
-        self.weighted_sum_tp_metrics = content['weighted_sum_tp_metrics']
-        self.max_boxes_per_sample = content['max_boxes_per_sample']
-        self.mean_ap_weight = content['mean_ap_weight']
-        self.class_names = content['class_names']
+        self.class_range = class_range
+        self.dist_fcn = dist_fcn
+        self.dist_ths = dist_ths
+        self.dist_th_tp = dist_th_fp
+        self.min_recall = min_recall
+        self.min_precision = min_precision
+        self.tp_metrics = tp_metrics
+        self.max_boxes_per_sample = max_boxes_per_sample
+        self.mean_ap_weight = mean_ap_weight
+        self.class_names = self.class_range.keys()
+        self.metric_names = ["trans_err", "scale_err", "orient_err", "vel_err", "attr_err"]
 
-        self.metric_names = self.metric_bounds.keys()
+    def serialize(self):
+        """ Serialize instance into json-friendly format """
+        pass  # TODO: write
+
+    @classmethod
+    def deserialize(cls, content):
+        """ Initialize from serialized content """
+        return cls(content['class_range'],
+                   content['dist_fcn'],
+                   content['dist_ths'],
+                   content['dist_th_fp'],
+                   content['min_recall'],
+                   content['min_precision'],
+                   content['tp_metrics'],
+                   content['max_boxes_per_sample'],
+                   content['mean_ap_weight'])
 
 
 class EvalBox:
@@ -52,10 +76,12 @@ class EvalBox:
         return self.detection_name
 
     def serialize(self):
+        """ Serialize instance into json-friendly format """
         pass  # TODO: write
 
     @classmethod
     def deserialize(cls, content):
+        """ Initialize from serialized content """
         # TODO type-checking
         return cls(content['sample_token'],
                    content['translation'],
@@ -76,7 +102,7 @@ class EvalBoxes:
     def __repr__(self):
         return "EvalBoxes with {} boxes across {} samples".format(len(self.all), len(self.sample_tokens))
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> List[EvalBox]:
         return self.boxes[item]
 
     @property
@@ -94,10 +120,12 @@ class EvalBoxes:
         self.boxes[sample_token] = boxes
 
     def serialize(self):
+        """ Serialize instance into json-friendly format """
         pass  # TODO: write
 
     @classmethod
     def deserialize(cls, content):
+        """ Initialize from serialized content """
         # TODO type-checking
         eb = cls()
         for sample_token, boxes in content.items():

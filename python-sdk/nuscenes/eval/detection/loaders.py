@@ -100,11 +100,12 @@ def add_center_dist(nusc, eval_boxes: EvalBoxes):
     return eval_boxes
 
 
-def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: float):
+def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: dict):
     """ Applies filtering to boxes. Distance, bike-racks and point per box. """
 
     # TODO: add the other filtering here
     for sample_token in eval_boxes.sample_tokens:
-        eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if box.ego_dist < max_dist]
+        eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
+                                          box.ego_dist < max_dist[box.detection_name]]
 
     return eval_boxes

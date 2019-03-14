@@ -1,20 +1,22 @@
 {
-  "range": 40,
+  "range": {
+    "car": 50,
+    "truck": 50,
+    "bus": 50,
+    "trailer": 50,
+    "construction_vehicle": 50,
+    "pedestrian": 40,
+    "motorcycle": 40,
+    "bicycle": 40,
+    "traffic_cone": 30,
+    "barrier": 30
+  },
   "dist_fcn": "center_distance",
   "dist_ths": [0.5, 1.0, 2.0, 4.0],
   "dist_th_tp": 2.0,
-  "metric_bounds": {
-    "trans_err": 0.5,
-    "vel_err": 1.5,
-    "scale_err": 0.5,
-    "orient_err": 1.570796,
-    "attr_err": 1
-  },
-  "min_recall": 0,
-  "min_precision": 0,
-  "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
+  "min_recall": 0.1,
+  "min_precision": 0.1,
+  "tp_metrics": ["trans_err", "scale_err", "orient_err", "vel_err", "attr_err"],
   "max_boxes_per_sample": 500,
-  "mean_ap_weight": 5,
-  "class_names": ["barrier", "bicycle", "bus", "car", "construction_vehicle", "motorcycle", "pedestrian",
-    "traffic_cone", "trailer", "truck"]
+  "mean_ap_weight": 5
 }

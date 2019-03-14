@@ -74,8 +74,8 @@ class NuScenesEval:
         self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
 
         # Filter boxes (distance, points per box, etc.)
-        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.range)
-        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.range)
+        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range)
+        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range)
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
