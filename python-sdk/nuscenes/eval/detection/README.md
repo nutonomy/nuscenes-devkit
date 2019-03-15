@@ -27,7 +27,7 @@ The results will be presented at the Workshop on Autonomous Driving ([wad.ai](ht
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
 * Users apply their method on the test set and submit their results to our evaluation server, which returns the metrics listed below.
-* We do not use strata (cf. easy / medium / hard in KITTI). We only filter annotations and predictions beyond a class specific distance.
+* We do not use strata (cf. easy / medium / hard in KITTI). Instead, we filter annotations and predictions beyond class specific distances.
 * Every submission has to provide information on the method and any external / map data used. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
 * The maximum time window of past sensor data that may be used is 0.5s.
@@ -65,7 +65,7 @@ sample_result {
 Note that the detection classes may differ from the general nuScenes classes, as detailed below.
 
 ## Classes, attributes, and detection ranges
-The nuScenes dataset comes with annotations for 25 classes ([details](https://www.nuscenes.org/data-annotation)).
+The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove classes that have less than 1000 samples in the teaser dataset.
 This results in 10 classes for the detection challenge.
@@ -125,6 +125,14 @@ Below we list nuScene class specific rules for annotation and detection ranges.
 Below we define the metrics for the nuScenes detection task.
 Our final score is a weighted sum of mean Average Precision (mAP) and several True Positive (TP) metrics.
 
+### Preprocessing
+Before running the evaluation code the following pre-processing is done on the data
+* All boxes (gt and prediction) are filtered on class-specific max-distance. See config.json for details.
+* All bikes and motorcycle boxes (gt and prediction) that fall inside a bike-rack are removed. The reason is that we do 
+not annotate bikes inside bike-racks.  
+* All boxes (gt) without any lidar nor radar points in them are removed. The reason is that we can not guarantee that they 
+are actually visible in the frame. We do not filter the estimated boxes here.   
+
 ### Average Precision metric
 * **mean Average Precision (mAP)**:
 We use the well-known Average Precision metric as in KITTI,
@@ -154,7 +162,7 @@ All errors are >= 0, but note that for translation and velocity errors the error
 ### Weighted sum metric
 * **Weighted sum**: We compute the weighted sum of the above metrics: mAP, mATE, mASE, mAOE, mAVE and mAAE.
 As a first step we convert the TP errors to TP scores as *x_score = max(1 - x_err, 0.0)*.
-We then assign a weight of *5* to mAP and *1* to the 5 TP scores, sum and normalize by 10.
+We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
 
 
 ## Leaderboard & challenge tracks
@@ -169,11 +177,11 @@ Methods will be compared within these tracks and the winners will be decided for
 
 * **LIDAR detection track**: 
 This track allows only lidar sensor data as input.
-No external data or map data is allowed.
+No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization)
 
 * **VISION detection track**: 
 This track allows only camera sensor data (images) as input.
-No external data or map data is allowed.
+No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization)
 
 * **OPEN detection track**: 
 This is where users can go wild.
