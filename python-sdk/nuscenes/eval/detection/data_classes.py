@@ -290,7 +290,7 @@ class MetricData:
     def random_md(cls):
         return cls(recall=np.linspace(0, 100, cls.nelem),
                    precision=np.random.random(cls.nelem),
-                   confidence=np.sort(np.random.random(cls.nelem))[::-1],
+                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
                    trans_err=np.random.random(cls.nelem),
                    vel_err=np.random.random(cls.nelem),
                    scale_err=np.random.random(cls.nelem),
