@@ -2,8 +2,6 @@
 # Code written by Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from __future__ import annotations
-
 import json
 import time
 import sys
@@ -379,32 +377,33 @@ class NuScenes:
     def list_sample(self, sample_token: str) -> None:
         self.explorer.list_sample(sample_token)
 
-    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5,  pointsensor_channel: str='LIDAR_TOP',
-                                   camera_channel: str='CAM_FRONT') -> None:
+    def render_pointcloud_in_image(self, sample_token: str, dot_size: int = 5,  pointsensor_channel: str = 'LIDAR_TOP',
+                                   camera_channel: str = 'CAM_FRONT') -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel)
 
-    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY, nsweeps: int=1) -> None:
+    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1)\
+            -> None:
         self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps)
 
-    def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
-                           nsweeps: int=1) -> None:
+    def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
+                           box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
+                           nsweeps: int = 1) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps)
 
-    def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
-                          box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
+    def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
+                          box_vis_level: BoxVisibility = BoxVisibility.ANY) -> None:
         self.explorer.render_annotation(sample_annotation_token, margin, view, box_vis_level)
 
     def render_instance(self, instance_token: str) -> None:
         self.explorer.render_instance(instance_token)
 
-    def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
-                     out_path: str=None) -> None:
+    def render_scene(self, scene_token: str, freq: float = 10, imsize: Tuple[float, float] = (640, 360),
+                     out_path: str = None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)) \
-            -> None:
+    def render_scene_channel(self, scene_token: str, channel: str = 'CAM_FRONT',
+                             imsize: Tuple[float, float] = (640, 360)) -> None:
         self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
@@ -772,7 +771,7 @@ class NuScenesExplorer:
     def render_annotation(self,
                           anntoken: str,
                           margin: float = 10,
-                          view:np.ndarray = np.eye(4),
+                          view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY) -> None:
         """
         Render selected annotation.
