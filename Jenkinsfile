@@ -3,8 +3,6 @@ pipeline {
   agent none
 
   environment {
-    TEST_IMAGE = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
-    TEST_CONTAINER_NAME = "nuscenes-test_container"
     PROD_IMAGE = "nuscenes:production"
   }
 
@@ -49,23 +47,9 @@ pipeline {
           // an activated Conda environment inside of the container.
           sh """#!/bin/bash
             set -eux
-            echo 'Building docker image...'
-            docker rm -f $TEST_CONTAINER_NAME || echo "Container does not exist"
-            docker build -t $TEST_IMAGE .
-            docker run --name $TEST_CONTAINER_NAME \
-	      $TEST_IMAGE \
-              bash -c "source activate nuenv && cd python-sdk && python -m unittest"
+            bash test_mini_split.sh
           """
         } // container
-
-        container('docker') {
-        // Remove container if it is already running. We make this a
-        // separate step because this should happen regardless of the
-        // outcome of the previous build and test step.
-          sh """#!/bin/bash
-            docker rm -f $TEST_CONTAINER_NAME || echo "Container does not exist"
-          """
-        }
       }
     } // stage('Build and test')
     stage('Deploy') {
