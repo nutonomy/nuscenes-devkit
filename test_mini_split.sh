@@ -21,7 +21,6 @@ echo "Pulling image containing mini split data from registry"
 docker pull ${data_image} || { echo "error during docker pull;" exit 1; }
 
 echo "Creating Docker volume from container"
-# Create volume from container
 docker run -d --name=${data_container} -v ${data_volume}:/data:ro ${data_image} || { echo "container already running";}
 
 echo "Building image containing nuscenes-devkit"
