@@ -87,7 +87,6 @@ class TestEndToEnd(unittest.TestCase):
             mock_results[sample['token']] = sample_res
         return mock_results
 
-    @unittest.skip
     def test_delta(self):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
