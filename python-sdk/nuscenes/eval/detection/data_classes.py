@@ -209,14 +209,14 @@ class MetricData:
     nelem = 101
 
     def __init__(self,
-                 recall: np.array = np.empty(0),
-                 precision: np.array = np.empty(0),
-                 confidence: np.array = np.empty(0),
-                 trans_err: np.array = np.empty(0),
-                 vel_err: np.array = np.empty(0),
-                 scale_err: np.array = np.empty(0),
-                 orient_err: np.array = np.empty(0),
-                 attr_err: np.array = np.empty(0),
+                 recall: np.array,
+                 precision: np.array,
+                 confidence: np.array,
+                 trans_err: np.array,
+                 vel_err: np.array,
+                 scale_err: np.array,
+                 orient_err: np.array,
+                 attr_err: np.array,
                  ):
 
         # Assert lenths
@@ -275,10 +275,22 @@ class MetricData:
                    attr_err=np.array(content['attr_err']))
 
     @classmethod
+    def no_predictions(cls):
+        """ Returns a md instance corresponding to having no predictions """
+        return cls(recall=np.linspace(0, 100, cls.nelem),
+                   precision=np.zeros(cls.nelem),
+                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
+                   trans_err=np.ones(cls.nelem),
+                   vel_err=np.ones(cls.nelem),
+                   scale_err=np.ones(cls.nelem),
+                   orient_err=np.ones(cls.nelem),
+                   attr_err=np.ones(cls.nelem))
+
+    @classmethod
     def random_md(cls):
-        return cls(recall=np.sort(np.random.random(cls.nelem)),
+        return cls(recall=np.linspace(0, 100, cls.nelem),
                    precision=np.random.random(cls.nelem),
-                   confidence=np.sort(np.random.random(cls.nelem))[::-1],
+                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
                    trans_err=np.random.random(cls.nelem),
                    vel_err=np.random.random(cls.nelem),
                    scale_err=np.random.random(cls.nelem),

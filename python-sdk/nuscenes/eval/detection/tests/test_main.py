@@ -109,10 +109,11 @@ class TestMain(unittest.TestCase):
                                  verbose=False)
         metrics = nusc_eval.run()
 
-        # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
-        # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
-        # Changed to 1.0-mini. Cleaned up build script. So new basline at 0.24954451673961747
-        self.assertAlmostEqual(metrics['weighted_sum'], 0.24954451673961747)
+        # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.
+        # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
+        # 3. Score = 0.24954451673961747. Changed to 1.0-mini and cleaned up build script.
+        # 4. Score = 0.20478832626986893. Updated treatment of cones, barriers, and other algo tunings.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.20478832626986893)
 
 
 if __name__ == '__main__':

@@ -2,9 +2,10 @@
 # Code written by Holger Caesar, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
+from typing import List, Dict, Optional
+
 import numpy as np
 from pyquaternion import Quaternion
-from typing import List, Dict, Optional
 
 from nuscenes.eval.detection.data_classes import EvalBox
 from nuscenes.utils.data_classes import Box
@@ -200,3 +201,19 @@ def boxes_to_sensor(boxes: List[EvalBox], pose_record: Dict, cs_record: Dict):
         boxes_out.append(box)
 
     return boxes_out
+
+
+def cummean(x: np.array) -> np.array:
+    """
+    Computes the cumulative mean up to each position in a NaN sensitive way
+    - If all values are NaN return an array of ones.
+    - If some values are NaN, accumulate arrays discording those entries.
+    """
+    if sum(np.isnan(x)) == len(x):
+        # Is all numbers in array are NaN's.
+        return np.ones(len(x))  # If all errors are NaN set to error to 1 for all operating points.
+    else:
+        # Accumulate in a nan-aware manner.
+        sum_vals = np.nancumsum(x)  # Cumulative sum ignoring nans.
+        count_vals = np.cumsum(~np.isnan(x))  # Number of non-nans up to each position.
+        return np.divide(sum_vals, count_vals, out=np.zeros_like(sum_vals), where=count_vals != 0)
