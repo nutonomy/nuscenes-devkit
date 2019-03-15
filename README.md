@@ -40,8 +40,8 @@ Download the devkit to your home directory using:
 ```
 cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
-The devkit is tested for Python 3.7.
-To install Python 3.7 and set up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment).
+The devkit is tested for Python 3.5.
+To install Python 3.5 and set up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment).
 To install the required packages, run the following command in your favourite virtual environment:
 ```
 pip install -r requirements.txt
@@ -84,15 +84,15 @@ For instructions related to the object detection task, the results format, class
 
 It is recommended to install the devkit in a new virtual environment. Here are the steps you can follow to create one:
 
-### Python 3.7 installation
+### Python 3.5 installation
 
-If you don't have Python 3.7 on your system, you can use the following steps to install it.
+If you don't have Python 3.5 on your system, you can use the following steps to install it.
 
 Ubuntu:
 ```
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install python3.7
+sudo apt-get install python3.5
 ```
 
 Mac OS: Download from `https://www.python.org/downloads/mac-osx/` and install.
@@ -116,7 +116,7 @@ After editing it, reload the shell startup file by running e.g. `source ~/.bashr
 ```
 mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
 ```
-PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.
+PYTHON_BINARIES are typically at either `/usr/local/bin/python3.5` or `/usr/bin/python3.5`.
 
 ### Activating the virtual environment
 If you are inside the virtual environment, your shell prompt should look like: `(nuscenes) user@computer:~$`

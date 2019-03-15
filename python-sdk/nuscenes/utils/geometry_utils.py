@@ -2,8 +2,6 @@
 # Code written by Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from __future__ import annotations
-
 import numpy as np
 from enum import IntEnum
 from pyquaternion import Quaternion
