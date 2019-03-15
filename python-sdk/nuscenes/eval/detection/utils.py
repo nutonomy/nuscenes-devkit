@@ -142,8 +142,8 @@ def scale_iou(sample_annotation: EvalBox, sample_result: EvalBox) -> float:
     min_wlh = np.minimum(sa_size, sr_size)
     volume_annotation = np.prod(sa_size)
     volume_result = np.prod(sr_size)
-    intersection: float = np.prod(min_wlh)
-    union: float = volume_annotation + volume_result - intersection
+    intersection = np.prod(min_wlh)  # type: float
+    union = volume_annotation + volume_result - intersection  # type: float
     iou = intersection / union
 
     return iou
