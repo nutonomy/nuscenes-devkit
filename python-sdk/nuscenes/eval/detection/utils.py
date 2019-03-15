@@ -2,9 +2,10 @@
 # Code written by Holger Caesar, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
+from typing import List, Dict, Optional
+
 import numpy as np
 from pyquaternion import Quaternion
-from typing import List, Dict, Optional
 
 from nuscenes.eval.detection.data_classes import EvalBox
 from nuscenes.utils.data_classes import Box
@@ -206,11 +207,11 @@ def cummean(x: np.array) -> np.array:
     """
     Computes the cumulative mean up to each position in a NaN sensitive way
     - If all values are NaN return an array of ones.
-    - If some values are NaN, accumulate anyays discording those entries.
+    - If some values are NaN, accumulate arrays discording those entries.
     """
     if sum(np.isnan(x)) == len(x):
         # Is all numbers in array are NaN's.
-        return np.ones(len(x))  # If all errors are NaN set to error to 1 for all operting points.
+        return np.ones(len(x))  # If all errors are NaN set to error to 1 for all operating points.
     else:
         # Accumulate in a nan-aware manner.
         sum_vals = np.nancumsum(x)  # Cumulative sum ignoring nans.

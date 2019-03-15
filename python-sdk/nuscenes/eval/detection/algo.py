@@ -36,7 +36,7 @@ def accumulate(gt_boxes: EvalBoxes,
     # Count the positives.
     npos = len([1 for gt_box in gt_boxes.all if gt_box.detection_name == class_name])
 
-    # For missing classes in the GT, return a data struce corresponding to no predictions.
+    # For missing classes in the GT, return a data structure corresponding to no predictions.
     if npos == 0:
         return MetricData.no_predictions()
 
