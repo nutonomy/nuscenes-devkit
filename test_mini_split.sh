@@ -4,7 +4,7 @@ data_image=registry-local.nutonomy.team:5000/nuscenes/mini_split_data
 data_container=mini_split_data
 data_volume=mini_split_volume
 
-function cleanup(){
+function clean_up(){
     echo "Cleaning up docker containers and volumes if they already exist"
     docker container stop ${data_container} || { echo "container does not exist"; }
     docker container rm ${data_container} || { echo "container does not exist"; }
@@ -13,7 +13,9 @@ function cleanup(){
     docker volume rm ${data_volume} || { echo "volume does not already exist"; }
 }
 
-cleanup
+trap clean_up EXIT
+
+clean_up
 
 echo "Pulling image containing mini split data from registry"
 docker pull ${data_image} || { echo "error during docker pull;" exit 1; }
@@ -29,4 +31,4 @@ docker run --name=test_container -v ${data_volume}:/data \
     -e NUSCENES=/data/nuscenes-v1.0 test_mini_split \
     /bin/bash -c "source activate nuenv && cd python-sdk && python -m unittest"
 
-cleanup
+clean_up

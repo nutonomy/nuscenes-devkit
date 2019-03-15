@@ -3,8 +3,6 @@ pipeline {
   agent none
 
   environment {
-    TEST_IMAGE = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
-    TEST_CONTAINER_NAME = "nuscenes-test_container"
     PROD_IMAGE = "nuscenes:production"
   }
 
@@ -52,15 +50,6 @@ pipeline {
             bash test_mini_split.sh
           """
         } // container
-
-        container('docker') {
-        // Remove container if it is already running. We make this a
-        // separate step because this should happen regardless of the
-        // outcome of the previous build and test step.
-          sh """#!/bin/bash
-            docker rm -f $TEST_CONTAINER_NAME || echo "Container does not exist"
-          """
-        }
       }
     } // stage('Build and test')
     stage('Deploy') {
