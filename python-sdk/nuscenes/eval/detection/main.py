@@ -2,18 +2,17 @@
 # Code written by Holger Caesar & Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
+import json
 import os
 import time
-import json
-from typing import Dict
 
 import numpy as np
 
 from nuscenes import NuScenes
-from nuscenes.eval.detection.utils import dist_fcn_map
+from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
+from nuscenes.eval.detection.constants import TP_METRICS
+from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.eval.detection.algo import average_precision, calc_tp_metrics
 
 
 class NuScenesEval:
@@ -78,75 +77,57 @@ class NuScenesEval:
         self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
 
         # Filter boxes (distance, points per box, etc.)
-        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.range)
-        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.range)
+        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range)
+        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range)
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
-    def run(self) -> Dict:
-        """
-        Perform evaluation given the predictions and annotations stored in self.
-        :return: All nuScenes detection metrics. These are also written to disk.
-        """
+    def run(self) -> DetectionMetrics:
 
         start_time = time.time()
 
-        # Compute metrics.
-        raw_metrics = {label: [] for label in self.cfg.class_names}
-        label_aps = {label: [] for label in self.cfg.class_names}
-        label_tp_metrics = {label: [] for label in self.cfg.class_names}
+        # -----------------------------------
+        # Step 1: Accumulate metric data for all classes and distance thresholds
+        # -----------------------------------
 
+        metric_data_list = MetricDataList()
         for class_name in self.cfg.class_names:
-            if self.verbose:
-                print('\n# Computing stats for class %s' % class_name)
+            for dist_th in self.cfg.dist_ths:
+                md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, dist_th)
+                metric_data_list.set(class_name, dist_th, md)
 
-            # Compute AP and to get the confidence thresholds used for TP metrics.
-            dist_th_count = len(self.cfg.dist_ths)
-            label_aps[class_name] = np.zeros((dist_th_count,))
-            raw_metrics[class_name] = [None] * dist_th_count
-            for d, dist_th in enumerate(self.cfg.dist_ths):
-                label_aps[class_name][d], raw_metrics[class_name][d] = \
-                    average_precision(self.gt_boxes, self.pred_boxes, class_name, self.cfg,
-                                      dist_fcn=dist_fcn_map[self.cfg.dist_fcn], dist_th=dist_th,
-                                      score_range=self.cfg.recall_range, verbose=self.verbose)
+        # -----------------------------------
+        # Step 2: Calculate metrics from the data
+        # -----------------------------------
 
-            # Given the raw metrics, compute the TP metrics.
-            tp_ind = [i for i, dist_th in enumerate(self.cfg.dist_ths) if dist_th == self.cfg.dist_th_tp][0]
-            label_tp_metrics[class_name] = calc_tp_metrics(raw_metrics[class_name][tp_ind], self.cfg, class_name,
-                                                           self.verbose)
+        metrics = DetectionMetrics(self.cfg)
+        for class_name in self.cfg.class_names:
+            for dist_th in self.cfg.dist_ths:
+                metric_data = metric_data_list[(class_name, dist_th)]
+                ap = calc_ap(metric_data, self.cfg.min_recall, self.cfg.min_precision)
+                metrics.add_label_ap(class_name, ap)
 
-        # Compute stats.
-        mean_ap = np.nanmean(np.vstack(list(label_aps.values())))  # Nan APs are ignored.
-        tp_metrics = dict()
-        for metric in self.cfg.metric_names:
-            tp_metrics[metric] = np.nanmean([label_tp_metrics[label][metric] for label in self.cfg.class_names])
-        tp_metrics_neg = [1 - tp_metrics[m] for m in self.cfg.weighted_sum_tp_metrics]
-        weighted_sum = np.sum([self.cfg.mean_ap_weight * mean_ap] + tp_metrics_neg)  # Sum with special weight for mAP.
-        weighted_sum /= (self.cfg.mean_ap_weight + len(tp_metrics_neg))  # Normalize by total weight.
-        end_time = time.time()
-        eval_time = end_time - start_time
+            for metric_name in TP_METRICS:
+                metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
+                if class_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
+                    tp = np.nan
+                elif class_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
+                    tp = np.nan
+                else:
+                    tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
+                metrics.add_label_tp(class_name, metric_name, tp)
 
-        # Print stats.
-        if self.verbose:
-            print('\n# Results')
-            print('mAP: %.4f' % mean_ap)
-            print('TP metrics:\n%s' % '\n'.join(['  %s: %.4f' % (k, v) for (k, v) in tp_metrics.items()]))
-            print('Weighted sum: %.4f' % weighted_sum)
-            print('Evaluation time: %.1fs.' % eval_time)
+        metrics.add_runtime(time.time() - start_time)
 
-        # Write metrics to disk.
-        all_metrics = {
-            'label_aps': {k: v.tolist() for (k, v) in label_aps.items()},
-            'label_tp_metrics': label_tp_metrics,
-            'mean_ap': mean_ap,
-            'tp_metrics': tp_metrics,
-            'weighted_sum': weighted_sum,
-            'eval_time': eval_time
-        }
+        # TODO: call rendering methods here
+
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
-            json.dump(all_metrics, f, indent=2)
+            json.dump(metrics.serialize(), f, indent=2)
 
-        return all_metrics
+        with open(os.path.join(self.output_dir, 'metric_data_list.json'), 'w') as f:
+            json.dump(metric_data_list.serialize(), f, indent=2)
+
+        return metrics
 
 
 if __name__ == "__main__":

@@ -2,24 +2,24 @@
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import unittest
-import random
 import json
 import os
+import random
 import shutil
+import unittest
 from typing import Dict
 
-from tqdm import tqdm
 import numpy as np
+from tqdm import tqdm
 
-from nuscenes.eval.detection import NuScenesEval
-from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
-from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes import NuScenes
+from nuscenes.eval.detection import NuScenesEval
+from nuscenes.eval.detection.data_classes import DetectionConfig
+from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.utils.splits import create_splits_scenes
 
 
-class TestEndToEnd(unittest.TestCase):
+class TestMain(unittest.TestCase):
     res_mockup = 'nsc_eval.json'
     res_eval_folder = 'tmp'
 
@@ -78,12 +78,11 @@ class TestEndToEnd(unittest.TestCase):
                         'translation': list(np.array(ann['translation']) + 5 * (np.random.rand(3) - 0.5)),
                         'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
                         'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
-                        'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
+                        'velocity': list(nusc.box_velocity(ann_token)[:2] * (np.random.rand(3)[:2] + 0.5)),
                         'detection_name': detection_name,
                         'detection_score': random.random(),
                         'attribute_name': random_attr(detection_name)
                     })
-
             mock_results[sample['token']] = sample_res
         return mock_results
 
@@ -97,28 +96,9 @@ class TestEndToEnd(unittest.TestCase):
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
 
-        cfg = DetectionConfig({
-            "range": 40,
-            "dist_fcn": "center_distance",
-            "dist_ths": [0.5, 1.0, 2.0, 4.0],
-            "dist_th_tp": 2.0,
-            "metric_bounds": {
-                "trans_err": 0.5,
-                "vel_err": 1.5,
-                "scale_err": 0.5,
-                "orient_err": 1.570796,
-                "attr_err": 1
-            },
-            "attributes": ["cycle.with_rider", "cycle.without_rider", "pedestrian.moving",
-                           "pedestrian.sitting_lying_down", "pedestrian.standing", "vehicle.moving",
-                           "vehicle.parked", "vehicle.stopped"],
-            "recall_range": [0.1, 1],
-            "weighted_sum_tp_metrics": ["trans_err", "scale_err", "orient_err"],
-            "max_boxes_per_sample": 500,
-            "mean_ap_weight": 5,
-            "class_names": ["barrier", "bicycle", "bus", "car", "construction_vehicle", "motorcycle",
-                            "pedestrian", "traffic_cone", "trailer", "truck"]
-        })
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(this_dir, '../config.json')) as f:
+            cfg = DetectionConfig.deserialize(json.load(f))
 
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
@@ -129,10 +109,11 @@ class TestEndToEnd(unittest.TestCase):
                                  verbose=False)
         metrics = nusc_eval.run()
 
-        # Score of 0.22082865720221012 was measured on the branch "release_v0.2" on March 7 2019.
-        # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
-        # Changed to 1.0-mini. Cleaned up build script. So new basline at 0.24954451673961747
-        self.assertAlmostEqual(metrics['weighted_sum'], 0.24954451673961747)
+        # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.
+        # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
+        # 3. Score = 0.24954451673961747. Changed to 1.0-mini and cleaned up build script.
+        # 4. Score = 0.20478832626986893. Updated treatment of cones, barriers, and other algo tunings.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.20478832626986893)
 
 
 if __name__ == '__main__':

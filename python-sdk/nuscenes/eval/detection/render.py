@@ -1,7 +1,12 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2019.
+# Licensed under the Creative Commons [see licence.txt]
+
 from typing import Dict
 
 import numpy as np
 from matplotlib import pyplot as plt
+
 from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud

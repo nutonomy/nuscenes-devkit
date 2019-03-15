@@ -3,6 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from __future__ import annotations
+
 from functools import reduce
 import struct
 from typing import Tuple, List, Dict
