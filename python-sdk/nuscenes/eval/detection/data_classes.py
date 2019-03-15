@@ -2,10 +2,11 @@
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
+from collections import defaultdict
 from typing import List, Dict
+
 import numpy as np
 
-from collections import defaultdict
 from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES, TP_METRICS
 
 

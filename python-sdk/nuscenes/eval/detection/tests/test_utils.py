@@ -7,8 +7,8 @@ import unittest
 import numpy as np
 from pyquaternion import Quaternion
 
-from nuscenes.eval.detection.utils import scale_iou, quaternion_yaw, yaw_diff, angle_diff
 from nuscenes.eval.detection.data_classes import EvalBox
+from nuscenes.eval.detection.utils import scale_iou, quaternion_yaw, yaw_diff, angle_diff
 
 
 class TestEval(unittest.TestCase):
