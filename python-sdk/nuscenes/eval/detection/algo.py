@@ -249,7 +249,7 @@ def calc_tp_metrics(raw_metrics: Dict, cfg: DetectionConfig, class_name: str, ve
         #     plt.savefig(save_path)
 
         if verbose:
-            clip_ratio: float = np.mean(metric_vals == 1)
+            clip_ratio = np.mean(metric_vals == 1)  # type: float
             print('%s: %.4f, %.1f%% values clipped' % (metric_name, tp_metrics[metric_name], clip_ratio * 100))
 
     return tp_metrics
