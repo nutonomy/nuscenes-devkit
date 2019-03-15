@@ -21,7 +21,6 @@ class TestNuScenes(unittest.TestCase):
 
         # Trivial assert statement
         self.assertEqual(nusc.table_root, os.path.join(os.environ['NUSCENES'], 'v1.0-mini'))
-        print("Passed unit test test_load")
 
 
 if __name__ == '__main__':
