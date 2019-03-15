@@ -6,7 +6,7 @@ import argparse
 import os
 from tqdm import tqdm
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 
 def verify_setup(nusc: NuScenes):

@@ -5,7 +5,7 @@
 import unittest
 import os
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 
 class TestNuScenes(unittest.TestCase):

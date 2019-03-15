@@ -2,13 +2,12 @@
 # Code written by Holger Caesar, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from typing import List, Dict, Optional
-
 import numpy as np
 from pyquaternion import Quaternion
+from typing import List, Dict, Optional
 
-from nuscenes.utils.data_classes import Box
 from nuscenes.eval.detection.data_classes import EvalBox
+from nuscenes.utils.data_classes import Box
 
 
 def category_to_detection_name(category_name: str) -> Optional[str]:
