@@ -315,27 +315,30 @@ class DetectionMetrics:
         for metric_name in TP_METRICS:
             errors = []
             for detection_name in self.cfg.class_names:
+
                 if detection_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
                     # We don't include this in mean since:
                     # - We dont have attributes for cones.
                     # - Cones are stationary.
                     # - Orientation of a cone is ill-defined.
-                    continue
+                    pass
 
-                if detection_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
+                elif detection_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
                     # We don't include this in mean since:
                     # - We dont have attributes for cones.
                     # - Barriers are stationary.
-                    continue
+                    pass
 
-                errors.append(self.label_tp_errors[detection_name][metric_name])
+                else:
+                    errors.append(self.label_tp_errors[detection_name][metric_name])
 
             tp_errors[metric_name] = float(np.mean(errors))
+            
         return tp_errors
 
     @property
-    def weighted_sum(self):
-        weighted_sum = self.cfg.mean_ap_weight * self.mean_ap
+    def tp_scores(self):
+        scores = []
         for metric_name in TP_METRICS:
 
             # We convert the true positive errors to "scores" by 1-error
@@ -344,14 +347,25 @@ class DetectionMetrics:
             # Some of the true positive errors are unbounded, so we bound the scores to min 0.
             score = max(0.0, score)
 
-            # Accumulate
-            weighted_sum += score
-        return weighted_sum / float(self.cfg.mean_ap_weight + len(TP_METRICS))
+            scores.append(score)
+        return scores
+
+    @property
+    def weighted_sum(self):
+
+        # Summarize
+        total = self.cfg.mean_ap_weight * self.mean_ap + np.sum(self.tp_scores)
+
+        # Normalize
+        total = total / float(self.cfg.mean_ap_weight + len(self.tp_scores))
+
+        return total
 
     def serialize(self):
         return {'label_aps': self.label_aps,
-                'label_tp_metrics': self.label_tp_errors,
+                'label_tp_errors': self.label_tp_errors,
                 'mean_ap': self.mean_ap,
-                'tp_metrics': self.tp_errors,
+                'tp_errors': self.tp_errors,
+                'tp_scores': self.tp_scores,
                 'weighted_sum': self.weighted_sum,
                 'eval_time': self.eval_time}
