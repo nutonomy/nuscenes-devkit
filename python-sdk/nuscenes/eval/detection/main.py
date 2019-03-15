@@ -93,7 +93,6 @@ class NuScenesEval:
         metric_data_list = MetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
-                print(dist_th, class_name)
                 md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, dist_th)
                 metric_data_list.set(class_name, dist_th, md)
 

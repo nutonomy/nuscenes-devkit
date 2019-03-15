@@ -124,7 +124,7 @@ class TestAlgo(unittest.TestCase):
                     tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
-        self.assertEqual(0.101181797324938, metrics.weighted_sum)
+        self.assertEqual(0.10063518713627559, metrics.weighted_sum)
 
 
 if __name__ == '__main__':

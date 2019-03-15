@@ -5,7 +5,7 @@
 import numpy as np
 
 from nuscenes.eval.detection.data_classes import EvalBoxes, MetricData
-from nuscenes.eval.detection.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc
+from nuscenes.eval.detection.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc, cummean
 
 
 def accumulate(gt_boxes: EvalBoxes,
@@ -36,9 +36,9 @@ def accumulate(gt_boxes: EvalBoxes,
     # Count the positives.
     npos = len([1 for gt_box in gt_boxes.all if gt_box.detection_name == class_name])
 
-    # For missing classes in the GT, return nan mAP.
+    # For missing classes in the GT, return a data struce corresponding to no predictions.
     if npos == 0:
-        return MetricData()
+        return MetricData.no_predictions()
 
     # Organize the predictions in a single list.
     pred_boxes_list = [box for box in pred_boxes.all if box.detection_name == class_name]
@@ -50,7 +50,7 @@ def accumulate(gt_boxes: EvalBoxes,
     # Do the actual matching.
     tp = []  # Accumulator of true positives
     fp = []  # Accumulator of false positives
-    confs = []  # Accumulator of confidences
+    conf = []  # Accumulator of confidences
 
     # match_data holds the extra metrics we calculate for each match.
     match_data = {'trans_err': [],
@@ -90,7 +90,7 @@ def accumulate(gt_boxes: EvalBoxes,
             #  Update tp, fp and confs
             tp.append(1)
             fp.append(0)
-            confs.append(pred_box.detection_score)
+            conf.append(pred_box.detection_score)
 
             # Since it is a match, update match data also.
             gt_box_match = gt_boxes[pred_box.sample_token][match_gt_idx]
@@ -114,7 +114,7 @@ def accumulate(gt_boxes: EvalBoxes,
             # No match. Mark this as a false positive.
             tp.append(0)
             fp.append(1)
-            confs.append(pred_box.detection_score)
+            conf.append(pred_box.detection_score)
 
     # Now that the data has been accumulated we will apply three post-processing step
 
@@ -125,63 +125,44 @@ def accumulate(gt_boxes: EvalBoxes,
     # Accumulate.
     tp = np.cumsum(tp).astype(np.float)
     fp = np.cumsum(fp).astype(np.float)
-    confs = np.array(confs)
+    conf = np.array(conf)
 
     # Calculate precision and recall.
     prec = tp / (fp + tp)
-    if npos > 0:
-        rec = tp / float(npos)
-    else:
-        rec = 0 * tp
-
-    # If there are no data points, add a point at (rec, prec) of (0.01, 0) such that the AP equals 0.
-    if len(prec) == 0:
-        rec = np.array([0.01])
-        prec = np.array([0])
-        confs = np.array([0.5])
-
-    # If there is no precision value for recall == 0, we add a conservative estimate.
-    if rec[0] != 0:
-        rec = np.append(0.0, rec)
-        prec = np.append(prec[0], prec)
-        confs = np.append(1, confs)
+    rec = tp / float(npos)
 
     # ---------------------------------------------
     # Step3: Re-sample recall, precision and confidences such that we have one data point for each
     # recall percentage between 0 and 1.
     # ---------------------------------------------
 
-    rec_interp = np.linspace(0, 1,  MetricData.nelem)  # 101 steps, from 0% to 100% recall.
-    prec = np.interp(rec_interp, rec, prec, right=0)
-    conf = np.interp(rec_interp, rec, confs, right=0)
-    rec = rec_interp
-    print(len(rec))
+    if len(prec) == 0:  # If there are no data points, set value which generates zero average precision
+        rec = np.linspace(0, 100, MetricData.nelem),
+        prec = np.zeros(MetricData.nelem),
+        conf = np.linspace(0, 100, MetricData.nelem)[::-1],
 
+    else:  # Else interpolate
+        rec_interp = np.linspace(0, 1, MetricData.nelem)  # 101 steps, from 0% to 100% recall.
+        prec = np.interp(rec_interp, rec, prec, right=0)
+        conf = np.interp(rec_interp, rec, conf, right=0)
+        rec = rec_interp
 
     # ---------------------------------------------
     # Step 4: Re-sample the match-data to match, prec, recall and conf.
     # ---------------------------------------------
-
-    def cummean(x):
-        """ Computes the cumulative mean up to each position. """
-        if len(np.isnan(x)) == len(x):
-            # Is all numbers in array are NaN's.
-            return np.empty(len(x))
-        else:
-            # Accumulate in a nan-aware manner.
-            sum_vals = np.nancumsum(x)  # Cumulative sum ignoring nans.
-            count_vals = np.cumsum(~np.isnan(x))  # Number of non-nans up to each position.
-            return np.divide(sum_vals, count_vals, out=np.zeros_like(sum_vals), where=count_vals != 0)
-
     for key in match_data.keys():
         if key == "conf":
             continue  # Confidence is used as reference to align with fp and tp. So skip in this step.
 
-        # For each match_data, we first calculate the accumulated mean.
-        tmp = cummean(match_data[key])
+        if len(match_data[key]) == 0:  # If there are no matches, set error to 1 for all operating poitns.
+            match_data[key] = np.ones(MetricData.nelem)
 
-        # Then interpolate based on the confidences. (Note reversing since np.interp needs increasing arrays)
-        match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp)
+        else:
+            # For each match_data, we first calculate the accumulated mean.
+            tmp = cummean(match_data[key])
+
+            # Then interpolate based on the confidences. (Note reversing since np.interp needs increasing arrays)
+            match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp)
 
     # ---------------------------------------------
     # Done: Instantiate MetricData and return
