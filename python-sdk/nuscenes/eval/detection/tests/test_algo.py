@@ -49,10 +49,10 @@ class TestAlgo(unittest.TestCase):
 
                 this_gt.append(EvalBox(
                     sample_token=str(sample_itt),
-                    translation=list(np.random.rand(2)*15) + [0],
-                    size=list(np.random.rand(3)*4),
-                    rotation=list(np.random.rand(4)),
-                    velocity=list(np.random.rand(3)*4),
+                    translation=tuple(list(np.random.rand(2)*15) + [0.0]),
+                    size=tuple(np.random.rand(3)*4),
+                    rotation=tuple(np.random.rand(4)),
+                    velocity=tuple(np.random.rand(3)[:2]*4),
                     detection_name=detection_name,
                     detection_score=random.random(),
                     attribute_name=random_attr(),
@@ -67,10 +67,10 @@ class TestAlgo(unittest.TestCase):
 
                 this_pred.append(EvalBox(
                     sample_token=str(sample_itt),
-                    translation = list(np.random.rand(2)*10) + [0],
-                    size=list(np.random.rand(3) * 4),
-                    rotation=list(np.random.rand(4)),
-                    velocity=list(np.random.rand(3) * 4),
+                    translation=tuple(list(np.random.rand(2) * 10) + [0.0]),
+                    size=tuple(np.random.rand(3) * 4),
+                    rotation=tuple(np.random.rand(4)),
+                    velocity=tuple(np.random.rand(3)[:2] * 4),
                     detection_name=detection_name,
                     detection_score=random.random(),
                     attribute_name=random_attr(),

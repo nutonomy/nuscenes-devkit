@@ -80,10 +80,7 @@ def velocity_l2(gt_box: EvalBox, pred_box: EvalBox) -> float:
     :param pred_box: Predicted sample.
     :return: L2 distance.
     """
-    if any(np.isnan(pred_box.velocity[:2])):
-        return np.inf
-    else:
-        return np.linalg.norm(np.array(pred_box.velocity[:2]) - np.array(gt_box.velocity[:2]))
+    return np.linalg.norm(np.array(pred_box.velocity) - np.array(gt_box.velocity))
 
 
 def yaw_diff(gt_box: EvalBox, eval_box: EvalBox, period: float = 2*np.pi) -> float:

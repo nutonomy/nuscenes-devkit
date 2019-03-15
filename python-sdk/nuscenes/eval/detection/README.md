@@ -52,7 +52,7 @@ sample_result {
     "translation":        <float> [3]   -- Estimated bounding box location in m in the global frame: center_x, center_y, center_z.
     "size":               <float> [3]   -- Estimated bounding box size in m: width, length, height.
     "rotation":           <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
-    "velocity":           <float> [3]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy, vz.
+    "velocity":           <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
     "detection_name":     <str>         -- The predicted class for this sample_result, e.g. car, pedestrian.
     "detection_score":    <float>       -- Object prediction score between 0 and 1 for the class identified by detection_name.
     "attribute_name":     <str>         -- Name of the predicted attribute or empty string for classes without attributes.

@@ -77,7 +77,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
                     translation=sample_annotation['translation'],
                     size=sample_annotation['size'],
                     rotation=sample_annotation['rotation'],
-                    velocity=list(nusc.box_velocity(sample_annotation['token'])),
+                    velocity=nusc.box_velocity(sample_annotation['token'])[:2],
                     detection_name=detection_name,
                     detection_score=np.nan,  # GT samples do not have a score.
                     attribute_name=attribute_name,

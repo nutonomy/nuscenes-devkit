@@ -58,7 +58,7 @@ class EvalBox:
                  translation: Tuple[float, float, float] = (0, 0, 0),
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
-                 velocity: Tuple[float, float, float] = (0, 0, 0),
+                 velocity: Tuple[float, float] = (0, 0),
                  detection_name: str = "car",
                  attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
                  ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
@@ -77,7 +77,7 @@ class EvalBox:
         assert len(rotation) == 4
         assert not np.any(np.isnan(rotation))
 
-        assert len(velocity) == 3
+        assert len(velocity) == 2
         assert not np.any(np.isnan(velocity))
 
         assert detection_name in DETECTION_NAMES
