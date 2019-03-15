@@ -49,12 +49,7 @@ pipeline {
           // an activated Conda environment inside of the container.
           sh """#!/bin/bash
             set -eux
-            echo 'Building docker image...'
-            docker rm -f $TEST_CONTAINER_NAME || echo "Container does not exist"
-            docker build -t $TEST_IMAGE .
-            docker run --name $TEST_CONTAINER_NAME \
-	      $TEST_IMAGE \
-              bash -c "source activate nuenv && cd python-sdk && python -m unittest"
+            bash test_mini_split.sh
           """
         } // container
 
