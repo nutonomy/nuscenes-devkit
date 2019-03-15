@@ -127,11 +127,9 @@ Our final score is a weighted sum of mean Average Precision (mAP) and several Tr
 
 ### Preprocessing
 Before running the evaluation code the following pre-processing is done on the data
-* All boxes (gt and prediction) are filtered on class-specific max-distance. See config.json for details.
-* All bikes and motorcycle boxes (gt and prediction) that fall inside a bike-rack are removed. The reason is that we do 
-not annotate bikes inside bike-racks.  
-* All boxes (gt) without any lidar nor radar points in them are removed. The reason is that we can not guarantee that they 
-are actually visible in the frame. We do not filter the estimated boxes here.   
+* All boxes (gt and prediction) are filtered on class-specific max-distance. 
+* All bikes and motorcycle boxes (gt and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
+* All boxes (gt) without any lidar nor radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the estimated boxes here.   
 
 ### Average Precision metric
 * **mean Average Precision (mAP)**:
@@ -152,18 +150,16 @@ Finally we compute the mean over classes.
 
 * **mean Average Translation Error (mATE)**: For each match we compute the translation error as the Euclidean center distance in 2D in meters.
 * **mean Average Scale Error (mASE)**: For each match we compute the 3D IOU after aligning orientation and translation.
-* **mean Average Orientation Error (mAOE)**: For each match we compute the orientation error as the smallest yaw angle difference between prediction and ground-truth in radians.
-* **mean Average Velocity Error (mAVE)**: For each match we compute the absolute velocity error as the L2 norm of the velocity differences in 2D in m/s.
-* **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. The attribute error is ignored for annotations without attributes.
+* **mean Average Orientation Error (mAOE)**: For each match we compute the orientation error as the smallest yaw angle difference between prediction and ground-truth in radians. Orientation error is evaluated at 360 degree for all classes except barriers where it is only evaluated at 180 degrees. Orientation errors for cones are ignored.
+* **mean Average Velocity Error (mAVE)**: For each match we compute the absolute velocity error as the L2 norm of the velocity differences in 2D in m/s. Velocity error for barriers and cones are ignored.
+* **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. Attribute error for barriers and cones are ignored.
 
 All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
-
 
 ### Weighted sum metric
 * **Weighted sum**: We compute the weighted sum of the above metrics: mAP, mATE, mASE, mAOE, mAVE and mAAE.
 As a first step we convert the TP errors to TP scores as *x_score = max(1 - x_err, 0.0)*.
 We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
-
 
 ## Leaderboard & challenge tracks
 Compared to other datasets and challenges, nuScenes will have a single leaderboard for the detection task.
@@ -177,11 +173,11 @@ Methods will be compared within these tracks and the winners will be decided for
 
 * **LIDAR detection track**: 
 This track allows only lidar sensor data as input.
-No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization)
+No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
 
 * **VISION detection track**: 
 This track allows only camera sensor data (images) as input.
-No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization)
+No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
 
 * **OPEN detection track**: 
 This is where users can go wild.

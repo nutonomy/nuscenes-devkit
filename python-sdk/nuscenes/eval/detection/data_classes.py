@@ -349,23 +349,9 @@ class DetectionMetrics:
             class_errors = []
             for detection_name in self.cfg.class_names:
 
-                if detection_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
-                    # We don't include this in mean since:
-                    # - We dont have attributes for cones.
-                    # - Cones are stationary.
-                    # - Orientation of a cone is ill-defined.
-                    pass
+                class_errors.append(self.label_tp_errors[detection_name][metric_name])
 
-                elif detection_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
-                    # We don't include this in mean since:
-                    # - We dont have attributes for cones.
-                    # - Barriers are stationary.
-                    pass
-
-                else:
-                    class_errors.append(self.label_tp_errors[detection_name][metric_name])
-
-            errors[metric_name] = float(np.mean(class_errors))
+            errors[metric_name] = float(np.nanmean(class_errors))
 
         return errors
 

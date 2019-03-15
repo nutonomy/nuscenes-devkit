@@ -115,7 +115,13 @@ class TestAlgo(unittest.TestCase):
                 metrics.add_label_ap(class_name, ap)
 
             for metric_name in TP_METRICS:
-                tp = calc_tp(mdl[(class_name, self.cfg.dist_th_tp)], self.cfg.min_recall, metric_name)
+                metric_data = mdl[(class_name, self.cfg.dist_th_tp)]
+                if class_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
+                    tp = np.nan
+                elif class_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
+                    tp = np.nan
+                else:
+                    tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
         self.assertEqual(0.101181797324938, metrics.weighted_sum)
