@@ -12,10 +12,10 @@ from typing import Dict
 import numpy as np
 from tqdm import tqdm
 
+from nuscenes import NuScenes
+from nuscenes.eval.detection import NuScenesEval
 from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.eval.detection.main import NuScenesEval
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
-from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -78,7 +78,7 @@ class TestMain(unittest.TestCase):
                         'translation': list(np.array(ann['translation']) + 5 * (np.random.rand(3) - 0.5)),
                         'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
                         'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
-                        'velocity': list(nusc.box_velocity(ann_token) * (np.random.rand(3) + 0.5)),
+                        'velocity': list(nusc.box_velocity(ann_token)[:2] * (np.random.rand(3)[:2] + 0.5)),
                         'detection_name': detection_name,
                         'detection_score': random.random(),
                         'attribute_name': random_attr(detection_name)
@@ -86,7 +86,6 @@ class TestMain(unittest.TestCase):
             mock_results[sample['token']] = sample_res
         return mock_results
 
-    @unittest.skip
     def test_delta(self):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
@@ -98,7 +97,8 @@ class TestMain(unittest.TestCase):
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
 
         this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg = DetectionConfig.deserialize(json.load(open(os.path.join(this_dir, '../config.json'))))
+        with open(os.path.join(this_dir, '../config.json')) as f:
+            cfg = DetectionConfig.deserialize(json.load(f))
 
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 

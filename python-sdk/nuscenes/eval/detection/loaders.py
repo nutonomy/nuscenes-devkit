@@ -79,7 +79,7 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
                     rotation=sample_annotation['rotation'],
                     velocity=nusc.box_velocity(sample_annotation['token'])[:2],
                     detection_name=detection_name,
-                    detection_score=np.nan,  # GT samples do not have a score.
+                    detection_score=-1.0,  # GT samples do not have a score.
                     attribute_name=attribute_name,
                     num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_lidar_pts']
                 )

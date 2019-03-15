@@ -155,6 +155,8 @@ def accumulate(gt_boxes: EvalBoxes,
     prec = np.interp(rec_interp, rec, prec, right=0)
     conf = np.interp(rec_interp, rec, confs, right=0)
     rec = rec_interp
+    print(len(rec))
+
 
     # ---------------------------------------------
     # Step 4: Re-sample the match-data to match, prec, recall and conf.

@@ -5,25 +5,24 @@
 from __future__ import annotations
 
 import json
-import time
-import sys
 import os.path as osp
+import sys
+import time
 from datetime import datetime
-from typing import Tuple, List
 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import sklearn.metrics
 from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
-import sklearn.metrics
 from tqdm import tqdm
+from typing import Tuple, List
 
-from nuscenes.utils.map_mask import MapMask
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from nuscenes.utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
-
+from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility
+from nuscenes.utils.map_mask import MapMask
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -37,7 +36,7 @@ class NuScenes:
     """
 
     def __init__(self,
-                 version: str = 'v1.0',
+                 version: str = 'v1.0-mini',
                  dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1):
@@ -307,10 +306,10 @@ class NuScenes:
                     center = [np.interp(t, [t0, t1], [c0, c1]) for c0, c1 in zip(prev_ann_rec['translation'],
                                                                                  curr_ann_rec['translation'])]
 
-                    # Interpolate orientation. (There is a bug in pyquaternion.slerp() so use external method.)
-                    rotation = Quaternion(quaternion_slerp(np.array(prev_ann_rec['rotation']),
-                                                           np.array(curr_ann_rec['rotation']),
-                                                           (t - t0) / (t1 - t0)))
+                    # Interpolate orientation.
+                    rotation = Quaternion.slerp(q0=Quaternion(prev_ann_rec['rotation']),
+                                                q1=Quaternion(curr_ann_rec['rotation']),
+                                                amount=(t - t0) / (t1 - t0))
 
                     box = Box(center, curr_ann_rec['size'], rotation, name=curr_ann_rec['category_name'])
                 else:

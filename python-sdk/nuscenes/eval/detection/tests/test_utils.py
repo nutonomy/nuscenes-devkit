@@ -8,7 +8,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.data_classes import EvalBox
-from nuscenes.eval.detection.utils import scale_iou, quaternion_yaw, yaw_diff, angle_diff
+from nuscenes.eval.detection.utils import scale_iou, yaw_diff, angle_diff
 
 
 class TestEval(unittest.TestCase):
@@ -53,48 +53,6 @@ class TestEval(unittest.TestCase):
         sa = EvalBox(size=[4, 4, 4])
         sr = EvalBox(size=[4, -5, 4])
         self.assertRaises(AssertionError, scale_iou, sa, sr)
-
-    def test_quaternion_yaw(self):
-        """Test valid and invalid inputs for quaternion_yaw()."""
-
-        # Misc yaws.
-        for yaw_in in np.linspace(-10, 10, 100):
-            q = Quaternion(axis=(0, 0, 1), angle=yaw_in)
-            yaw_true = yaw_in % (2 * np.pi)
-            if yaw_true > np.pi:
-                yaw_true -= 2 * np.pi
-            yaw_test = quaternion_yaw(q)
-            self.assertAlmostEqual(yaw_true, yaw_test)
-
-        # Non unit axis vector.
-        yaw_in = np.pi/4
-        q = Quaternion(axis=(0, 0, 0.5), angle=yaw_in)
-        yaw_test = quaternion_yaw(q)
-        self.assertAlmostEqual(yaw_in, yaw_test)
-
-        # Inverted axis vector.
-        yaw_in = np.pi/4
-        q = Quaternion(axis=(0, 0, -1), angle=yaw_in)
-        yaw_test = -quaternion_yaw(q)
-        self.assertAlmostEqual(yaw_in, yaw_test)
-
-        # Rotate around another axis.
-        yaw_in = np.pi/4
-        q = Quaternion(axis=(0, 1, 0), angle=yaw_in)
-        yaw_test = quaternion_yaw(q)
-        self.assertAlmostEqual(0, yaw_test)
-
-        # Rotate around two axes jointly.
-        yaw_in = np.pi/2
-        q = Quaternion(axis=(0, 1, 1), angle=yaw_in)
-        yaw_test = quaternion_yaw(q)
-        self.assertAlmostEqual(yaw_in, yaw_test)
-
-        # Rotate around two axes separately.
-        yaw_in = np.pi/2
-        q = Quaternion(axis=(0, 0, 1), angle=yaw_in) * Quaternion(axis=(0, 1, 0), angle=0.5821)
-        yaw_test = quaternion_yaw(q)
-        self.assertAlmostEqual(yaw_in, yaw_test)
 
     def test_yaw_diff(self):
         """Test valid and invalid inputs for yaw_diff()."""

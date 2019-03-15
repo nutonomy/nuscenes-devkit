@@ -8,11 +8,11 @@ import time
 
 import numpy as np
 
+from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.nuscenes import NuScenes
 
 
 class NuScenesEval:
@@ -93,6 +93,7 @@ class NuScenesEval:
         metric_data_list = MetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
+                print(dist_th, class_name)
                 md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, dist_th)
                 metric_data_list.set(class_name, dist_th, md)
 

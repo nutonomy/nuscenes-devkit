@@ -10,7 +10,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 # Load NuScenes class
 nusc = NuScenes()

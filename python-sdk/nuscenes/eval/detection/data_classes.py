@@ -77,8 +77,7 @@ class EvalBox:
         assert len(rotation) == 4
         assert not np.any(np.isnan(rotation))
 
-        assert len(velocity) == 2
-        assert not np.any(np.isnan(velocity))
+        assert len(velocity) == 2  # Velocity can be NaN from our database for certain annotations.
 
         assert detection_name in DETECTION_NAMES
 
@@ -146,9 +145,9 @@ class EvalBox:
                    velocity=tuple(content['velocity']),
                    detection_name=content['detection_name'],
                    attribute_name=content['attribute_name'],
-                   ego_dist=content['ego_dist'],
-                   detection_score=content['detection_score'],
-                   num_pts=int(content['num_pts']))
+                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),
+                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
 
 
 class EvalBoxes:
