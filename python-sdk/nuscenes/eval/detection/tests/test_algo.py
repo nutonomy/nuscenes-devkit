@@ -106,7 +106,7 @@ class TestAlgo(unittest.TestCase):
         for class_name in self.cfg.class_names:
             gt, pred = self._mock_results(30, 3, 25, class_name)
             for dist_th in self.cfg.dist_ths:
-                mdl.add(class_name, dist_th, accumulate(gt, pred, class_name, 'center_distance', 2))
+                mdl.set(class_name, dist_th, accumulate(gt, pred, class_name, 'center_distance', 2))
 
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
@@ -118,7 +118,7 @@ class TestAlgo(unittest.TestCase):
                 tp = calc_tp(mdl[(class_name, self.cfg.dist_th_tp)], self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
-        self.assertEqual(0.135073927045973, metrics.weighted_sum)
+        self.assertEqual(0.101181797324938, metrics.weighted_sum)
 
 
 if __name__ == '__main__':

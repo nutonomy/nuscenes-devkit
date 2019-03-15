@@ -98,7 +98,11 @@ def accumulate(gt_boxes: EvalBoxes,
             match_data['trans_err'].append(center_distance(gt_box_match, pred_box))
             match_data['vel_err'].append(velocity_l2(gt_box_match, pred_box))
             match_data['scale_err'].append(1 - scale_iou(gt_box_match, pred_box))
-            match_data['orient_err'].append(yaw_diff(gt_box_match, pred_box))
+
+            # Barrier orientation is only determined up to 180 degree. (For cones orientation is discarded later)
+            period = np.pi if class_name == 'barrier' else 2 * np.pi
+            match_data['orient_err'].append(yaw_diff(gt_box_match, pred_box, period=period))
+
             match_data['attr_err'].append(1 - attr_acc(gt_box_match, pred_box))
             match_data['conf'].append(pred_box.detection_score)
 
@@ -201,8 +205,11 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
 
 
 def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
-    """ Calculates true positive metrics """
+    """ Calculates true positive errors. """
 
     first_ind = round(100 * min_recall)
     last_ind = np.nonzero(md.confidence)[0][-1]  # First instance of confidence = 0 is index of max achieved recall.
-    return float(np.mean(getattr(md, metric_name)[first_ind: last_ind]))
+    if last_ind < first_ind:
+        return 1  # Assign 1 here. If this happens for all classes, the score for that TP metric will be 0.
+    else:
+        return float(np.mean(getattr(md, metric_name)[first_ind: last_ind]))

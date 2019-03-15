@@ -5,25 +5,48 @@
 import json
 import unittest
 
-from nuscenes.eval.detection.data_classes import MetricData, MetricDataList
+from nuscenes.eval.detection.data_classes import MetricData, EvalBox, EvalBoxes, MetricDataList
 
 
 class TestMetricData(unittest.TestCase):
 
     def test_serialization(self):
-        md1 = MetricData.random_md()
-        md2 = MetricData.deserialize(json.loads(json.dumps(md1.serialize())))
-        self.assertEqual(md1, md2)
+        """ test that instance serialization protocol works with json encodeding """
+        md = MetricData.random_md()
+        recovered = MetricData.deserialize(json.loads(json.dumps(md.serialize())))
+        self.assertEqual(md, recovered)
 
 
 class TestMetricDataList(unittest.TestCase):
 
     def test_serialization(self):
-        mdl1 = MetricDataList()
+        """ test that instance serialization protocol works with json encodeding """
+        mdl = MetricDataList()
         for i in range(10):
-            mdl1.add('name', 0.1, MetricData.random_md())
-        mdl2 = MetricDataList.deserialize(json.loads(json.dumps(mdl1.serialize())))
-        self.assertEqual(mdl1, mdl2)
+            mdl.set('name', 0.1, MetricData.random_md())
+        recovered = MetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())))
+        self.assertEqual(mdl, recovered)
+
+
+class TestEvalBox(unittest.TestCase):
+
+    def test_serialization(self):
+        """ test that instance serialization protocol works with json encodeding """
+        box = EvalBox()
+        recovered = EvalBox.deserialize(json.loads(json.dumps(box.serialize())))
+        self.assertEqual(box, recovered)
+
+
+class TestEvalBoxes(unittest.TestCase):
+
+    def test_serialization(self):
+        """ test that instance serialization protocol works with json encodeding """
+        boxes = EvalBoxes()
+        for i in range(10):
+            boxes.add_boxes(str(i), [EvalBox(), EvalBox(), EvalBox()])
+
+        recovered = EvalBoxes.deserialize(json.loads(json.dumps(boxes.serialize())))
+        self.assertEqual(boxes, recovered)
 
 
 if __name__ == '__main__':
