@@ -30,7 +30,7 @@ def accumulate(gt_boxes: EvalBoxes,
     dist_fcn = dist_fcn_map[dist_fcn_name]
 
     # ---------------------------------------------
-    # Step0: Organize input and inititialize accumulators
+    # Organize input and inititialize accumulators
     # ---------------------------------------------
 
     # Count the positives.
@@ -63,7 +63,7 @@ def accumulate(gt_boxes: EvalBoxes,
                   'vel_magn': []}
 
     # ---------------------------------------------
-    # Step1: Match and accumulate match data
+    # Match and accumulate match data
     # ---------------------------------------------
 
     taken = set()  # Initially no gt bounding box is matched.
@@ -116,10 +116,12 @@ def accumulate(gt_boxes: EvalBoxes,
             fp.append(1)
             conf.append(pred_box.detection_score)
 
-    # Now that the data has been accumulated we will apply three post-processing step
+    # Check if we have any matches. If not, just return a "no predictions" array.
+    if len(match_data['trans_err']) == 0:
+        return MetricData.no_predictions()
 
     # ---------------------------------------------
-    # Step2: accumulate and catch corner cases for precision / recall curve
+    # Calculate and interpolate precision and recall
     # ---------------------------------------------
 
     # Accumulate.
@@ -131,31 +133,18 @@ def accumulate(gt_boxes: EvalBoxes,
     prec = tp / (fp + tp)
     rec = tp / float(npos)
 
-    # ---------------------------------------------
-    # Step3: Re-sample recall, precision and confidences such that we have one data point for each
-    # recall percentage between 0 and 1.
-    # ---------------------------------------------
-
-    if len(prec) == 0:  # If there are no data points, set value which generates zero average precision
-        rec = np.linspace(0, 100, MetricData.nelem),
-        prec = np.zeros(MetricData.nelem),
-        conf = np.linspace(0, 100, MetricData.nelem)[::-1],
-
-    else:  # Else interpolate
-        rec_interp = np.linspace(0, 1, MetricData.nelem)  # 101 steps, from 0% to 100% recall.
-        prec = np.interp(rec_interp, rec, prec, right=0)
-        conf = np.interp(rec_interp, rec, conf, right=0)
-        rec = rec_interp
+    rec_interp = np.linspace(0, 1, MetricData.nelem)  # 101 steps, from 0% to 100% recall.
+    prec = np.interp(rec_interp, rec, prec, right=0)
+    conf = np.interp(rec_interp, rec, conf, right=0)
+    rec = rec_interp
 
     # ---------------------------------------------
-    # Step 4: Re-sample the match-data to match, prec, recall and conf.
+    # Re-sample the match-data to match, prec, recall and conf.
     # ---------------------------------------------
+
     for key in match_data.keys():
         if key == "conf":
             continue  # Confidence is used as reference to align with fp and tp. So skip in this step.
-
-        if len(match_data[key]) == 0:  # If there are no matches, set error to 1 for all operating poitns.
-            match_data[key] = np.ones(MetricData.nelem)
 
         else:
             # For each match_data, we first calculate the accumulated mean.
@@ -165,7 +154,7 @@ def accumulate(gt_boxes: EvalBoxes,
             match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp)
 
     # ---------------------------------------------
-    # Done: Instantiate MetricData and return
+    # Done. Instantiate MetricData and return
     # ---------------------------------------------
     return MetricData(recall=rec,
                       precision=prec,
