@@ -133,6 +133,7 @@ class TestEndToEnd(unittest.TestCase):
         # After changing to measure center distance from the ego-vehicle this changed to 0.2199307290627096
         # Changed to 1.0-mini. Cleaned up build script. So new basline at 0.24954451673961747
         self.assertAlmostEqual(metrics['weighted_sum'], 0.24954451673961747)
+        print("Passed unit test test_delta")
 
 
 if __name__ == '__main__':
