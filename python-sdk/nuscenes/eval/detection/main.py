@@ -92,7 +92,7 @@ class NuScenesEval:
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
                 md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, dist_th)
-                metric_data_list.add(class_name, dist_th, md)
+                metric_data_list.set(class_name, dist_th, md)
 
         # -----------------------------------
         # Step 2: Calculate metrics from the data

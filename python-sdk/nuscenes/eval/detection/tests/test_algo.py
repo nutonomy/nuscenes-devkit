@@ -106,7 +106,7 @@ class TestAlgo(unittest.TestCase):
         for class_name in self.cfg.class_names:
             gt, pred = self._mock_results(30, 3, 25, class_name)
             for dist_th in self.cfg.dist_ths:
-                mdl.add(class_name, dist_th, accumulate(gt, pred, class_name, 'center_distance', 2))
+                mdl.set(class_name, dist_th, accumulate(gt, pred, class_name, 'center_distance', 2))
 
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:

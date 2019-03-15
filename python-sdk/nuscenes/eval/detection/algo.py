@@ -208,7 +208,7 @@ def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
     """ Calculates true positive errors. """
 
     first_ind = round(100 * min_recall)
-    last_ind = np.nonzero(md.confidence)[0][-1]  # First instance of confidence = 0 is index of max achived recall.
+    last_ind = np.nonzero(md.confidence)[0][-1]  # First instance of confidence = 0 is index of max achieved recall.
     if last_ind < first_ind:
         return 1  # Assign 1 here. If this happens for all classes, the score for that TP metric will be 0.
     else:

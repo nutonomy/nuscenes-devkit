@@ -3,7 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from collections import defaultdict
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy as np
 
@@ -37,13 +37,9 @@ class DetectionConfig:
 
         self.class_names = self.class_range.keys()
 
-    def serialize(self):
-        """ Serialize instance into json-friendly format """
-        pass  # TODO: write
-
     @classmethod
     def deserialize(cls, content):
-        """ Initialize from serialized content """
+        """ Initialize from serialized dictionary """
         return cls(content['class_range'],
                    content['dist_fcn'],
                    content['dist_ths'],
@@ -59,10 +55,10 @@ class EvalBox:
 
     def __init__(self,
                  sample_token: str = "",
-                 translation: List[float] = (0, 0, 0),
-                 size: List[float] = (0, 0, 0),
-                 rotation: List[float] = (0, 0, 0, 0),
-                 velocity: List[float] = (0, 0, 0),
+                 translation: Tuple[float, float, float] = (0, 0, 0),
+                 size: Tuple[float, float, float] = (0, 0, 0),
+                 rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
+                 velocity: Tuple[float, float, float] = (0, 0, 0),
                  detection_name: str = "car",
                  attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
                  ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
@@ -105,38 +101,61 @@ class EvalBox:
         self.rotation = rotation
         self.velocity = velocity
         self.detection_name = detection_name
-        self.detection_score = detection_score
         self.attribute_name = attribute_name
         self.ego_dist = ego_dist
+        self.detection_score = detection_score
         self.num_pts = num_pts
 
     def __repr__(self):
-        return self.detection_name
+        return str(self.serialize())
 
-    def serialize(self):
+    def __eq__(self, other):
+        return (self.sample_token == other.sample_token and
+                self.translation == other.translation and
+                self.size == other.size and
+                self.rotation == other.rotation and
+                self.velocity == other.velocity and
+                self.detection_name == other.detection_name and
+                self.attribute_name == other.attribute_name and
+                self.ego_dist == other.ego_dist and
+                self.detection_score == other.detection_score and
+                self.num_pts == other.num_pts)
+
+    def serialize(self) -> dict:
         """ Serialize instance into json-friendly format """
-        pass  # TODO: write
+        return {
+            'sample_token': self.sample_token,
+            'translation': self.translation,
+            'size': self.size,
+            'rotation': self.rotation,
+            'velocity': self.velocity,
+            'detection_name': self.detection_name,
+            'attribute_name': self.attribute_name,
+            'ego_dist': self.ego_dist,
+            'detection_score': self.detection_score,
+            'num_pts': self.num_pts
+        }
 
     @classmethod
     def deserialize(cls, content):
         """ Initialize from serialized content """
-        return cls(content['sample_token'],
-                   content['translation'],
-                   content['size'],
-                   content['rotation'],
-                   content['velocity'],
-                   content['detection_name'],
-                   content['detection_score'],
-                   content['attribute_name'],
-                   content['ego_dist'],
-                   content['num_pts'])
+        return cls(sample_token=content['sample_token'],
+                   translation=tuple(content['translation']),
+                   size=tuple(content['size']),
+                   rotation=tuple(content['rotation']),
+                   velocity=tuple(content['velocity']),
+                   detection_name=content['detection_name'],
+                   attribute_name=content['attribute_name'],
+                   ego_dist=content['ego_dist'],
+                   detection_score=content['detection_score'],
+                   num_pts=int(content['num_pts']))
 
 
 class EvalBoxes:
     """ Data class that groups EvalBox instances by sample """
 
     def __init__(self):
-        self.boxes = {}
+        self.boxes = defaultdict(list)
 
     def __repr__(self):
         return "EvalBoxes with {} boxes across {} samples".format(len(self.all), len(self.sample_tokens))
@@ -144,28 +163,41 @@ class EvalBoxes:
     def __getitem__(self, item) -> List[EvalBox]:
         return self.boxes[item]
 
+    def __eq__(self, other):
+        if not set(self.sample_tokens) == set(other.sample_tokens):
+            return False
+        ok = True
+        for token in self.sample_tokens:
+            if not len(self[token]) == len(self[token]):
+                return False
+            for box1, box2 in zip(self[token], other[token]):
+                ok = ok and box1 == box2
+        return ok
+
     @property
     def all(self) -> List[EvalBox]:
+        """ Returns all EvalBoxes in a list """
         ab = []
         for sample_token in self.sample_tokens:
             ab.extend(self[sample_token])
         return ab
 
     @property
-    def sample_tokens(self):
+    def sample_tokens(self) -> List[float]:
+        """ Returns a list of all keys """
         return list(self.boxes.keys())
 
-    def add_boxes(self, sample_token, boxes):
-        self.boxes[sample_token] = boxes
+    def add_boxes(self, sample_token, boxes) -> None:
+        """ Adds a list of boxes """
+        self.boxes[sample_token].extend(boxes)
 
-    def serialize(self):
+    def serialize(self) -> dict:
         """ Serialize instance into json-friendly format """
-        pass  # TODO: write
+        return {key: [box.serialize() for box in boxes] for key, boxes in self.boxes.items()}
 
     @classmethod
     def deserialize(cls, content):
         """ Initialize from serialized content """
-        # TODO type-checking
         eb = cls()
         for sample_token, boxes in content.items():
             eb.add_boxes(sample_token, [EvalBox.deserialize(box) for box in boxes])
@@ -270,10 +302,11 @@ class MetricDataList:
             eq = eq and self[key] == other[key]
         return eq
 
-    def add(self, detection_name: str, match_distance: float, data: MetricData):
+    def set(self, detection_name: str, match_distance: float, data: MetricData):
+        """ Sets the MetricData entry for a certain detectdion_name and match_distance """
         self.md[(detection_name, match_distance)] = data
 
-    def serialize(self):
+    def serialize(self) -> dict:
         return {key[0]+':'+str(key[1]): value.serialize() for key, value in self.md.items()}
 
     @classmethod
@@ -281,7 +314,7 @@ class MetricDataList:
         mdl = cls()
         for key, md in content.items():
             name, distance = key.split(':')
-            mdl.add(name, float(distance), MetricData.deserialize(md))
+            mdl.set(name, float(distance), MetricData.deserialize(md))
         return mdl
 
 
@@ -305,15 +338,15 @@ class DetectionMetrics:
         self.eval_time = eval_time
 
     @property
-    def mean_ap(self):
-        return np.mean([np.mean(aps) for aps in self.label_aps.values()])
+    def mean_ap(self) -> float:
+        return float(np.mean([np.mean(aps) for aps in self.label_aps.values()]))
 
     @property
-    def tp_errors(self):
+    def tp_errors(self) -> Dict[str, float]:
         """ Calculates the mean true positive error across all classes for each metric. """
-        tp_errors = {}
+        errors = {}
         for metric_name in TP_METRICS:
-            errors = []
+            class_errors = []
             for detection_name in self.cfg.class_names:
 
                 if detection_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
@@ -330,15 +363,15 @@ class DetectionMetrics:
                     pass
 
                 else:
-                    errors.append(self.label_tp_errors[detection_name][metric_name])
+                    class_errors.append(self.label_tp_errors[detection_name][metric_name])
 
-            tp_errors[metric_name] = float(np.mean(errors))
-            
-        return tp_errors
+            errors[metric_name] = float(np.mean(class_errors))
+
+        return errors
 
     @property
-    def tp_scores(self):
-        scores = []
+    def tp_scores(self) -> Dict[str, float]:
+        scores = {}
         for metric_name in TP_METRICS:
 
             # We convert the true positive errors to "scores" by 1-error
@@ -347,17 +380,18 @@ class DetectionMetrics:
             # Some of the true positive errors are unbounded, so we bound the scores to min 0.
             score = max(0.0, score)
 
-            scores.append(score)
+            scores[metric_name] = score
+
         return scores
 
     @property
-    def weighted_sum(self):
+    def weighted_sum(self) -> float:
 
         # Summarize
-        total = self.cfg.mean_ap_weight * self.mean_ap + np.sum(self.tp_scores)
+        total = float(self.cfg.mean_ap_weight * self.mean_ap + np.sum(list(self.tp_scores.values())))
 
         # Normalize
-        total = total / float(self.cfg.mean_ap_weight + len(self.tp_scores))
+        total = total / float(self.cfg.mean_ap_weight + len(self.tp_scores.keys()))
 
         return total
 
