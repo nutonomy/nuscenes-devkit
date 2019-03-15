@@ -5,7 +5,7 @@
 from typing import Dict, List
 import argparse
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 train = \
     ['scene-0001', 'scene-0002', 'scene-0004', 'scene-0005', 'scene-0006', 'scene-0007', 'scene-0008', 'scene-0009',

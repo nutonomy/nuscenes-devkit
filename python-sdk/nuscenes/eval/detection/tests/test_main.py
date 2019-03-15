@@ -12,10 +12,10 @@ from typing import Dict
 from tqdm import tqdm
 import numpy as np
 
-from nuscenes.eval.detection.main import NuScenesEval
+from nuscenes.eval.detection import NuScenesEval
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 from nuscenes.utils.splits import create_splits_scenes
 
 

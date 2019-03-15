@@ -9,7 +9,7 @@ from typing import Dict
 
 import numpy as np
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 from nuscenes.eval.detection.utils import dist_fcn_map
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.data_classes import DetectionConfig
