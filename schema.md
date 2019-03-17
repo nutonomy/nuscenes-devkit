@@ -1,6 +1,5 @@
 Database schema
 ==========
-
 category
 ---------
 
@@ -163,10 +162,12 @@ sample_annotation {
    "sample_token":            <str> -- Foreign key. NOTE: this points to a sample NOT a sample_data since annotations are done on the sample level taking all relevant sample_data into account.
    "instance_token":          <str> -- Foreign key. Which object instance is this annotating. An instance can have multiple annotations over time.
    "attribute_tokens":        <str> [n] -- Foreign keys. List of attributes for this annotation. Attributes can change over time, so they belong here, not in the object table.
-   "visibility_token":        <str> -- Foreign key. Visibility may also change over time. If no visibility is annotated, the token is an empty string. 
+   "visibility_token":        <str> -- Foreign key. Visibility may also change over time. If no visibility is annotated, the token is an empty string.
    "translation":             <float> [3] -- Bounding box location as center_x, center_y, center_z.
    "size":                    <float> [3] -- Bounding box size as width, length, height.
    "rotation":                <float> [4] -- Bounding box orientation as quaternion: w, x, y, z.
+   "num_lidar_pts":           <int> -- Number of lidar points in this box. Points are counted during the lidar sweep identified with this sample.
+   "num_radar_pts":           <int> -- Number of radar points in this box. Points are counted during the radar sweep identified with this sample. This number is summed across all radar sensors without any invalid point filtering.
    "next":                    <str> -- Foreign key. Sample annotation from the same object instance that follows this in time. Empty if this is the last annotation for this object.
    "prev":                    <str> -- Foreign key. Sample annotation from the same object instance that precedes this in time. Empty if this is the first annotation for this object.
 }
