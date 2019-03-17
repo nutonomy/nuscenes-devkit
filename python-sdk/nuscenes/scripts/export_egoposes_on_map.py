@@ -13,7 +13,7 @@ import numpy as np
 from nuscenes import NuScenes
 
 # Load NuScenes class
-nusc = NuScenes()
+nusc = NuScenes(dataroot='/data/sets/nuscenes', version='v1.0-trainval')
 locations = np.unique([l['location'] for l in nusc.log])
 
 # Create output directory
@@ -22,6 +22,7 @@ if not os.path.isdir(out_dir):
     os.makedirs(out_dir)
 
 for location in locations:
+    print('Rendering map %s...' % location)
     nusc.render_egoposes_on_map(log_location=location)
     out_path = os.path.join(out_dir, 'egoposes-%s.png' % location)
     plt.tight_layout()

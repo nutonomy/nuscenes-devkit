@@ -1036,6 +1036,7 @@ class NuScenesExplorer:
         map_poses = []
         map_mask = None
 
+        print('Adding ego poses to map...')
         for scene_token in tqdm(scene_tokens_location):
 
             # Get records from the database.
@@ -1058,6 +1059,7 @@ class NuScenesExplorer:
                     map_mask.to_pixel_coords(pose_record['translation'][0], pose_record['translation'][1])))
 
         # Compute number of close ego poses.
+        print('Create plot...')
         map_poses = np.vstack(map_poses)
         dists = sklearn.metrics.pairwise.euclidean_distances(map_poses * map_mask.resolution)
         close_poses = np.sum(dists < close_dist, axis=0)
