@@ -35,11 +35,11 @@
 **For every bounding box, include one of the following labels:**
 1. **[Car or Van or SUV](#car-or-van-or-suv)**: Vehicle designed primarily for personal use, e.g. sedans, hatch-backs, wagons, vans, mini-vans, SUVs and jeeps.   
 
-2. **[Truck](#truck)**: Vehicles primarily designed to haul cargo including lorrys, trucks. 
+2. **[Truck](#truck)**: Vehicles primarily designed to haul cargo including pick-ups, lorrys, trucks and semi-tractors. Trailers hauled after a semi-tractor should be labeled as vehicle.trailer.
 
-3. **[Pickup Truck](#pickup-truck)**: A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use. 
+    - **[Pickup Truck](#pickup-truck)**: A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use. 
 
-4. **[Front Of Semi Truck](#front-of-semi-truck)**: Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
+    - **[Front Of Semi Truck](#front-of-semi-truck)**: Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
 
 5. **[Bendy Bus](#bendy-bus)**: Buses and shuttles designed to carry more than 10 people and comprises two or more rigid sections linked by a pivoting joint. Annotate each section of the bendy bus individually. 
 
@@ -53,7 +53,7 @@
 
 10. **[Bicycle Rack](#bicycle-rack)**: Area or device intended to park or secure the bicycles in a row. It includes all the bicycles parked in it and any empty slots that are intended for parking bicycles. Bicycles that are not part of the rack should not be included. Instead they should be annotated as bicycles separately.
 
-11. **[Trailer](#trailer)**: Any vehicle trailer, both for trucks, cars and motorcycles (regardless of whether currently being towed or not). For semi-trailers (containers) label the truck itself as "front of semi truck".
+11. **[Trailer](#trailer)**: Any vehicle trailer, both for trucks, cars and motorcycles (regardless of whether currently being towed or not). For semi-trailers (containers) label the truck itself as "Truck".
 
 12. **[Police Vehicle](#police-vehicle)**: All types of police vehicles including police bicycles and motorcycles. 
 
@@ -129,15 +129,14 @@ Bounding Box color convention in example images:
 
  [Top](#overview)
 ## Truck 
-+ Vehicles primarily designed to haul cargo including lorrys, trucks. 
++ Vehicles primarily designed to haul cargo including pick-ups, lorrys, trucks and semi-tractors. Trailers hauled after a semi-tractor should be labeled as vehicle.trailer.
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_2.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_3.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_4.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_5.jpg)
 
- [Top](#overview)
-## Pickup Truck 
+**Pickup Truck** 
 + A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use.
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_2.jpg)
@@ -145,8 +144,7 @@ Bounding Box color convention in example images:
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_4.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_5.jpg)
 
- [Top](#overview)
-## Front Of Semi Truck 
+**Front Of Semi Truck**
 + Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_2.png)
