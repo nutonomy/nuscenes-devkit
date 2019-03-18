@@ -70,7 +70,7 @@ You can also run `assert_download.py` in the `nuscenes/scripts` folder.
 
 ### Setup NUSCENES environment variable
 
-Finally, set NUSCENES env. variable that points to your data folder. In the example below, our data is stored in `/data/sets/nuscenes`.
+Finally, set NUSCENES env. variable that points to your data folder. In the script below, our data is stored in `/data/sets/nuscenes`.
 ```
 export NUSCENES="/data/sets/nuscenes"
 ```
