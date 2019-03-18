@@ -81,7 +81,7 @@ class EvalBox:
 
         assert detection_name in DETECTION_NAMES
 
-        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ""
+        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ''
 
         assert type(ego_dist) == float
         assert not np.any(np.isnan(ego_dist))
@@ -219,7 +219,7 @@ class MetricData:
                  attr_err: np.array,
                  ):
 
-        # Assert lenths
+        # Assert lengths
         assert len(recall) == self.nelem
         assert len(precision) == self.nelem
         assert len(confidence) == self.nelem
