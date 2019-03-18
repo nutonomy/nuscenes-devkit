@@ -9,7 +9,8 @@ from numpy.testing import assert_array_almost_equal
 from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.data_classes import EvalBox
-from nuscenes.eval.detection.utils import attr_acc, scale_iou, yaw_diff, angle_diff, center_distance, velocity_l2, cummean
+from nuscenes.eval.detection.utils import attr_acc, scale_iou, yaw_diff, angle_diff, center_distance, velocity_l2,\
+    cummean, boxes_to_sensor
 
 
 class TestEval(unittest.TestCase):
@@ -172,28 +173,28 @@ class TestEval(unittest.TestCase):
 
     def test_cummean(self):
 
-        # Single NaN
+        # Single NaN.
         x = np.array((np.nan, 5))
         assert_array_almost_equal(cummean(x), np.array((0, 5)))
 
-        x = np.array((5, np.nan))
-        assert_array_almost_equal(cummean(x), np.array((5, 5)))
+        x = np.array((5, 2, np.nan))
+        assert_array_almost_equal(cummean(x), np.array((5, 3.5, 3.5)))
 
-        # Two NaN values
-        x = np.array((np.nan, 4.5, np.nan, 9))
-        assert_array_almost_equal(cummean(x), np.array((0, 4.5, 4.5, 6.75)))
+        # Two NaN values.
+        x = np.array((np.nan, 4.5, np.nan))
+        assert_array_almost_equal(cummean(x), np.array((0, 4.5, 4.5)))
 
-        # All NaN values
+        # All NaN values.
         x = np.array((np.nan, np.nan, np.nan, np.nan))
         assert_array_almost_equal(cummean(x), np.array((1, 1, 1, 1)))
 
-        # One nan value (WIP does not work now)
-        #x = np.array(np.nan)
-        #assert_array_almost_equal(cummean(x), np.array(1))
-        #x = np.array(4)
-        #assert_array_almost_equal(cummean(x), np.array(1))
+        # Single value array.
+        x = np.array([np.nan])
+        assert_array_almost_equal(cummean(x), np.array([1]))
+        x = np.array([4])
+        assert_array_almost_equal(cummean(x), np.array([4.0]))
 
-        # Arbitrary values
+        # Arbitrary values.
         x = np.array((np.nan, 3.58, 2.14, np.nan, 9, 1.48, np.nan))
         assert_array_almost_equal(cummean(x), np.array((0, 3.58, 2.86, 2.86, 4.906666, 4.05, 4.05)))
 
@@ -211,7 +212,6 @@ class TestEval(unittest.TestCase):
         sa = EvalBox(attribute_name='')
         sr = EvalBox(attribute_name='vehicle.parked')
         self.assertIs(attr_acc(sa, sr), np.nan)
-
 
 
 if __name__ == '__main__':

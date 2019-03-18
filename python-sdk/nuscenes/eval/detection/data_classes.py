@@ -219,7 +219,7 @@ class MetricData:
                  attr_err: np.array,
                  ):
 
-        # Assert lenths
+        # Assert lengths
         assert len(recall) == self.nelem
         assert len(precision) == self.nelem
         assert len(confidence) == self.nelem

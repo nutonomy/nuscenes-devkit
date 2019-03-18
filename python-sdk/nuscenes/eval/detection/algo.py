@@ -148,7 +148,7 @@ def accumulate(gt_boxes: EvalBoxes,
 
         else:
             # For each match_data, we first calculate the accumulated mean.
-            tmp = cummean(match_data[key])
+            tmp = cummean(np.array(match_data[key]))
 
             # Then interpolate based on the confidences. (Note reversing since np.interp needs increasing arrays)
             match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp)
@@ -168,6 +168,9 @@ def accumulate(gt_boxes: EvalBoxes,
 
 def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     """ Calculated average precision. """
+
+    assert min_precision > 0 and min_precision < 1
+    assert min_recall > 0 and min_recall <= 1
 
     prec = md.precision
     prec = prec[round(100 * min_recall):]  # Clip low recalls.
