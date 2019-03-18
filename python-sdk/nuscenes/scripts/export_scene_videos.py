@@ -7,7 +7,7 @@ Exports a video of each scene (with annotations) to disk.
 """
 import os
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 # Load NuScenes class
 nusc = NuScenes()

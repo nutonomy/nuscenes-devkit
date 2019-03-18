@@ -8,13 +8,14 @@
 - [Detailed Instructions and Examples](#detailed-instructions-and-examples) 
 
 # Instructions
-+ Draw 3D bounding box around all objects from the [labels](#labels) list, and label them according to the instructions below. 
++ Draw 3D bounding boxes around all objects from the [labels](#labels) list, and label them according to the instructions below. 
 + **Do not** apply more than one box to a single object.
 + Check every cuboid in every frame, to make sure all points are inside the cuboid and **look reasonable in the image view**.
++ For nighttime or rainy scenes, annotate objects as if these are daytime or normal weather scenes.
 
 # Special Rules 
-+ **Minimum LIDAR Points** : 
-    + Label any target object containing **at least 1 LIDAR point**, as long as you can be reasonably sure you know the location and shape of the object. Use your best judgment on correct cuboid position, sizing, and heading. 
++ **Minimum number of points** : 
+    + Label any target object containing **at least 1 LIDAR or RADAR point**, as long as you can be reasonably sure you know the location and shape of the object. Use your best judgment on correct cuboid position, sizing, and heading. 
 + **Cuboid Sizing** : 
     + **Cuboids must be very tight.** Draw the cuboid as close as possible to the edge of the object without excluding any LIDAR points. There should be almost no visible space between the cuboid border and the closest point on the object. 
 + **Extremities** : 
