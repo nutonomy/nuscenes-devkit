@@ -128,6 +128,8 @@ class TestAlgo(unittest.TestCase):
         self.assertEqual(0.10063518713627559, metrics.weighted_sum)
 
     def test_calc_tp(self):
+        """Test for calc_tp()."""
+        
         random.seed(42)
         np.random.seed(42)
 
@@ -139,6 +141,8 @@ class TestAlgo(unittest.TestCase):
         self.assertEqual(1.0, calc_tp(md, min_recall=1, metric_name='trans_err'))
 
     def test_calc_ap(self):
+        """Test for calc_ap()."""
+
         random.seed(42)
         np.random.seed(42)
 

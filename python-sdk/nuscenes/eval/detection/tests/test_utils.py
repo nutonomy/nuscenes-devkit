@@ -57,6 +57,7 @@ class TestEval(unittest.TestCase):
         self.assertRaises(AssertionError, scale_iou, sa, sr)
 
     def test_yaw_diff(self):
+        """Test valid and invalid inputs for yaw_diff()."""
 
         # Identical rotation.
         sa = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
@@ -89,7 +90,7 @@ class TestEval(unittest.TestCase):
         self.assertAlmostEqual(diff, 0.2 * np.pi)
 
     def test_angle_diff(self):
-        """Test valid and invalid inputs for yaw_diff()."""
+        """Test valid and invalid inputs for angle_diff()."""
         def rad(x):
             return x/180*np.pi
 
@@ -129,6 +130,7 @@ class TestEval(unittest.TestCase):
         self.assertAlmostEqual(rad(180), abs(angle_diff(rad(a), rad(b), rad(period))))
 
     def test_center_distance(self):
+        """Test for center_distance()."""
 
         sa = EvalBox(translation=[4, 4, 5])
         sr = EvalBox(translation=[4, 4, 5])
@@ -155,6 +157,7 @@ class TestEval(unittest.TestCase):
         self.assertAlmostEqual(center_distance(sa, sr), 5.693197695)
 
     def test_velocity_l2(self):
+        """Test for velocity_l2()."""
 
         # Same velocity.
         sa = EvalBox(velocity=[4, 4])
@@ -172,6 +175,7 @@ class TestEval(unittest.TestCase):
         self.assertAlmostEqual(velocity_l2(sa, sr), 10.94897255)
 
     def test_cummean(self):
+        """Test for cummean()."""
 
         # Single NaN.
         x = np.array((np.nan, 5))
@@ -199,6 +203,7 @@ class TestEval(unittest.TestCase):
         assert_array_almost_equal(cummean(x), np.array((0, 3.58, 2.86, 2.86, 4.906666, 4.05, 4.05)))
 
     def test_attr_acc(self):
+        """Test for attr_acc()."""
 
         # Same velocity.
         sa = EvalBox(attribute_name='vehicle.parked')
