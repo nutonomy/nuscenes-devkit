@@ -169,8 +169,8 @@ def accumulate(gt_boxes: EvalBoxes,
 def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     """ Calculated average precision. """
 
-    assert min_precision > 0 and min_precision < 1
-    assert min_recall > 0 and min_recall <= 1
+    assert 0 <= min_precision < 1
+    assert 0 <= min_recall <= 1
 
     prec = md.precision
     prec = prec[round(100 * min_recall):]  # Clip low recalls.
