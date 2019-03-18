@@ -90,8 +90,7 @@
 # Attributes 
 1. **For every object, include the attribute:** 
     + **Visibility**: 
-        + **0%-20%**: The object is 0% to 20% visible in panoramic view of all cameras.
-        + **21%-40%**: The object is 21% to 40% visible in panoramic view of all cameras.
+        + **0%-40%**: The object is 0% to 40% visible in panoramic view of all cameras.
         + **41%-60%**: The object is 41% to 60% visible in panoramic view of all cameras.
         + **61%-80%**: The object is 61% to 80% visible in panoramic view of all cameras.
         + **81%-100%**: The object is 81% to 100% visible in panoramic view of all cameras.
