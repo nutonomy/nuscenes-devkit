@@ -1,4 +1,6 @@
 #!/bin/bash
+dockerfile=$1
+set -eux
 
 data_image=registry-local.nutonomy.team:5000/nuscenes/mini_split_data
 data_container=mini_split_data
@@ -24,7 +26,7 @@ echo "Creating Docker volume from container"
 docker run -d --name=${data_container} -v ${data_volume}:/data:ro ${data_image} || { echo "container already running";}
 
 echo "Building image containing nuscenes-devkit"
-docker build -t test_mini_split . || { echo "Failed to build main Docker image"; exit 1; }
+docker build -t test_mini_split -f ${dockerfile} . || { echo "Failed to build main Docker image"; exit 1; }
 
 docker run --name=test_container -v ${data_volume}:/data \
     -e NUSCENES=/data/nuscenes-v1.0 test_mini_split \
