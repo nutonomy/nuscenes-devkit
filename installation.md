@@ -7,6 +7,7 @@ We provide step-by-step instructions to install from source.
 - [Setup PYTHONPATH](#setup-pythonpath)
 - [Install required packages](#install-required-packages)
 - [Verify Install](#verify-install)
+- [Setup NUSCENES env variable](#setup-nuscens-env-variable)
 
 
 ### Source Download
@@ -33,7 +34,7 @@ It is then recommended to install the devkit in a new virtual environment, follo
 ##### Install miniconda
 https://conda.io/en/latest/miniconda.html
 
-##### Create the virtual environment
+##### Setup a CONDA environment
 ```
 conda create --name nuscenes python=3.7
 ```
@@ -66,6 +67,13 @@ pip install -r requirements.txt
 ### Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder.
 You can also run `assert_download.py` in the `nuscenes/scripts` folder.
+
+### Setup NUSCENES environment variable
+
+Finally, set NUSCENES env. variable that points to your data folder. In the example below, our data is stored in `/data/sets/nuscenes`.
+```
+export NUSCENES="/data/sets/nuscenes"
+```
 
 That's it you should be good to go!
 
