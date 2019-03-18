@@ -129,7 +129,7 @@ class TestAlgo(unittest.TestCase):
 
     def test_calc_tp(self):
         """Test for calc_tp()."""
-        
+
         random.seed(42)
         np.random.seed(42)
 

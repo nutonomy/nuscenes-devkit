@@ -132,6 +132,7 @@ class TestEval(unittest.TestCase):
     def test_center_distance(self):
         """Test for center_distance()."""
 
+        # Same boxes.
         sa = EvalBox(translation=[4, 4, 5])
         sr = EvalBox(translation=[4, 4, 5])
         self.assertAlmostEqual(center_distance(sa, sr), 0)
@@ -141,7 +142,7 @@ class TestEval(unittest.TestCase):
         sr = EvalBox(size=[3, 3, 3])
         self.assertAlmostEqual(center_distance(sa, sr), 0)
 
-        # Different z translation (should be ignored).
+        # Different z translation (z should be ignored).
         sa = EvalBox(translation=[4, 4, 4])
         sr = EvalBox(translation=[3, 3, 3])
         self.assertAlmostEqual(center_distance(sa, sr), np.sqrt(2))
@@ -205,15 +206,17 @@ class TestEval(unittest.TestCase):
     def test_attr_acc(self):
         """Test for attr_acc()."""
 
-        # Same velocity.
+        # Same attributes.
         sa = EvalBox(attribute_name='vehicle.parked')
         sr = EvalBox(attribute_name='vehicle.parked')
         self.assertAlmostEqual(attr_acc(sa, sr), 1.0)
 
+        # Different attributes.
         sa = EvalBox(attribute_name='vehicle.parked')
         sr = EvalBox(attribute_name='vehicle.moving')
         self.assertAlmostEqual(attr_acc(sa, sr), 0.0)
 
+        # No attribute in one.
         sa = EvalBox(attribute_name='')
         sr = EvalBox(attribute_name='vehicle.parked')
         self.assertIs(attr_acc(sa, sr), np.nan)
