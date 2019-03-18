@@ -5,10 +5,11 @@
 import unittest
 
 import numpy as np
+from numpy.testing import assert_array_almost_equal
 from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.data_classes import EvalBox
-from nuscenes.eval.detection.utils import scale_iou, yaw_diff, angle_diff
+from nuscenes.eval.detection.utils import attr_acc, scale_iou, yaw_diff, angle_diff, center_distance, velocity_l2, cummean
 
 
 class TestEval(unittest.TestCase):
@@ -55,7 +56,6 @@ class TestEval(unittest.TestCase):
         self.assertRaises(AssertionError, scale_iou, sa, sr)
 
     def test_yaw_diff(self):
-        """Test valid and invalid inputs for yaw_diff()."""
 
         # Identical rotation.
         sa = EvalBox(rotation=Quaternion(axis=(0, 0, 1), angle=np.pi/8).elements)
@@ -88,7 +88,7 @@ class TestEval(unittest.TestCase):
         self.assertAlmostEqual(diff, 0.2 * np.pi)
 
     def test_angle_diff(self):
-
+        """Test valid and invalid inputs for yaw_diff()."""
         def rad(x):
             return x/180*np.pi
 
@@ -126,6 +126,92 @@ class TestEval(unittest.TestCase):
         b = 180.0 + 360*200
         period = 360
         self.assertAlmostEqual(rad(180), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+    def test_center_distance(self):
+
+        sa = EvalBox(translation=[4, 4, 5])
+        sr = EvalBox(translation=[4, 4, 5])
+        self.assertAlmostEqual(center_distance(sa, sr), 0)
+
+        # When no translation given
+        sa = EvalBox(size=[4, 4, 4])
+        sr = EvalBox(size=[3, 3, 3])
+        self.assertAlmostEqual(center_distance(sa, sr), 0)
+
+        # Different z translation (should be ignored).
+        sa = EvalBox(translation=[4, 4, 4])
+        sr = EvalBox(translation=[3, 3, 3])
+        self.assertAlmostEqual(center_distance(sa, sr), np.sqrt(2))
+
+        # Negative values.
+        sa = EvalBox(translation=[-1, -1, -1])
+        sr = EvalBox(translation=[1, 1, 1])
+        self.assertAlmostEqual(center_distance(sa, sr), np.sqrt(8))
+
+        # Arbitrary values.
+        sa = EvalBox(translation=[4.2, 2.8, 4.2])
+        sr = EvalBox(translation=[-1.45, 3.5, 3.9])
+        self.assertAlmostEqual(center_distance(sa, sr), 5.693197695)
+
+    def test_velocity_l2(self):
+
+        # Same velocity.
+        sa = EvalBox(velocity=[4, 4])
+        sr = EvalBox(velocity=[4, 4])
+        self.assertAlmostEqual(velocity_l2(sa, sr), 0)
+
+        # Negative values.
+        sa = EvalBox(velocity=[-1, -1])
+        sr = EvalBox(velocity=[1, 1])
+        self.assertAlmostEqual(velocity_l2(sa, sr), np.sqrt(8))
+
+        # Arbitrary values.
+        sa = EvalBox(velocity=[8.2, 1.4])
+        sr = EvalBox(velocity=[6.4, -9.4])
+        self.assertAlmostEqual(velocity_l2(sa, sr), 10.94897255)
+
+    def test_cummean(self):
+
+        # Single NaN
+        x = np.array((np.nan, 5))
+        assert_array_almost_equal(cummean(x), np.array((0, 5)))
+
+        x = np.array((5, np.nan))
+        assert_array_almost_equal(cummean(x), np.array((5, 5)))
+
+        # Two NaN values
+        x = np.array((np.nan, 4.5, np.nan, 9))
+        assert_array_almost_equal(cummean(x), np.array((0, 4.5, 4.5, 6.75)))
+
+        # All NaN values
+        x = np.array((np.nan, np.nan, np.nan, np.nan))
+        assert_array_almost_equal(cummean(x), np.array((1, 1, 1, 1)))
+
+        # One nan value (WIP does not work now)
+        #x = np.array(np.nan)
+        #assert_array_almost_equal(cummean(x), np.array(1))
+        #x = np.array(4)
+        #assert_array_almost_equal(cummean(x), np.array(1))
+
+        # Arbitrary values
+        x = np.array((np.nan, 3.58, 2.14, np.nan, 9, 1.48, np.nan))
+        assert_array_almost_equal(cummean(x), np.array((0, 3.58, 2.86, 2.86, 4.906666, 4.05, 4.05)))
+
+    def test_attr_acc(self):
+
+        # Same velocity.
+        sa = EvalBox(attribute_name='vehicle.parked')
+        sr = EvalBox(attribute_name='vehicle.parked')
+        self.assertAlmostEqual(attr_acc(sa, sr), 1.0)
+
+        sa = EvalBox(attribute_name='vehicle.parked')
+        sr = EvalBox(attribute_name='vehicle.moving')
+        self.assertAlmostEqual(attr_acc(sa, sr), 0.0)
+
+        sa = EvalBox(attribute_name='')
+        sr = EvalBox(attribute_name='vehicle.parked')
+        self.assertIs(attr_acc(sa, sr), np.nan)
+
 
 
 if __name__ == '__main__':
