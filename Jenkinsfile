@@ -47,7 +47,21 @@ pipeline {
           // an activated Conda environment inside of the container.
           sh """#!/bin/bash
           bash test_mini_split.sh Dockerfile_3.5
+          """
+        } // container
+
+        container('docker') {
+          // Build the Docker image, and then run python -m unittest inside
+          // an activated Conda environment inside of the container.
+          sh """#!/bin/bash
           bash test_mini_split.sh Dockerfile_3.6
+          """
+        } // container
+
+        container('docker') {
+          // Build the Docker image, and then run python -m unittest inside
+          // an activated Conda environment inside of the container.
+          sh """#!/bin/bash
           bash test_mini_split.sh Dockerfile_3.7
           """
         } // container
