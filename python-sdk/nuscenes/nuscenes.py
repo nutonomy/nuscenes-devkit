@@ -2,28 +2,25 @@
 # Code written by Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from __future__ import annotations
-
 import json
-import time
-import sys
 import os.path as osp
+import sys
+import time
 from datetime import datetime
-from typing import Tuple, List
 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import sklearn.metrics
 from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
-import sklearn.metrics
 from tqdm import tqdm
+from typing import Tuple, List
 
-from nuscenes.utils.map_mask import MapMask
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from nuscenes.utils.geometry_utils import view_points, box_in_image, quaternion_slerp, BoxVisibility
-
+from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility
+from nuscenes.utils.map_mask import MapMask
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -37,7 +34,7 @@ class NuScenes:
     """
 
     def __init__(self,
-                 version: str = 'v1.0',
+                 version: str = 'v1.0-mini',
                  dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1):
@@ -307,10 +304,10 @@ class NuScenes:
                     center = [np.interp(t, [t0, t1], [c0, c1]) for c0, c1 in zip(prev_ann_rec['translation'],
                                                                                  curr_ann_rec['translation'])]
 
-                    # Interpolate orientation. (There is a bug in pyquaternion.slerp() so use external method.)
-                    rotation = Quaternion(quaternion_slerp(np.array(prev_ann_rec['rotation']),
-                                                           np.array(curr_ann_rec['rotation']),
-                                                           (t - t0) / (t1 - t0)))
+                    # Interpolate orientation.
+                    rotation = Quaternion.slerp(q0=Quaternion(prev_ann_rec['rotation']),
+                                                q1=Quaternion(curr_ann_rec['rotation']),
+                                                amount=(t - t0) / (t1 - t0))
 
                     box = Box(center, curr_ann_rec['size'], rotation, name=curr_ann_rec['category_name'])
                 else:
@@ -379,32 +376,33 @@ class NuScenes:
     def list_sample(self, sample_token: str) -> None:
         self.explorer.list_sample(sample_token)
 
-    def render_pointcloud_in_image(self, sample_token: str, dot_size: int=5,  pointsensor_channel: str='LIDAR_TOP',
-                                   camera_channel: str='CAM_FRONT') -> None:
+    def render_pointcloud_in_image(self, sample_token: str, dot_size: int = 5,  pointsensor_channel: str = 'LIDAR_TOP',
+                                   camera_channel: str = 'CAM_FRONT') -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel)
 
-    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility=BoxVisibility.ANY, nsweeps: int=1) -> None:
+    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1)\
+            -> None:
         self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps)
 
-    def render_sample_data(self, sample_data_token: str, with_anns: bool=True,
-                           box_vis_level: BoxVisibility=BoxVisibility.ANY, axes_limit: float=40, ax: Axes=None,
-                           nsweeps: int=1) -> None:
+    def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
+                           box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
+                           nsweeps: int = 1) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps)
 
-    def render_annotation(self, sample_annotation_token: str, margin: float=10, view: np.ndarray=np.eye(4),
-                          box_vis_level: BoxVisibility=BoxVisibility.ANY) -> None:
+    def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
+                          box_vis_level: BoxVisibility = BoxVisibility.ANY) -> None:
         self.explorer.render_annotation(sample_annotation_token, margin, view, box_vis_level)
 
     def render_instance(self, instance_token: str) -> None:
         self.explorer.render_instance(instance_token)
 
-    def render_scene(self, scene_token: str, freq: float=10, imsize: Tuple[float, float]=(640, 360),
-                     out_path: str=None) -> None:
+    def render_scene(self, scene_token: str, freq: float = 10, imsize: Tuple[float, float] = (640, 360),
+                     out_path: str = None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
-    def render_scene_channel(self, scene_token: str, channel: str='CAM_FRONT', imsize: Tuple[float, float]=(640, 360)) \
-            -> None:
+    def render_scene_channel(self, scene_token: str, channel: str = 'CAM_FRONT',
+                             imsize: Tuple[float, float] = (640, 360)) -> None:
         self.explorer.render_scene_channel(scene_token, channel=channel, imsize=imsize)
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
@@ -772,7 +770,7 @@ class NuScenesExplorer:
     def render_annotation(self,
                           anntoken: str,
                           margin: float = 10,
-                          view:np.ndarray = np.eye(4),
+                          view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY) -> None:
         """
         Render selected annotation.

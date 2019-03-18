@@ -2,7 +2,6 @@
 # Code written by Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from __future__ import annotations
 from functools import reduce
 import struct
 from typing import Tuple, List, Dict
@@ -101,8 +100,8 @@ class PointCloud(ABC):
 
             # Get past pose.
             current_pose_rec = nusc.get('ego_pose', current_sd_rec['ego_pose_token'])
-            global_from_car = transform_matrix(current_pose_rec['translation'], Quaternion(current_pose_rec['rotation']),
-                                               inverse=False)
+            global_from_car = transform_matrix(current_pose_rec['translation'],
+                                               Quaternion(current_pose_rec['rotation']), inverse=False)
 
             # Homogeneous transformation matrix from sensor coordinate frame to ego car frame.
             current_cs_rec = nusc.get('calibrated_sensor', current_sd_rec['calibrated_sensor_token'])
@@ -260,9 +259,9 @@ class LidarPointCloud(PointCloud):
 class RadarPointCloud(PointCloud):
 
     # Class-level settings for radar pointclouds, see from_file().
-    invalid_states: List[int] = [0]
-    dynprop_states: List[int] = range(7)  # Use [0, 2, 6] for moving objects only.
-    ambig_states: List[int] = [3]
+    invalid_states = [0]  # type: List[int]
+    dynprop_states = range(7)  # type: List[int] # Use [0, 2, 6] for moving objects only.
+    ambig_states = [3]  # type: List[int]
 
     @staticmethod
     def nbr_dims() -> int:

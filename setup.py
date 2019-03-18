@@ -27,19 +27,19 @@ packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='0.3.3',
+    version='0.3.4',
     author="Holger Caesar, Qiang Xu, Oscar Beijbom et al.",
     author_email="nuscenes@nutonomy.com",
     description="The official devkit of the nuScenes dataset",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nutonomy/nuscenes-devkit",
-    python_requires='>=3.7',
+    python_requires='>=3.5',
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
     classifiers=[
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.5",
         "Operating System :: OS Independent",
     ],
 

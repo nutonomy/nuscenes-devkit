@@ -5,12 +5,11 @@
 import unittest
 import os
 
-from nuscenes.nuscenes import NuScenes
+from nuscenes import NuScenes
 
 
 class TestNuScenes(unittest.TestCase):
 
-    @unittest.skip
     def test_load(self):
         """
         Loads up NuScenes.
