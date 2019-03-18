@@ -1011,16 +1011,17 @@ class NuScenesExplorer:
 
         cv2.destroyAllWindows()
 
-    def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
+    def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, close_dist: float = 100.0) -> None:
         """
         Renders ego poses a the map. These can be filtered by location or scene.
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
+        :param close_dist: Distance in meters for an ego pose to be considered within range of another ego pose.
         """
 
         # Settings
-        close_dist = 100
+
 
         # Get logs by location
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
