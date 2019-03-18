@@ -16,13 +16,13 @@ cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
 ### Install Python
 
-The devkit is tested for Python 3.5. For Ubuntu: If the right Python version isn't already installed on your system, install it by doing
+The devkit is tested for Python 3.5 onwards, but we recommend to use Python 3.7. For Ubuntu: If the right Python version isn't already installed on your system, install it by doing
 ```
 sudo apt install python-pip
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install python3.5
-sudo apt-get install python3.5-dev
+sudo apt-get install python3.7
+sudo apt-get install python3.7-dev
 ```
 For Mac OS: download from `https://www.python.org/downloads/mac-osx/` and install.
 
@@ -34,7 +34,7 @@ https://conda.io/en/latest/miniconda.html
 
 ##### Create the virtual environment
 ```
-conda create --name nuscenes python=3.5
+conda create --name nuscenes python=3.7
 ```
 Here, we create a new vitrual environment named `nuscenes`.
 
@@ -88,7 +88,7 @@ mkvirtualenv nuscenes --python [PYTHON_BINARIES]
 ```
 Here, we create a new vitrual environment named `nuscenes`.
 
-PYTHON_BINARIES are typically at either `/usr/local/bin/python3.5` or `/usr/bin/python3.5`.
+PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.
 
 ##### Activating the virtual environment
 If you are inside the virtual environment, your shell prompt should look like: `(nuscenes) user@computer:~$`
