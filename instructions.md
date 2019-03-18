@@ -71,19 +71,17 @@
 
 19. **[Portable Personal Mobility Vehicle](#portable-personal-mobility-vehicle)**: A small electric or self-propelled vehicle, e.g. skateboard, segway, or scooters, on which the person typically travels in a upright position. Driver and (if applicable) rider should be included in the bounding box along with the vehicle. 
 
-20. **[Traffic Police](#traffic-police)**: Police officer actively directing traffic.
+20. **[Police Officer](#police-officer)**: Any type of police officer, regardless whether directing the traffic or not.
 
-21. **[Other Police](#other-police)**: Police officer NOT actively directing traffic.
+21. **[Animal](#animal)**: All animals, e.g. cats, rats, dogs, deer, birds. 
 
-22. **[Animal](#animal)**: All animals, e.g. cats, rats, dogs, deer, birds. 
+22. **[Traffic Cone](#traffic-cone)**: All types of traffic cones.
 
-23. **[Traffic Cone](#traffic-cone)**: All types of traffic cones.
+23. **[Temporary Traffic Barrier](#temporary-traffic-barrier)**: Any metal, concrete or water barrier temporarily placed in the scene in order to re-direct vehicle or pedestrian traffic. In particular, includes barriers used at construction zones. If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
 
-24. **[Temporary Traffic Barrier](#temporary-traffic-barrier)**: Any metal, concrete or water barrier temporarily placed in the scene in order to re-direct vehicle or pedestrian traffic. In particular, includes barriers used at construction zones. If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
+24. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
 
-25. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
-
-26. **[Debris](#debris)**: Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
+25. **[Debris](#debris)**: Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
 
 # Attributes 
 1. **For every object, include the attribute:** 
@@ -321,16 +319,11 @@ Bounding Box color convention in example images:
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/personal_mobility_3.png)
 
  [Top](#overview)
-## Traffic Police 
-+ Police officer actively directing traffic.
+## Police Officer
++ Any type of police officer, regardless whether directing the traffic or not.
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_police_1.png)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_police_2.png)
-
- [Top](#overview)
-## Other Police 
-+ Police officer NOT actively directing traffic. 
-
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/other_police_1.png)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/other_police_2.png)
 
