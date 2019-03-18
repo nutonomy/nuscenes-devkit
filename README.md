@@ -47,10 +47,6 @@ If you don't have pip, please check [here](https://pip.pypa.io/en/stable/install
 
 If you wish to install from source, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md) for detailed instructions.
 
-### Verify install
-To verify your environment run `python -m unittest` in the `python-sdk` folder. 
-You can also run `assert_download.py` in the `nuscenes/scripts` folder.
-
 ## Tutorial
 To get started with the nuScenes devkit, please run the tutorial as an IPython notebook:
 ```

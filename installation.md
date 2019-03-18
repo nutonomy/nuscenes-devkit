@@ -3,9 +3,10 @@
 We provide step-by-step instructions to install from source. 
 - [Source Download](#source-download)
 - [Install Python](#install-python)
-- [Setup a new virtual environment](#setup-a-new-virtual-environment)
+- [Setup a CONDA environment](#setup-a-conda-environment)
 - [Setup PYTHONPATH](#setup-pythonpath)
 - [Install required packages](#install-required-packages)
+- [Verify Install](#verify-install)
 
 
 ### Source Download
@@ -26,7 +27,7 @@ sudo apt-get install python3.7-dev
 ```
 For Mac OS: download from `https://www.python.org/downloads/mac-osx/` and install.
 
-### Setup a new virtual environment
+### Setup a CONDA environment
 It is then recommended to install the devkit in a new virtual environment, follow instructions below to setup your dev environment.  Here we include instructions for [CONDA](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html). If you don't want to install conda, an alternative would be to use virtualenvwrapper, if you prefer this, you can look at [these instructions](#alternative-setting-up-a-new-virtual-environment).
 
 ##### Install miniconda
@@ -61,10 +62,15 @@ To install the required packages, run the following command in your favourite vi
 ```
 pip install -r requirements.txt
 ```
+
+### Verify install
+To verify your environment run `python -m unittest` in the `python-sdk` folder.
+You can also run `assert_download.py` in the `nuscenes/scripts` folder.
+
 That's it you should be good to go!
 
 -----
-### (Alternative) Setup a new virtual environment 
+### (Alternative) Setup a virtualenv environment
 Another option for setting up a new virtual environment is to use virtualenvwrapper.  Follow instructions below to setup your dev environment.
 
 ##### Install virtualenvwrapper
