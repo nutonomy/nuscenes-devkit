@@ -1024,7 +1024,7 @@ class NuScenesExplorer:
 
         # Get logs by location
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
-        assert len(log_tokens) > 0
+        assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
         # Filter scenes
         scene_tokens_location = [e['token'] for e in self.nusc.scene if e['log_token'] in log_tokens]
@@ -1065,7 +1065,7 @@ class NuScenesExplorer:
         close_poses = np.sum(dists < close_dist, axis=0)
 
         # Plot.
-        _, ax = plt.subplots(1, 1, figsize=(10, 10))
+        _, ax = plt.subplots(1, 1, figsize=(10, 10), facecolor='b')
         ax.imshow(map_mask.mask())
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
         ax.set_title(title, color='w')
