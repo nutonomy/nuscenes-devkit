@@ -142,40 +142,40 @@ mini_val = \
     ['scene-0103', 'scene-0916']
 
 
-def create_splits_logs(nusc: 'NuScenes', verbose: bool = False) -> Dict[str, List[str]]:
+def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:
     """
     Returns the logs in each dataset split of nuScenes.
     Note: Previously this script included the teaser dataset splits. Since new scenes from those logs were added and
           others removed in the full dataset, that code is incompatible and was removed.
+    :param split: NuScenes split.
     :param nusc: NuScenes instance.
-    :param verbose: Whether to print out statistics on a scene level.
     :return: A mapping from split name to a list of logs in that split.
     """
+
     # Load splits on a scene-level.
     scene_splits = create_splits_scenes(verbose=False)
 
-    # Get logs for each split.
-    log_splits = {split: [] for split in scene_splits.keys()}
+    assert split in scene_splits.keys(), 'Requested split {} which is not a known nuScenes split.'.format(split)
+
+    # Check compatibility of split with nusc versions
+    version = nusc.version
+    if split in {'train', 'val'}:
+        assert version.endswith('trainval'), 'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
+    elif split in {'mini_train', 'mini_val'}:
+        assert version.endswith('mini'), 'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
+    elif split == 'test':
+        assert version.endswith('test'), 'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
+    else:
+        raise ValueError('Requested split {} which this function cannot map to logs.'.format(split))
+
+    # Get logs for this split
     scene_to_log = {scene['name']: nusc.get('log', scene['log_token'])['logfile'] for scene in nusc.scene}
-    for split, scenes in scene_splits.items():
-        logs = set()
-        for scene in scenes:
-            logs.add(scene_to_log[scene])
-        log_splits[split] = list(logs)
+    logs = set()
+    scenes = scene_splits[split]
+    for scene in scenes:
+        logs.add(scene_to_log[scene])
 
-    # Check that split includes all logs.
-    all_logs = list(set(log_splits['train'] + log_splits['val'] + log_splits['test']))
-    assert len(log_splits['train']) + len(log_splits['val']) + len(log_splits['test']) == len(all_logs), \
-        'Error: Logs included in multiple splits!'
-    assert len(all_logs) == 83, 'Error: Logs incomplete!'
-
-    # Optional: Print log-level stats.
-    if verbose:
-        for split, logs in log_splits.items():
-                print('%s: %d' % (split, len(logs)))
-                print('%s' % logs)
-
-    return log_splits
+    return list(logs)
 
 
 def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
