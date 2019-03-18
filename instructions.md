@@ -59,33 +59,31 @@
 
 13. **[Ambulance](#ambulance)**: All types of ambulances. 
 
-14. **[Train](#train)**: Any vehicle that travels on rails e.g. light rail / tram / train. For trains, that consist of several linked units, annotate each segment with a bounding box.
+14. **[Adult Pedestrian](#adult-pedestrian)**: An adult pedestrian moving around the cityscape. Mannequins should also be annotated as Adult Pedestrian. 
 
-15. **[Adult Pedestrian](#adult-pedestrian)**: An adult pedestrian moving around the cityscape. Mannequins should also be annotated as Adult Pedestrian. 
+15. **[Child Pedestrian](#child-pedestrian)**: A child pedestrian moving around the cityscape. 
 
-16. **[Child Pedestrian](#child-pedestrian)**: A child pedestrian moving around the cityscape. 
+16. **[Construction Worker](#construction-worker)**: A human in the scene whose main purpose is construction work.
 
-17. **[Construction Worker](#construction-worker)**: A human in the scene whose main purpose is construction work.
+17. **[Stroller](#stroller)**: Any stroller. If a person is in the stroller, include in the annotation. If a pedestrian pushing the stroller, then they should be labeled separately. 
 
-18. **[Stroller](#stroller)**: Any stroller. If a person is in the stroller, include in the annotation. If a pedestrian pushing the stroller, then they should be labeled separately. 
+18. **[Wheelchair](#wheelchair)**: Any type of wheelchair. If a pedestrian is pushing the wheelchair then they should be labeled separately.
 
-19. **[Wheelchair](#wheelchair)**: Any type of wheelchair. If a pedestrian is pushing the wheelchair then they should be labeled separately.
+19. **[Portable Personal Mobility Vehicle](#portable-personal-mobility-vehicle)**: A small electric or self-propelled vehicle, e.g. skateboard, segway, or scooters, on which the person typically travels in a upright position. Driver and (if applicable) rider should be included in the bounding box along with the vehicle. 
 
-20. **[Portable Personal Mobility Vehicle](#portable-personal-mobility-vehicle)**: A small electric or self-propelled vehicle, e.g. skateboard, segway, or scooters, on which the person typically travels in a upright position. Driver and (if applicable) rider should be included in the bounding box along with the vehicle. 
+20. **[Traffic Police](#traffic-police)**: Police officer actively directing traffic.
 
-21. **[Traffic Police](#traffic-police)**: Police officer actively directing traffic.
+21. **[Other Police](#other-police)**: Police officer NOT actively directing traffic.
 
-22. **[Other Police](#other-police)**: Police officer NOT actively directing traffic.
+22. **[Animal](#animal)**: All animals, e.g. cats, rats, dogs, deer, birds. 
 
-23. **[Animal](#animal)**: All animals, e.g. cats, rats, dogs, deer, birds. 
+23. **[Traffic Cone](#traffic-cone)**: All types of traffic cones.
 
-24. **[Traffic Cone](#traffic-cone)**: All types of traffic cones.
+24. **[Temporary Traffic Barrier](#temporary-traffic-barrier)**: Any metal, concrete or water barrier temporarily placed in the scene in order to re-direct vehicle or pedestrian traffic. In particular, includes barriers used at construction zones. If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
 
-25. **[Temporary Traffic Barrier](#temporary-traffic-barrier)**: Any metal, concrete or water barrier temporarily placed in the scene in order to re-direct vehicle or pedestrian traffic. In particular, includes barriers used at construction zones. If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
+25. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
 
-26. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
-
-27. **[Debris](#debris)**: Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
+26. **[Debris](#debris)**: Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
 
 # Attributes 
 1. **For every object, include the attribute:** 
@@ -264,16 +262,6 @@ Bounding Box color convention in example images:
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/ambulance_2.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/ambulance_3.jpg)
-
- [Top](#overview)
-## Train 
-+ Any vehicle that travels on rails e.g. light rail / tram / train. 
-    + For trains, that consist of several linked units, annotate each segment with a bounding box. 
-
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_1.png)
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_2.png)
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_3.png)
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_4.png)
 
  [Top](#overview)
 ## Adult Pedestrian 
