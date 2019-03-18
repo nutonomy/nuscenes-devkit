@@ -1065,7 +1065,7 @@ class NuScenesExplorer:
         close_poses = np.sum(dists < close_dist, axis=0)
 
         # Plot.
-        _, ax = plt.subplots(1, 1, figsize=(10, 10), facecolor='b')
+        _, ax = plt.subplots(1, 1, figsize=(10, 10), facecolor='black')
         ax.imshow(map_mask.mask())
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
         ax.set_title(title, color='w')
