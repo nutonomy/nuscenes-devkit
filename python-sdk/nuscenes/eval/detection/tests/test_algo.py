@@ -6,6 +6,7 @@ import json
 import os
 import random
 import unittest
+from typing import Dict, List
 
 import numpy as np
 
@@ -160,3 +161,119 @@ class TestAlgo(unittest.TestCase):
 
     if __name__ == '__main__':
         unittest.main()
+
+
+class TestAPSimple(unittest.TestCase):
+    """ Tests the correctness of AP calculation for simple cases. """
+
+    def setUp(self):
+        self.car1 = {'trans': (1, 1, 1), 'size': (2, 4, 2), 'rot': (0, 0, 0, 0), 'name': 'car', 'score': 1.0}
+        self.car2 = {'trans': (3, 3, 1), 'size': (2, 4, 2), 'rot': (0, 0, 0, 0), 'name': 'car', 'score': 0.7}
+        self.bicycle1 = {'trans': (5, 5, 1), 'size': (2, 2, 2), 'rot': (0, 0, 0, 0), 'name': 'bicycle', 'score': 1.0}
+        self.bicycle2 = {'trans': (7, 7, 1), 'size': (2, 2, 2), 'rot': (0, 0, 0, 0), 'name': 'bicycle', 'score': 0.7}
+
+    def check_ap(self, gts: Dict[str, List[Dict]],
+                 preds: Dict[str, List[Dict]],
+                 target_ap: float,
+                 detection_name: str = 'car',
+                 dist_th: float = 2.0,
+                 min_precision: float = 0.1,
+                 min_recall: float = 0.1) -> None:
+        """
+        Calculate and check the AP value.
+        :param gts: Ground truth data.
+        :param preds: Predictions.
+        :param target_ap: Expected Average Precision value.
+        :param detection_name: Name of the class we are interested in.
+        :param dist_th: Distance threshold for matching.
+        :param min_precision: Minimum precision value.
+        :param min_recall: Minimum recall value.
+        """
+        # Create GT EvalBoxes instance.
+        gt_eval_boxes = EvalBoxes()
+        for sample_token, data in gts.items():
+            gt_boxes = []
+            for gt in data:
+                eb = EvalBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'], rotation=gt['rot'],
+                             detection_name=gt['name'])
+                gt_boxes.append(eb)
+
+            gt_eval_boxes.add_boxes(sample_token, gt_boxes)
+
+        # Create Predictions EvalBoxes instance.
+        pred_eval_boxes = EvalBoxes()
+        for sample_token, data in preds.items():
+            pred_boxes = []
+            for pred in data:
+                eb = EvalBox(sample_token=sample_token, translation=pred['trans'], size=pred['size'],
+                             rotation=pred['rot'], detection_name=pred['name'], detection_score=pred['score'])
+                pred_boxes.append(eb)
+            pred_eval_boxes.add_boxes(sample_token, pred_boxes)
+
+        metric_data = accumulate(gt_eval_boxes, pred_eval_boxes, class_name=detection_name,
+                                 dist_fcn_name='center_distance', dist_th=dist_th)
+
+        ap = calc_ap(metric_data, min_precision=min_precision, min_recall=min_recall)
+
+        self.assertAlmostEqual(ap, target_ap, places=3, msg='Incorrect AP')
+
+    def test_no_data(self):
+        """ Test empty ground truth and/or predictions. """
+
+        gts = {'sample1': [self.car1]}
+        preds = {'sample1': [self.car1]}
+        empty = {'sample1': []}
+
+        # No ground truth objects (all False positives)
+        self.check_ap(empty, preds, target_ap=0.0)
+
+        # No predictions (all False negatives)
+        self.check_ap(gts, empty, target_ap=0.0)
+
+        # No predictions and no ground truth objects.
+        self.check_ap(empty, empty, target_ap=1.0)
+
+    def test_one_img(self):
+        """ Test perfect detection. """
+
+        # Perfect detection.
+        self.check_ap({'sample1': [self.car1]},
+                      {'sample1': [self.car1]},
+                      target_ap=1.0, detection_name='car')
+
+        # Detect one of the two objects
+        self.check_ap({'sample1': [self.car1, self.car2]},
+                      {'sample1': [self.car1]},
+                      target_ap=0.5, detection_name='car')
+
+        # One detection and one FP. FP score is less than TP score.
+        self.check_ap({'sample1': [self.car1]},
+                      {'sample1': [self.car1, self.car2]},
+                      target_ap=1.0, detection_name='car')
+
+        # One detection and one FP. FP score is more than TP score.
+        self.check_ap({'sample1': [self.car2]},
+                      {'sample1': [self.car1, self.car2]},
+                      target_ap=0.25, detection_name='car')
+
+        # FP but different class.
+        self.check_ap({'sample1': [self.car1]},
+                      {'sample1': [self.car1, self.bicycle1]},
+                      target_ap=1.0, detection_name='car')
+
+    def test_two_imgs(self):
+
+        # Objects in both samples are detected.
+        self.check_ap({'sample1': [self.car1], 'sample2': [self.car2]},
+                      {'sample1': [self.car1], 'sample2': [self.car2]},
+                      target_ap=1.0, detection_name='car')
+
+        # Object in first sample is detected, second sample is empty.
+        self.check_ap({'sample1': [self.car1], 'sample2': []},
+                      {'sample1': [self.car1], 'sample2': []},
+                      target_ap=1.0, detection_name='car')
+
+        # Perfect detection in one image, FN in other.
+        self.check_ap({'sample1': [self.car1], 'sample2': [self.car2]},
+                      {'sample1': [self.car1], 'sample2': []},
+                      target_ap=0.5, detection_name='car')

@@ -369,10 +369,11 @@ class DetectionMetrics:
     @property
     def tp_scores(self) -> Dict[str, float]:
         scores = {}
+        tp_errors = self.tp_errors
         for metric_name in TP_METRICS:
 
             # We convert the true positive errors to "scores" by 1-error
-            score = 1.0 - self.tp_errors[metric_name]
+            score = 1.0 - tp_errors[metric_name]
 
             # Some of the true positive errors are unbounded, so we bound the scores to min 0.
             score = max(0.0, score)

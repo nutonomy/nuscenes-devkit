@@ -30,7 +30,7 @@ def accumulate(gt_boxes: EvalBoxes,
     dist_fcn = dist_fcn_map[dist_fcn_name]
 
     # ---------------------------------------------
-    # Organize input and inititialize accumulators
+    # Organize input and initialize accumulators
     # ---------------------------------------------
 
     # Count the positives.
