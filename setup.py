@@ -34,7 +34,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nutonomy/nuscenes-devkit",
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
