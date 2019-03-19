@@ -2,7 +2,6 @@
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import json
 import os
 import random
 import unittest
@@ -10,16 +9,16 @@ import unittest
 import numpy as np
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
+from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox, MetricDataList, \
-    DetectionMetrics, MetricData
+from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox, MetricDataList, DetectionMetrics, MetricData
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 
 
 class TestAlgo(unittest.TestCase):
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg = DetectionConfig.deserialize(json.load(open(os.path.join(this_dir, '../config.json'))))
+    cfg = config_factory('cvpr_2019')
 
     @staticmethod
     def _mock_results(nsamples, ngt, npred, detection_name):

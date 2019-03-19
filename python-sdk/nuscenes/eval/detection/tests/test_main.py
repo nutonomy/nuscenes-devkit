@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection import NuScenesEval
-from nuscenes.eval.detection.data_classes import DetectionConfig
+from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.utils.splits import create_splits_scenes
 
@@ -96,14 +96,12 @@ class TestMain(unittest.TestCase):
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
 
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(this_dir, '../config.json')) as f:
-            cfg = DetectionConfig.deserialize(json.load(f))
-
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
             json.dump(self._mock_results(nusc), f, indent=2)
+
+        cfg = config_factory('cvpr_2019')
 
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
                                  verbose=False)
