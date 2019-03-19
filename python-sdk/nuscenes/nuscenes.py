@@ -258,7 +258,8 @@ class NuScenes:
         :param sample_annotation_token: Unique sample_annotation identifier.
         """
         record = self.get('sample_annotation', sample_annotation_token)
-        return Box(record['translation'], record['size'], Quaternion(record['rotation']), name=record['category_name'])
+        return Box(record['translation'], record['size'], Quaternion(record['rotation']),
+                   name=record['category_name'], token=record['token'])
 
     def get_boxes(self, sample_data_token: str) -> List[Box]:
         """
@@ -309,7 +310,8 @@ class NuScenes:
                                                 q1=Quaternion(curr_ann_rec['rotation']),
                                                 amount=(t - t0) / (t1 - t0))
 
-                    box = Box(center, curr_ann_rec['size'], rotation, name=curr_ann_rec['category_name'])
+                    box = Box(center, curr_ann_rec['size'], rotation, name=curr_ann_rec['category_name'],
+                              token=curr_ann_rec['token'])
                 else:
                     # If not, simply grab the current annotation.
                     box = self.get_box(curr_ann_rec['token'])

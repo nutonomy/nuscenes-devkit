@@ -443,7 +443,8 @@ class Box:
                  label: int = np.nan,
                  score: float = np.nan,
                  velocity: Tuple = (np.nan, np.nan, np.nan),
-                 name: str = None):
+                 name: str = None,
+                 token: str = None):
         """
         :param center: Center of box given as x, y, z.
         :param size: Size of box in width, length, height.
@@ -452,6 +453,7 @@ class Box:
         :param score: Classification score, optional.
         :param velocity: Box velocity in x, y, z direction.
         :param name: Box name, optional. Can be used e.g. for denote category name.
+        :param token: Unique string identifier from DB.
         """
         assert not np.any(np.isnan(center))
         assert not np.any(np.isnan(size))
@@ -466,6 +468,7 @@ class Box:
         self.score = float(score) if not np.isnan(score) else score
         self.velocity = np.array(velocity)
         self.name = name
+        self.token = token
 
     def __eq__(self, other):
         center = np.allclose(self.center, other.center)
@@ -481,12 +484,12 @@ class Box:
     def __repr__(self):
         repr_str = 'label: {}, score: {:.2f}, xyz: [{:.2f}, {:.2f}, {:.2f}], wlh: [{:.2f}, {:.2f}, {:.2f}], ' \
                    'rot axis: [{:.2f}, {:.2f}, {:.2f}], ang(degrees): {:.2f}, ang(rad): {:.2f}, ' \
-                   'vel: {:.2f}, {:.2f}, {:.2f}, name: {}'
+                   'vel: {:.2f}, {:.2f}, {:.2f}, name: {}, token: {}'
 
         return repr_str.format(self.label, self.score, self.center[0], self.center[1], self.center[2], self.wlh[0],
                                self.wlh[1], self.wlh[2], self.orientation.axis[0], self.orientation.axis[1],
                                self.orientation.axis[2], self.orientation.degrees, self.orientation.radians,
-                               self.velocity[0], self.velocity[1], self.velocity[2], self.name)
+                               self.velocity[0], self.velocity[1], self.velocity[2], self.name, self.token)
 
     @property
     def rotation_matrix(self) -> np.ndarray:

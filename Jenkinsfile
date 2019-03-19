@@ -46,8 +46,7 @@ pipeline {
           // Build the Docker image, and then run python -m unittest inside 
           // an activated Conda environment inside of the container.
           sh """#!/bin/bash
-            set -eux
-            bash test_mini_split.sh
+          bash test_multiple_docker_imgs.sh
           """
         } // container
       }

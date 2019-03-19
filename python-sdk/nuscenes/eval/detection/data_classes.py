@@ -37,6 +37,19 @@ class DetectionConfig:
 
         self.class_names = self.class_range.keys()
 
+    def serialize(self) -> dict:
+        """ Serialize instance into json-friendly format """
+        return {
+            'class_range': self.class_range,
+            'dist_fcn': self.dist_fcn,
+            'dist_ths': self.dist_ths,
+            'dist_th_tp': self.dist_th_tp,
+            'min_recall': self.min_recall,
+            'min_precision': self.min_precision,
+            'max_boxes_per_sample': self.max_boxes_per_sample,
+            'mean_ap_weight': self.mean_ap_weight
+        }
+
     @classmethod
     def deserialize(cls, content):
         """ Initialize from serialized dictionary """
@@ -81,7 +94,7 @@ class EvalBox:
 
         assert detection_name in DETECTION_NAMES
 
-        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ""
+        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ''
 
         assert type(ego_dist) == float
         assert not np.any(np.isnan(ego_dist))
@@ -219,7 +232,7 @@ class MetricData:
                  attr_err: np.array,
                  ):
 
-        # Assert lenths
+        # Assert lengths
         assert len(recall) == self.nelem
         assert len(precision) == self.nelem
         assert len(confidence) == self.nelem

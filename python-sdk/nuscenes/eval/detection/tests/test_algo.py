@@ -2,7 +2,6 @@
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import json
 import os
 import random
 import unittest
@@ -10,15 +9,16 @@ import unittest
 import numpy as np
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
+from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, EvalBoxes, EvalBox, MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox, MetricDataList, DetectionMetrics, MetricData
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 
 
 class TestAlgo(unittest.TestCase):
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg = DetectionConfig.deserialize(json.load(open(os.path.join(this_dir, '../config.json'))))
+    cfg = config_factory('cvpr_2019')
 
     @staticmethod
     def _mock_results(nsamples, ngt, npred, detection_name):
@@ -126,6 +126,36 @@ class TestAlgo(unittest.TestCase):
 
         self.assertEqual(0.10063518713627559, metrics.weighted_sum)
 
+    def test_calc_tp(self):
+        """Test for calc_tp()."""
 
-if __name__ == '__main__':
-    unittest.main()
+        random.seed(42)
+        np.random.seed(42)
+
+        md = MetricData.random_md()
+
+        self.assertEqual(0.5389758924116305, calc_tp(md, min_recall=0.4, metric_name='orient_err'))
+
+        # min_recall greater than 1.
+        self.assertEqual(1.0, calc_tp(md, min_recall=1, metric_name='trans_err'))
+
+    def test_calc_ap(self):
+        """Test for calc_ap()."""
+
+        random.seed(42)
+        np.random.seed(42)
+
+        md = MetricData.random_md()
+        self.assertAlmostEqual(0.026738322081734534, calc_ap(md, min_recall=0.7, min_precision=0.8))
+        self.assertAlmostEqual(0, calc_ap(md, min_recall=1.0, min_precision=0.8))
+
+        # Negative min_recall and min_precision
+        self.assertRaises(AssertionError, calc_ap, md, -0.5, 0.4)
+        self.assertRaises(AssertionError, calc_ap, md, 0.5, -0.8)
+
+        # More than 1 min_precision/min_recall
+        self.assertRaises(AssertionError, calc_ap, md, 0.7, 1)
+        self.assertRaises(AssertionError, calc_ap, md, 1.2, 0)
+
+    if __name__ == '__main__':
+        unittest.main()
