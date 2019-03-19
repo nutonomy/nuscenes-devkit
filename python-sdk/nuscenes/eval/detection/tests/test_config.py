@@ -14,9 +14,17 @@ class TestConfigs(unittest.TestCase):
         """ Test serialization round trip """
         cfg = {
             'class_range': {
-                'class1': 0,
-                'class2': 0,
-              },
+                'car': 1,
+                'truck': 1,
+                'bus': 1,
+                'trailer': 1,
+                'construction_vehicle': 1,
+                'pedestrian': 1,
+                'motorcycle': 1,
+                'bicycle': 1,
+                'traffic_cone': 1,
+                'barrier': 1
+            },
             'dist_fcn': 'distance',
             'dist_ths': [0.0, 1.0],
             'dist_th_tp': 1.0,
@@ -34,6 +42,6 @@ class TestConfigs(unittest.TestCase):
     def test_all_configs(self):
         """ Confirm that all configurations in eval_detection_configs work in the factory """
 
-        for name in eval_detection_configs.items():
+        for name in eval_detection_configs.keys():
             detect_config = config_factory(name)
             self.assertTrue(isinstance(detect_config, DetectionConfig))
