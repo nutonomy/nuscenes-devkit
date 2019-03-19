@@ -1,6 +1,6 @@
 
 ## Advanced Installation
-We provide step-by-step instructions to install from source. 
+We provide step-by-step instructions to install our devkit. 
 - [Source Download](#source-download)
 - [Install Python](#install-python)
 - [Setup a CONDA environment](#setup-a-conda-environment)
@@ -8,6 +8,7 @@ We provide step-by-step instructions to install from source.
 - [Install required packages](#install-required-packages)
 - [Verify Install](#verify-install)
 - [Setup NUSCENES env variable](#setup-nuscens-env-variable)
+- [(Alternative) Setup a virtualenv environment](#(Alternative)-Setup-a-virtualenv-environment)
 
 
 ### Source Download
@@ -18,7 +19,7 @@ cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
 ### Install Python
 
-The devkit is tested for Python 3.5 onwards, but we recommend to use Python 3.7. For Ubuntu: If the right Python version isn't already installed on your system, install it by doing
+The devkit is tested for Python 3.6 onwards, but we recommend to use Python 3.7. For Ubuntu: If the right Python version isn't already installed on your system, install it by doing
 ```
 sudo apt install python-pip
 sudo add-apt-repository ppa:deadsnakes/ppa
@@ -35,10 +36,10 @@ It is then recommended to install the devkit in a new virtual environment, follo
 https://conda.io/en/latest/miniconda.html
 
 ##### Setup a CONDA environment
+We create a new vitrual environment named `nuscenes`.
 ```
 conda create --name nuscenes python=3.7
 ```
-Here, we create a new vitrual environment named `nuscenes`.
 
 ##### Activating the virtual environment
 If you are inside the virtual environment, your shell prompt should look like: `(nuscenes) user@computer:~$`
@@ -97,11 +98,14 @@ depending on where it is installed on your system.
 After editing it, reload the shell startup file by running e.g. `source ~/.bashrc`.
 
 ##### Create the virtual environment
+We create a new virtual environment named `nuscenes`.
+```
+mkvirtualenv nuscenes --python=python3.7 
+```
+or
 ```
 mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
 ```
-Here, we create a new vitrual environment named `nuscenes`.
-
 PYTHON_BINARIES are typically at either `/usr/local/bin/python3.7` or `/usr/bin/python3.7`.
 
 ##### Activating the virtual environment
