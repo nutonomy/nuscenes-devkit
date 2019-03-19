@@ -14,7 +14,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Backward compatibility](#backward-compatibility)
 
 ## Changelog
-- March 26, 2019: Full data-set released. Version 1.0.0 of devkit released. Teaser data no longer supported on master.
+- March 26, 2019: Full data-set & devkit ver. 1.0.0 released. Support dropeed for teaser data.
 - Dec. 20, 2018: Initial evaluation code released. See notes on [backward compatibility](#backward-compatibility).
 - Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
 - Oct. 4, 2018: Code to parse RADAR data released.
@@ -45,7 +45,7 @@ pip install nuscenes-devkit
 ```
 If you don't have pip, please check [here](https://pip.pypa.io/en/stable/installing/) to install pip.
 
-For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md) for detailed instructions.
+For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md) for detailed instructions.
 
 ## Tutorial
 To get started with the nuScenes devkit, please run the tutorial as an IPython notebook:
