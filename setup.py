@@ -39,7 +39,7 @@ setuptools.setup(
     packages=packages,
     package_dir={'': 'python-sdk'},
     classifiers=[
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Operating System :: OS Independent",
     ],
 
