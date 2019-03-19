@@ -6,9 +6,12 @@ import json
 
 import numpy as np
 import tqdm
+from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox
 from nuscenes.eval.detection.utils import category_to_detection_name
+from nuscenes.utils.geometry_utils import points_in_box
+from nuscenes.utils.data_classes import Box
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -117,6 +120,22 @@ def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: dict):
         # Then remove boxes with zero points in them. Eval boxes have -1 points by default.
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if not box.num_pts == 0]
 
-        # TODO: add bike-rack filtering
+        # Perform bike-rack filtering
+        sample_anns = nusc.get('sample', sample_token)['anns']
+        bikerack_recs = [nusc.get('sample_annotation', ann) for ann in sample_anns if
+                         nusc.get('sample_annotation', ann)['category_name'] == 'static_object.bicycle_rack']
+
+        filtered_boxes = []
+
+        for rec in bikerack_recs:
+            bikerack_box = Box(rec['translation'], rec['size'], Quaternion(rec['rotation']))
+            for box in eval_boxes[sample_token]:
+                if box.detection_name in ['bicycle', 'motorcycle'] and \
+                        np.sum(points_in_box(bikerack_box, np.expand_dims(np.array(box.translation), axis=1))) > 0:
+                    continue
+                else:
+                    filtered_boxes.append(box)
+
+        eval_boxes.boxes[sample_token] = filtered_boxes
 
     return eval_boxes
