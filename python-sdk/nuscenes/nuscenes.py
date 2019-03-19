@@ -258,8 +258,8 @@ class NuScenes:
         :param sample_annotation_token: Unique sample_annotation identifier.
         """
         record = self.get('sample_annotation', sample_annotation_token)
-        return Box(record['translation'], record['size'], Quaternion(record['rotation']), name=record[
-            'category_name'], token=record['token'])
+        return Box(record['translation'], record['size'], Quaternion(record['rotation']),
+                   name=record['category_name'], token=record['token'])
 
     def get_boxes(self, sample_data_token: str) -> List[Box]:
         """
