@@ -36,29 +36,15 @@ Eventually you should have the following folder structure:
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class below.
 
 ## Devkit setup
-Download the devkit to your home directory using:
-```
-cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
-```
-The devkit is tested for Python 3.5.
-To install Python 3.5 and set up a new virtual environment, you can look at [these instructions](#setting-up-a-new-virtual-environment).
-To install the required packages, run the following command in your favourite virtual environment:
-```
-pip install -r requirements.txt
-```
-Also add the `python-sdk` directory to your `PYTHONPATH` environmental variable, e.g. by adding the 
-following to your `~/.virtualenvs/nuscenes/bin/postactivate` (virtual environment) or `~/.bashrc` (global):
-```
-export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
-```
-Finally, set NUSCENES env. variable that points to your data folder
-```
-export NUSCENES="/data/sets/nuscenes"
-```
+The devkit is tested for Python 3.6 and Python 3.7. To install python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md#install-python).
 
-### Verify install
-To verify your environment run `python -m unittest` in the `python-sdk` folder. 
-You can also run `assert_download.py` in the `nuscenes/scripts` folder.
+Our devkit is available and can be installed via pip:
+```
+pip install nuscenes-devkit
+```
+If you don't have pip, please check [here](https://pip.pypa.io/en/stable/installing/) to install pip.
+
+For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md) for detailed instructions.
 
 ## Tutorial
 To get started with the nuScenes devkit, please run the tutorial as an IPython notebook:
@@ -79,55 +65,6 @@ For instructions related to the object detection task, the results format, class
 3) *How can I use the RADAR data?* We recently [added features to parse and visualize RADAR point-clouds](https://github.com/nutonomy/nuscenes-devkit/pull/6). More visualization tools will follow.
 
 4) *Why are there less sample pointclouds than samples?* See [this issue](https://github.com/nutonomy/nuscenes-devkit/issues/8). Scenes 169 and 170 overlap and going forward we will remove scene 169.
-
-## Setting up a new virtual environment
-
-It is recommended to install the devkit in a new virtual environment. Here are the steps you can follow to create one:
-
-### Python 3.5 installation
-
-If you don't have Python 3.5 on your system, you can use the following steps to install it.
-
-Ubuntu:
-```
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt-get update
-sudo apt-get install python3.5
-```
-
-Mac OS: Download from `https://www.python.org/downloads/mac-osx/` and install.
-
-### Install virtualenvwrapper
-```
-pip install virtualenvwrapper
-```
-Add these two lines to `~/.bashrc` (`~/.bash_profile` on MAC OS) to set the location where the virtual environments 
-should live and the location of the script installed with this package:
-```
-export WORKON_HOME=$HOME/.virtualenvs
-source [VIRTUAL_ENV_LOCATION]
-```
-Replace `[VIRTUAL_ENV_LOCATION]` with either `/usr/local/bin/virtualenvwrapper.sh` or `~/.local/bin/virtualenvwrapper.sh` 
-depending on where it is installed on your system.
-
-After editing it, reload the shell startup file by running e.g. `source ~/.bashrc`.
-
-### Create the virtual environment
-```
-mkvirtualenv nuscenes --python [PYTHON_BINARIES] 
-```
-PYTHON_BINARIES are typically at either `/usr/local/bin/python3.5` or `/usr/bin/python3.5`.
-
-### Activating the virtual environment
-If you are inside the virtual environment, your shell prompt should look like: `(nuscenes) user@computer:~$`
-If that is not the case, you can enable the virtual environment using:
-```
-workon nuscenes
-```
-To deactivate the virtual environment, use:
-```
-deactivate
-```
 
 ## Backward compatibility
 - Dec. 20, 2018: We restructured the nuscenes-devkit code, which breaks backward compatibility.
