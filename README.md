@@ -14,6 +14,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Backward compatibility](#backward-compatibility)
 
 ## Changelog
+- March 26, 2019: Full data-set released. Version 1.0.0 of devkit released. Teaser data no longer supported on master.
 - Dec. 20, 2018: Initial evaluation code released. See notes on [backward compatibility](#backward-compatibility).
 - Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
 - Oct. 4, 2018: Code to parse RADAR data released.
