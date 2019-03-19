@@ -37,6 +37,19 @@ class DetectionConfig:
 
         self.class_names = self.class_range.keys()
 
+    def serialize(self) -> dict:
+        """ Serialize instance into json-friendly format """
+        return {
+            'class_range': self.class_range,
+            'dist_fcn': self.dist_fcn,
+            'dist_ths': self.dist_ths,
+            'dist_th_tp': self.dist_th_tp,
+            'min_recall': self.min_recall,
+            'min_precision': self.min_precision,
+            'max_boxes_per_sample': self.max_boxes_per_sample,
+            'mean_ap_weight': self.mean_ap_weight
+        }
+
     @classmethod
     def deserialize(cls, content):
         """ Initialize from serialized dictionary """
