@@ -72,11 +72,11 @@ def accumulate(gt_boxes: EvalBoxes,
         min_dist = np.inf
         match_gt_idx = None
 
-        for gt_idx, sample_annotation in enumerate(gt_boxes[pred_box.sample_token]):
+        for gt_idx, gt_box in enumerate(gt_boxes[pred_box.sample_token]):
 
             # Find closest match among ground truth boxes
-            if sample_annotation.detection_name == class_name and not (pred_box.sample_token, gt_idx) in taken:
-                this_distance = dist_fcn(sample_annotation, pred_box)
+            if gt_box.detection_name == class_name and not (pred_box.sample_token, gt_idx) in taken:
+                this_distance = dist_fcn(gt_box, pred_box)
                 if this_distance < min_dist:
                     min_dist = this_distance
                     match_gt_idx = gt_idx
