@@ -106,7 +106,7 @@ class TestLoader(unittest.TestCase):
         eval_boxes.add_boxes('0af0feb5b1394b928dd13d648de898f5', [box1, box2, box3, box4, box5])
 
         filtered_boxes = filter_eval_boxes(nusc, eval_boxes, max_dist)
-        self.assertEqual(len(filtered_boxes.boxes[sample_token]), 2)  # box1, box2 to be filtered. box3, box4 to stay.
+        self.assertEqual(len(filtered_boxes.boxes[sample_token]), 2)  # box1, box2, box5 to be filtered. box3, box4 to stay.
         self.assertEqual(filtered_boxes.boxes[sample_token][0].detection_name, 'car')
         self.assertEqual(filtered_boxes.boxes[sample_token][1].detection_name, 'bicycle')
         self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
