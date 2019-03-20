@@ -173,10 +173,10 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     assert 0 <= min_recall <= 1
 
     prec = md.precision
-    prec = prec[round(100 * min_recall):]  # Clip low recalls.
+    prec = prec[round(100 * min_recall) + 1:]  # Clip low recalls.
     prec -= min_precision  # Clip low precision
     prec[prec < 0] = 0
-    return float(np.mean(prec)) / (1.0 - min_precision)
+    return np.mean(prec) / (1.0 - min_precision)
 
 
 def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:

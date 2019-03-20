@@ -94,7 +94,7 @@ class TestAlgo(unittest.TestCase):
         gt, pred = self._mock_results(100, 3, 250, detection_name)
         metrics = accumulate(gt, pred, detection_name, 'center_distance', 2)
         ap = calc_ap(metrics, self.cfg.min_recall, self.cfg.min_precision)
-        self.assertEqual(ap, 7.794866035607614e-06)
+        self.assertEqual(ap, 3.7524860219895e-06)
 
     def test_weighted_sum(self):
         """
@@ -126,7 +126,7 @@ class TestAlgo(unittest.TestCase):
                     tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
-        self.assertEqual(0.10063518713627559, metrics.weighted_sum)
+        self.assertEqual(0.10054642294395506, metrics.weighted_sum)
 
     def test_calc_tp(self):
         """Test for calc_tp()."""
@@ -148,8 +148,7 @@ class TestAlgo(unittest.TestCase):
         np.random.seed(42)
 
         md = MetricData.random_md()
-        self.assertAlmostEqual(0.026738322081734534, calc_ap(md, min_recall=0.7, min_precision=0.8))
-        self.assertAlmostEqual(0, calc_ap(md, min_recall=1.0, min_precision=0.8))
+        self.assertAlmostEqual(0.02762959948445902, calc_ap(md, min_recall=0.7, min_precision=0.8))
 
         # Negative min_recall and min_precision
         self.assertRaises(AssertionError, calc_ap, md, -0.5, 0.4)
@@ -158,9 +157,6 @@ class TestAlgo(unittest.TestCase):
         # More than 1 min_precision/min_recall
         self.assertRaises(AssertionError, calc_ap, md, 0.7, 1)
         self.assertRaises(AssertionError, calc_ap, md, 1.2, 0)
-
-    if __name__ == '__main__':
-        unittest.main()
 
 
 class TestAPSimple(unittest.TestCase):
@@ -215,7 +211,8 @@ class TestAPSimple(unittest.TestCase):
 
         ap = calc_ap(metric_data, min_precision=min_precision, min_recall=min_recall)
 
-        self.assertAlmostEqual(ap, target_ap, places=3, msg='Incorrect AP')
+        # We quantize the curve into 100 bins to calculate integral so the AP is accurate up to 1%.
+        self.assertGreaterEqual(0.01, abs(ap - target_ap), msg='Incorrect AP')
 
     def test_no_data(self):
         """ Test empty ground truth and/or predictions. """
@@ -231,11 +228,10 @@ class TestAPSimple(unittest.TestCase):
         self.check_ap(gts, empty, target_ap=0.0)
 
         # No predictions and no ground truth objects.
-        self.check_ap(empty, empty, target_ap=1.0)
+        self.check_ap(empty, empty, target_ap=0.0)
 
     def test_one_img(self):
         """ Test perfect detection. """
-
         # Perfect detection.
         self.check_ap({'sample1': [self.car1]},
                       {'sample1': [self.car1]},
@@ -244,7 +240,7 @@ class TestAPSimple(unittest.TestCase):
         # Detect one of the two objects
         self.check_ap({'sample1': [self.car1, self.car2]},
                       {'sample1': [self.car1]},
-                      target_ap=0.5, detection_name='car')
+                      target_ap=0.4/0.9, detection_name='car')
 
         # One detection and one FP. FP score is less than TP score.
         self.check_ap({'sample1': [self.car1]},
@@ -254,7 +250,7 @@ class TestAPSimple(unittest.TestCase):
         # One detection and one FP. FP score is more than TP score.
         self.check_ap({'sample1': [self.car2]},
                       {'sample1': [self.car1, self.car2]},
-                      target_ap=0.25, detection_name='car')
+                      target_ap=((0.8*0.4)/2)/(0.9*0.9), detection_name='car')
 
         # FP but different class.
         self.check_ap({'sample1': [self.car1]},
@@ -262,7 +258,6 @@ class TestAPSimple(unittest.TestCase):
                       target_ap=1.0, detection_name='car')
 
     def test_two_imgs(self):
-
         # Objects in both samples are detected.
         self.check_ap({'sample1': [self.car1], 'sample2': [self.car2]},
                       {'sample1': [self.car1], 'sample2': [self.car2]},
@@ -276,4 +271,8 @@ class TestAPSimple(unittest.TestCase):
         # Perfect detection in one image, FN in other.
         self.check_ap({'sample1': [self.car1], 'sample2': [self.car2]},
                       {'sample1': [self.car1], 'sample2': []},
-                      target_ap=0.5, detection_name='car')
+                      target_ap=0.4/0.9, detection_name='car')
+
+
+if __name__ == '__main__':
+    unittest.main()
