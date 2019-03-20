@@ -109,7 +109,7 @@ def transform_matrix(translation: np.ndarray = np.array([0, 0, 0]),
     return tm
 
 
-def points_in_box(box: 'Box', points: float, wlh_factor: float = 1.0):
+def points_in_box(box: 'Box', points: np.ndarray, wlh_factor: float = 1.0):
     """
     Checks whether points are inside the box.
 
