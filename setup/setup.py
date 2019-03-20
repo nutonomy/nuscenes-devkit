@@ -28,7 +28,7 @@ packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='0.3.6',
+    version='0.3.7',
     author="Holger Caesar, Qiang Xu, Oscar Beijbom et al.",
     author_email="nuscenes@nutonomy.com",
     description="The official devkit of the nuScenes dataset",
@@ -43,5 +43,4 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Operating System :: OS Independent",
     ],
-
 )
