@@ -3,11 +3,13 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
+from typing import Dict
 
 import numpy as np
 import tqdm
 from pyquaternion import Quaternion
 
+from nuscenes import NuScenes
 from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox
 from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.utils.geometry_utils import points_in_box
@@ -108,8 +110,13 @@ def add_center_dist(nusc, eval_boxes: EvalBoxes):
     return eval_boxes
 
 
-def filter_eval_boxes(nusc, eval_boxes: EvalBoxes, max_dist: dict):
-    """ Applies filtering to boxes. Distance, bike-racks and points per box. """
+def filter_eval_boxes(nusc: NuScenes, eval_boxes: EvalBoxes, max_dist: Dict[str, float]) -> EvalBoxes:
+    """
+    Applies filtering to boxes. Distance, bike-racks and points per box.
+    :param nusc: An instance of the NuScenes class.
+    :param eval_boxes: An instance of the EvalBoxes class.
+    :param max_dist: Maps the detection name to the eval distance threshold for that class.
+    """
 
     for sample_token in eval_boxes.sample_tokens:
 
