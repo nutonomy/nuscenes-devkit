@@ -112,7 +112,8 @@ class TestMain(unittest.TestCase):
         # 3. Score = 0.24954451673961747. Changed to 1.0-mini and cleaned up build script.
         # 4. Score = 0.20478832626986893. Updated treatment of cones, barriers, and other algo tunings.
         # 5. Score = 0.2043569666105005. AP calculation area is changed from >=min_recall to >min_recall.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.2043569666105005)
+        # 6. Score = 0.20636954644294506. After bike-rack filtering.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.20636954644294506)
 
 
 if __name__ == '__main__':
