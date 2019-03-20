@@ -12,7 +12,8 @@ def accumulate(gt_boxes: EvalBoxes,
                pred_boxes: EvalBoxes,
                class_name: str,
                dist_fcn_name: str,
-               dist_th: float):
+               dist_th: float,
+               verbose: bool = False):
     """
     Average Precision over predefined different recall thresholds for a single distance threshold.
     The recall/conf thresholds and other raw metrics will be used in secondary metrics.
@@ -21,6 +22,7 @@ def accumulate(gt_boxes: EvalBoxes,
     :param class_name: Class to compute AP on.
     :param dist_fcn_name: Name of distance function used to match detections and ground truths.
     :param dist_th: Distance threshold for a match.
+    :param verbose: If true, print debug messages.
     :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
     """
 
@@ -35,6 +37,9 @@ def accumulate(gt_boxes: EvalBoxes,
 
     # Count the positives.
     npos = len([1 for gt_box in gt_boxes.all if gt_box.detection_name == class_name])
+    if verbose:
+        print("Found {} GT of class {} out of {} total across {} samples.".
+              format(npos, class_name, len(gt_boxes.all), len(gt_boxes.sample_tokens)))
 
     # For missing classes in the GT, return a data structure corresponding to no predictions.
     if npos == 0:
@@ -43,6 +48,10 @@ def accumulate(gt_boxes: EvalBoxes,
     # Organize the predictions in a single list.
     pred_boxes_list = [box for box in pred_boxes.all if box.detection_name == class_name]
     pred_confs = [box.detection_score for box in pred_boxes_list]
+
+    if verbose:
+        print("Found {} PRED of class {} out of {} total across {} samples.".
+              format(len(pred_confs), class_name, len(pred_boxes.all), len(pred_boxes.sample_tokens)))
 
     # Sort by confidence.
     sortind = [i for (v, i) in sorted((v, i) for (i, v) in enumerate(pred_confs))][::-1]
