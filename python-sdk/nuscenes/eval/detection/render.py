@@ -137,7 +137,7 @@ def class_pr_curve(md_list: MetricDataList,
                         min_precision=min_precision, min_recall=min_recall)
 
     # Get recall vs precision values of given class for each distance threshold.
-    data = [(md, dist_th) for (name, dist_th), md in md_list if name == detection_name]
+    data = md_list.get_class_data(detection_name)
 
     # Plot the recall vs. precision curve for each distance threshold.
     for md, dist_th in data:
@@ -193,7 +193,8 @@ def dist_pr_curve(md_list: MetricDataList,
                         xlim=1, ylim=1, min_precision=min_precision, min_recall=min_recall)
 
     # Plot the recall vs. precision curve for each detection class.
-    for ind, detection_name in enumerate(DETECTION_NAMES):
+    data = md_list.get_dist_data(dist_th)
+    for md, detection_name in data:
         md = md_list[(detection_name, dist_th)]
         ap = metrics.get_label_ap(detection_name, dist_th)
         ax.plot(md.recall, md.precision, label='{} ap: {:.1f}'.format(detection_name, ap * 100),
