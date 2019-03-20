@@ -5,12 +5,15 @@
 import json
 import os
 import time
+import random
+import argparse
 
 import numpy as np
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
+from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve
@@ -123,21 +126,7 @@ class NuScenesEval:
         # -----------------------------------
         # Step 3: Render statistics
         # -----------------------------------
-        def savepath(name):
-            return os.path.join(self.plot_dir, name+'.png')
-
-        summary_plot(metric_data_list, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
-                     dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
-
-        for detection_name in self.cfg.class_names:
-            class_pr_curve(metric_data_list, detection_name, self.cfg.min_precision, self.cfg.min_recall,
-                           savepath=savepath(detection_name+'_pr'))
-
-            class_tp_curve(metric_data_list, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
-                           savepath=savepath(detection_name+'_tp'))
-        for dist_th in self.cfg.dist_ths:
-            dist_pr_curve(metric_data_list, dist_th, self.cfg.min_precision, self.cfg.min_recall,
-                          savepath=savepath('dist_pr_'+str(dist_th)))
+        # self.render(metric_data_list)
 
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics.serialize(), f, indent=2)
@@ -147,10 +136,29 @@ class NuScenesEval:
 
         return metrics
 
+    def render(self, md_list: MetricDataList):
+
+        def savepath(name):
+            return os.path.join(self.plot_dir, name+'.png')
+
+        summary_plot(md_list, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
+                     dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
+
+        for detection_name in self.cfg.class_names:
+            class_pr_curve(md_list, detection_name, self.cfg.min_precision, self.cfg.min_recall,
+                           savepath=savepath(detection_name+'_pr'))
+
+            class_tp_curve(md_list, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
+                           savepath=savepath(detection_name+'_tp'))
+        for dist_th in self.cfg.dist_ths:
+            dist_pr_curve(md_list, dist_th, self.cfg.min_precision, self.cfg.min_recall,
+                          savepath=savepath('dist_pr_'+str(dist_th)))
+
 
 if __name__ == "__main__":
     pass
-    # Settings.
+    # TODO: Cleanup the CLI
+    # # Settings.
     # parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
     #                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # parser.add_argument('--result_path', type=str, default='~/nuscenes-metrics/results.json',
@@ -161,7 +169,7 @@ if __name__ == "__main__":
     #                     help='Which dataset split to evaluate on, e.g. train or val.')
     # parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
     #                     help='Default nuScenes data directory.')
-    # parser.add_argument('--version', type=str, default='v0.5',
+    # parser.add_argument('--version', type=str, default='v1.0-trainval',
     #                     help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
     # parser.add_argument('--plot_examples', type=int, default=0,
     #                     help='Whether to plot example visualizations to disk.')
@@ -173,22 +181,24 @@ if __name__ == "__main__":
     # eval_set = args.eval_set
     # dataroot = args.dataroot
     # version = args.version
-    # eval_limit = args.eval_limit
+    # # eval_limit = args.eval_limit
     # plot_examples = bool(args.plot_examples)
     # verbose = bool(args.verbose)
     #
-    # Init.
+    # # Init.
     # random.seed(43)
+    # cfg = config_factory('cvpr_2019')
     # nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
-    # nusc_eval = NuScenesEval(nusc_, result_path, eval_set=eval_set, output_dir=output_dir, verbose=verbose)
+    # nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
+    #                          verbose=verbose)
     #
-    # Visualize samples.
-    # if plot_examples:
-    #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
-    #     random.shuffle(sample_tokens_)
-    #     for sample_token_ in sample_tokens_:
-    #         visualize_sample(nusc, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
-    #                          eval_range=nusc_eval.cfg.eval_range)
+    # # # Visualize samples.
+    # # if plot_examples:
+    # #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
+    # #     random.shuffle(sample_tokens_)
+    # #     for sample_token_ in sample_tokens_:
+    # #         visualize_sample(nusc, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
+    # #                          eval_range=nusc_eval.cfg.eval_range)
     #
-    # Run evaluation.
+    # # Run evaluation.
     # nusc_eval.run()

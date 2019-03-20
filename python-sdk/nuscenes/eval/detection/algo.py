@@ -172,7 +172,7 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     assert 0 <= min_precision < 1
     assert 0 <= min_recall <= 1
 
-    prec = md.precision
+    prec = np.copy(md.precision)
     prec = prec[round(100 * min_recall) + 1:]  # Clip low recalls.
     prec -= min_precision  # Clip low precision
     prec[prec < 0] = 0
