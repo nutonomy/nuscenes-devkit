@@ -171,7 +171,6 @@ def class_tp_curve(md_list: MetricDataList,
             ax.plot(md.recall[:md.max_recall_ind + 1], getattr(md, metric)[:md.max_recall_ind + 1],
                     label='{}: {:.2f}'.format(metric, tp))
 
-    ax.plot(md.recall, md.confidence, 'k', label='{}'.format('conf. th'))
     ax.axvline(x=md.max_recall, linestyle='--', color='k')
 
     ax.legend(loc='best')
