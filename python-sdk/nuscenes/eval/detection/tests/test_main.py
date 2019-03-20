@@ -111,7 +111,8 @@ class TestMain(unittest.TestCase):
         # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
         # 3. Score = 0.24954451673961747. Changed to 1.0-mini and cleaned up build script.
         # 4. Score = 0.20478832626986893. Updated treatment of cones, barriers, and other algo tunings.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.20478832626986893)
+        # 5. Score = 0.2043569666105005. AP calculation area is changed from >=min_recall to >min_recall.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.2043569666105005)
 
 
 if __name__ == '__main__':

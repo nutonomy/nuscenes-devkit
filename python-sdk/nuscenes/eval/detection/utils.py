@@ -57,7 +57,7 @@ def detection_name_to_rel_attributes(detection_name: str) -> List[str]:
         # Classes without attributes: barrier, traffic_cone.
         rel_attributes = []
     else:
-        raise Exception('Error: %s is not a valid detection class.' % detection_name)
+        raise ValueError('Error: %s is not a valid detection class.' % detection_name)
 
     return rel_attributes
 
