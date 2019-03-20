@@ -100,7 +100,7 @@ class TestAlgo(unittest.TestCase):
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
                 ap = calc_ap(mdl[(class_name, dist_th)], self.cfg.min_recall, self.cfg.min_precision)
-                metrics.add_label_ap(class_name, ap)
+                metrics.add_label_ap(class_name, dist_th, ap)
 
             for metric_name in TP_METRICS:
                 metric_data = mdl[(class_name, self.cfg.dist_th_tp)]

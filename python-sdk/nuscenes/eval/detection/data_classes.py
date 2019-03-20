@@ -339,6 +339,9 @@ class MetricDataList:
             eq = eq and self[key] == other[key]
         return eq
 
+    def __iter__(self):
+        return self.md.items()
+
     def set(self, detection_name: str, match_distance: float, data: MetricData):
         """ Sets the MetricData entry for a certain detectdion_name and match_distance """
         self.md[(detection_name, match_distance)] = data
@@ -361,22 +364,28 @@ class DetectionMetrics:
     def __init__(self, cfg: DetectionConfig):
 
         self.cfg = cfg
-        self.label_aps = defaultdict(lambda: defaultdict(float))
-        self.label_tp_errors = defaultdict(lambda: defaultdict(float))
+        self._label_aps = defaultdict(lambda: defaultdict(float))
+        self._label_tp_errors = defaultdict(lambda: defaultdict(float))
         self.eval_time = None
 
     def add_label_ap(self, detection_name: str, dist_th: float, ap: float):
-        self.label_aps[detection_name][dist_th] = ap
+        self._label_aps[detection_name][dist_th] = ap
+
+    def get_label_ap(self, detection_name: str, dist_th: float) -> float:
+        return self._label_aps[detection_name][dist_th]
 
     def add_label_tp(self, detection_name: str, metric_name: str, tp: float):
-        self.label_tp_errors[detection_name][metric_name] = tp
+        self._label_tp_errors[detection_name][metric_name] = tp
+
+    def get_label_tp(self, detection_name: str, metric_name: str) -> float:
+        return self._label_tp_errors[detection_name][metric_name]
 
     def add_runtime(self, eval_time: float):
         self.eval_time = eval_time
 
     @property
     def mean_ap(self) -> float:
-        return float(np.mean([np.mean(aps) for aps in self.label_aps.values()]))
+        return float(np.mean([np.mean([ap for dist_th, ap in d.items()]) for class_name, d in self._label_aps.items()]))
 
     @property
     def tp_errors(self) -> Dict[str, float]:
@@ -386,7 +395,7 @@ class DetectionMetrics:
             class_errors = []
             for detection_name in self.cfg.class_names:
 
-                class_errors.append(self.label_tp_errors[detection_name][metric_name])
+                class_errors.append(self.get_label_tp(detection_name, metric_name))
 
             errors[metric_name] = float(np.nanmean(class_errors))
 
@@ -420,8 +429,8 @@ class DetectionMetrics:
         return total
 
     def serialize(self):
-        return {'label_aps': self.label_aps,
-                'label_tp_errors': self.label_tp_errors,
+        return {'label_aps': self._label_aps,
+                'label_tp_errors': self._label_tp_errors,
                 'mean_ap': self.mean_ap,
                 'tp_errors': self.tp_errors,
                 'tp_scores': self.tp_scores,

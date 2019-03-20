@@ -137,12 +137,11 @@ def class_pr_curve(md_list: MetricDataList,
                         min_precision=min_precision, min_recall=min_recall)
 
     # Get recall vs precision values of given class for each distance threshold.
-    data = [(md, dist_th) for (name, dist_th), md in md_list.md.items()
-            if name == detection_name]
+    data = [(md, dist_th) for (name, dist_th), md in md_list if name == detection_name]
 
     # Plot the recall vs. precision curve for each distance threshold.
     for md, dist_th in data:
-        ap = metrics.label_aps[detection_name][dist_th]
+        ap = metrics.get_label_ap(detection_name, dist_th)
         ax.plot(md.recall, md.precision, label='dist_th: {}, ap: {:.1f}'.format(dist_th, ap * 100))
 
     ax.legend(loc='best')
@@ -167,7 +166,7 @@ def class_tp_curve(md_list: MetricDataList,
 
     # Plot the recall vs. error curve for each tp metric.
     for metric in TP_METRICS:
-        tp = metrics.label_tp_errors[detection_name][metric]
+        tp = metrics.get_label_tp(detection_name, metric)
         if tp is not np.nan:
             ax.plot(md.recall[:md.max_recall_ind + 1], getattr(md, metric)[:md.max_recall_ind + 1],
                     label='{}: {:.2f}'.format(metric, tp))
@@ -196,7 +195,7 @@ def dist_pr_curve(md_list: MetricDataList,
     # Plot the recall vs. precision curve for each detection class.
     for ind, detection_name in enumerate(DETECTION_NAMES):
         md = md_list[(detection_name, dist_th)]
-        ap = metrics.label_aps[detection_name][dist_th]
+        ap = metrics.get_label_ap(detection_name, dist_th)
         ax.plot(md.recall, md.precision, label='{} ap: {:.1f}'.format(detection_name, ap * 100),
                 color=DETECTION_COLORS[detection_name])
 

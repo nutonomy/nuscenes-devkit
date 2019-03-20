@@ -23,11 +23,11 @@ class TestMain(unittest.TestCase):
     res_mockup = 'nsc_eval.json'
     res_eval_folder = 'tmp'
 
-    def tearDown(self):
-        if os.path.exists(self.res_mockup):
-            os.remove(self.res_mockup)
-        if os.path.exists(self.res_eval_folder):
-            shutil.rmtree(self.res_eval_folder)
+    # def tearDown(self):
+    #     if os.path.exists(self.res_mockup):
+    #         os.remove(self.res_mockup)
+    #     if os.path.exists(self.res_eval_folder):
+    #         shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
     def _mock_results(nusc) -> Dict[str, list]:
@@ -105,7 +105,7 @@ class TestMain(unittest.TestCase):
 
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
                                  verbose=False)
-        metrics = nusc_eval.run()
+        metrics, md_list = nusc_eval.run()
 
         # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.
         # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
