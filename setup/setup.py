@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-with open("README.md", "r") as fh:
+with open("../README.md", "r") as fh:
     long_description = fh.read()
 
 with open('requirements.txt') as f:
@@ -22,6 +22,7 @@ def get_dirlist(_rootdir):
 
 
 # Get subfolders recursively
+os.chdir('..')
 rootdir = 'python-sdk'
 packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_dirlist(rootdir)]
 
