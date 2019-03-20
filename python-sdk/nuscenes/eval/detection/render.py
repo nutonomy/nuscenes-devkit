@@ -169,6 +169,9 @@ def class_tp_curve(md_list: MetricDataList,
         tp = calc_tp(md, min_recall, metric_name=metric)
         ax.plot(md.recall, getattr(md, metric), label='{}: {:.2f}'.format(metric, tp))
 
+    ax.plot(md.recall, md.confidence, 'k', label='{}'.format('conf. th'))
+    ax.axvline(x=md.max_recall, linestyle='--', color='k')
+
     ax.legend(loc='best')
     if savepath is not None:
         plt.savefig(savepath)

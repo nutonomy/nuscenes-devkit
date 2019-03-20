@@ -262,6 +262,19 @@ class MetricData:
             eq = eq and np.array_equal(getattr(self, key), getattr(other, key))
         return eq
 
+    @property
+    def max_recall_ind(self):
+        """ Returns index of max recall achieved. """
+
+        # Last instance of confidence > 0 is index of max achieved recall.
+        return np.nonzero(self.confidence)[0][-1]
+
+    @property
+    def max_recall(self):
+        """ Returns max recall achieved. """
+
+        return self.recall[self.max_recall_ind]
+
     def serialize(self):
         """ Serialize instance into json-friendly format """
         return {
