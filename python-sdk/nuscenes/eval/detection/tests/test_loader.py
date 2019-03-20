@@ -6,6 +6,7 @@ import os
 import unittest
 
 from nuscenes import NuScenes
+from nuscenes.eval.detection.config import eval_detection_configs
 from nuscenes.eval.detection.loaders import filter_eval_boxes
 from nuscenes.eval.detection.data_classes import EvalBox, EvalBoxes
 
@@ -27,16 +28,7 @@ class TestLoader(unittest.TestCase):
         # 'size': [1.641, 14.465, 1.4],
         # 'rotation': [0.3473693995546558, 0.0, 0.0, 0.9377283723195315]
 
-        max_dist = {'car': 50,
-                    'truck': 50,
-                    'bus': 50,
-                    'trailer': 50,
-                    'construction_vehicle': 50,
-                    'pedestrian': 40,
-                    'motorcycle': 40,
-                    'bicycle': 40,
-                    'traffic_cone': 30,
-                    'barrier': 30}
+        max_dist = eval_detection_configs['cvpr_2019']['class_range']
 
         # Test bicycle filtering by creating a box at the same position as the bike rack.
         box1 = EvalBox(sample_token=sample_token,
