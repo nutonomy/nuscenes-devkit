@@ -168,7 +168,8 @@ def class_tp_curve(md_list: MetricDataList,
     # Plot the recall vs. error curve for each tp metric.
     for metric in TP_METRICS:
         tp = metrics.label_tp_errors[detection_name][metric]
-        ax.plot(md.recall, getattr(md, metric), label='{}: {:.2f}'.format(metric, tp))
+        if tp is not np.nan:
+            ax.plot(md.recall, getattr(md, metric), label='{}: {:.2f}'.format(metric, tp))
 
     ax.plot(md.recall, md.confidence, 'k', label='{}'.format('conf. th'))
     ax.axvline(x=md.max_recall, linestyle='--', color='k')
