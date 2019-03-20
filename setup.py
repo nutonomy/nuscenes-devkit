@@ -27,7 +27,7 @@ packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='0.3.5',
+    version='0.3.6',
     author="Holger Caesar, Qiang Xu, Oscar Beijbom et al.",
     author_email="nuscenes@nutonomy.com",
     description="The official devkit of the nuScenes dataset",
