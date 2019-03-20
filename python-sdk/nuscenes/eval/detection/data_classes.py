@@ -361,12 +361,12 @@ class DetectionMetrics:
     def __init__(self, cfg: DetectionConfig):
 
         self.cfg = cfg
-        self.label_aps = defaultdict(list)
+        self.label_aps = defaultdict(lambda: defaultdict(float))
         self.label_tp_errors = defaultdict(lambda: defaultdict(float))
         self.eval_time = None
 
-    def add_label_ap(self, detection_name: str, ap: float):
-        self.label_aps[detection_name].append(ap)
+    def add_label_ap(self, detection_name: str, dist_th: float, ap: float):
+        self.label_aps[detection_name][dist_th] = ap
 
     def add_label_tp(self, detection_name: str, metric_name: str, tp: float):
         self.label_tp_errors[detection_name][metric_name] = tp
