@@ -17,14 +17,15 @@ class DetectionConfig:
                  class_range: Dict[str, int],
                  dist_fcn: str,
                  dist_ths: List[float],
-                 dist_th_tp: str,
+                 dist_th_tp: float,
                  min_recall: float,
                  min_precision: float,
                  max_boxes_per_sample: float,
                  mean_ap_weight: int
                  ):
 
-        assert set(class_range.keys()) == set(DETECTION_NAMES)
+        assert set(class_range.keys()) == set(DETECTION_NAMES), "Class count mismatch."
+        assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
 
         self.class_range = class_range
         self.dist_fcn = dist_fcn
@@ -195,11 +196,11 @@ class EvalBoxes:
         return ab
 
     @property
-    def sample_tokens(self) -> List[float]:
+    def sample_tokens(self) -> List[str]:
         """ Returns a list of all keys """
         return list(self.boxes.keys())
 
-    def add_boxes(self, sample_token, boxes) -> None:
+    def add_boxes(self, sample_token: str, boxes: List[EvalBox]) -> None:
         """ Adds a list of boxes """
         self.boxes[sample_token].extend(boxes)
 
@@ -262,6 +263,25 @@ class MetricData:
             eq = eq and np.array_equal(getattr(self, key), getattr(other, key))
         return eq
 
+    @property
+    def max_recall_ind(self):
+        """ Returns index of max recall achieved. """
+
+        # Last instance of confidence > 0 is index of max achieved recall.
+        non_zero = np.nonzero(self.confidence)[0]
+        if len(non_zero) == 0:  # If there are no matches, all the confidence values will be zero.
+            max_recall_ind = 0
+        else:
+            max_recall_ind = non_zero[-1]
+
+        return max_recall_ind
+
+    @property
+    def max_recall(self):
+        """ Returns max recall achieved. """
+
+        return self.recall[self.max_recall_ind]
+
     def serialize(self):
         """ Serialize instance into json-friendly format """
         return {
@@ -290,9 +310,9 @@ class MetricData:
     @classmethod
     def no_predictions(cls):
         """ Returns a md instance corresponding to having no predictions """
-        return cls(recall=np.linspace(0, 100, cls.nelem),
+        return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.zeros(cls.nelem),
-                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
+                   confidence=np.zeros(cls.nelem),
                    trans_err=np.ones(cls.nelem),
                    vel_err=np.ones(cls.nelem),
                    scale_err=np.ones(cls.nelem),
@@ -301,9 +321,9 @@ class MetricData:
 
     @classmethod
     def random_md(cls):
-        return cls(recall=np.linspace(0, 100, cls.nelem),
+        return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.random.random(cls.nelem),
-                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
+                   confidence=np.linspace(0, 1, cls.nelem)[::-1],
                    trans_err=np.random.random(cls.nelem),
                    vel_err=np.random.random(cls.nelem),
                    scale_err=np.random.random(cls.nelem),
@@ -325,6 +345,14 @@ class MetricDataList:
         for key in self.md.keys():
             eq = eq and self[key] == other[key]
         return eq
+
+    def get_class_data(self, detection_name: str) -> List[Tuple[MetricData, float]]:
+        """ Get all the MetricData entries for a certain detection_name. """
+        return [(md, dist_th) for (name, dist_th), md in self.md.items() if name == detection_name]
+
+    def get_dist_data(self, dist_th: float) -> List[Tuple[MetricData, str]]:
+        """ Get all the MetricData entries for a certain match_distance. """
+        return [(md, detection_name) for (detection_name, dist), md in self.md.items() if dist == dist_th]
 
     def set(self, detection_name: str, match_distance: float, data: MetricData):
         """ Sets the MetricData entry for a certain detectdion_name and match_distance """
@@ -348,22 +376,28 @@ class DetectionMetrics:
     def __init__(self, cfg: DetectionConfig):
 
         self.cfg = cfg
-        self.label_aps = defaultdict(list)
-        self.label_tp_errors = defaultdict(lambda: defaultdict(float))
+        self._label_aps = defaultdict(lambda: defaultdict(float))
+        self._label_tp_errors = defaultdict(lambda: defaultdict(float))
         self.eval_time = None
 
-    def add_label_ap(self, detection_name: str, ap: float):
-        self.label_aps[detection_name].append(ap)
+    def add_label_ap(self, detection_name: str, dist_th: float, ap: float):
+        self._label_aps[detection_name][dist_th] = ap
+
+    def get_label_ap(self, detection_name: str, dist_th: float) -> float:
+        return self._label_aps[detection_name][dist_th]
 
     def add_label_tp(self, detection_name: str, metric_name: str, tp: float):
-        self.label_tp_errors[detection_name][metric_name] = tp
+        self._label_tp_errors[detection_name][metric_name] = tp
+
+    def get_label_tp(self, detection_name: str, metric_name: str) -> float:
+        return self._label_tp_errors[detection_name][metric_name]
 
     def add_runtime(self, eval_time: float):
         self.eval_time = eval_time
 
     @property
     def mean_ap(self) -> float:
-        return float(np.mean([np.mean(aps) for aps in self.label_aps.values()]))
+        return float(np.mean([np.mean([ap for dist_th, ap in d.items()]) for class_name, d in self._label_aps.items()]))
 
     @property
     def tp_errors(self) -> Dict[str, float]:
@@ -373,7 +407,7 @@ class DetectionMetrics:
             class_errors = []
             for detection_name in self.cfg.class_names:
 
-                class_errors.append(self.label_tp_errors[detection_name][metric_name])
+                class_errors.append(self.get_label_tp(detection_name, metric_name))
 
             errors[metric_name] = float(np.nanmean(class_errors))
 
@@ -407,8 +441,8 @@ class DetectionMetrics:
         return total
 
     def serialize(self):
-        return {'label_aps': self.label_aps,
-                'label_tp_errors': self.label_tp_errors,
+        return {'label_aps': self._label_aps,
+                'label_tp_errors': self._label_tp_errors,
                 'mean_ap': self.mean_ap,
                 'tp_errors': self.tp_errors,
                 'tp_scores': self.tp_scores,
