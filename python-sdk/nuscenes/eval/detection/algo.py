@@ -30,7 +30,7 @@ def accumulate(gt_boxes: EvalBoxes,
     dist_fcn = dist_fcn_map[dist_fcn_name]
 
     # ---------------------------------------------
-    # Organize input and inititialize accumulators
+    # Organize input and initialize accumulators
     # ---------------------------------------------
 
     # Count the positives.
@@ -173,7 +173,7 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     assert 0 <= min_recall <= 1
 
     prec = md.precision
-    prec = prec[round(100 * min_recall):]  # Clip low recalls.
+    prec = prec[round(100 * min_recall) + 1:]  # Clip low recalls.
     prec -= min_precision  # Clip low precision
     prec[prec < 0] = 0
     return float(np.mean(prec)) / (1.0 - min_precision)
