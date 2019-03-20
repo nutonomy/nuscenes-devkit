@@ -11,6 +11,9 @@ from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
+from nuscenes.eval.detection.algo import calc_ap, calc_tp
+from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS
+from nuscenes.eval.detection.data_classes import MetricDataList
 
 
 def visualize_sample(nusc: NuScenes,
@@ -84,3 +87,139 @@ def visualize_sample(nusc: NuScenes,
         print('Showing sample token %s' % sample_token)
     plt.title(sample_token)
     plt.show()
+
+
+def setup_axis(xlabel: str = None,
+               ylabel: str = None,
+               xlim: int = None,
+               ylim: int = None,
+               title: str = None,
+               min_precision: float = None,
+               min_recall: float = None,
+               ax=None):
+
+    if ax is None:
+        ax = plt.subplot()
+
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+
+    if title is not None:
+        ax.set_title(title, size='large')
+    if xlabel is not None:
+        ax.set_xlabel(xlabel, size='large')
+    if ylabel is not None:
+        ax.set_ylabel(ylabel, size='large')
+    if xlim is not None:
+        ax.set_xlim(0, xlim)
+    if ylim is not None:
+        ax.set_ylim(0, ylim)
+    if min_recall is not None:
+        ax.axvline(x=min_recall, linestyle='--', color='k')
+    if min_precision is not None:
+        ax.axhline(y=min_precision, linestyle='--', color='k')
+
+    return ax
+
+
+def class_pr_curve(md_list: MetricDataList,
+                   detection_name: str,
+                   min_precision: float,
+                   min_recall: float,
+                   savepath: str = None,
+                   ax=None):
+    if ax is None:
+        ax = setup_axis(title=detection_name.title(), xlabel='Recall', ylabel='Precision', xlim=1, ylim=1,
+                        min_precision=min_precision, min_recall=min_recall)
+
+    # Get recall vs precision values of given class for each distance threshold.
+    data = [(md, dist_th) for (name, dist_th), md in md_list.md.items()
+            if name == detection_name]
+
+    # Plot the recall vs. precision curve for each distance threshold.
+    for md, dist_th in data:
+        ap = calc_ap(md, min_recall=min_recall, min_precision=min_precision)
+        ax.plot(md.recall, md.precision, label='dist_th: {}, ap: {:.1f}'.format(dist_th, ap * 100))
+
+    ax.legend(loc='best')
+    if savepath is not None:
+        plt.savefig(savepath)
+        plt.close()
+
+
+def class_tp_curve(md_list: MetricDataList,
+                   detection_name: str,
+                   min_recall: float,
+                   dist_th_tp: float,
+                   savepath: str = None,
+                   ax=None):
+
+    if ax is None:
+        ax = setup_axis(title=detection_name.title(), xlabel='Recall', ylabel='Error', xlim=1, min_recall=min_recall)
+
+    # Get metric data for given detection class with tp distance threshold.
+    md = md_list[(detection_name, dist_th_tp)]
+
+    # Plot the recall vs. error curve for each tp metric.
+    for metric in TP_METRICS:
+        tp = calc_tp(md, min_recall, metric_name=metric)
+        ax.plot(md.recall, getattr(md, metric), label='{}: {:.2f}'.format(metric, tp))
+
+    ax.legend(loc='best')
+    if savepath is not None:
+        plt.savefig(savepath)
+        plt.close()
+
+
+def dist_pr_curve(md_list: MetricDataList,
+                  dist_th: float,
+                  min_precision: float,
+                  min_recall: float,
+                  savepath: str = None,
+                  ax=None) -> None:
+
+    if ax is None:
+        ax = setup_axis(title='Distance threshold = {}'.format(dist_th), xlabel='Recall', ylabel='Precision',
+                        xlim=1, ylim=1, min_precision=min_precision, min_recall=min_recall)
+
+    # Plot the recall vs. precision curve for each detection class.
+    for ind, detection_name in enumerate(DETECTION_NAMES):
+        md = md_list[(detection_name, dist_th)]
+        ap = calc_ap(md, min_recall=min_recall, min_precision=min_precision)
+        ax.plot(md.recall, md.precision, label='{} ap: {:.1f}'.format(detection_name, ap * 100),
+                color=DETECTION_COLORS[detection_name])
+
+    ax.legend(loc='best')
+    if savepath is not None:
+        plt.savefig(savepath)
+        plt.close()
+
+
+def summary_plot(md_list: MetricDataList,
+                 min_precision: float,
+                 min_recall: float,
+                 dist_th_tp: float,
+                 savepath: str = None) -> None:
+
+    n_classes = len(DETECTION_NAMES)
+    _, axes = plt.subplots(nrows=n_classes, ncols=2, figsize=(15, 5 * n_classes))
+    for ind, detection_name in enumerate(DETECTION_NAMES):
+        title1, title2 = ('Recall vs Precision', 'Recall vs Error') if ind == 0 else (None, None)
+        xlabel = 'Recall' if ind == n_classes - 1 else None
+
+        ax1 = setup_axis(xlabel=xlabel, ylabel='{} \n \n Precision'.format(detection_name.title()), xlim=1, ylim=1,
+                         title=title1, min_precision=min_precision, min_recall=min_recall, ax=axes[ind, 0])
+        ax2 = setup_axis(xlabel=xlabel, ylabel=None, xlim=1, title=title2, min_recall=min_recall, ax=axes[ind, 1])
+
+        class_pr_curve(md_list, detection_name, min_precision, min_recall, ax=ax1)
+        class_tp_curve(md_list, detection_name,  min_recall, dist_th_tp=dist_th_tp, ax=ax2)
+
+    plt.tight_layout()
+
+    if savepath is not None:
+        plt.savefig(savepath)
+        plt.close()

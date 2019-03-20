@@ -13,6 +13,7 @@ from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve
 
 
 class NuScenesEval:
@@ -119,7 +120,24 @@ class NuScenesEval:
 
         metrics.add_runtime(time.time() - start_time)
 
-        # TODO: call rendering methods here
+        # -----------------------------------
+        # Step 3: Render statistics
+        # -----------------------------------
+        def savepath(name):
+            return os.path.join(self.plot_dir, name+'.png')
+
+        summary_plot(metric_data_list, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
+                     dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
+
+        for detection_name in self.cfg.class_names:
+            class_pr_curve(metric_data_list, detection_name, self.cfg.min_precision, self.cfg.min_recall,
+                           savepath=savepath(detection_name+'_pr'))
+
+            class_tp_curve(metric_data_list, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
+                           savepath=savepath(detection_name+'_tp'))
+        for dist_th in self.cfg.dist_ths:
+            dist_pr_curve(metric_data_list, dist_th, self.cfg.min_precision, self.cfg.min_recall,
+                          savepath=savepath('dist_pr_'+str(dist_th)))
 
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics.serialize(), f, indent=2)
