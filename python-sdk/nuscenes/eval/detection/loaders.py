@@ -17,7 +17,7 @@ from nuscenes.utils.data_classes import Box
 from nuscenes.utils.splits import create_splits_scenes
 
 
-def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = True) -> EvalBoxes:
+def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> EvalBoxes:
     """ Loads object predictions from file. """
     with open(result_path) as f:
         all_results = EvalBoxes.deserialize(json.load(f))
@@ -32,7 +32,7 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool =
     return all_results
 
 
-def load_gt(nusc, eval_split: str, verbose: bool = True) -> EvalBoxes:
+def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
     """ Loads ground truth boxes from DB. """
 
     # Init.
@@ -120,7 +120,7 @@ def add_center_dist(nusc, eval_boxes: EvalBoxes):
 def filter_eval_boxes(nusc: NuScenes,
                       eval_boxes: EvalBoxes,
                       max_dist: Dict[str, float],
-                      verbose: bool = True) -> EvalBoxes:
+                      verbose: bool = False) -> EvalBoxes:
     """
     Applies filtering to boxes. Distance, bike-racks and points per box.
     :param nusc: An instance of the NuScenes class.
@@ -129,18 +129,18 @@ def filter_eval_boxes(nusc: NuScenes,
     :param verbose: Whether to print to stdout.
     """
     # Accumulators for number of filtered boxes.
-    total, dist_filter, point_filter, bike_rack_filter = [], [], [], []
+    total, dist_filter, point_filter, bike_rack_filter = 0, 0, 0, 0
     for ind, sample_token in enumerate(eval_boxes.sample_tokens):
 
         # Filter on distance first
-        total.append(eval_boxes[sample_token])
+        total += len(eval_boxes[sample_token])
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
                                           box.ego_dist < max_dist[box.detection_name]]
-        dist_filter.append(total[ind] - len(eval_boxes[sample_token]))
+        dist_filter += len(eval_boxes[sample_token])
 
         # Then remove boxes with zero points in them. Eval boxes have -1 points by default.
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if not box.num_pts == 0]
-        point_filter.append(dist_filter[ind] - len(eval_boxes[sample_token]))
+        point_filter += len(eval_boxes[sample_token])
 
         # Perform bike-rack filtering
         sample_anns = nusc.get('sample', sample_token)['anns']
@@ -161,10 +161,10 @@ def filter_eval_boxes(nusc: NuScenes,
                 filtered_boxes.append(box)
 
         eval_boxes.boxes[sample_token] = filtered_boxes
-        bike_rack_filter.append(point_filter[ind] - len(eval_boxes.boxes[sample_token]))
+        bike_rack_filter += len(eval_boxes.boxes[sample_token])
     if verbose:
         print("=> Original number of boxes: {}\n=> After distance based filtering: {}\n"
               "=> After LIDAR points based filtering: {}\n=>After bike racks filtering: {}".
-              format(sum(total), sum(dist_filter), sum(point_filter), sum(bike_rack_filter)))
+              format(total, dist_filter, point_filter, bike_rack_filter))
 
     return eval_boxes
