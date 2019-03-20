@@ -163,17 +163,30 @@ def class_tp_curve(md_list: MetricDataList,
 
     # Get metric data for given detection class with tp distance threshold.
     md = md_list[(detection_name, dist_th_tp)]
+    min_recall_ind = round(100 * min_recall)
 
     # Plot the recall vs. error curve for each tp metric.
     for metric in TP_METRICS:
         tp = metrics.get_label_tp(detection_name, metric)
-        if tp is not np.nan:
-            ax.plot(md.recall[:md.max_recall_ind + 1], getattr(md, metric)[:md.max_recall_ind + 1],
-                    label='{}: {:.2f}'.format(metric, tp))
+
+        # Plot only if we have valid data.
+        if tp is not np.nan or min_recall_ind <= md.max_recall_ind:
+            recall, error = md.recall[:md.max_recall_ind + 1], getattr(md, metric)[:md.max_recall_ind + 1]
+        else:
+            recall, error = [], []
+
+        # Change legend based on tp value
+        if tp is np.nan:
+            label = '{}: n/a'.format(metric)
+        elif min_recall_ind > md.max_recall_ind:
+            label = '{}: nan'.format(metric)
+        else:
+            label = '{}: {:.2f}'.format(metric, tp)
+        ax.plot(recall, error, label=label)
 
     ax.axvline(x=md.max_recall, linestyle='--', color='k')
-
     ax.legend(loc='best')
+
     if savepath is not None:
         plt.savefig(savepath)
         plt.close()

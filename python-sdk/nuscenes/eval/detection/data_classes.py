@@ -267,7 +267,13 @@ class MetricData:
         """ Returns index of max recall achieved. """
 
         # Last instance of confidence > 0 is index of max achieved recall.
-        return np.nonzero(self.confidence)[0][-1]
+        non_zero = np.nonzero(self.confidence)
+        if len(non_zero[0]) == 0:  # If there are no matches, all the confidence values will be zero.
+            max_recall_ind = 0
+        else:
+            max_recall_ind = non_zero[0][-1]
+
+        return max_recall_ind
 
     @property
     def max_recall(self):
@@ -303,9 +309,9 @@ class MetricData:
     @classmethod
     def no_predictions(cls):
         """ Returns a md instance corresponding to having no predictions """
-        return cls(recall=np.linspace(0, 100, cls.nelem),
+        return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.zeros(cls.nelem),
-                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
+                   confidence=np.zeros(cls.nelem),
                    trans_err=np.ones(cls.nelem),
                    vel_err=np.ones(cls.nelem),
                    scale_err=np.ones(cls.nelem),
@@ -314,9 +320,9 @@ class MetricData:
 
     @classmethod
     def random_md(cls):
-        return cls(recall=np.linspace(0, 100, cls.nelem),
+        return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.random.random(cls.nelem),
-                   confidence=np.linspace(0, 100, cls.nelem)[::-1],
+                   confidence=np.linspace(0, 1, cls.nelem)[::-1],
                    trans_err=np.random.random(cls.nelem),
                    vel_err=np.random.random(cls.nelem),
                    scale_err=np.random.random(cls.nelem),
