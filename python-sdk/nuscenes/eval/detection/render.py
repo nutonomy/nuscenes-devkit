@@ -11,7 +11,7 @@ from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS
+from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS
 from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
 
 
@@ -182,7 +182,7 @@ def class_tp_curve(md_list: MetricDataList,
         elif min_recall_ind > md.max_recall_ind:
             label = '{}: nan'.format(metric)
         else:
-            label = '{}: {:.2f}'.format(metric, tp)
+            label = '{}: {:.2f} ({})'.format(metric, tp, TP_METRICS_UNITS[metric])
         ax.plot(recall, error, label=label)
 
     ax.axvline(x=md.max_recall, linestyle='-.', color=(0, 0, 0, 0.3))

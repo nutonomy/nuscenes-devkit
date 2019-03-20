@@ -23,11 +23,11 @@ class TestMain(unittest.TestCase):
     res_mockup = 'nsc_eval.json'
     res_eval_folder = 'tmp'
 
-    # def tearDown(self):
-    #     if os.path.exists(self.res_mockup):
-    #         os.remove(self.res_mockup)
-    #     if os.path.exists(self.res_eval_folder):
-    #         shutil.rmtree(self.res_eval_folder)
+    def tearDown(self):
+        if os.path.exists(self.res_mockup):
+            os.remove(self.res_mockup)
+        if os.path.exists(self.res_eval_folder):
+            shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
     def _mock_results(nusc) -> Dict[str, list]:
