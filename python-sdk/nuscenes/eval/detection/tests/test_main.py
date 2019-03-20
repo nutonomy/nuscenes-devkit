@@ -113,7 +113,8 @@ class TestMain(unittest.TestCase):
         # 4. Score = 0.20478832626986893. Updated treatment of cones, barriers, and other algo tunings.
         # 5. Score = 0.2043569666105005. AP calculation area is changed from >=min_recall to >min_recall.
         # 6. Score = 0.20636954644294506. After bike-rack filtering.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.20636954644294506)
+        # 7. Score - 0.20237925145690996. After TP reversion bug.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.20237925145690996)
 
 
 if __name__ == '__main__':
