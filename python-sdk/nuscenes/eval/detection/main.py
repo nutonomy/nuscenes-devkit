@@ -169,14 +169,14 @@ def main():
     verbose = bool(args.verbose)
 
     # Init.
-    random.seed(43)
-    cfg = config_factory('cvpr_2019')
+    cfg = config_factory(args.config_name)
     nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
     nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
                              verbose=verbose)
 
     # # TODO: Add this back in once visualize_sample is updated.
     # # Visualize samples.
+    # random.seed(43)
     # plot_examples = bool(args.plot_examples)
     # if plot_examples:
     #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
@@ -195,8 +195,7 @@ if __name__ == "__main__":
     # Settings.
     parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--result_path', type=str, default='~/nuscenes-metrics/results.json',
-                        help='The submission as a JSON file.')
+    parser.add_argument('result_path', type=str, help='The submission as a JSON file.')
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='val',
@@ -204,7 +203,9 @@ if __name__ == "__main__":
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
-                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
+    parser.add_argument('--config_name', type=str, default='cvpr_2019',
+                        help='Name of the configuration to use for evaluation, e.g. cvpr_2019.')
     parser.add_argument('--plot_examples', type=int, default=0,
                         help='Whether to plot example visualizations to disk.')
     parser.add_argument('--verbose', type=int, default=1,

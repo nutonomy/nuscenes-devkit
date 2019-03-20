@@ -268,11 +268,11 @@ class MetricData:
         """ Returns index of max recall achieved. """
 
         # Last instance of confidence > 0 is index of max achieved recall.
-        non_zero = np.nonzero(self.confidence)
-        if len(non_zero[0]) == 0:  # If there are no matches, all the confidence values will be zero.
+        non_zero, _ = np.nonzero(self.confidence)
+        if len(non_zero) == 0:  # If there are no matches, all the confidence values will be zero.
             max_recall_ind = 0
         else:
-            max_recall_ind = non_zero[0][-1]
+            max_recall_ind = non_zero[-1]
 
         return max_recall_ind
 
