@@ -1022,8 +1022,8 @@ class NuScenesExplorer:
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
-        :param color_fg: Color of the driveable surface in RGB format.
-        :param color_bg: Color of the non-driveable surface in RGB format.
+        :param color_fg: Color of the semantic prior in RGB format.
+        :param color_bg: Color of the non-semantic prior in RGB format.
         """
 
         # Settings
