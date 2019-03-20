@@ -30,10 +30,9 @@ class NuScenesEval:
     - Weighted sum: The weighted sum of the above.
 
     Here is an overview of the functions in this method:
-    - load_boxes(): Loads GT annotations an predictions stored in JSON format.
-    - run_eval(): Performs evaluation and returns the above metrics.
-    - average_precision(): Computes AP for a single distance threshold.
-    - tp_metrics(): Computes the TP metrics.
+    - init: Loads GT annotations an predictions stored in JSON format and filters the boxes.
+    - run: Performs evaluation and dumps the metric data to disk.
+    - render: Renders various plots and dumps to disk.
 
     We assume that:
     - Every sample_token is given in the results, although there may be no predictions for that sample.
@@ -71,8 +70,8 @@ class NuScenesEval:
             os.makedirs(self.plot_dir)
 
         # Load data
-        self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set)
+        self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."
@@ -82,8 +81,12 @@ class NuScenesEval:
         self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
 
         # Filter boxes (distance, points per box, etc.)
-        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range)
-        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range)
+        if verbose:
+            print('=> Filtering predictions')
+        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range, verbose=verbose)
+        if verbose:
+            print('=> Filtering ground truth annotations')
+        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range, verbose=verbose)
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
@@ -125,9 +128,8 @@ class NuScenesEval:
         metrics.add_runtime(time.time() - start_time)
 
         # -----------------------------------
-        # Step 3: Render statistics
+        # Step 3: Dump the metric data and metrics to disk
         # -----------------------------------
-        # self.render(metric_data_list)
 
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics.serialize(), f, indent=2)
@@ -157,50 +159,54 @@ class NuScenesEval:
                           savepath=savepath('dist_pr_'+str(dist_th)))
 
 
-if __name__ == "__main__":
-    pass
-    # TODO: Cleanup the CLI
-    # # Settings.
-    # parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
-    #                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # parser.add_argument('--result_path', type=str, default='~/nuscenes-metrics/results.json',
-    #                     help='The submission as a JSON file.')
-    # parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
-    #                     help='Folder to store result metrics, graphs and example visualizations.')
-    # parser.add_argument('--eval_set', type=str, default='val',
-    #                     help='Which dataset split to evaluate on, e.g. train or val.')
-    # parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
-    #                     help='Default nuScenes data directory.')
-    # parser.add_argument('--version', type=str, default='v1.0-trainval',
-    #                     help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
-    # parser.add_argument('--plot_examples', type=int, default=0,
-    #                     help='Whether to plot example visualizations to disk.')
-    # parser.add_argument('--verbose', type=int, default=1,
-    #                     help='Whether to print to stdout.')
-    # args = parser.parse_args()
-    # result_path = os.path.expanduser(args.result_path)
-    # output_dir = os.path.expanduser(args.output_dir)
-    # eval_set = args.eval_set
-    # dataroot = args.dataroot
-    # version = args.version
-    # # eval_limit = args.eval_limit
+def main():
+    args = parser.parse_args()
+    result_path = os.path.expanduser(args.result_path)
+    output_dir = os.path.expanduser(args.output_dir)
+    eval_set = args.eval_set
+    dataroot = args.dataroot
+    version = args.version
+    verbose = bool(args.verbose)
+
+    # Init.
+    random.seed(43)
+    cfg = config_factory('cvpr_2019')
+    nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
+    nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
+                             verbose=verbose)
+
+    # # TODO: Add this back in once visualize_sample is updated.
+    # # Visualize samples.
     # plot_examples = bool(args.plot_examples)
-    # verbose = bool(args.verbose)
-    #
-    # # Init.
-    # random.seed(43)
-    # cfg = config_factory('cvpr_2019')
-    # nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
-    # nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
-    #                          verbose=verbose)
-    #
-    # # # Visualize samples.
-    # # if plot_examples:
-    # #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
-    # #     random.shuffle(sample_tokens_)
-    # #     for sample_token_ in sample_tokens_:
-    # #         visualize_sample(nusc, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
-    # #                          eval_range=nusc_eval.cfg.eval_range)
-    #
-    # # Run evaluation.
-    # nusc_eval.run()
+    # if plot_examples:
+    #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
+    #     random.shuffle(sample_tokens_)
+    #     for sample_token_ in sample_tokens_:
+    #         visualize_sample(nusc, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
+    #                          eval_range=nusc_eval.cfg.eval_range)
+
+    # Run evaluation.
+    metrics, md_list = nusc_eval.run()
+    nusc_eval.render(md_list, metrics)
+
+
+if __name__ == "__main__":
+
+    # Settings.
+    parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--result_path', type=str, default='~/nuscenes-metrics/results.json',
+                        help='The submission as a JSON file.')
+    parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
+                        help='Folder to store result metrics, graphs and example visualizations.')
+    parser.add_argument('--eval_set', type=str, default='val',
+                        help='Which dataset split to evaluate on, e.g. train or val.')
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
+                        help='Default nuScenes data directory.')
+    parser.add_argument('--version', type=str, default='v1.0-trainval',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v0.5.')
+    parser.add_argument('--plot_examples', type=int, default=0,
+                        help='Whether to plot example visualizations to disk.')
+    parser.add_argument('--verbose', type=int, default=1,
+                        help='Whether to print to stdout.')
+    main()

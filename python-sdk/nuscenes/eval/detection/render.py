@@ -134,7 +134,7 @@ def class_pr_curve(md_list: MetricDataList,
                    savepath: str = None,
                    ax=None):
     if ax is None:
-        ax = setup_axis(title=detection_name.title(), xlabel='Recall', ylabel='Precision', xlim=1, ylim=1,
+        ax = setup_axis(title=detection_name, xlabel='Recall', ylabel='Precision', xlim=1, ylim=1,
                         min_precision=min_precision, min_recall=min_recall)
 
     # Get recall vs precision values of given class for each distance threshold.
@@ -160,7 +160,7 @@ def class_tp_curve(md_list: MetricDataList,
                    ax=None):
 
     if ax is None:
-        ax = setup_axis(title=detection_name.title(), xlabel='Recall', ylabel='Error', xlim=1, min_recall=min_recall)
+        ax = setup_axis(title=detection_name, xlabel='Recall', ylabel='Error', xlim=1, min_recall=min_recall)
 
     # Get metric data for given detection class with tp distance threshold.
     md = md_list[(detection_name, dist_th_tp)]
@@ -232,7 +232,7 @@ def summary_plot(md_list: MetricDataList,
         title1, title2 = ('Recall vs Precision', 'Recall vs Error') if ind == 0 else (None, None)
         xlabel = 'Recall' if ind == n_classes - 1 else None
 
-        ax1 = setup_axis(xlabel=xlabel, ylabel='{} \n \n Precision'.format(detection_name.title()), xlim=1, ylim=1,
+        ax1 = setup_axis(xlabel=xlabel, ylabel='{} \n \n Precision'.format(detection_name), xlim=1, ylim=1,
                          title=title1, min_precision=min_precision, min_recall=min_recall, ax=axes[ind, 0])
         ax2 = setup_axis(xlabel=xlabel, ylabel=None, xlim=1, title=title2, min_recall=min_recall, ax=axes[ind, 1])
 

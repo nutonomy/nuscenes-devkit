@@ -17,11 +17,13 @@ from nuscenes.utils.data_classes import Box
 from nuscenes.utils.splits import create_splits_scenes
 
 
-def load_prediction(result_path: str, max_boxes_per_sample: int) -> EvalBoxes:
+def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = True) -> EvalBoxes:
     """ Loads object predictions from file. """
     with open(result_path) as f:
         all_results = EvalBoxes.deserialize(json.load(f))
-
+    if verbose:
+        print("=> Loaded results from {}. Found detections for {} samples.".format(result_path,
+                                                                                   len(all_results.sample_tokens)))
     # Check that each sample has no more than x predicted boxes.
     for sample_token in all_results.sample_tokens:
         assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, \
@@ -30,12 +32,14 @@ def load_prediction(result_path: str, max_boxes_per_sample: int) -> EvalBoxes:
     return all_results
 
 
-def load_gt(nusc, eval_split: str) -> EvalBoxes:
+def load_gt(nusc, eval_split: str, verbose: bool = True) -> EvalBoxes:
     """ Loads ground truth boxes from DB. """
 
     # Init.
     attribute_map = {a['token']: a['name'] for a in nusc.attribute}
 
+    if verbose:
+        print('=> Loading annotations for {} split from nuScenes version: {}'.format(eval_split, nusc.version))
     # Read out all sample_tokens in DB.
     sample_tokens_all = [s['token'] for s in nusc.sample]
     assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
@@ -91,6 +95,9 @@ def load_gt(nusc, eval_split: str) -> EvalBoxes:
             )
         all_annotations.add_boxes(sample_token, sample_boxes)
 
+    if verbose:
+        print("=> Loaded ground truth annotations for {} samples.".format(len(all_annotations.sample_tokens)))
+
     return all_annotations
 
 
@@ -110,22 +117,30 @@ def add_center_dist(nusc, eval_boxes: EvalBoxes):
     return eval_boxes
 
 
-def filter_eval_boxes(nusc: NuScenes, eval_boxes: EvalBoxes, max_dist: Dict[str, float]) -> EvalBoxes:
+def filter_eval_boxes(nusc: NuScenes,
+                      eval_boxes: EvalBoxes,
+                      max_dist: Dict[str, float],
+                      verbose: bool = True) -> EvalBoxes:
     """
     Applies filtering to boxes. Distance, bike-racks and points per box.
     :param nusc: An instance of the NuScenes class.
     :param eval_boxes: An instance of the EvalBoxes class.
     :param max_dist: Maps the detection name to the eval distance threshold for that class.
+    :param verbose: Whether to print to stdout.
     """
-
-    for sample_token in eval_boxes.sample_tokens:
+    # Accumulators for number of filtered boxes.
+    total, dist_filter, point_filter, bike_rack_filter = [], [], [], []
+    for ind, sample_token in enumerate(eval_boxes.sample_tokens):
 
         # Filter on distance first
+        total.append(eval_boxes[sample_token])
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
                                           box.ego_dist < max_dist[box.detection_name]]
+        dist_filter.append(total[ind] - len(eval_boxes[sample_token]))
 
         # Then remove boxes with zero points in them. Eval boxes have -1 points by default.
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if not box.num_pts == 0]
+        point_filter.append(dist_filter[ind] - len(eval_boxes[sample_token]))
 
         # Perform bike-rack filtering
         sample_anns = nusc.get('sample', sample_token)['anns']
@@ -144,5 +159,10 @@ def filter_eval_boxes(nusc: NuScenes, eval_boxes: EvalBoxes, max_dist: Dict[str,
                     filtered_boxes.append(box)
 
         eval_boxes.boxes[sample_token] = filtered_boxes
+        bike_rack_filter.append(point_filter[ind] - len(eval_boxes.boxes[sample_token]))
+    if verbose:
+        print("=> Original number of boxes: {}\n=> After distance based filtering: {}\n"
+              "=> After LIDAR points based filtering: {}\n=>After bike racks filtering: {}".
+              format(sum(total), sum(dist_filter), sum(point_filter), sum(bike_rack_filter)))
 
     return eval_boxes

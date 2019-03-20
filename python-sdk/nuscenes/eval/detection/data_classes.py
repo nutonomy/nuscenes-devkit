@@ -195,7 +195,7 @@ class EvalBoxes:
         return ab
 
     @property
-    def sample_tokens(self) -> List[float]:
+    def sample_tokens(self) -> List[str]:
         """ Returns a list of all keys """
         return list(self.boxes.keys())
 
