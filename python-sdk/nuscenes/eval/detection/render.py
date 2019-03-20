@@ -11,9 +11,8 @@ from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.eval.detection.algo import calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS
-from nuscenes.eval.detection.data_classes import MetricDataList
+from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
 
 
 def visualize_sample(nusc: NuScenes,
@@ -127,6 +126,7 @@ def setup_axis(xlabel: str = None,
 
 
 def class_pr_curve(md_list: MetricDataList,
+                   metrics: DetectionMetrics,
                    detection_name: str,
                    min_precision: float,
                    min_recall: float,
@@ -142,7 +142,7 @@ def class_pr_curve(md_list: MetricDataList,
 
     # Plot the recall vs. precision curve for each distance threshold.
     for md, dist_th in data:
-        ap = calc_ap(md, min_recall=min_recall, min_precision=min_precision)
+        ap = metrics.label_aps[detection_name][dist_th]
         ax.plot(md.recall, md.precision, label='dist_th: {}, ap: {:.1f}'.format(dist_th, ap * 100))
 
     ax.legend(loc='best')
@@ -152,6 +152,7 @@ def class_pr_curve(md_list: MetricDataList,
 
 
 def class_tp_curve(md_list: MetricDataList,
+                   metrics: DetectionMetrics,
                    detection_name: str,
                    min_recall: float,
                    dist_th_tp: float,
@@ -166,7 +167,7 @@ def class_tp_curve(md_list: MetricDataList,
 
     # Plot the recall vs. error curve for each tp metric.
     for metric in TP_METRICS:
-        tp = calc_tp(md, min_recall, metric_name=metric)
+        tp = metrics.label_tp_errors[detection_name][metric]
         ax.plot(md.recall, getattr(md, metric), label='{}: {:.2f}'.format(metric, tp))
 
     ax.plot(md.recall, md.confidence, 'k', label='{}'.format('conf. th'))
@@ -179,6 +180,7 @@ def class_tp_curve(md_list: MetricDataList,
 
 
 def dist_pr_curve(md_list: MetricDataList,
+                  metrics: DetectionMetrics,
                   dist_th: float,
                   min_precision: float,
                   min_recall: float,
@@ -192,7 +194,7 @@ def dist_pr_curve(md_list: MetricDataList,
     # Plot the recall vs. precision curve for each detection class.
     for ind, detection_name in enumerate(DETECTION_NAMES):
         md = md_list[(detection_name, dist_th)]
-        ap = calc_ap(md, min_recall=min_recall, min_precision=min_precision)
+        ap = metrics.label_aps[detection_name][dist_th]
         ax.plot(md.recall, md.precision, label='{} ap: {:.1f}'.format(detection_name, ap * 100),
                 color=DETECTION_COLORS[detection_name])
 
@@ -203,6 +205,7 @@ def dist_pr_curve(md_list: MetricDataList,
 
 
 def summary_plot(md_list: MetricDataList,
+                 metrics: DetectionMetrics,
                  min_precision: float,
                  min_recall: float,
                  dist_th_tp: float,
@@ -218,8 +221,8 @@ def summary_plot(md_list: MetricDataList,
                          title=title1, min_precision=min_precision, min_recall=min_recall, ax=axes[ind, 0])
         ax2 = setup_axis(xlabel=xlabel, ylabel=None, xlim=1, title=title2, min_recall=min_recall, ax=axes[ind, 1])
 
-        class_pr_curve(md_list, detection_name, min_precision, min_recall, ax=ax1)
-        class_tp_curve(md_list, detection_name,  min_recall, dist_th_tp=dist_th_tp, ax=ax2)
+        class_pr_curve(md_list, metrics, detection_name, min_precision, min_recall, ax=ax1)
+        class_tp_curve(md_list, metrics, detection_name,  min_recall, dist_th_tp=dist_th_tp, ax=ax2)
 
     plt.tight_layout()
 
