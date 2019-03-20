@@ -7,6 +7,7 @@ import os
 import time
 import random
 import argparse
+from typing import Tuple
 
 import numpy as np
 
@@ -86,7 +87,7 @@ class NuScenesEval:
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
-    def run(self) -> DetectionMetrics:
+    def run(self) -> Tuple[DetectionMetrics, MetricDataList]:
 
         start_time = time.time()
 
@@ -109,7 +110,7 @@ class NuScenesEval:
             for dist_th in self.cfg.dist_ths:
                 metric_data = metric_data_list[(class_name, dist_th)]
                 ap = calc_ap(metric_data, self.cfg.min_recall, self.cfg.min_precision)
-                metrics.add_label_ap(class_name, ap)
+                metrics.add_label_ap(class_name, dist_th, ap)
 
             for metric_name in TP_METRICS:
                 metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
@@ -134,24 +135,25 @@ class NuScenesEval:
         with open(os.path.join(self.output_dir, 'metric_data_list.json'), 'w') as f:
             json.dump(metric_data_list.serialize(), f, indent=2)
 
-        return metrics
+        return metrics, metric_data_list
 
-    def render(self, md_list: MetricDataList):
+    def render(self, md_list: MetricDataList, metrics: DetectionMetrics):
 
         def savepath(name):
             return os.path.join(self.plot_dir, name+'.png')
 
-        summary_plot(md_list, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
+        summary_plot(md_list, metrics, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
                      dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
 
         for detection_name in self.cfg.class_names:
-            class_pr_curve(md_list, detection_name, self.cfg.min_precision, self.cfg.min_recall,
+            class_pr_curve(md_list, metrics, detection_name, self.cfg.min_precision, self.cfg.min_recall,
                            savepath=savepath(detection_name+'_pr'))
 
-            class_tp_curve(md_list, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
+            class_tp_curve(md_list, metrics, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
                            savepath=savepath(detection_name+'_tp'))
+
         for dist_th in self.cfg.dist_ths:
-            dist_pr_curve(md_list, dist_th, self.cfg.min_precision, self.cfg.min_recall,
+            dist_pr_curve(md_list, metrics, dist_th, self.cfg.min_precision, self.cfg.min_recall,
                           savepath=savepath('dist_pr_'+str(dist_th)))
 
 

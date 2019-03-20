@@ -105,7 +105,8 @@ class TestMain(unittest.TestCase):
 
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
                                  verbose=False)
-        metrics = nusc_eval.run()
+        metrics, md_list = nusc_eval.run()
+        nusc_eval.render(md_list, metrics)
 
         # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.
         # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
