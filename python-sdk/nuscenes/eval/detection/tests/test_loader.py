@@ -95,7 +95,7 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(filtered_boxes.boxes[sample_token][1].detection_name, 'bicycle')
         self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
 
-        # Finally add another bike on the bike rack center but set the ego_dist higher than what's defined in max_dist
+        # Add another bike on the bike rack center but set the ego_dist higher than what's defined in max_dist
         box5 = EvalBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
@@ -106,7 +106,23 @@ class TestLoader(unittest.TestCase):
         eval_boxes.add_boxes('0af0feb5b1394b928dd13d648de898f5', [box1, box2, box3, box4, box5])
 
         filtered_boxes = filter_eval_boxes(nusc, eval_boxes, max_dist)
-        self.assertEqual(len(filtered_boxes.boxes[sample_token]), 2)  # box1, box2, box5 to be filtered. box3, box4 to stay.
+        self.assertEqual(len(filtered_boxes.boxes[sample_token]), 2)  # box1, box2, box5 filtered. box3, box4 to stay.
+        self.assertEqual(filtered_boxes.boxes[sample_token][0].detection_name, 'car')
+        self.assertEqual(filtered_boxes.boxes[sample_token][1].detection_name, 'bicycle')
+        self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
+
+        # Add another bike on the bike rack center but set the num_pts to be zero so that it gets filtered.
+        box6 = EvalBox(sample_token=sample_token,
+                       translation=(683.681, 1592.002, 0.809),
+                       size=(1, 1, 1),
+                       detection_name='bicycle',
+                       num_pts=0)
+
+        eval_boxes = EvalBoxes()
+        eval_boxes.add_boxes('0af0feb5b1394b928dd13d648de898f5', [box1, box2, box3, box4, box5, box6])
+
+        filtered_boxes = filter_eval_boxes(nusc, eval_boxes, max_dist)
+        self.assertEqual(len(filtered_boxes.boxes[sample_token]), 2)  # box1, box2, box5, box6 filtered. box3, box4 stay
         self.assertEqual(filtered_boxes.boxes[sample_token][0].detection_name, 'car')
         self.assertEqual(filtered_boxes.boxes[sample_token][1].detection_name, 'bicycle')
         self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
