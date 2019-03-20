@@ -101,6 +101,7 @@ def setup_axis(xlabel: str = None,
         ax = plt.subplot()
 
     ax.get_xaxis().tick_bottom()
+    ax.tick_params(labelsize='large')
     ax.get_yaxis().tick_left()
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
@@ -118,9 +119,9 @@ def setup_axis(xlabel: str = None,
     if ylim is not None:
         ax.set_ylim(0, ylim)
     if min_recall is not None:
-        ax.axvline(x=min_recall, linestyle='--', color='k')
+        ax.axvline(x=min_recall, linestyle='--', color=(0, 0, 0, 0.3))
     if min_precision is not None:
-        ax.axhline(y=min_precision, linestyle='--', color='k')
+        ax.axhline(y=min_precision, linestyle='--', color=(0, 0, 0, 0.3))
 
     return ax
 
@@ -184,7 +185,7 @@ def class_tp_curve(md_list: MetricDataList,
             label = '{}: {:.2f}'.format(metric, tp)
         ax.plot(recall, error, label=label)
 
-    ax.axvline(x=md.max_recall, linestyle='--', color='k')
+    ax.axvline(x=md.max_recall, linestyle='-.', color=(0, 0, 0, 0.3))
     ax.legend(loc='best')
 
     if savepath is not None:
