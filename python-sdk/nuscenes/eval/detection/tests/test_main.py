@@ -106,7 +106,6 @@ class TestMain(unittest.TestCase):
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
                                  verbose=False)
         metrics, md_list = nusc_eval.run()
-        nusc_eval.render(md_list, metrics)
 
         # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.
         # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
@@ -114,8 +113,9 @@ class TestMain(unittest.TestCase):
         # 4. Score = 0.20478832626986893. Updated treatment of cones, barriers, and other algo tunings.
         # 5. Score = 0.2043569666105005. AP calculation area is changed from >=min_recall to >min_recall.
         # 6. Score = 0.20636954644294506. After bike-rack filtering.
-        # 7. Score - 0.20237925145690996. After TP reversion bug.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.20237925145690996)
+        # 7. Score = 0.20237925145690996. After TP reversion bug.
+        # 8. Score = 0.24047129251302665. After bike racks bug.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.24047129251302665)
 
 
 if __name__ == '__main__':

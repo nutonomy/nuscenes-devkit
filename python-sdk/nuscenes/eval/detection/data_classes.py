@@ -17,14 +17,15 @@ class DetectionConfig:
                  class_range: Dict[str, int],
                  dist_fcn: str,
                  dist_ths: List[float],
-                 dist_th_tp: str,
+                 dist_th_tp: float,
                  min_recall: float,
                  min_precision: float,
                  max_boxes_per_sample: float,
                  mean_ap_weight: int
                  ):
 
-        assert set(class_range.keys()) == set(DETECTION_NAMES)
+        assert set(class_range.keys()) == set(DETECTION_NAMES), "Class count mismatch."
+        assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
 
         self.class_range = class_range
         self.dist_fcn = dist_fcn
@@ -199,7 +200,7 @@ class EvalBoxes:
         """ Returns a list of all keys """
         return list(self.boxes.keys())
 
-    def add_boxes(self, sample_token, boxes) -> None:
+    def add_boxes(self, sample_token: str, boxes: List[EvalBox]) -> None:
         """ Adds a list of boxes """
         self.boxes[sample_token].extend(boxes)
 

@@ -90,7 +90,7 @@ def load_gt(nusc, eval_split: str, verbose: bool = True) -> EvalBoxes:
                     detection_name=detection_name,
                     detection_score=-1.0,  # GT samples do not have a score.
                     attribute_name=attribute_name,
-                    num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_lidar_pts']
+                    num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_radar_pts']
                 )
             )
         all_annotations.add_boxes(sample_token, sample_boxes)
@@ -146,17 +146,19 @@ def filter_eval_boxes(nusc: NuScenes,
         sample_anns = nusc.get('sample', sample_token)['anns']
         bikerack_recs = [nusc.get('sample_annotation', ann) for ann in sample_anns if
                          nusc.get('sample_annotation', ann)['category_name'] == 'static_object.bicycle_rack']
+        bikerack_boxes = [Box(rec['translation'], rec['size'], Quaternion(rec['rotation'])) for rec in bikerack_recs]
 
         filtered_boxes = []
-
-        for rec in bikerack_recs:
-            bikerack_box = Box(rec['translation'], rec['size'], Quaternion(rec['rotation']))
-            for box in eval_boxes[sample_token]:
-                if box.detection_name in ['bicycle', 'motorcycle'] and \
-                        np.sum(points_in_box(bikerack_box, np.expand_dims(np.array(box.translation), axis=1))) > 0:
-                    continue
-                else:
+        for box in eval_boxes[sample_token]:
+            if box.detection_name in ['bicycle', 'motorcycle']:
+                in_a_bikerack = False
+                for bikerack_box in bikerack_boxes:
+                    if np.sum(points_in_box(bikerack_box, np.expand_dims(np.array(box.translation), axis=1))) > 0:
+                        in_a_bikerack = True
+                if not in_a_bikerack:
                     filtered_boxes.append(box)
+            else:
+                filtered_boxes.append(box)
 
         eval_boxes.boxes[sample_token] = filtered_boxes
         bike_rack_filter.append(point_filter[ind] - len(eval_boxes.boxes[sample_token]))
