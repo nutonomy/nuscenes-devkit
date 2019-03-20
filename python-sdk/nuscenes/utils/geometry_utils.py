@@ -8,8 +8,6 @@ from typing import Tuple
 import numpy as np
 from pyquaternion import Quaternion
 
-from nuscenes.utils.data_classes import Box
-
 
 class BoxVisibility(IntEnum):
     """ Enumerates the various level of box visibility in an image """
@@ -111,7 +109,7 @@ def transform_matrix(translation: np.ndarray = np.array([0, 0, 0]),
     return tm
 
 
-def points_in_box(box: Box, points: float, wlh_factor: float = 1.0):
+def points_in_box(box: 'Box', points: float, wlh_factor: float = 1.0):
     """
     Checks whether points are inside the box.
 
