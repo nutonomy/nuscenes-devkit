@@ -4,6 +4,10 @@
 
 DETECTION_NAMES = ['car', 'truck', 'bus', 'trailer', 'construction_vehicle', 'pedestrian', 'motorcycle', 'bicycle',
                    'traffic_cone', 'barrier']
+PRETTY_DETECTION_NAMES = {'car': 'Car', 'truck': 'Truck', 'bus': 'Bus', 'trailer': 'Trailer',
+                          'construction_vehicle': 'Construction Vehicle', 'pedestrian': 'Pedestrian',
+                          'motorcycle': 'Motorcycle', 'bicycle': 'Bicycle', 'traffic_cone': 'Traffic Cone',
+                          'barrier': 'Barrier'}
 
 ATTRIBUTE_NAMES = ['pedestrian.moving', 'pedestrian.sitting_lying_down', 'pedestrian.standing', 'cycle.with_rider',
                    'cycle.without_rider', 'vehicle.moving', 'vehicle.parked', 'vehicle.stopped']

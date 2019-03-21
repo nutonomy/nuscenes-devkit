@@ -11,7 +11,8 @@ from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS
+from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
+    PRETTY_DETECTION_NAMES
 from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
 
 
@@ -134,8 +135,8 @@ def class_pr_curve(md_list: MetricDataList,
                    savepath: str = None,
                    ax=None):
     if ax is None:
-        ax = setup_axis(title=pretty_name(detection_name), xlabel='Recall', ylabel='Precision', xlim=1, ylim=1,
-                        min_precision=min_precision, min_recall=min_recall)
+        ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Precision', xlim=1,
+                        ylim=1, min_precision=min_precision, min_recall=min_recall)
 
     # Get recall vs precision values of given class for each distance threshold.
     data = md_list.get_class_data(detection_name)
@@ -160,7 +161,7 @@ def class_tp_curve(md_list: MetricDataList,
                    ax=None):
 
     if ax is None:
-        ax = setup_axis(title=pretty_name(detection_name), xlabel='Recall', ylabel='Error', xlim=1,
+        ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Error', xlim=1,
                         min_recall=min_recall)
 
     # Get metric data for given detection class with tp distance threshold.
@@ -203,7 +204,7 @@ def dist_pr_curve(md_list: MetricDataList,
                   ax=None) -> None:
 
     if ax is None:
-        ax = setup_axis(title='Distance threshold = {}'.format(dist_th), xlabel='Recall', ylabel='Precision',
+        ax = setup_axis(title='PR Curve (dist_th={})'.format(dist_th), xlabel='Recall', ylabel='Precision',
                         xlim=1, ylim=1, min_precision=min_precision, min_recall=min_recall)
 
     # Plot the recall vs. precision curve for each detection class.
@@ -211,7 +212,7 @@ def dist_pr_curve(md_list: MetricDataList,
     for md, detection_name in data:
         md = md_list[(detection_name, dist_th)]
         ap = metrics.get_label_ap(detection_name, dist_th)
-        ax.plot(md.recall, md.precision, label='{} ap: {:.1f}'.format(detection_name, ap * 100),
+        ax.plot(md.recall, md.precision, label='{}: {:.1f}%'.format(PRETTY_DETECTION_NAMES[detection_name], ap * 100),
                 color=DETECTION_COLORS[detection_name])
 
     ax.legend(loc='best')
@@ -234,7 +235,7 @@ def summary_plot(md_list: MetricDataList,
 
         ax1 = setup_axis(xlim=1, ylim=1, title=title1, min_precision=min_precision,
                          min_recall=min_recall, ax=axes[ind, 0])
-        ax1.set_ylabel('{} \n \n Precision'.format(pretty_name(detection_name)), size=20)
+        ax1.set_ylabel('{} \n \n Precision'.format(PRETTY_DETECTION_NAMES[detection_name]), size=20)
 
         ax2 = setup_axis(xlim=1, title=title2, min_recall=min_recall, ax=axes[ind, 1])
         if ind == n_classes - 1:
@@ -249,8 +250,3 @@ def summary_plot(md_list: MetricDataList,
     if savepath is not None:
         plt.savefig(savepath)
         plt.close()
-
-
-def pretty_name(name: str):
-    """ Get a pretty name for a detection class. """
-    return ' '.join(name.title().split('_'))
