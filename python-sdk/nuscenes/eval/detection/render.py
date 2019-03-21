@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar, 2019.
+# Code written by Holger Caesar and Alex Lang, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
 from typing import Dict
@@ -307,10 +307,8 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
            'AOE: average orientation error (rad.), ' \
            'AVE: average velocity error ($m/s$), ' \
            'AAE: average attribute error ($1-acc$). ' \
-           'nuScenes Detection Score (NDS)= {:.1f} \%{}\n'.format(metrics['weighted_sum'] * 100, '}')
+           'nuScenes Detection Score (NDS) = {:.1f} \%{}\n'.format(metrics['weighted_sum'] * 100, '}')
     tex += '\\end{table}\n'
 
     with open(output_path, 'w') as f:
         f.write(tex)
-
-
