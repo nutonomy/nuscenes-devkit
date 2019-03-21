@@ -27,7 +27,7 @@ attribute {
 visibility
 ---------
 
-The visibility of an instance is the fraction of pixels visible in all 6 images. Binned into 5 bins of 20%.
+The visibility of an instance is the fraction of pixels visible in all 6 images. Binned into 4 bins 0-40%, 40-60%, 60-80% and 80-100%.
 ```
 visibility {
    "token":                   <str> -- Unique record identifier.
