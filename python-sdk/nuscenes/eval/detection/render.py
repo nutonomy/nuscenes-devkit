@@ -215,7 +215,7 @@ def dist_pr_curve(md_list: MetricDataList,
         ax.plot(md.recall, md.precision, label='{}: {:.1f}%'.format(PRETTY_DETECTION_NAMES[detection_name], ap * 100),
                 color=DETECTION_COLORS[detection_name])
 
-    ax.legend(loc='best')
+    ax.legend(loc='best', markerfirst=False)
     if savepath is not None:
         plt.savefig(savepath)
         plt.close()
