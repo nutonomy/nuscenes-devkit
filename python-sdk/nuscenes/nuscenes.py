@@ -446,7 +446,7 @@ class NuScenesExplorer:
         # Add empty categories
         for category in self.nusc.category:
             if category['name'] not in categories:
-                categories[category['name']] = [np.nan] * 4
+                categories[category['name']] = [[np.nan] * 4]
 
         # Print stats
         for name, stats in sorted(categories.items()):
