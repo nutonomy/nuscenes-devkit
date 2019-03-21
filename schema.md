@@ -175,7 +175,7 @@ sample_annotation {
 map
 ---------
 
-Map data that is stored as binary semantic masks from a top-down view. As the maps are updated regularly, there may be multiple versions for the same location. In that case the ego_poses of logs with different maps cannot be compared.
+Map data that is stored as binary semantic masks from a top-down view.
 ```
 map {
    "token":                   <str> -- Unique record identifier.
