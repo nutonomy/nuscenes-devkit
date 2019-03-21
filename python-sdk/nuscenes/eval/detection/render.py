@@ -5,6 +5,7 @@
 from typing import Dict
 
 import numpy as np
+import json
 from matplotlib import pyplot as plt
 
 from nuscenes.eval.detection.utils import boxes_to_sensor
@@ -250,3 +251,60 @@ def summary_plot(md_list: MetricDataList,
     if savepath is not None:
         plt.savefig(savepath)
         plt.close()
+
+
+def write_tex_table(metrics_path, output_path):
+
+    with open(metrics_path, 'r') as f:
+        metrics = json.load(f)
+
+    tex = ''
+
+    tex += '\\begin{table}[]\n'
+    tex += '\\small\n'
+    tex += '\\begin{tabular}{| c | c | c | c | c | c | c |} \\hline\n'
+    tex += '\\textbf{Class}    &   \\textbf{AP}  &   \\textbf{ATE} &   \\textbf{ASE} & \\textbf{AOE}   & ' \
+           '\\textbf{AVE}   & ' \
+           '\\textbf{AAE}   \\\\ \\hline ' \
+           '\\hline\n'
+    for name in DETECTION_NAMES:
+        ap = metrics['label_aps'][name]['2.0'] * 100
+        ate = metrics['label_tp_errors'][name]['trans_err']
+        ase = metrics['label_tp_errors'][name]['scale_err']
+        aoe = metrics['label_tp_errors'][name]['orient_err']
+        ave = metrics['label_tp_errors'][name]['vel_err']
+        aae = metrics['label_tp_errors'][name]['attr_err']
+        tex_name = PRETTY_DETECTION_NAMES[name]
+        if name == 'traffic_cone':
+            tex += '{}  &   {:.1f}  &   {:.2f}  &   {:.2f}  &   N/A  &   N/A  &   N/A  \\\\ \\hline\n'.format(
+                tex_name, ap, ate, ase)
+        elif name == 'barrier':
+            tex += '{}  &   {:.1f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   N/A  &   N/A  \\\\ \\hline\n'.format(
+                tex_name, ap, ate, ase, aoe)
+        else:
+            tex += '{}  &   {:.1f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  \\\\ ' \
+                   '\\hline\n'.format(tex_name, ap, ate, ase, aoe, ave, aae)
+
+    map_ = metrics['mean_ap'] * 100
+    mate = metrics['tp_errors']['trans_err']
+    mase = metrics['tp_errors']['scale_err']
+    maoe = metrics['tp_errors']['orient_err']
+    mave = metrics['tp_errors']['vel_err']
+    maae = metrics['tp_errors']['attr_err']
+    tex += '\\hline {} &   {:.1f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  \\\\ ' \
+           '\\hline\n'.format('\\textbf{Mean}', map_, mate, mase, maoe, mave, maae)
+
+    tex += '\\end{tabular}\n'
+    tex += '\\caption{Detailed detection performance, '
+    tex += 'NDS={:.3f}. '.format(metrics['weighted_sum'])
+    tex += 'Abbreviations: NDS = nuTonomy detection score, ' \
+           'AP = average precision (\%), ATE = average translation error ($m$), ASE = average scale error (' \
+           '$1-IOU$), ' \
+           'AOE = average orientation error (rad.), AVE = average velocity error ($m/s$), ' \
+           'AAE = average attribute error ($1-acc$).}\n'
+    tex += '\\end{table}\n'
+
+    with open(output_path, 'w') as f:
+        f.write(tex)
+
+

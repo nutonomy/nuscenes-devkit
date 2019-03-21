@@ -5,7 +5,7 @@
 DETECTION_NAMES = ['car', 'truck', 'bus', 'trailer', 'construction_vehicle', 'pedestrian', 'motorcycle', 'bicycle',
                    'traffic_cone', 'barrier']
 PRETTY_DETECTION_NAMES = {'car': 'Car', 'truck': 'Truck', 'bus': 'Bus', 'trailer': 'Trailer',
-                          'construction_vehicle': 'Construction Vehicle', 'pedestrian': 'Pedestrian',
+                          'construction_vehicle': 'Constr. Veh.', 'pedestrian': 'Pedestrian',
                           'motorcycle': 'Motorcycle', 'bicycle': 'Bicycle', 'traffic_cone': 'Traffic Cone',
                           'barrier': 'Barrier'}
 
