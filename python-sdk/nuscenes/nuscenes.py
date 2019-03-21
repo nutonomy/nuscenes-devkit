@@ -433,7 +433,7 @@ class NuScenesExplorer:
             return 255, 0, 255  # Magenta
 
     def list_categories(self) -> None:
-        """ Print categories, counts and stats. """
+        """ Print categories, counts and stats. These stats only cover the split specified in nusc.version. """
         print('Category stats for split %s:' % self.nusc.version)
 
         # Add all annotations
@@ -442,11 +442,6 @@ class NuScenesExplorer:
             if record['category_name'] not in categories:
                 categories[record['category_name']] = []
             categories[record['category_name']].append(record['size'] + [record['size'][1] / record['size'][0]])
-
-        # Add empty categories
-        for category in self.nusc.category:
-            if category['name'] not in categories:
-                categories[category['name']] = [[np.nan] * 4]
 
         # Print stats
         for name, stats in sorted(categories.items()):
