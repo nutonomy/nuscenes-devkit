@@ -253,13 +253,18 @@ def summary_plot(md_list: MetricDataList,
         plt.close()
 
 
-def write_tex_table(metrics_path, output_path):
+def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
+    """
+    Renders a detailed results table in tex.
+    :param metrics_path: path to a serialized DetectionMetrics file.
+    :param output_path: path to the output file.
+    :return:
+    """
 
     with open(metrics_path, 'r') as f:
         metrics = json.load(f)
 
     tex = ''
-
     tex += '\\begin{table}[]\n'
     tex += '\\small\n'
     tex += '\\begin{tabular}{| c | c | c | c | c | c | c |} \\hline\n'
@@ -295,13 +300,14 @@ def write_tex_table(metrics_path, output_path):
            '\\hline\n'.format('\\textbf{Mean}', map_, mate, mase, maoe, mave, maae)
 
     tex += '\\end{tabular}\n'
-    tex += '\\caption{Detailed detection performance, '
-    tex += 'NDS={:.3f}. '.format(metrics['weighted_sum'])
-    tex += 'Abbreviations: NDS = nuTonomy detection score, ' \
-           'AP = average precision (\%), ATE = average translation error ($m$), ASE = average scale error (' \
-           '$1-IOU$), ' \
-           'AOE = average orientation error (rad.), AVE = average velocity error ($m/s$), ' \
-           'AAE = average attribute error ($1-acc$).}\n'
+    tex += '\\caption{Detailed detection performance. '
+    tex += 'AP: average precision (\%), ' \
+           'ATE: average translation error ($m$), ' \
+           'ASE: average scale error ($1-IOU$), ' \
+           'AOE: average orientation error (rad.), ' \
+           'AVE: average velocity error ($m/s$), ' \
+           'AAE: average attribute error ($1-acc$). ' \
+           'nuScenes Detection Score (NDS)= {:.1f} \%{}\n'.format(metrics['weighted_sum'] * 100, '}')
     tex += '\\end{table}\n'
 
     with open(output_path, 'w') as f:
