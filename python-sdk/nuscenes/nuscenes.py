@@ -448,10 +448,10 @@ class NuScenesExplorer:
             stats = np.array(stats)
             print('{:27} n={:5}, width={:5.2f}\u00B1{:.2f}, len={:5.2f}\u00B1{:.2f}, height={:5.2f}\u00B1{:.2f}, '
                   'lw_aspect={:5.2f}\u00B1{:.2f}'.format(name[:27], stats.shape[0],
-                                                         np.nanmean(stats[:, 0]), np.nanstd(stats[:, 0]),
-                                                         np.nanmean(stats[:, 1]), np.nanstd(stats[:, 1]),
-                                                         np.nanmean(stats[:, 2]), np.nanstd(stats[:, 2]),
-                                                         np.nanmean(stats[:, 3]), np.nanstd(stats[:, 3])))
+                                                         np.mean(stats[:, 0]), np.std(stats[:, 0]),
+                                                         np.mean(stats[:, 1]), np.std(stats[:, 1]),
+                                                         np.mean(stats[:, 2]), np.std(stats[:, 2]),
+                                                         np.mean(stats[:, 3]), np.std(stats[:, 3])))
 
     def list_attributes(self) -> None:
         """ Prints attributes and counts. """
