@@ -81,7 +81,7 @@
 
 24. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
 
-25. **[Debris](#debris)**: Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
+25. **[Debris](#debris)**: Debris or movable object that is too large to be driven over safely. Includes misc. things like trash bags, temporary road-signs, objects around construction zones, and trash cans. 
 
 # Attributes 
 1. **For every object, include the attribute:** 

@@ -1013,13 +1013,19 @@ class NuScenesExplorer:
 
         cv2.destroyAllWindows()
 
-    def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, close_dist: float = 100.0) -> None:
+    def render_egoposes_on_map(self, log_location: str,
+                               scene_tokens: List = None,
+                               close_dist: float = 100,
+                               color_fg: Tuple[int, int, int] = (167, 174, 186),
+                               color_bg: Tuple[int, int, int] = (255, 255, 255)) -> None:
         """
         Renders ego poses a the map. These can be filtered by location or scene.
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
         :param close_dist: Distance in meters for an ego pose to be considered within range of another ego pose.
+        :param color_fg: Color of the semantic prior in RGB format.
+        :param color_bg: Color of the non-semantic prior in RGB format.
         """
 
         # Settings
@@ -1067,14 +1073,29 @@ class NuScenesExplorer:
         dists = sklearn.metrics.pairwise.euclidean_distances(map_poses * map_mask.resolution)
         close_poses = np.sum(dists < close_dist, axis=0)
 
+        # Set the colors for the mask.
+        mask = Image.fromarray(map_mask.mask())
+        mask = np.array(mask)
+
+        maskr = color_fg[0] * np.ones(np.shape(mask), dtype=np.uint8)
+        maskr[mask == 0] = color_bg[0]
+        maskg = color_fg[1] * np.ones(np.shape(mask), dtype=np.uint8)
+        maskg[mask == 0] = color_bg[1]
+        maskb = color_fg[2] * np.ones(np.shape(mask), dtype=np.uint8)
+        maskb[mask == 0] = color_bg[2]
+        mask = np.concatenate((np.expand_dims(maskr, axis=2),
+                               np.expand_dims(maskg, axis=2),
+                               np.expand_dims(maskb, axis=2)), axis=2)
+
         # Plot.
-        _, ax = plt.subplots(1, 1, figsize=(10, 10), facecolor='black')
-        ax.imshow(Image.fromarray(map_mask.mask()))
+        _, ax = plt.subplots(1, 1, figsize=(10, 10))
+        ax.imshow(mask)
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
-        ax.set_title(title, color='w')
+        ax.set_title(title, color='k')
         sc = ax.scatter(map_poses[:, 0], map_poses[:, 1], s=10, c=close_poses)
         color_bar = plt.colorbar(sc, fraction=0.025, pad=0.04)
         plt.rcParams['figure.facecolor'] = 'black'
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
-        plt.setp(color_bar_ticklabels, color='w')
+        plt.setp(color_bar_ticklabels, color='k')
         plt.rcParams['figure.facecolor'] = 'white'  # Reset for future plots
+

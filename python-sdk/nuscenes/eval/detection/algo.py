@@ -12,7 +12,8 @@ def accumulate(gt_boxes: EvalBoxes,
                pred_boxes: EvalBoxes,
                class_name: str,
                dist_fcn_name: str,
-               dist_th: float):
+               dist_th: float,
+               verbose: bool = False):
     """
     Average Precision over predefined different recall thresholds for a single distance threshold.
     The recall/conf thresholds and other raw metrics will be used in secondary metrics.
@@ -21,6 +22,7 @@ def accumulate(gt_boxes: EvalBoxes,
     :param class_name: Class to compute AP on.
     :param dist_fcn_name: Name of distance function used to match detections and ground truths.
     :param dist_th: Distance threshold for a match.
+    :param verbose: If true, print debug messages.
     :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
     """
 
@@ -30,11 +32,14 @@ def accumulate(gt_boxes: EvalBoxes,
     dist_fcn = dist_fcn_map[dist_fcn_name]
 
     # ---------------------------------------------
-    # Organize input and inititialize accumulators
+    # Organize input and initialize accumulators
     # ---------------------------------------------
 
     # Count the positives.
     npos = len([1 for gt_box in gt_boxes.all if gt_box.detection_name == class_name])
+    if verbose:
+        print("Found {} GT of class {} out of {} total across {} samples.".
+              format(npos, class_name, len(gt_boxes.all), len(gt_boxes.sample_tokens)))
 
     # For missing classes in the GT, return a data structure corresponding to no predictions.
     if npos == 0:
@@ -43,6 +48,10 @@ def accumulate(gt_boxes: EvalBoxes,
     # Organize the predictions in a single list.
     pred_boxes_list = [box for box in pred_boxes.all if box.detection_name == class_name]
     pred_confs = [box.detection_score for box in pred_boxes_list]
+
+    if verbose:
+        print("Found {} PRED of class {} out of {} total across {} samples.".
+              format(len(pred_confs), class_name, len(pred_boxes.all), len(pred_boxes.sample_tokens)))
 
     # Sort by confidence.
     sortind = [i for (v, i) in sorted((v, i) for (i, v) in enumerate(pred_confs))][::-1]
@@ -72,11 +81,11 @@ def accumulate(gt_boxes: EvalBoxes,
         min_dist = np.inf
         match_gt_idx = None
 
-        for gt_idx, sample_annotation in enumerate(gt_boxes[pred_box.sample_token]):
+        for gt_idx, gt_box in enumerate(gt_boxes[pred_box.sample_token]):
 
             # Find closest match among ground truth boxes
-            if sample_annotation.detection_name == class_name and not (pred_box.sample_token, gt_idx) in taken:
-                this_distance = dist_fcn(sample_annotation, pred_box)
+            if gt_box.detection_name == class_name and not (pred_box.sample_token, gt_idx) in taken:
+                this_distance = dist_fcn(gt_box, pred_box)
                 if this_distance < min_dist:
                     min_dist = this_distance
                     match_gt_idx = gt_idx
@@ -151,7 +160,7 @@ def accumulate(gt_boxes: EvalBoxes,
             tmp = cummean(np.array(match_data[key]))
 
             # Then interpolate based on the confidences. (Note reversing since np.interp needs increasing arrays)
-            match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp)
+            match_data[key] = np.interp(conf[::-1], match_data['conf'][::-1], tmp[::-1])[::-1]
 
     # ---------------------------------------------
     # Done. Instantiate MetricData and return
@@ -172,8 +181,8 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     assert 0 <= min_precision < 1
     assert 0 <= min_recall <= 1
 
-    prec = md.precision
-    prec = prec[round(100 * min_recall):]  # Clip low recalls.
+    prec = np.copy(md.precision)
+    prec = prec[round(100 * min_recall) + 1:]  # Clip low recalls.
     prec -= min_precision  # Clip low precision
     prec[prec < 0] = 0
     return float(np.mean(prec)) / (1.0 - min_precision)
@@ -183,7 +192,7 @@ def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
     """ Calculates true positive errors. """
 
     first_ind = round(100 * min_recall)
-    last_ind = np.nonzero(md.confidence)[0][-1]  # First instance of confidence = 0 is index of max achieved recall.
+    last_ind = md.max_recall_ind  # First instance of confidence = 0 is index of max achieved recall.
     if last_ind < first_ind:
         return 1.0  # Assign 1 here. If this happens for all classes, the score for that TP metric will be 0.
     else:
