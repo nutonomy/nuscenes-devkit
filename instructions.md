@@ -35,7 +35,7 @@
 **For every bounding box, include one of the following labels:**
 1. **[Car or Van or SUV](#car-or-van-or-suv)**: Vehicle designed primarily for personal use, e.g. sedans, hatch-backs, wagons, vans, mini-vans, SUVs and jeeps.   
 
-2. **[Truck](#truck)**: Vehicles primarily designed to haul cargo including pick-ups, lorrys, trucks and semi-tractors. Trailers hauled after a semi-tractor should be labeled as vehicle.trailer.
+2. **[Truck](#truck)**: Vehicles primarily designed to haul cargo including pick-ups, lorrys, trucks and semi-tractors. Trailers hauled after a semi-tractor should be labeled as "Trailer".
 
     - **[Pickup Truck](#pickup-truck)**: A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use. 
 
