@@ -1027,10 +1027,6 @@ class NuScenesExplorer:
         :param color_fg: Color of the semantic prior in RGB format.
         :param color_bg: Color of the non-semantic prior in RGB format.
         """
-
-        # Settings
-
-
         # Get logs by location
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
@@ -1098,4 +1094,3 @@ class NuScenesExplorer:
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
         plt.setp(color_bar_ticklabels, color='k')
         plt.rcParams['figure.facecolor'] = 'white'  # Reset for future plots
-
