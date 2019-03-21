@@ -61,7 +61,7 @@ export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
 
 To install the required packages, run the following command in your favourite virtual environment:
 ```
-pip install -r requirements.txt
+pip install -r setup/requirements.txt
 ```
 
 ### Verify install
