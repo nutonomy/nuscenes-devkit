@@ -27,7 +27,7 @@ attribute {
 visibility
 ---------
 
-The visibility of an instance is the fraction of pixels visible in all 6 images. Binned into 5 bins of 20%.
+The visibility of an instance is the fraction of pixels visible in all 6 images. Binned into 4 bins 0-40%, 40-60%, 60-80% and 80-100%.
 ```
 visibility {
    "token":                   <str> -- Unique record identifier.
@@ -175,7 +175,7 @@ sample_annotation {
 map
 ---------
 
-Map data that is stored as binary semantic masks from a top-down view. As the maps are updated regularly, there may be multiple versions for the same location. In that case the ego_poses of logs with different maps cannot be compared.
+Map data that is stored as binary semantic masks from a top-down view.
 ```
 map {
    "token":                   <str> -- Unique record identifier.
