@@ -19,7 +19,7 @@ PRETTY_ATTRIBUTE_NAMES = {'pedestrian.moving': 'Ped. Moving', 'pedestrian.sittin
 TP_METRICS = ['trans_err', 'scale_err', 'orient_err', 'vel_err', 'attr_err']
 PRETTY_TP_METRICS = {'trans_err': 'Trans.', 'scale_err': 'Scale', 'orient_err': 'Orient.', 'vel_err': 'Vel.',
                      'attr_err': 'Attr.'}
-TP_METRICS_UNITS = {'trans_err': 'm', 'scale_err': '1-IOU', 'orient_err': 'rad', 'vel_err': 'm/s', 'attr_err': '1-acc'}
+TP_METRICS_UNITS = {'trans_err': 'm', 'scale_err': '1-IOU', 'orient_err': 'rad.', 'vel_err': 'm/s', 'attr_err': '1-acc.'}
 
 DETECTION_COLORS = {'car': 'C0',
                     'truck': 'C1',

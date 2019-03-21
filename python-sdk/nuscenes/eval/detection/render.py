@@ -145,7 +145,7 @@ def class_pr_curve(md_list: MetricDataList,
     # Plot the recall vs. precision curve for each distance threshold.
     for md, dist_th in data:
         ap = metrics.get_label_ap(detection_name, dist_th)
-        ax.plot(md.recall, md.precision, label='Dist. Th.: {}, AP: {:.1f}'.format(dist_th, ap * 100))
+        ax.plot(md.recall, md.precision, label='Dist. : {}, AP: {:.1f}'.format(dist_th, ap * 100))
 
     ax.legend(loc='best')
     if savepath is not None:
@@ -207,8 +207,8 @@ def dist_pr_curve(md_list: MetricDataList,
     fig, (ax, lax) = plt.subplots(ncols=2, gridspec_kw={"width_ratios": [4, 1]},
                                   figsize=(7.5, 5))
 
-    ax = setup_axis(title='PR Curve (dist_th={})'.format(dist_th), xlabel='Recall', ylabel='Precision', xlim=1, ylim=1,
-                    min_precision=min_precision, min_recall=min_recall, ax=ax)
+    ax = setup_axis(title='Recall vs Precision ({} m)'.format(dist_th), xlabel='Recall', ylabel='Precision',
+                    xlim=1, ylim=1, min_precision=min_precision, min_recall=min_recall, ax=ax)
 
     # Plot the recall vs. precision curve for each detection class.
     data = md_list.get_dist_data(dist_th)
@@ -304,14 +304,18 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
            '\\hline\n'.format('\\textbf{Mean}', map_, mate, mase, maoe, mave, maae)
 
     tex += '\\end{tabular}\n'
+
+    # All one line
     tex += '\\caption{Detailed detection performance. '
-    tex += 'AP: average precision (\%), ' \
-           'ATE: average translation error ($m$), ' \
-           'ASE: average scale error ($1-IOU$), ' \
-           'AOE: average orientation error (rad.), ' \
-           'AVE: average velocity error ($m/s$), ' \
-           'AAE: average attribute error ($1-acc$). ' \
-           'nuScenes Detection Score (NDS) = {:.1f} \%{}\n'.format(metrics['weighted_sum'] * 100, '}')
+    tex += 'AP: average precision (\%), '
+    tex += 'ATE: average translation error (${}$), '.format(TP_METRICS_UNITS['trans_err'])
+    tex += 'ASE: average scale error (${}$), '.format(TP_METRICS_UNITS['scale_err'])
+    tex += 'AOE: average orientation error (${}$), '.format(TP_METRICS_UNITS['orient_err'])
+    tex += 'AVE: average velocity error (${}$), '.format(TP_METRICS_UNITS['vel_err'])
+    tex += 'AAE: average attribute error (${}$). '.format(TP_METRICS_UNITS['attr_err'])
+    tex += 'nuScenes Detection Score (NDS) = {:.1f} '.format(metrics['weighted_sum'] * 100)
+    tex += '}\n'
+
     tex += '\\end{table}\n'
 
     with open(output_path, 'w') as f:
