@@ -433,13 +433,17 @@ class NuScenesExplorer:
             return 255, 0, 255  # Magenta
 
     def list_categories(self) -> None:
-        """ Print categories, counts and stats. """
+        """ Print categories, counts and stats. These stats only cover the split specified in nusc.version. """
+        print('Category stats for split %s:' % self.nusc.version)
+
+        # Add all annotations
         categories = dict()
         for record in self.nusc.sample_annotation:
             if record['category_name'] not in categories:
                 categories[record['category_name']] = []
             categories[record['category_name']].append(record['size'] + [record['size'][1] / record['size'][0]])
 
+        # Print stats
         for name, stats in sorted(categories.items()):
             stats = np.array(stats)
             print('{:27} n={:5}, width={:5.2f}\u00B1{:.2f}, len={:5.2f}\u00B1{:.2f}, height={:5.2f}\u00B1{:.2f}, '
@@ -1013,20 +1017,23 @@ class NuScenesExplorer:
 
         cv2.destroyAllWindows()
 
-    def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None) -> None:
+    def render_egoposes_on_map(self, log_location: str,
+                               scene_tokens: List = None,
+                               close_dist: float = 100,
+                               color_fg: Tuple[int, int, int] = (167, 174, 186),
+                               color_bg: Tuple[int, int, int] = (255, 255, 255)) -> None:
         """
         Renders ego poses a the map. These can be filtered by location or scene.
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
+        :param close_dist: Distance in meters for an ego pose to be considered within range of another ego pose.
+        :param color_fg: Color of the semantic prior in RGB format.
+        :param color_bg: Color of the non-semantic prior in RGB format.
         """
-
-        # Settings
-        close_dist = 100
-
         # Get logs by location
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
-        assert len(log_tokens) > 0
+        assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
         # Filter scenes
         scene_tokens_location = [e['token'] for e in self.nusc.scene if e['log_token'] in log_tokens]
@@ -1038,6 +1045,7 @@ class NuScenesExplorer:
         map_poses = []
         map_mask = None
 
+        print('Adding ego poses to map...')
         for scene_token in tqdm(scene_tokens_location):
 
             # Get records from the database.
@@ -1060,18 +1068,33 @@ class NuScenesExplorer:
                     map_mask.to_pixel_coords(pose_record['translation'][0], pose_record['translation'][1])))
 
         # Compute number of close ego poses.
+        print('Creating plot...')
         map_poses = np.vstack(map_poses)
         dists = sklearn.metrics.pairwise.euclidean_distances(map_poses * map_mask.resolution)
         close_poses = np.sum(dists < close_dist, axis=0)
 
+        # Set the colors for the mask.
+        mask = Image.fromarray(map_mask.mask())
+        mask = np.array(mask)
+
+        maskr = color_fg[0] * np.ones(np.shape(mask), dtype=np.uint8)
+        maskr[mask == 0] = color_bg[0]
+        maskg = color_fg[1] * np.ones(np.shape(mask), dtype=np.uint8)
+        maskg[mask == 0] = color_bg[1]
+        maskb = color_fg[2] * np.ones(np.shape(mask), dtype=np.uint8)
+        maskb[mask == 0] = color_bg[2]
+        mask = np.concatenate((np.expand_dims(maskr, axis=2),
+                               np.expand_dims(maskg, axis=2),
+                               np.expand_dims(maskb, axis=2)), axis=2)
+
         # Plot.
         _, ax = plt.subplots(1, 1, figsize=(10, 10))
-        ax.imshow(map_mask.mask())
+        ax.imshow(mask)
         title = 'Number of ego poses within {}m in {}'.format(close_dist, log_location)
-        ax.set_title(title, color='w')
+        ax.set_title(title, color='k')
         sc = ax.scatter(map_poses[:, 0], map_poses[:, 1], s=10, c=close_poses)
         color_bar = plt.colorbar(sc, fraction=0.025, pad=0.04)
         plt.rcParams['figure.facecolor'] = 'black'
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
-        plt.setp(color_bar_ticklabels, color='w')
+        plt.setp(color_bar_ticklabels, color='k')
         plt.rcParams['figure.facecolor'] = 'white'  # Reset for future plots

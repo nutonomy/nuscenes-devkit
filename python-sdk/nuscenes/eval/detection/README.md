@@ -1,11 +1,6 @@
 # nuScenes detection task
 In this document we present the rules, results format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
 
-
-## Disclaimer
-Please note that the challenge design and evaluation protocol described in this document are an initial proposal to discuss our design choices with the community.
-The final design will be released once the community feedback has been taken into account.
-
 ## Overview
 - [Introduction](#introduction)
 - [General rules](#general-rules)
@@ -19,7 +14,7 @@ The primary task of the nuScenes dataset is 3D object detection.
 The goal of 3D object detection is to place a tight 3D bounding box around every object.
 Object detection is the backbone for autonomous vehicles, as well as many other applications.
 Our goal is to provide a benchmark to measure performance and advance the state-of-the-art in autonomous driving.
-To this end we will host the nuScenes detection challenge from March 2019.
+To this end we will host the nuScenes detection challenge from April 2019.
 The results will be presented at the Workshop on Autonomous Driving ([wad.ai](http://wad.ai)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 ![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
 
@@ -67,42 +62,41 @@ Note that the detection classes may differ from the general nuScenes classes, as
 ## Classes, attributes, and detection ranges
 The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
-Hence we merge similar classes and remove classes that have less than 1000 samples in the teaser dataset.
+Hence we merge similar classes and remove rare classes.
 This results in 10 classes for the detection challenge.
-The full dataset will have 10x more samples for each class.
-Below we show the table of detection classes and their counterpart in the general nuScenes dataset.
-Double quotes (") indicate that a cell has the same class as the cell above.
+Below we show the table of detection classes and their counterpart in the nuScenes dataset.
+For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
 
-|   nuScenes detection class|   nuScenes general class                  |   Annotations         |
-|   ---                     |   ---                                     |   ---                 |
-|   void / ignore           |   animal                                  |   6                   |
-|   void / ignore           |   human.pedestrian.personal_mobility      |   24                  |
-|   void / ignore           |   human.pedestrian.stroller               |   40                  |
-|   void / ignore           |   human.pedestrian.wheelchair             |   5                   |
-|   void / ignore           |   movable_object.debris                   |   500                 |
-|   void / ignore           |   movable_object.pushable_pullable        |   583                 |
-|   void / ignore           |   static_object.bicycle_rack              |   192                 |
-|   void / ignore           |   vehicle.emergency.ambulance             |   19                  |
-|   void / ignore           |   vehicle.emergency.police                |   88                  |
-|   barrier                 |   movable_object.barrier                  |   18,449              |
-|   bicycle                 |   vehicle.bicycle                         |   1,685               |
-|   bus                     |   vehicle.bus.bendy                       |   98                  |
-|   bus                     |   vehicle.bus.rigid                       |   1,115               |
-|   car                     |   vehicle.car                             |   32,497              |
-|   construction_vehicle    |   vehicle.construction                    |   1,889               |
-|   motorcycle              |   vehicle.motorcycle                      |   1,975               |
-|   pedestrian              |   human.pedestrian.adult                  |   20,510              |
-|   pedestrian              |   human.pedestrian.child                  |   15                  |
-|   pedestrian              |   human.pedestrian.construction_worker    |   2,400               |
-|   pedestrian              |   human.pedestrian.police_officer         |   39                  |
-|   traffic_cone            |   movable_object.trafficcone              |   7,197               |
-|   trailer                 |   vehicle.trailer                         |   2,383               |
-|   truck                   |   vehicle.truck                           |   8,243               |
+|   nuScenes detection class|   nuScenes general class                  |
+|   ---                     |   ---                                     |
+|   void / ignore           |   animal                                  |
+|   void / ignore           |   human.pedestrian.personal_mobility      |
+|   void / ignore           |   human.pedestrian.stroller               |
+|   void / ignore           |   human.pedestrian.wheelchair             |
+|   void / ignore           |   movable_object.debris                   |
+|   void / ignore           |   movable_object.pushable_pullable        |
+|   void / ignore           |   static_object.bicycle_rack              |
+|   void / ignore           |   vehicle.emergency.ambulance             |
+|   void / ignore           |   vehicle.emergency.police                |
+|   barrier                 |   movable_object.barrier                  |
+|   bicycle                 |   vehicle.bicycle                         |
+|   bus                     |   vehicle.bus.bendy                       |
+|   bus                     |   vehicle.bus.rigid                       |
+|   car                     |   vehicle.car                             |
+|   construction_vehicle    |   vehicle.construction                    |
+|   motorcycle              |   vehicle.motorcycle                      |
+|   pedestrian              |   human.pedestrian.adult                  |
+|   pedestrian              |   human.pedestrian.child                  |
+|   pedestrian              |   human.pedestrian.construction_worker    |
+|   pedestrian              |   human.pedestrian.police_officer         |
+|   traffic_cone            |   movable_object.trafficcone              |
+|   trailer                 |   vehicle.trailer                         |
+|   truck                   |   vehicle.truck                           |
 
 Below we list which nuScenes classes can have which attributes.
 Note that some annotations are missing attributes (0.4% of all sample_annotations).
 
-For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle 
+For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle, 
 but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
 detection radius.
 
@@ -127,17 +121,17 @@ Our final score is a weighted sum of mean Average Precision (mAP) and several Tr
 
 ### Preprocessing
 Before running the evaluation code the following pre-processing is done on the data
-* All boxes (gt and prediction) are filtered on class-specific max-distance. 
-* All bikes and motorcycle boxes (gt and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
-* All boxes (gt) without any lidar nor radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the estimated boxes here.   
+* All boxes (GT and prediction) are removed if they exceed the class-specific detection range. 
+* All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
+* All boxes (GT) with lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes here.   
 
 ### Average Precision metric
 * **mean Average Precision (mAP)**:
 We use the well-known Average Precision metric as in KITTI,
 but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
 Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
-For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for 
-recalls and precisions > 0.1. We thus exclude operating points with recall or precision < 0.1 from the calculation.  
+For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for recalls and precisions > 0.1.
+We thus exclude operating points with recall or precision < 0.1 from the calculation.  
 We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
 
 ### True Positive errors
@@ -156,8 +150,9 @@ Finally we compute the mean over classes.
 
 All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
 
-### Weighted sum metric
-* **Weighted sum**: We compute the weighted sum of the above metrics: mAP, mATE, mASE, mAOE, mAVE and mAAE.
+### nuScenes detection score
+* **nuScenes detection score (NDS)**:
+We consolidate the above metrics by computing a weighted sum: mAP, mATE, mASE, mAOE, mAVE and mAAE.
 As a first step we convert the TP errors to TP scores as *x_score = max(1 - x_err, 0.0)*.
 We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
 

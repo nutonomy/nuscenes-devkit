@@ -182,7 +182,7 @@ def main():
         random.shuffle(sample_tokens_)
         for sample_token_ in sample_tokens_:
             visualize_sample(nusc_, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
-                             eval_range=nusc_eval.cfg.class_range)
+                             eval_range=max(nusc_eval.cfg.class_range.values()))
 
     # Run evaluation.
     metrics, md_list = nusc_eval.run()
