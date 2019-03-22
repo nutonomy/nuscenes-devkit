@@ -9,8 +9,6 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Devkit setup](#devkit-setup)
 - [Tutorial](#tutorial)
 - [Object detection task](#object-detection-task)
-- [Frequently asked questions](#frequently-asked-questions)
-- [Setting up a new virtual environment](#setting-up-a-new-virtual-environment)
 - [Backward compatibility](#backward-compatibility)
 
 ## Changelog
