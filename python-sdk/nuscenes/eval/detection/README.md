@@ -64,7 +64,7 @@ The nuScenes dataset comes with annotations for 23 classes ([details](https://ww
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
 This results in 10 classes for the detection challenge.
-Below we show the table of detection classes and their counterpart in the full nuScenes dataset.
+Below we show the table of detection classes and their counterpart in the nuScenes dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
 
 |   nuScenes detection class|   nuScenes general class                  |

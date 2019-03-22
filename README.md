@@ -54,7 +54,7 @@ In case you want to avoid downloading and setting up the data, you can also take
 To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) or take a look at the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
 
 ## Object detection task
-For instructions related to the object detection task, the results format, classes and evaluation metrics, please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
+For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
 
 ## Backward compatibility
 - Mar. 25, 2019: With the full dataset release we drop support for the code and data of the teaser release. Several changes to the map table and map files break backward compatibility.
