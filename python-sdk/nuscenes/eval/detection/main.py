@@ -17,7 +17,7 @@ from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve
+from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
 
 
 class NuScenesEval:
@@ -142,7 +142,7 @@ class NuScenesEval:
     def render(self, md_list: MetricDataList, metrics: DetectionMetrics):
 
         def savepath(name):
-            return os.path.join(self.plot_dir, name+'.png')
+            return os.path.join(self.plot_dir, name+'.pdf')
 
         summary_plot(md_list, metrics, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
                      dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
@@ -174,16 +174,15 @@ def main():
     nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
                              verbose=verbose)
 
-    # # TODO: Add this back in once visualize_sample is updated.
-    # # Visualize samples.
-    # random.seed(43)
-    # plot_examples = bool(args.plot_examples)
-    # if plot_examples:
-    #     sample_tokens_ = list(nusc_eval.gt_boxes.keys())
-    #     random.shuffle(sample_tokens_)
-    #     for sample_token_ in sample_tokens_:
-    #         visualize_sample(nusc, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
-    #                          eval_range=nusc_eval.cfg.eval_range)
+    # Visualize samples.
+    random.seed(43)
+    plot_examples = bool(args.plot_examples)
+    if plot_examples:
+        sample_tokens_ = list(nusc_eval.sample_tokens)
+        random.shuffle(sample_tokens_)
+        for sample_token_ in sample_tokens_:
+            visualize_sample(nusc_, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
+                             eval_range=nusc_eval.cfg.class_range)
 
     # Run evaluation.
     metrics, md_list = nusc_eval.run()

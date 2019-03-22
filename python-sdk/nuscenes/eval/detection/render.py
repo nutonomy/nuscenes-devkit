@@ -12,29 +12,29 @@ from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS
-from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics, EvalBoxes
 
 
 def visualize_sample(nusc: NuScenes,
                      sample_token: str,
-                     all_annotations: Dict,
-                     all_results: Dict,
+                     gt_boxes: EvalBoxes,
+                     pred_boxes: EvalBoxes,
+                     eval_range: Dict[str, float],
                      nsweeps: int = 1,
                      conf_th: float = 0.15,
-                     eval_range: float = 40,
                      verbose=True) -> None:
     """
     Visualizes a sample from BEV with annotations and detection results.
     :param nusc: NuScenes object.
     :param sample_token: The nuScenes sample token.
-    :param all_annotations: Maps each sample token to its annotations.
-    :param all_results: Maps each sample token to its results.
+    :param gt_boxes: Ground truth boxes grouped by sample.
+    :param pred_boxes: Prediction grouped by sample.
     :param nsweeps: Number of sweeps used for lidar visualization.
     :param conf_th: The confidence threshold used to filter negatives.
     :param eval_range: Range in meters beyond which boxes are ignored.
     :param verbose: Whether to print to stdout.
     """
-
+    max_eval_range = max(eval_range.values())
     # Retrieve sensor & pose records.
     sample_rec = nusc.get('sample', sample_token)
     sd_record = nusc.get('sample_data', sample_rec['data']['LIDAR_TOP'])
@@ -42,8 +42,8 @@ def visualize_sample(nusc: NuScenes,
     pose_record = nusc.get('ego_pose', sd_record['ego_pose_token'])
 
     # Get boxes.
-    boxes_gt_global = all_annotations[sample_token]
-    boxes_est_global = all_results[sample_token]
+    boxes_gt_global = gt_boxes[sample_token]
+    boxes_est_global = pred_boxes[sample_token]
 
     # Map GT boxes to lidar.
     boxes_gt = boxes_to_sensor(boxes_gt_global, pose_record, cs_record)
@@ -60,7 +60,7 @@ def visualize_sample(nusc: NuScenes,
     # Show point cloud.
     points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
     dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-    colors = np.minimum(1, dists / eval_range)
+    colors = np.minimum(1, dists / max_eval_range)
     ax.scatter(points[0, :], points[1, :], c=colors, s=0.2)
 
     # Show ego vehicle.
@@ -77,7 +77,7 @@ def visualize_sample(nusc: NuScenes,
             box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'), linewidth=1)
 
     # Limit visible range.
-    axes_limit = eval_range + 3  # Slightly bigger to include boxes that extend beyond the range.
+    axes_limit = max_eval_range + 3  # Slightly bigger to include boxes that extend beyond the range.
     ax.set_xlim(-axes_limit, axes_limit)
     ax.set_ylim(-axes_limit, axes_limit)
 
