@@ -121,7 +121,7 @@ Our final score is a weighted sum of mean Average Precision (mAP) and several Tr
 
 ### Preprocessing
 Before running the evaluation code the following pre-processing is done on the data
-* All boxes (GT and prediction) are filtered if they exceed the class-specific detection range. 
+* All boxes (GT and prediction) are removed if they exceed the class-specific detection range. 
 * All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
 * All boxes (GT) with lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes here.   
 
