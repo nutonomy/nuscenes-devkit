@@ -352,12 +352,19 @@ class TestTPSimple(unittest.TestCase):
         pred4 = {'trans': (20, 20, 1), 'size': (2, 4, 2), 'score': 0.7}
         pred5 = {'trans': (21, 20, 1), 'size': (2, 4, 2), 'score': 0.7}
 
-        # One GT and one detection
+        # one GT and one matching prediction. Object location is off by 1 meter, so error 1.
         self.check_tp({'sample1': [gt2]}, {'sample1': [pred2]}, target_error=1, metric_name='trans_err')
 
         # Two GT's and two detections.
         # The target is the average value of the recall vs. Error curve.
-        target_error = ((0 + 0) / 2 + (0 + 0.5) / 2) / (2 * 0.9)  # It is a piecewise linear with 2 segments.
+        # In this case there will three points on the curve. (0.1, 0), (0.5, 0), (1.0, 0.5).
+        # (0.1, 0): Minimum recall we start from.
+        # (0.5, 0): Detection with highest score has no translation error, and one of out of two objects recalled.
+        # (1.0, 0.5): The last object is recalled but with 1m translation error, the cumulative mean gets to 0.5m error.
+        # Error value of first segment of curve starts at 0 and ends at 0, so the average of this segment is 0.
+        # Next segment of the curve starts at 0 and ends at 0.5, so the average is 0.25.
+        # Then we take average of all segments and normalize it with the recall values we averaged over.
+        target_error = ((0 + 0) / 2 + (0 + 0.5) / 2) / (2 * 0.9)
         self.check_tp({'sample1': [gt1, gt2]}, {'sample1': [pred1, pred2]}, target_error=target_error,
                       metric_name='trans_err')
 
@@ -365,11 +372,20 @@ class TestTPSimple(unittest.TestCase):
         self.check_tp({'sample1': [gt1, gt2]}, {'sample1': [pred1, pred2, pred3]}, target_error=target_error,
                       metric_name='trans_err')
 
+        # In this case there will four points on the curve. (0.1, 0), (0.33, 0), (0.66, 0.5) (1.0, 0.33).
+        # (0.1, 0): Minimum recall we start from.
+        # (0.33, 0): One of out of three objects recalled with no error.
+        # (0.66, 0.5): Second object is recalled but with 1m error. Cumulative error becomes 0.5m.
+        # (1.0, 0.33): Third object recalled with no error. Cumulative error becomes 0.33m.
+        # First segment starts at 0 and ends at 0: average error 0.
+        # Next segment starts at 0 and ends at 0.5: average error is 0.25.
+        # Next segment starts at 0.5 and ends at 0.33: average error is 0.416
+        # Then we take average of all segments and normalize it with the recall values we averaged over.
         target_error = ((0+0)/2 + (0+0.5)/2 + (0.5 + 0.33)/2) / (3 * 0.9)  # It is a piecewise linear with 3 segments
         self.check_tp({'sample1': [gt1, gt2, gt3]}, {'sample1': [pred1, pred2, pred4]}, target_error=target_error,
                       metric_name='trans_err')
 
-        # All the detections does have same error, so the overall error is also same.
+        # Both matches have same translational error (1 meter), so the overall error is also 1 meter
         self.check_tp({'sample1': [gt2, gt3]}, {'sample1': [pred2, pred5]}, target_error=1.0,
                       metric_name='trans_err')
 
