@@ -89,6 +89,9 @@ def visualize_sample(nusc: NuScenes,
     plt.title(sample_token)
     if savepath is not None:
         plt.savefig(savepath)
+        plt.close()
+    else:
+        plt.show()
 
 
 def setup_axis(xlabel: str = None,
