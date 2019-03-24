@@ -115,7 +115,8 @@ class TestMain(unittest.TestCase):
         # 6. Score = 0.20636954644294506. After bike-rack filtering.
         # 7. Score = 0.20237925145690996. After TP reversion bug.
         # 8. Score = 0.24047129251302665. After bike racks bug.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.24047129251302665)
+        # 9. Score = 0.24104572227466886. After bug fix in calc_tp. Include the max recall and exclude the min recall.
+        self.assertAlmostEqual(metrics.weighted_sum, 0.24104572227466886)
 
 
 if __name__ == '__main__':
