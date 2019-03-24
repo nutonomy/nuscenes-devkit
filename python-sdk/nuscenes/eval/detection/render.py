@@ -25,7 +25,8 @@ def visualize_sample(nusc: NuScenes,
                      nsweeps: int = 1,
                      conf_th: float = 0.15,
                      eval_range: float = 50,
-                     verbose=True) -> None:
+                     verbose: bool = True,
+                     savepath: str = None) -> None:
     """
     Visualizes a sample from BEV with annotations and detection results.
     :param nusc: NuScenes object.
@@ -36,6 +37,7 @@ def visualize_sample(nusc: NuScenes,
     :param conf_th: The confidence threshold used to filter negatives.
     :param eval_range: Range in meters beyond which boxes are ignored.
     :param verbose: Whether to print to stdout.
+    :param savepath: If given, saves the the rendering here instead of displaying.
     """
     # Retrieve sensor & pose records.
     sample_rec = nusc.get('sample', sample_token)
@@ -83,11 +85,12 @@ def visualize_sample(nusc: NuScenes,
     ax.set_xlim(-axes_limit, axes_limit)
     ax.set_ylim(-axes_limit, axes_limit)
 
-    # Show plot.
+    # Show / save plot.
     if verbose:
-        print('Showing sample token %s' % sample_token)
+        print('Rendered sample token %s' % sample_token)
     plt.title(sample_token)
-    plt.show()
+    if savepath is not None:
+        plt.savefig(savepath)
 
 
 def setup_axis(xlabel: str = None,
