@@ -30,7 +30,7 @@ class TestMain(unittest.TestCase):
             shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
-    def _mock_results(nusc) -> Dict[str, list]:
+    def _mock_results(nusc, split) -> Dict[str, list]:
         """
         Creates "reasonable" results by looping through the full val-set, and adding 1 prediction per GT.
         Predictions will be permuted randomly along all axes.
@@ -64,7 +64,7 @@ class TestMain(unittest.TestCase):
         splits = create_splits_scenes()
         val_samples = []
         for sample in nusc.sample:
-            if nusc.get('scene', sample['scene_token'])['name'] in splits['val']:
+            if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
                 val_samples.append(sample)
 
         for sample in tqdm(val_samples):
@@ -99,11 +99,11 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_results(nusc), f, indent=2)
+            json.dump(self._mock_results(nusc, 'mini_val'), f, indent=2)
 
         cfg = config_factory('cvpr_2019')
 
-        nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='val', output_dir=self.res_eval_folder,
+        nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=False)
         metrics, md_list = nusc_eval.run()
 
