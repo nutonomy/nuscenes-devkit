@@ -12,7 +12,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Backward compatibility](#backward-compatibility)
 
 ## Changelog
-- Mar. 25, 2019: Full dataset & devkit v1.0.0 released. Support dropped for teaser data.
+- Mar. 26, 2019: Full dataset & devkit v1.0.0 released. Support dropped for teaser data.
 - Dec. 20, 2018: Initial evaluation code released. Devkit folders restructured. 
 - Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
 - Oct. 4, 2018: Code to parse RADAR data released.
@@ -57,7 +57,7 @@ To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) 
 For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
 
 ## Backward compatibility
-- Mar. 25, 2019: With the full dataset release we drop support for the code and data of the teaser release. Several changes to the map table and map files break backward compatibility.
+- Mar. 26, 2019: With the full dataset release we drop support for the code and data of the teaser release. Several changes to the map table and map files break backward compatibility.
 - Dec. 20, 2018: We restructured the nuscenes-devkit code, which breaks backward compatibility.
   The new structure has a top-level package `nuscenes` which contains packages `eval`, `export` and `utils`.
   Therefore, existing imports from `nuscenes_utils` should be replaced by `nuscenes.nuscenes`.
