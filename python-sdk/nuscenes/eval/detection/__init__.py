@@ -1,1 +1,1 @@
-from .main import NuScenesEval
+from .evaluate import NuScenesEval

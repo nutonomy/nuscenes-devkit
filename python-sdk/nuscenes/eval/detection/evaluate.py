@@ -159,24 +159,16 @@ class NuScenesEval:
                           savepath=savepath('dist_pr_'+str(dist_th)))
 
 
-def main():
-    args = parser.parse_args()
-    result_path = os.path.expanduser(args.result_path)
-    output_dir = os.path.expanduser(args.output_dir)
-    eval_set = args.eval_set
-    dataroot = args.dataroot
-    version = args.version
-    verbose = bool(args.verbose)
+def main(result_path, output_dir, eval_set, dataroot, version, verbose, config_name, plot_examples):
 
     # Init.
-    cfg = config_factory(args.config_name)
+    cfg = config_factory(config_name)
     nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
     nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
                              verbose=verbose)
 
     # Visualize samples.
     random.seed(43)
-    plot_examples = bool(args.plot_examples)
     if plot_examples:
         sample_tokens_ = list(nusc_eval.sample_tokens)
         random.shuffle(sample_tokens_)
@@ -210,4 +202,15 @@ if __name__ == "__main__":
                         help='Whether to plot example visualizations to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
-    main()
+    args = parser.parse_args()
+
+    result_path_ = os.path.expanduser(args.result_path)
+    output_dir_ = os.path.expanduser(args.output_dir)
+    eval_set_ = args.eval_set
+    dataroot_ = args.dataroot
+    version_ = args.version
+    verbose_ = bool(args.verbose)
+    config_name_ = args.config_name
+    plot_examples_ = bool(args.plot_examples)
+
+    main(result_path_, output_dir_, eval_set_, dataroot_, version_, verbose_, config_name_, plot_examples_)
