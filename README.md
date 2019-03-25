@@ -20,7 +20,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 
 ## Dataset download
 To download nuScenes you need to go to the [Download page](https://www.nuscenes.org/download), 
-create an account and confirm the nuScenes [Terms of Use](https://www.nuscenes.org/terms-of-use).
+create an account and agree to the nuScenes [Terms of Use](https://www.nuscenes.org/terms-of-use).
 After logging in you will see multiple archives. 
 For the devkit to work you will need to download *all* archives.
 Please unpack the archives to the `/data/sets/nuscenes` folder \*without\* overwriting folders that occur in multiple archives.
@@ -32,7 +32,7 @@ Eventually you should have the following folder structure:
     maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene.
     v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (trainval, test, mini) is provided in a separate folder.
 ```
-If you want to use another folder, specify the `dataroot` parameter of the NuScenes class below.
+If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7. To install python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md#install-python).
@@ -60,7 +60,7 @@ For instructions related to the object detection task (results format, classes a
 - Mar. 25, 2019: With the full dataset release we drop support for the code and data of the teaser release. Several changes to the map table and map files break backward compatibility.
 - Dec. 20, 2018: We restructured the nuscenes-devkit code, which breaks backward compatibility.
   The new structure has a top-level package `nuscenes` which contains packages `eval`, `export` and `utils`.
-  Therefor existing imports from `nuscenes_utils` should be replaced by `nuscenes.nuscenes`.
+  Therefore, existing imports from `nuscenes_utils` should be replaced by `nuscenes.nuscenes`.
 
 
 ![](https://www.nuscenes.org/public/images/nuscenes-example.png)
