@@ -1,11 +1,9 @@
 # nuScenes dev-kit.
-# Code written by Oscar Beijbom, 2018.
+# Code written by Oscar Beijbom and Alex Lang, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from __future__ import annotations
-from typing import Tuple
-import math
 from enum import IntEnum
+from typing import Tuple
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -16,38 +14,6 @@ class BoxVisibility(IntEnum):
     ALL = 0  # Requires all corners are inside the image.
     ANY = 1  # Requires at least one corner visible in the image.
     NONE = 2  # Requires no corners to be inside, i.e. box can be fully outside the image.
-
-
-def quaternion_slerp(q0: np.ndarray, q1: np.ndarray, fraction: float) -> np.ndarray:
-    """
-    Does interpolation between two quaternions. This code is modified from
-    https://www.lfd.uci.edu/~gohlke/code/transformations.py.html
-    :param q0: <np.array: 4>. First quaternion.
-    :param q1: <np.array: 4>. Second quaternion.
-    :param fraction: Interpolation fraction between 0 and 1.
-    :return: <np.array: 4>. Interpolated quaternion.
-    """
-
-    eps = np.finfo(float).eps * 4.0
-    if fraction == 0.0:
-        return q0
-    elif fraction == 1.0:
-        return q1
-    d = np.dot(q0, q1)
-    if abs(abs(d) - 1.0) < eps:
-        return q0
-    if d < 0.0:
-        # invert rotation
-        d = -d
-        np.negative(q1, q1)
-    angle = math.acos(d)
-    if abs(angle) < eps:
-        return q0
-    is_in = 1.0 / math.sin(angle)
-    q0 *= math.sin((1.0 - fraction) * angle) * is_in
-    q1 *= math.sin(fraction * angle) * is_in
-    q0 += q1
-    return q0
 
 
 def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.ndarray:
@@ -89,7 +55,7 @@ def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.nda
     return points
 
 
-def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level: int=BoxVisibility.ANY) -> bool:
+def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level: int = BoxVisibility.ANY) -> bool:
     """
     Check if a box is visible inside an image without accounting for occlusions.
     :param box: The box to be checked.
@@ -119,8 +85,9 @@ def box_in_image(box, intrinsic: np.ndarray, imsize: Tuple[int, int], vis_level:
         raise ValueError("vis_level: {} not valid".format(vis_level))
 
 
-def transform_matrix(translation: np.ndarray=np.array([0, 0, 0]), rotation: Quaternion=Quaternion([1, 0, 0, 0]),
-                     inverse: bool=False) -> np.ndarray:
+def transform_matrix(translation: np.ndarray = np.array([0, 0, 0]),
+                     rotation: Quaternion = Quaternion([1, 0, 0, 0]),
+                     inverse: bool = False) -> np.ndarray:
     """
     Convert pose to transformation matrix.
     :param translation: <np.float32: 3>. Translation in x, y, z.
@@ -140,3 +107,40 @@ def transform_matrix(translation: np.ndarray=np.array([0, 0, 0]), rotation: Quat
         tm[:3, 3] = np.transpose(np.array(translation))
 
     return tm
+
+
+def points_in_box(box: 'Box', points: np.ndarray, wlh_factor: float = 1.0):
+    """
+    Checks whether points are inside the box.
+
+    Picks one corner as reference (p1) and computes the vector to a target point (v).
+    Then for each of the 3 axes, project v onto the axis and compare the length.
+    Inspired by: https://math.stackexchange.com/a/1552579
+    :param box: <Box>.
+    :param points: <np.float: 3, n>.
+    :param wlh_factor: Inflates or deflates the box.
+    :return: <np.bool: n, >.
+    """
+    corners = box.corners(wlh_factor=wlh_factor)
+
+    p1 = corners[:, 0]
+    p_x = corners[:, 4]
+    p_y = corners[:, 1]
+    p_z = corners[:, 3]
+
+    i = p_x - p1
+    j = p_y - p1
+    k = p_z - p1
+
+    v = points - p1.reshape((-1, 1))
+
+    iv = np.dot(i, v)
+    jv = np.dot(j, v)
+    kv = np.dot(k, v)
+
+    mask_x = np.logical_and(0 <= iv, iv <= np.dot(i, i))
+    mask_y = np.logical_and(0 <= jv, jv <= np.dot(j, j))
+    mask_z = np.logical_and(0 <= kv, kv <= np.dot(k, k))
+    mask = np.logical_and(np.logical_and(mask_x, mask_y), mask_z)
+
+    return mask

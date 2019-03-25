@@ -6,9 +6,10 @@
 Export fused point clouds of a scene to a Wavefront OBJ file.
 This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
 """
+
+import argparse
 import os
 import os.path as osp
-import argparse
 from typing import Tuple
 
 import numpy as np
@@ -16,13 +17,18 @@ from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
+from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.nuscenes import NuScenes
 
 
-def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, channel: str='LIDAR_TOP',
-                            min_dist: float=3.0, max_dist: float=30.0, verbose: bool=True) -> None:
+def export_scene_pointcloud(nusc: NuScenes,
+                            out_path: str,
+                            scene_token: str,
+                            channel: str = 'LIDAR_TOP',
+                            min_dist: float = 3.0,
+                            max_dist: float = 30.0,
+                            verbose: bool = True) -> None:
     """
     Export fused point clouds of a scene to a Wavefront OBJ file.
     This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
@@ -105,7 +111,9 @@ def export_scene_pointcloud(nusc: NuScenes, out_path: str, scene_token: str, cha
                 sd_rec = nusc.get('sample_data', sd_rec['next'])
 
 
-def pointcloud_color_from_image(nusc: NuScenes, pointsensor_token: str, camera_token: str) -> Tuple[np.array, np.array]:
+def pointcloud_color_from_image(nusc: NuScenes,
+                                pointsensor_token: str,
+                                camera_token: str) -> Tuple[np.array, np.array]:
     """
     Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
     plane, then retrieve the colors of the closest image pixels.
@@ -176,6 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--scene', default='scene-0061', type=str, help='Name of a scene, e.g. scene-0061')
     parser.add_argument('--out_dir', default='~/nuscenes-visualization/pointclouds', type=str, help='Output folder')
     parser.add_argument('--verbose', default=0, type=int, help='Whether to print outputs to stdout')
+
     args = parser.parse_args()
     out_dir = os.path.expanduser(args.out_dir)
     scene_name = args.scene

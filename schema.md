@@ -1,11 +1,10 @@
 Database schema
 ==========
-
 category
 ---------
 
 Taxonomy of object categories (e.g. vehicle, human). 
-Subcategories are delineated by a period.
+Subcategories are delineated by a period (e.g. human.pedestrian.adult).
 ```
 category {
    "token":                   <str> -- Unique record identifier.
@@ -28,7 +27,7 @@ attribute {
 visibility
 ---------
 
-The visibility of an instance is the fraction of pixels visible in all 6 images. Binned into 5 bins of 20%.
+The visibility of an instance is the fraction of annotation visible in all 6 images. Binned into 4 bins 0-40%, 40-60%, 60-80% and 80-100%.
 ```
 visibility {
    "token":                   <str> -- Unique record identifier.
@@ -163,10 +162,12 @@ sample_annotation {
    "sample_token":            <str> -- Foreign key. NOTE: this points to a sample NOT a sample_data since annotations are done on the sample level taking all relevant sample_data into account.
    "instance_token":          <str> -- Foreign key. Which object instance is this annotating. An instance can have multiple annotations over time.
    "attribute_tokens":        <str> [n] -- Foreign keys. List of attributes for this annotation. Attributes can change over time, so they belong here, not in the object table.
-   "visibility_token":        <str> -- Foreign key. Visibility may also change over time.
+   "visibility_token":        <str> -- Foreign key. Visibility may also change over time. If no visibility is annotated, the token is an empty string.
    "translation":             <float> [3] -- Bounding box location as center_x, center_y, center_z.
    "size":                    <float> [3] -- Bounding box size as width, length, height.
    "rotation":                <float> [4] -- Bounding box orientation as quaternion: w, x, y, z.
+   "num_lidar_pts":           <int> -- Number of lidar points in this box. Points are counted during the lidar sweep identified with this sample.
+   "num_radar_pts":           <int> -- Number of radar points in this box. Points are counted during the radar sweep identified with this sample. This number is summed across all radar sensors without any invalid point filtering.
    "next":                    <str> -- Foreign key. Sample annotation from the same object instance that follows this in time. Empty if this is the last annotation for this object.
    "prev":                    <str> -- Foreign key. Sample annotation from the same object instance that precedes this in time. Empty if this is the first annotation for this object.
 }
@@ -174,11 +175,11 @@ sample_annotation {
 map
 ---------
 
-Map data that is stored as binary semantic masks from a top-down view. As the maps are updated regularly, there may be multiple versions for the same location. In that case the ego_poses of logs with different maps cannot be compared.
+Map data that is stored as binary semantic masks from a top-down view.
 ```
 map {
    "token":                   <str> -- Unique record identifier.
-   "log_token":               <str> -- Foreign key.
+   "log_tokens":              <str> [n] -- Foreign keys.
    "category":                <str> -- Map category, currently only semantic_prior for drivable surface and sidewalk
    "filename":                <str> -- Relative path to the file with the map mask.
 }

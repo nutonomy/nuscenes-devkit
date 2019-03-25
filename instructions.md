@@ -8,13 +8,14 @@
 - [Detailed Instructions and Examples](#detailed-instructions-and-examples) 
 
 # Instructions
-+ Draw 3D bounding box around all objects from the [labels](#labels) list, and label them according to the instructions below. 
++ Draw 3D bounding boxes around all objects from the [labels](#labels) list, and label them according to the instructions below. 
 + **Do not** apply more than one box to a single object.
 + Check every cuboid in every frame, to make sure all points are inside the cuboid and **look reasonable in the image view**.
++ For nighttime or rainy scenes, annotate objects as if these are daytime or normal weather scenes.
 
 # Special Rules 
-+ **Minimum LIDAR Points** : 
-    + Label any target object containing **at least 1 LIDAR point**, as long as you can be reasonably sure you know the location and shape of the object. Use your best judgment on correct cuboid position, sizing, and heading. 
++ **Minimum number of points** : 
+    + Label any target object containing **at least 1 LIDAR or RADAR point**, as long as you can be reasonably sure you know the location and shape of the object. Use your best judgment on correct cuboid position, sizing, and heading. 
 + **Cuboid Sizing** : 
     + **Cuboids must be very tight.** Draw the cuboid as close as possible to the edge of the object without excluding any LIDAR points. There should be almost no visible space between the cuboid border and the closest point on the object. 
 + **Extremities** : 
@@ -34,11 +35,11 @@
 **For every bounding box, include one of the following labels:**
 1. **[Car or Van or SUV](#car-or-van-or-suv)**: Vehicle designed primarily for personal use, e.g. sedans, hatch-backs, wagons, vans, mini-vans, SUVs and jeeps.   
 
-2. **[Truck](#truck)**: Vehicles primarily designed to haul cargo including lorrys, trucks. 
+2. **[Truck](#truck)**: Vehicles primarily designed to haul cargo including pick-ups, lorrys, trucks and semi-tractors. Trailers hauled after a semi-tractor should be labeled as "Trailer".
 
-3. **[Pickup Truck](#pickup-truck)**: A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use. 
+    - **[Pickup Truck](#pickup-truck)**: A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use. 
 
-4. **[Front Of Semi Truck](#front-of-semi-truck)**: Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
+    - **[Front Of Semi Truck](#front-of-semi-truck)**: Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
 
 5. **[Bendy Bus](#bendy-bus)**: Buses and shuttles designed to carry more than 10 people and comprises two or more rigid sections linked by a pivoting joint. Annotate each section of the bendy bus individually. 
 
@@ -52,45 +53,40 @@
 
 10. **[Bicycle Rack](#bicycle-rack)**: Area or device intended to park or secure the bicycles in a row. It includes all the bicycles parked in it and any empty slots that are intended for parking bicycles. Bicycles that are not part of the rack should not be included. Instead they should be annotated as bicycles separately.
 
-11. **[Trailer](#trailer)**: Any vehicle trailer, both for trucks, cars and motorcycles (regardless of whether currently being towed or not). For semi-trailers (containers) label the truck itself as "front of semi truck".
+11. **[Trailer](#trailer)**: Any vehicle trailer, both for trucks, cars and motorcycles (regardless of whether currently being towed or not). For semi-trailers (containers) label the truck itself as "Truck".
 
 12. **[Police Vehicle](#police-vehicle)**: All types of police vehicles including police bicycles and motorcycles. 
 
 13. **[Ambulance](#ambulance)**: All types of ambulances. 
 
-14. **[Train](#train)**: Any vehicle that travels on rails e.g. light rail / tram / train. For trains, that consist of several linked units, annotate each segment with a bounding box.
+14. **[Adult Pedestrian](#adult-pedestrian)**: An adult pedestrian moving around the cityscape. Mannequins should also be annotated as Adult Pedestrian. 
 
-15. **[Adult Pedestrian](#adult-pedestrian)**: An adult pedestrian moving around the cityscape. Mannequins should also be annotated as Adult Pedestrian. 
+15. **[Child Pedestrian](#child-pedestrian)**: A child pedestrian moving around the cityscape. 
 
-16. **[Child Pedestrian](#child-pedestrian)**: A child pedestrian moving around the cityscape. 
+16. **[Construction Worker](#construction-worker)**: A human in the scene whose main purpose is construction work.
 
-17. **[Construction Worker](#construction-worker)**: A human in the scene whose main purpose is construction work.
+17. **[Stroller](#stroller)**: Any stroller. If a person is in the stroller, include in the annotation. If a pedestrian pushing the stroller, then they should be labeled separately. 
 
-18. **[Stroller](#stroller)**: Any stroller. If a person is in the stroller, include in the annotation. If a pedestrian pushing the stroller, then they should be labeled separately. 
+18. **[Wheelchair](#wheelchair)**: Any type of wheelchair. If a pedestrian is pushing the wheelchair then they should be labeled separately.
 
-19. **[Wheelchair](#wheelchair)**: Any type of wheelchair. If a pedestrian is pushing the wheelchair then they should be labeled separately.
+19. **[Portable Personal Mobility Vehicle](#portable-personal-mobility-vehicle)**: A small electric or self-propelled vehicle, e.g. skateboard, segway, or scooters, on which the person typically travels in a upright position. Driver and (if applicable) rider should be included in the bounding box along with the vehicle. 
 
-20. **[Portable Personal Mobility Vehicle](#portable-personal-mobility-vehicle)**: A small electric or self-propelled vehicle, e.g. skateboard, segway, or scooters, on which the person typically travels in a upright position. Driver and (if applicable) rider should be included in the bounding box along with the vehicle. 
+20. **[Police Officer](#police-officer)**: Any type of police officer, regardless whether directing the traffic or not.
 
-21. **[Traffic Police](#traffic-police)**: Police officer actively directing traffic.
+21. **[Animal](#animal)**: All animals, e.g. cats, rats, dogs, deer, birds. 
 
-22. **[Other Police](#other-police)**: Police officer NOT actively directing traffic.
+22. **[Traffic Cone](#traffic-cone)**: All types of traffic cones.
 
-23. **[Animal](#animal)**: All animals, e.g. cats, rats, dogs, deer, birds. 
+23. **[Temporary Traffic Barrier](#temporary-traffic-barrier)**: Any metal, concrete or water barrier temporarily placed in the scene in order to re-direct vehicle or pedestrian traffic. In particular, includes barriers used at construction zones. If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
 
-24. **[Traffic Cone](#traffic-cone)**: All types of traffic cones.
+24. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
 
-25. **[Temporary Traffic Barrier](#temporary-traffic-barrier)**: Any metal, concrete or water barrier temporarily placed in the scene in order to re-direct vehicle or pedestrian traffic. In particular, includes barriers used at construction zones. If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
-
-26. **[Pushable Pullable Object](#pushable-pullable-object)**: Objects that a pedestrian may push or pull. For example dolleys, wheel barrows, garbage-bins with wheels, or shopping carts. Typically not designed to carry humans.
-
-27. **[Debris](#debris)**: Debris or movable object that is left **on the driveable surface** that is too large to be driven over safely, e.g tree branch, full trash bag etc. 
+25. **[Debris](#debris)**: Debris or movable object that is too large to be driven over safely. Includes misc. things like trash bags, temporary road-signs, objects around construction zones, and trash cans. 
 
 # Attributes 
 1. **For every object, include the attribute:** 
     + **Visibility**: 
-        + **0%-20%**: The object is 0% to 20% visible in panoramic view of all cameras.
-        + **21%-40%**: The object is 21% to 40% visible in panoramic view of all cameras.
+        + **0%-40%**: The object is 0% to 40% visible in panoramic view of all cameras.
         + **41%-60%**: The object is 41% to 60% visible in panoramic view of all cameras.
         + **61%-80%**: The object is 61% to 80% visible in panoramic view of all cameras.
         + **81%-100%**: The object is 81% to 100% visible in panoramic view of all cameras.
@@ -129,15 +125,14 @@ Bounding Box color convention in example images:
 
  [Top](#overview)
 ## Truck 
-+ Vehicles primarily designed to haul cargo including lorrys, trucks. 
++ Vehicles primarily designed to haul cargo including pick-ups, lorrys, trucks and semi-tractors. Trailers hauled after a semi-tractor should be labeled as vehicle.trailer.
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_2.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_3.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_4.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/truck_5.jpg)
 
- [Top](#overview)
-## Pickup Truck 
+**Pickup Truck** 
 + A pickup truck is a light duty truck with an enclosed cab and an open or closed cargo area. A pickup truck can be intended primarily for hauling cargo or for personal use.
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_2.jpg)
@@ -145,8 +140,7 @@ Bounding Box color convention in example images:
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_4.jpg)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/pickup_truck_5.jpg)
 
- [Top](#overview)
-## Front Of Semi Truck 
+**Front Of Semi Truck**
 + Tractor part of a semi trailer truck. Trailers hauled after a semi-tractor should be labeled as a trailer. 
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/front_of_semi_truck_2.png)
@@ -268,16 +262,6 @@ Bounding Box color convention in example images:
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/ambulance_3.jpg)
 
  [Top](#overview)
-## Train 
-+ Any vehicle that travels on rails e.g. light rail / tram / train. 
-    + For trains, that consist of several linked units, annotate each segment with a bounding box. 
-
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_1.png)
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_2.png)
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_3.png)
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/train_4.png)
-
- [Top](#overview)
 ## Adult Pedestrian 
 + An adult pedestrian moving around the cityscape. 
     + Mannequins should also be treated as adult pedestrian.
@@ -335,16 +319,11 @@ Bounding Box color convention in example images:
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/personal_mobility_3.png)
 
  [Top](#overview)
-## Traffic Police 
-+ Police officer actively directing traffic.
+## Police Officer
++ Any type of police officer, regardless whether directing the traffic or not.
 
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_police_1.png)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/traffic_police_2.png)
-
- [Top](#overview)
-## Other Police 
-+ Police officer NOT actively directing traffic. 
-
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/other_police_1.png)
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/other_police_2.png)
 

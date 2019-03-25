@@ -2,17 +2,16 @@
 # Code written by Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from __future__ import annotations
-from functools import reduce
-import struct
-from typing import Tuple, List, Dict
-from abc import ABC, abstractmethod
 import os.path as osp
+import struct
+from abc import ABC, abstractmethod
+from functools import reduce
+from typing import Tuple, List, Dict
 
 import cv2
 import numpy as np
-from pyquaternion import Quaternion
 from matplotlib.axes import Axes
+from pyquaternion import Quaternion
 
 from nuscenes.utils.geometry_utils import view_points, transform_matrix
 
@@ -53,8 +52,13 @@ class PointCloud(ABC):
         pass
 
     @classmethod
-    def from_file_multisweep(cls, nusc, sample_rec: Dict, chan: str, ref_chan: str, nsweeps: int=26,
-                              min_distance: float=1.0) -> Tuple['PointCloud', np.ndarray]:
+    def from_file_multisweep(cls,
+                             nusc: 'NuScenes',
+                             sample_rec: Dict,
+                             chan: str,
+                             ref_chan: str,
+                             nsweeps: int = 26,
+                             min_distance: float = 1.0) -> Tuple['PointCloud', np.ndarray]:
         """
         Return a point cloud that aggregates multiple sweeps.
         As every sweep is in a different coordinate frame, we need to map the coordinates to a single reference frame.
@@ -96,8 +100,8 @@ class PointCloud(ABC):
 
             # Get past pose.
             current_pose_rec = nusc.get('ego_pose', current_sd_rec['ego_pose_token'])
-            global_from_car = transform_matrix(current_pose_rec['translation'], Quaternion(current_pose_rec['rotation']),
-                                               inverse=False)
+            global_from_car = transform_matrix(current_pose_rec['translation'],
+                                               Quaternion(current_pose_rec['rotation']), inverse=False)
 
             # Homogeneous transformation matrix from sensor coordinate frame to ego car frame.
             current_cs_rec = nusc.get('calibrated_sensor', current_sd_rec['calibrated_sensor_token'])
@@ -173,8 +177,12 @@ class PointCloud(ABC):
         """
         self.points[:3, :] = transf_matrix.dot(np.vstack((self.points[:3, :], np.ones(self.nbr_points()))))[:3, :]
 
-    def render_height(self, ax: Axes, view: np.ndarray=np.eye(4), x_lim: Tuple=(-20, 20), y_lim: Tuple=(-20, 20),
-                      marker_size: float=1) -> None:
+    def render_height(self,
+                      ax: Axes,
+                      view: np.ndarray = np.eye(4),
+                      x_lim: Tuple = (-20, 20),
+                      y_lim: Tuple = (-20, 20),
+                      marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by height (z-value).
         :param ax: Axes on which to render the points.
@@ -185,8 +193,12 @@ class PointCloud(ABC):
         """
         self._render_helper(2, ax, view, x_lim, y_lim, marker_size)
 
-    def render_intensity(self, ax: Axes, view: np.ndarray=np.eye(4), x_lim: Tuple=(-20, 20), y_lim: Tuple=(-20, 20),
-                         marker_size: float=1) -> None:
+    def render_intensity(self,
+                         ax: Axes,
+                         view: np.ndarray = np.eye(4),
+                         x_lim: Tuple = (-20, 20),
+                         y_lim: Tuple = (-20, 20),
+                         marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by intensity.
         :param ax: Axes on which to render the points.
@@ -197,7 +209,12 @@ class PointCloud(ABC):
         """
         self._render_helper(3, ax, view, x_lim, y_lim, marker_size)
 
-    def _render_helper(self, color_channel: int, ax: Axes, view: np.ndarray, x_lim: Tuple, y_lim: Tuple,
+    def _render_helper(self,
+                       color_channel: int,
+                       ax: Axes,
+                       view: np.ndarray,
+                       x_lim: Tuple,
+                       y_lim: Tuple,
                        marker_size: float) -> None:
         """
         Helper function for rendering.
@@ -241,6 +258,11 @@ class LidarPointCloud(PointCloud):
 
 class RadarPointCloud(PointCloud):
 
+    # Class-level settings for radar pointclouds, see from_file().
+    invalid_states = [0]  # type: List[int]
+    dynprop_states = range(7)  # type: List[int] # Use [0, 2, 6] for moving objects only.
+    ambig_states = [3]  # type: List[int]
+
     @staticmethod
     def nbr_dims() -> int:
         """
@@ -250,14 +272,18 @@ class RadarPointCloud(PointCloud):
         return 18
 
     @classmethod
-    def from_file(cls, file_name: str, invalid_states: List[int]=[0], dynprop_states: List[int]=range(7),
-                  ambig_states: List[int]=[3]) -> 'RadarPointCloud':
+    def from_file(cls,
+                  file_name: str,
+                  invalid_states: List[int] = None,
+                  dynprop_states: List[int] = None,
+                  ambig_states: List[int] = None) -> 'RadarPointCloud':
         """
         Loads RADAR data from a Point Cloud Data file. See details below.
         :param file_name: The path of the pointcloud file.
         :param invalid_states: Radar states to be kept. See details below.
         :param dynprop_states: Radar states to be kept. Use [0, 2, 6] for moving objects only. See details below.
         :param ambig_states: Radar states to be kept. See details below.
+        To keep all radar returns, set each state filter to range(18).
         :return: <np.float: d, n>. Point cloud matrix with d dimensions and n points.
 
         Example of the header fields:
@@ -303,23 +329,6 @@ class RadarPointCloud(PointCloud):
         0x10	valid cluster with high multi-target probability
         0x11	valid cluster with suspicious angle
 
-        ambig_state: State of Doppler (radial velocity) ambiguity solution.
-        0: invalid
-        1: ambiguous
-        2: staggered ramp
-        3: unambiguous
-        4: stationary candidates
-
-        pdh0: False alarm probability of cluster (i.e. probability for being an artefact caused by multipath or similar).
-        0: invalid
-        1: <25%
-        2: 50%
-        3: 75%
-        4: 90%
-        5: 99%
-        6: 99.9%
-        7: <=100%
-
         dynProp: Dynamic property of cluster to indicate if is moving or not.
         0: moving
         1: stationary
@@ -329,6 +338,23 @@ class RadarPointCloud(PointCloud):
         5: crossing stationary
         6: crossing moving
         7: stopped
+
+        ambig_state: State of Doppler (radial velocity) ambiguity solution.
+        0: invalid
+        1: ambiguous
+        2: staggered ramp
+        3: unambiguous
+        4: stationary candidates
+
+        pdh0: False alarm probability of cluster (i.e. probability of being an artefact caused by multipath or similar).
+        0: invalid
+        1: <25%
+        2: 50%
+        3: 75%
+        4: 90%
+        5: 99%
+        6: 99.9%
+        7: <=100%
         """
 
         assert file_name.endswith('.pcd'), 'Unsupported filetype {}'.format(file_name)
@@ -387,6 +413,11 @@ class RadarPointCloud(PointCloud):
         # Convert to numpy matrix.
         points = np.array(points).transpose()
 
+        # If no parameters are provided, use default settings.
+        invalid_states = cls.invalid_states if invalid_states is None else invalid_states
+        dynprop_states = cls.dynprop_states if dynprop_states is None else dynprop_states
+        ambig_states = cls.ambig_states if ambig_states is None else ambig_states
+
         # Filter points with an invalid state.
         valid = [p in invalid_states for p in points[-4, :]]
         points = points[:, valid]
@@ -405,8 +436,15 @@ class RadarPointCloud(PointCloud):
 class Box:
     """ Simple data class representing a 3d box including, label, score and velocity. """
 
-    def __init__(self, center: List[float], size: List[float], orientation: Quaternion, label: int=np.nan,
-                 score: float=np.nan, velocity: Tuple=(np.nan, np.nan, np.nan), name: str=None):
+    def __init__(self,
+                 center: List[float],
+                 size: List[float],
+                 orientation: Quaternion,
+                 label: int = np.nan,
+                 score: float = np.nan,
+                 velocity: Tuple = (np.nan, np.nan, np.nan),
+                 name: str = None,
+                 token: str = None):
         """
         :param center: Center of box given as x, y, z.
         :param size: Size of box in width, length, height.
@@ -415,6 +453,7 @@ class Box:
         :param score: Classification score, optional.
         :param velocity: Box velocity in x, y, z direction.
         :param name: Box name, optional. Can be used e.g. for denote category name.
+        :param token: Unique string identifier from DB.
         """
         assert not np.any(np.isnan(center))
         assert not np.any(np.isnan(size))
@@ -429,6 +468,7 @@ class Box:
         self.score = float(score) if not np.isnan(score) else score
         self.velocity = np.array(velocity)
         self.name = name
+        self.token = token
 
     def __eq__(self, other):
         center = np.allclose(self.center, other.center)
@@ -444,12 +484,12 @@ class Box:
     def __repr__(self):
         repr_str = 'label: {}, score: {:.2f}, xyz: [{:.2f}, {:.2f}, {:.2f}], wlh: [{:.2f}, {:.2f}, {:.2f}], ' \
                    'rot axis: [{:.2f}, {:.2f}, {:.2f}], ang(degrees): {:.2f}, ang(rad): {:.2f}, ' \
-                   'vel: {:.2f}, {:.2f}, {:.2f}, name: {}'
+                   'vel: {:.2f}, {:.2f}, {:.2f}, name: {}, token: {}'
 
         return repr_str.format(self.label, self.score, self.center[0], self.center[1], self.center[2], self.wlh[0],
                                self.wlh[1], self.wlh[2], self.orientation.axis[0], self.orientation.axis[1],
                                self.orientation.axis[2], self.orientation.degrees, self.orientation.radians,
-                               self.velocity[0], self.velocity[1], self.velocity[2], self.name)
+                               self.velocity[0], self.velocity[1], self.velocity[2], self.name, self.token)
 
     @property
     def rotation_matrix(self) -> np.ndarray:
@@ -475,7 +515,7 @@ class Box:
         self.orientation = quaternion * self.orientation
         self.velocity = np.dot(quaternion.rotation_matrix, self.velocity)
 
-    def corners(self, wlh_factor: float=1.0) -> np.ndarray:
+    def corners(self, wlh_factor: float = 1.0) -> np.ndarray:
         """
         Returns the bounding box corners.
         :param wlh_factor: Multiply w, l, h by a factor to scale the box.
@@ -508,8 +548,12 @@ class Box:
         """
         return self.corners()[:, [2, 3, 7, 6]]
 
-    def render(self, axis: Axes, view: np.ndarray=np.eye(3), normalize: bool=False, colors: Tuple=('b', 'r', 'k'),
-               linewidth: float=2):
+    def render(self,
+               axis: Axes,
+               view: np.ndarray = np.eye(3),
+               normalize: bool = False,
+               colors: Tuple = ('b', 'r', 'k'),
+               linewidth: float = 2):
         """
         Renders the box in the provided Matplotlib axis.
         :param axis: Axis onto which the box should be drawn.
@@ -544,8 +588,12 @@ class Box:
                   [center_bottom[1], center_bottom_forward[1]],
                   color=colors[0], linewidth=linewidth)
 
-    def render_cv2(self, im: np.ndarray, view: np.ndarray=np.eye(3), normalize: bool=False,
-                   colors: Tuple=((0, 0, 255), (255, 0, 0), (155, 155, 155)), linewidth: int=2) -> None:
+    def render_cv2(self,
+                   im: np.ndarray,
+                   view: np.ndarray = np.eye(3),
+                   normalize: bool = False,
+                   colors: Tuple = ((0, 0, 255), (255, 0, 0), (155, 155, 155)),
+                   linewidth: int = 2) -> None:
         """
         Renders box using OpenCV2.
         :param im: <np.array: width, height, 3>. Image array. Channels are in BGR order.
