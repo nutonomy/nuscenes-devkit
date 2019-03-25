@@ -6,9 +6,10 @@
 Export fused point clouds of a scene to a Wavefront OBJ file.
 This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
 """
+
+import argparse
 import os
 import os.path as osp
-import argparse
 from typing import Tuple
 
 import numpy as np
@@ -16,9 +17,9 @@ from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
+from nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes import NuScenes
 
 
 def export_scene_pointcloud(nusc: NuScenes,
@@ -183,6 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--scene', default='scene-0061', type=str, help='Name of a scene, e.g. scene-0061')
     parser.add_argument('--out_dir', default='~/nuscenes-visualization/pointclouds', type=str, help='Output folder')
     parser.add_argument('--verbose', default=0, type=int, help='Whether to print outputs to stdout')
+
     args = parser.parse_args()
     out_dir = os.path.expanduser(args.out_dir)
     scene_name = args.scene

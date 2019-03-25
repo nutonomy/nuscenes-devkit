@@ -12,8 +12,8 @@ from pyquaternion import Quaternion
 from nuscenes import NuScenes
 from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox
 from nuscenes.eval.detection.utils import category_to_detection_name
-from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.data_classes import Box
+from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.splits import create_splits_scenes
 
 

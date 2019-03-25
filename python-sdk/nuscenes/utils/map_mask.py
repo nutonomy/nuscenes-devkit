@@ -1,14 +1,14 @@
 # nuScenes dev-kit.
-# Code written by Qiang Xu, Oscar Beijbom, 2018.
+# Code written by Qiang Xu and Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
 import os.path as osp
 from typing import Tuple, Any
 
-from cachetools import cached, LRUCache
-import numpy as np
 import cv2
+import numpy as np
 from PIL import Image
+from cachetools import cached, LRUCache
 
 # Set the maximum loadable image size.
 Image.MAX_IMAGE_PIXELS = 400000 * 400000

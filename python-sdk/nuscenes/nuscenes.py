@@ -7,6 +7,7 @@ import os.path as osp
 import sys
 import time
 from datetime import datetime
+from typing import Tuple, List
 
 import cv2
 import matplotlib.pyplot as plt
@@ -16,7 +17,6 @@ from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
-from typing import Tuple, List
 
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility

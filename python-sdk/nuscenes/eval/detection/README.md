@@ -22,7 +22,7 @@ The results will be presented at the Workshop on Autonomous Driving ([wad.ai](ht
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
 * Users apply their method on the test set and submit their results to our evaluation server, which returns the metrics listed below.
-* We do not use strata (cf. easy / medium / hard in KITTI). Instead, we filter annotations and predictions beyond class specific distances.
+* We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
 * Every submission has to provide information on the method and any external / map data used. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
 * The maximum time window of past sensor data that may be used is 0.5s.
@@ -123,11 +123,11 @@ Our final score is a weighted sum of mean Average Precision (mAP) and several Tr
 Before running the evaluation code the following pre-processing is done on the data
 * All boxes (GT and prediction) are removed if they exceed the class-specific detection range. 
 * All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
-* All boxes (GT) with lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes here.   
+* All boxes (GT) without lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes based on number of points.
 
 ### Average Precision metric
 * **mean Average Precision (mAP)**:
-We use the well-known Average Precision metric as in KITTI,
+We use the well-known Average Precision metric,
 but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
 Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
 For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for recalls and precisions > 0.1.

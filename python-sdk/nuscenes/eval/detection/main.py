@@ -2,19 +2,19 @@
 # Code written by Holger Caesar & Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
+import argparse
 import json
 import os
-import time
 import random
-import argparse
+import time
 from typing import Tuple
 
 import numpy as np
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
-from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.config import config_factory
+from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample

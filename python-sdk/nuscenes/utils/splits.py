@@ -2,8 +2,8 @@
 # Code written by Holger Caesar, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from typing import Dict, List
 import argparse
+from typing import Dict, List
 
 from nuscenes import NuScenes
 
@@ -96,6 +96,7 @@ train = \
      'scene-1090', 'scene-1091', 'scene-1092', 'scene-1093', 'scene-1094', 'scene-1095', 'scene-1096', 'scene-1097',
      'scene-1098', 'scene-1099', 'scene-1100', 'scene-1101', 'scene-1102', 'scene-1104', 'scene-1105', 'scene-1106',
      'scene-1107', 'scene-1108', 'scene-1109', 'scene-1110']
+
 val = \
     ['scene-0003', 'scene-0012', 'scene-0013', 'scene-0014', 'scene-0015', 'scene-0016', 'scene-0017', 'scene-0018',
      'scene-0035', 'scene-0036', 'scene-0038', 'scene-0039', 'scene-0092', 'scene-0093', 'scene-0094', 'scene-0095',
@@ -116,6 +117,7 @@ val = \
      'scene-0963', 'scene-0966', 'scene-0967', 'scene-0968', 'scene-0969', 'scene-0971', 'scene-0972', 'scene-1059',
      'scene-1060', 'scene-1061', 'scene-1062', 'scene-1063', 'scene-1064', 'scene-1065', 'scene-1066', 'scene-1067',
      'scene-1068', 'scene-1069', 'scene-1070', 'scene-1071', 'scene-1072', 'scene-1073']
+
 test = \
     ['scene-0077', 'scene-0078', 'scene-0079', 'scene-0080', 'scene-0081', 'scene-0082', 'scene-0083', 'scene-0084',
      'scene-0085', 'scene-0086', 'scene-0087', 'scene-0088', 'scene-0089', 'scene-0090', 'scene-0091', 'scene-0111',
@@ -136,8 +138,10 @@ test = \
      'scene-0940', 'scene-0941', 'scene-0942', 'scene-0943', 'scene-1026', 'scene-1027', 'scene-1028', 'scene-1029',
      'scene-1030', 'scene-1031', 'scene-1032', 'scene-1033', 'scene-1034', 'scene-1035', 'scene-1036', 'scene-1037',
      'scene-1038', 'scene-1039', 'scene-1040', 'scene-1041', 'scene-1042', 'scene-1043']
+
 mini_train = \
     ['scene-0061', 'scene-0553', 'scene-0655', 'scene-0757', 'scene-0796', 'scene-1077', 'scene-1094', 'scene-1100']
+
 mini_val = \
     ['scene-0103', 'scene-0916']
 
@@ -218,7 +222,4 @@ if __name__ == '__main__':
     nusc = NuScenes(version=version, verbose=verbose_, dataroot=dataroot)
 
     # Print the scene-level stats.
-    create_splits_scenes(verbose=True)
-
-    # Print the log-level stats.
-    create_splits_logs(nusc, verbose=True)
+    scene_splits = create_splits_scenes(verbose=True)

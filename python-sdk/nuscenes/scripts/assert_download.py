@@ -39,6 +39,7 @@ if __name__ == "__main__":
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
+
     args = parser.parse_args()
     dataroot = args.dataroot
     version = args.version

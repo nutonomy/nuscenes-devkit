@@ -45,3 +45,7 @@ class TestConfigs(unittest.TestCase):
         for name in eval_detection_configs.keys():
             detect_config = config_factory(name)
             self.assertTrue(isinstance(detect_config, DetectionConfig))
+
+
+if __name__ == '__main__':
+    unittest.main()

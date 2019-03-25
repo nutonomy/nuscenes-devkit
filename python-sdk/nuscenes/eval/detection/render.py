@@ -2,18 +2,19 @@
 # Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import numpy as np
 import json
+
+import numpy as np
 from matplotlib import pyplot as plt
 
-from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes import NuScenes
-from nuscenes.utils.data_classes import LidarPointCloud
-from nuscenes.utils.geometry_utils import view_points
-from nuscenes.eval.detection.data_classes import EvalBoxes
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
     PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
+from nuscenes.eval.detection.data_classes import EvalBoxes
 from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.utils import boxes_to_sensor
+from nuscenes.utils.data_classes import LidarPointCloud
+from nuscenes.utils.geometry_utils import view_points
 
 
 def visualize_sample(nusc: NuScenes,

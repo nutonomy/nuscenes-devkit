@@ -7,8 +7,8 @@ import unittest
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection.config import eval_detection_configs
-from nuscenes.eval.detection.loaders import filter_eval_boxes
 from nuscenes.eval.detection.data_classes import EvalBox, EvalBoxes
+from nuscenes.eval.detection.loaders import filter_eval_boxes
 
 
 class TestLoader(unittest.TestCase):

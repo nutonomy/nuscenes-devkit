@@ -2,16 +2,16 @@
 # Code written by Oscar Beijbom, 2018.
 # Licensed under the Creative Commons [see licence.txt]
 
-from functools import reduce
-import struct
-from typing import Tuple, List, Dict
-from abc import ABC, abstractmethod
 import os.path as osp
+import struct
+from abc import ABC, abstractmethod
+from functools import reduce
+from typing import Tuple, List, Dict
 
 import cv2
 import numpy as np
-from pyquaternion import Quaternion
 from matplotlib.axes import Axes
+from pyquaternion import Quaternion
 
 from nuscenes.utils.geometry_utils import view_points, transform_matrix
 
