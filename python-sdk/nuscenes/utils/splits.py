@@ -191,7 +191,7 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     # Use hard-coded splits.
     all_scenes = list(set(train + val + test))
     assert len(all_scenes) == 1000, 'Error: Scenes incomplete!'
-    scene_splits = {'train': train, 'val': val, 'test': test, 'all': all_scenes,
+    scene_splits = {'train': train, 'val': val, 'test': test,
                     'mini_train': mini_train, 'mini_val': mini_val}
 
     # Optional: Print scene-level stats.
