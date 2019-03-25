@@ -4,7 +4,7 @@ category
 ---------
 
 Taxonomy of object categories (e.g. vehicle, human). 
-Subcategories are delineated by a period.
+Subcategories are delineated by a period (e.g. human.pedestrian.adult).
 ```
 category {
    "token":                   <str> -- Unique record identifier.
