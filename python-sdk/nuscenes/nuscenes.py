@@ -884,6 +884,9 @@ class NuScenesExplorer:
 
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
 
+        if out_path is not None:
+            assert osp.splitext(out_path)[-1] == '.avi'
+
         # Get records from DB.
         scene_rec = self.nusc.get('scene', scene_token)
         first_sample_rec = self.nusc.get('sample', scene_rec['first_sample_token'])
@@ -999,6 +1002,9 @@ class NuScenesExplorer:
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
         assert channel in valid_channels, 'Input channel {} not valid.'.format(channel)
 
+        if out_path is not None:
+            assert osp.splitext(out_path)[-1] == '.avi'
+
         # Get records from DB
         scene_rec = self.nusc.get('scene', scene_token)
         sample_rec = self.nusc.get('sample', scene_rec['first_sample_token'])
@@ -1011,7 +1017,7 @@ class NuScenesExplorer:
 
         if out_path is not None:
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-            out = cv2.VideoWriter(out_path, fourcc, freq, out_path)
+            out = cv2.VideoWriter(out_path, fourcc, freq, imsize)
         else:
             out = None
 
