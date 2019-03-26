@@ -1,32 +1,40 @@
 # nuScenes detection task
 In this document we present the rules, results format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
+![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
 
 ## Overview
 - [Introduction](#introduction)
+- [Challenges](#challenges)
 - [General rules](#general-rules)
 - [Results format](#results-format)
-- [Classes and attributes](#classes-and-attributes)
+- [Classes and attributes](#classes-attributes-and-detection-ranges)
 - [Evaluation metrics](#evaluation-metrics)
-- [Leaderboard & challenge tracks](#leaderboard--challenge-tracks)
+- [Leaderboard](#leaderboard)
+
 
 ## Introduction
-The primary task of the nuScenes dataset is 3D object detection.
-The goal of 3D object detection is to place a tight 3D bounding box around every object.
-Object detection is the backbone for autonomous vehicles, as well as many other applications.
-Our goal is to provide a benchmark to measure performance and advance the state-of-the-art in autonomous driving.
-To this end we will host the nuScenes detection challenge from April 2019.
-The results will be presented at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
-![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
+Here we define the 3D object detection task on nuScenes.
+The goal of this task is to place a 3D bounding box around 10 different categories of object,
+as well as estimating a set of attributes and the current velocity vector. 
+
+This document outlines rules, details, and metrics for the task.
+
+## Challenges
+### Workshop on Autonomous Driving, CVPR 2019
+The first nuScenes detection challenge will be held at CVPR 2019.
+Submission window opens in April 2019 and closes June 15th.
+Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
+
 
 ## General rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
-* Users apply their method on the test set and submit their results to our evaluation server, which returns the metrics listed below.
-* We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
-* Every submission has to provide information on the method and any external / map data used. We encourage publishing code, but do not make it a requirement.
-* Top leaderboard entries and their papers will be manually reviewed.
 * The maximum time window of past sensor data that may be used is 0.5s.
-* User needs to limit the number of submitted boxes per sample to 500 to reduce the server load. Submissions with more boxes are automatically rejected.
+* Users make predictions on the test set and submit the results to our eval. server, which returns the metrics listed below.
+* We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
+* Every submission provides method information We encourage publishing code, but do not make it a requirement.
+* Top leaderboard entries and their papers will be manually reviewed.
+* Users must to limit the number of submitted boxes per sample to 500. 
 
 ## Results format
 We define a standardized detection results format to allow users to submit results to our evaluation server.
@@ -131,40 +139,39 @@ We use the well-known Average Precision metric,
 but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
 Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
 For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for recalls and precisions > 0.1.
-We thus exclude operating points with recall or precision < 0.1 from the calculation.  
-We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
+  We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
 
-### True Positive errors
+### True Positive metrics
 Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
-All true positive metrics use a fixed matching threshold of 2m center distance and the matching and scoring happen independently per class.
-The metric is averaged over the same recall thresholds as for mAP. 
-If a recall value > 0.1 is not achieved, the TP error for that class is set to 1.
+All TP metrics are calculated using d = 2m center distance during matching, and they are all designed to be positive scalars.
 
-Finally we compute the mean over classes.
+Matching and scoring happen independently per class and each metric is the average of the cumulative mean at each achieved recall levels above 10%. If 10% recall is not achieved for a particular class, all TP errors for that class is set to 1. The following TP errors are defined
 
-* **mean Average Translation Error (mATE)**: For each match we compute the translation error as the Euclidean center distance in 2D in meters.
-* **mean Average Scale Error (mASE)**: For each match we compute the 3D IOU after aligning orientation and translation.
-* **mean Average Orientation Error (mAOE)**: For each match we compute the orientation error as the smallest yaw angle difference between prediction and ground-truth in radians. Orientation error is evaluated at 360 degree for all classes except barriers where it is only evaluated at 180 degrees. Orientation errors for cones are ignored.
-* **mean Average Velocity Error (mAVE)**: For each match we compute the absolute velocity error as the L2 norm of the velocity differences in 2D in m/s. Velocity error for barriers and cones are ignored.
-* **mean Average Attribute Error (mAAE)**: For each match we compute the attribute error as as *1 - acc*, where acc is the attribute classification accuracy of all the relevant attributes of the ground-truth class. Attribute error for barriers and cones are ignored.
+* **Average Translation Error (ATE)**: Euclidean center distance in 2D in meters.
+* **Average Scale Error (ASE)**: Calculated as *1 - IOU* after aligning centers and orientation.
+* **Average Orientation Error (AOE)**: Smallest yaw angle difference between prediction and ground-truth in radians. Orientation error is evaluated at 360 degree for all classes except barriers where it is only evaluated at 180 degrees. Orientation errors for cones are ignored.
+* **Average Velocity Error (AVE)**: Absolute velocity error in m/s. Velocity error for barriers and cones are ignored.
+* **Average Attribute Error (AAE)**: Calculated as *1 - acc*, where acc is the attribute classification accuracy. Attribute error for barriers and cones are ignored.
 
 All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
+
+The TP metrics are defined per class, and we then take a mean over classes to calculate mATE, mASE, mAOE, mAVE and mAAE.
+
 
 ### nuScenes detection score
 * **nuScenes detection score (NDS)**:
 We consolidate the above metrics by computing a weighted sum: mAP, mATE, mASE, mAOE, mAVE and mAAE.
-As a first step we convert the TP errors to TP scores as *x_score = max(1 - x_err, 0.0)*.
+As a first step we convert the TP errors to TP scores as *TP_score = max(1 - TP_error, 0.0)*.
 We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
 
-## Leaderboard & challenge tracks
-Compared to other datasets and challenges, nuScenes will have a single leaderboard for the detection task.
+## Leaderboard
+nuScenes will maintain a single leaderboard for the detection task.
 For each submission the leaderboard will list method aspects and evaluation metrics.
 Method aspects include input modalities (lidar, radar, vision), use of map data and use of external data.
 To enable a fair comparison between methods, the user will be able to filter the methods by method aspects.
  
-We define three such filters here.
-These filters correspond to the tracks in the nuScenes detection challenge.
-Methods will be compared within these tracks and the winners will be decided for each track separately:
+We define three such filters here which correspond to the tracks in the nuScenes detection challenge.
+Methods will be compared within these tracks and the winners will be decided for each track separately.
 
 * **LIDAR detection track**: 
 This track allows only lidar sensor data as input.
