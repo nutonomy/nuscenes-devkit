@@ -15,7 +15,7 @@ The goal of 3D object detection is to place a tight 3D bounding box around every
 Object detection is the backbone for autonomous vehicles, as well as many other applications.
 Our goal is to provide a benchmark to measure performance and advance the state-of-the-art in autonomous driving.
 To this end we will host the nuScenes detection challenge from April 2019.
-The results will be presented at the Workshop on Autonomous Driving ([wad.ai](http://wad.ai)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
+The results will be presented at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 ![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
 
 ## General rules
