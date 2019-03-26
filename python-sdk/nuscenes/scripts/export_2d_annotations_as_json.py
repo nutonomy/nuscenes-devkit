@@ -3,17 +3,19 @@
 # Licensed under the Creative Commons [see license.txt]
 
 """
-Export 2D annotations from re-projections of our annotated 3D bounding boxes to a .json file.
+Export 2D annotations (xmin, ymin,xmax, ymax) from re-projections of our annotated 3D bounding boxes to a .json file.
 """
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
 from nuscenes.utils.geometry_utils import box_in_image
 
-from typing import List
 import numpy as np
 import json
 import argparse
+import os
+
+from typing import List
 from pyquaternion.quaternion import Quaternion
 from collections import OrderedDict
 from tqdm import tqdm
@@ -115,7 +117,10 @@ def main():
         reprojection_records = get_2d_boxes(token)
         reprojections.extend(reprojection_records)
 
-    with open('test.json', 'w') as fh:
+    if not os.path.exists(args.dest_path):
+        os.makedirs(args.dest_path)
+
+    with open('{}.json'.format(os.path.join(args.dest_path, args.version)), 'w') as fh:
         json.dump(reprojections, fh, sort_keys=True, indent=4)
 
 
@@ -124,7 +129,7 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
     parser.add_argument('--version', type=str, default='v1.0-trainval')
-    parser.add_argument('--dest_path', type=str, default='v1.0-trainval-2D-box.json')
+    parser.add_argument('--dest_path', type=str, default='./2D_annotations/')
     parser.add_argument('--visibilities', type=str, default=['2', '3', '4'])
     args = parser.parse_args()
 
