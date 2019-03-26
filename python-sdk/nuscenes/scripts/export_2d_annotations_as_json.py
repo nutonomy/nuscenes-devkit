@@ -1,8 +1,16 @@
-from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.geometry_utils import BoxVisibility
-from nuscenes.utils.geometry_utils import view_points
-from nuscenes.utils.data_classes import Box
+# nuScenes dev-kit.
+# Code written by Sergi Adipraja Widjaja, 2019.
+# Licensed under the Creative Commons [see license.txt]
 
+"""
+Export 2D annotations from re-projections of our annotated 3D bounding boxes to a .json file.
+"""
+
+from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.geometry_utils import view_points
+from nuscenes.utils.geometry_utils import box_in_image
+
+from typing import List
 import numpy as np
 import json
 import argparse
@@ -11,64 +19,13 @@ from collections import OrderedDict
 from tqdm import tqdm
 
 
-def get_color(category_name):
-    """
-    Provides the default colors based on the category names.
-    :param category_name: Name of the category (must be in the relevant classes)
-    """
-    if category_name in ['vehicle.bicycle', 'vehicle.motorcycle']:
-        return 255, 61, 99  # Red
-    elif 'vehicle' in category_name:
-        return 255, 158, 0  # Orange
-    elif 'human.pedestrian' in category_name:
-        return 0, 0, 230  # Blue
-    elif 'cone' in category_name or 'barrier' in category_name:
-        return 0, 0, 0  # Black
-    else:
-        return 255, 0, 255  # Magenta
-
-
-def box_in_image(box, intrinsic: np.ndarray, imsize: tuple, vis_level: int = BoxVisibility.ANY) -> bool:
-    """
-    Check if a box is visible inside an image without accounting for occlusions.
-    :param box: The box to be checked.
-    :param intrinsic: <float: 3, 3>. Intrinsic camera matrix.
-    :param imsize: (width, height).
-    :param vis_level: One of the enumerations of <BoxVisibility>.
-    :return True if visibility condition is satisfied.
-    """
-
-    corners_3d = box.corners()
-    corners_img = view_points(corners_3d, intrinsic, normalize=True)[:2, :]
-
-    visible = np.logical_and(corners_img[0, :] > 0, corners_img[0, :] < imsize[0])
-    visible = np.logical_and(visible, corners_img[1, :] < imsize[1])
-    visible = np.logical_and(visible, corners_img[1, :] > 0)
-    visible = np.logical_and(visible, corners_3d[2, :] > 1)
-
-    in_front = corners_3d[2, :] > 0.1  # True if a corner is at least 0.1 meter in front of the camera.
-
-    if vis_level == BoxVisibility.ALL:
-        return all(visible) and all(in_front)
-    elif vis_level == BoxVisibility.ANY:
-        return any(visible) and all(in_front)
-    elif vis_level == BoxVisibility.NONE:
-        return True
-    else:
-        raise ValueError("vis_level: {} not valid".format(vis_level))
-
-
-def get_box(sample_annotation_token: str):
-    """
-    Instantiates a Box class from a sample annotation record.
-    :param sample_annotation_token: Unique sample_annotation identifier.
-    """
-    record = nusc.get('sample_annotation', sample_annotation_token)
-    return Box(record['translation'], record['size'], Quaternion(record['rotation']),
-               name=record['category_name'], token=record['token'])
-
-
-def generate_record(ann_rec, x1, y1, x2, y2, sample_data_token, filename):
+def generate_record(ann_rec: dict,
+                    x1: float,
+                    y1: float,
+                    x2: float,
+                    y2: float,
+                    sample_data_token: str,
+                    filename: str) -> OrderedDict:
     """
     Generate one 2d annotation record .
     :param ann_rec: Original 3d annotation record.
@@ -97,7 +54,7 @@ def generate_record(ann_rec, x1, y1, x2, y2, sample_data_token, filename):
     return repro_rec
 
 
-def get_2d_boxes(sample_data_token):
+def get_2d_boxes(sample_data_token: str) -> List[OrderedDict]:
     """
     Get the 2d annotation records for a given `sample_data_token`.
     :param sample_data_token: Sample data token belonging to a keyframe.
@@ -125,7 +82,7 @@ def get_2d_boxes(sample_data_token):
         ann_rec['sample_annotation_token'] = ann_rec['token']
         ann_rec['sample_data_token'] = sample_data_token
 
-        box = get_box(ann_rec['token'])
+        box = nusc.get_box(ann_rec['token'])
 
         box.translate(-np.array(pose_rec['translation']))
         box.rotate(Quaternion(pose_rec['rotation']).inverse)
@@ -161,14 +118,13 @@ def main():
     with open('test.json', 'w') as fh:
         json.dump(reprojections, fh, sort_keys=True, indent=4)
 
-    return reprojections
-
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Export 2D annotations from reprojections to a .json file.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
     parser.add_argument('--version', type=str, default='v1.0-trainval')
-    parser.add_argument('--dest_path', type=str, default='v1.0_2d_bbox.json')
+    parser.add_argument('--dest_path', type=str, default='v1.0-trainval-2D-box.json')
     parser.add_argument('--visibilities', type=str, default=['2', '3', '4'])
     args = parser.parse_args()
 
