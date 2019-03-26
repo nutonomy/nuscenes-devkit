@@ -29,7 +29,7 @@ def generate_record(ann_rec: dict,
                     sample_data_token: str,
                     filename: str) -> OrderedDict:
     """
-    Generate one 2d annotation record .
+    Generate one 2D annotation record given various informations on top of the 2D bounding box coordinates.
     :param ann_rec: Original 3d annotation record.
     :param x1: Minimum value of the x coordinate.
     :param y1: Minimum value of the y coordinate.
@@ -37,7 +37,7 @@ def generate_record(ann_rec: dict,
     :param y2: Maximum value of the y coordinate.
     :param sample_data_token: Sample data tolk
     :param filename:
-    :return:
+    :return: A sample 2D annotation record.
     """
     repro_rec = OrderedDict()
     repro_rec['sample_data_token'] = sample_data_token
@@ -58,9 +58,9 @@ def generate_record(ann_rec: dict,
 
 def get_2d_boxes(sample_data_token: str) -> List[OrderedDict]:
     """
-    Get the 2d annotation records for a given `sample_data_token`.
+    Get the 2D annotation records for a given `sample_data_token`.
     :param sample_data_token: Sample data token belonging to a keyframe.
-    :return: List of 2d annotation record that belongs to the input `sample_data_token`
+    :return: List of 2D annotation record that belongs to the input `sample_data_token`
     """
 
     # Get the sample data, and the sample corresponding to that sample data
