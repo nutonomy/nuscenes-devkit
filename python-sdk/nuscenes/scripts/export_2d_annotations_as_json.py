@@ -1,15 +1,14 @@
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import BoxVisibility
 from nuscenes.utils.geometry_utils import view_points
-import numpy as np
-import cv2
 from nuscenes.utils.data_classes import Box
-from pyquaternion.quaternion import Quaternion
-from collections import OrderedDict
-import os
-from tqdm import tqdm
+
+import numpy as np
 import json
 import argparse
+from pyquaternion.quaternion import Quaternion
+from collections import OrderedDict
+from tqdm import tqdm
 
 
 def get_color(category_name):
@@ -104,6 +103,7 @@ def get_2d_boxes(sample_data_token):
     :param sample_data_token: Sample data token belonging to a keyframe.
     :return: List of 2d annotation record that belongs to the input `sample_data_token`
     """
+
     # Get the sample data, and the sample corresponding to that sample data
     sd_rec = nusc.get('sample_data', sample_data_token)
     if not (sd_rec['is_key_frame']):
@@ -118,11 +118,6 @@ def get_2d_boxes(sample_data_token):
     # Get all the annotation with above a visibility threshold
     ann_recs = [nusc.get('sample_annotation', token) for token in s_rec['anns']]
     ann_recs = [ann_rec for ann_rec in ann_recs if (ann_rec['visibility_token'] in args.visibilities)]
-
-    # Load the image data
-    data_path = os.path.join(nusc.dataroot, sd_rec['filename'])
-    img = cv2.imread(data_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     repro_recs = []
     for ann_rec in ann_recs:
@@ -141,15 +136,11 @@ def get_2d_boxes(sample_data_token):
         if not box_in_image(box, camera_intrinsic, (1600, 900), 1):
             continue
 
-        c = get_color(box.name)
-
         corners = view_points(box.corners(), camera_intrinsic, True)
         max_x = max(corners[0])
         min_x = min(corners[0])
         max_y = max(corners[1])
         min_y = min(corners[1])
-
-        img = cv2.rectangle(img, (int(min_x), int(min_y)), (int(max_x), int(max_y)), c, 2)
 
         repro_rec = generate_record(ann_rec, min_x, min_y, max_x, max_y, sample_data_token, sd_rec['filename'])
         repro_recs.append(repro_rec)
@@ -183,4 +174,3 @@ if __name__ == '__main__':
 
     nusc = NuScenes(dataroot=args.dataroot, version=args.version)
     main()
-
