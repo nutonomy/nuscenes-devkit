@@ -110,8 +110,6 @@ class MapMask:
         size_y = int(img.size[1] / self.resolution * native_resolution)
         img = img.resize((size_x, size_y), resample=Image.NEAREST)
 
-        # Convert to numpy and binarize.
+        # Convert to numpy.
         raw_mask = np.array(img)
-        raw_mask[raw_mask < 225] = self.background
-        raw_mask[raw_mask >= 225] = self.foreground
         return raw_mask
