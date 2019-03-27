@@ -1,5 +1,5 @@
 # nuScenes devkit
-Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
+Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset and [paper](https://arxiv.org/abs/1903.11027).
  
 ![](https://www.nuscenes.org/public/images/road.jpg)
 
@@ -10,9 +10,10 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Tutorial](#tutorial)
 - [Object detection task](#object-detection-task)
 - [Backward compatibility](#backward-compatibility)
+- [Citation](#citation)
 
 ## Changelog
-- Mar. 26, 2019: Full dataset & devkit v1.0.0 released. Support dropped for teaser data.
+- Mar. 26, 2019: Full dataset, paper, & devkit v1.0.0 released. Support dropped for teaser data.
 - Dec. 20, 2018: Initial evaluation code released. Devkit folders restructured. 
 - Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
 - Oct. 4, 2018: Code to parse RADAR data released.
@@ -51,7 +52,7 @@ To get started with the nuScenes devkit, please run the tutorial as an IPython n
 jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 ```
 In case you want to avoid downloading and setting up the data, you can also take a look at the [rendered notebook on nuScenes.org](https://www.nuscenes.org/tutorial).
-To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) or take a look at the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
+To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) or take a look at the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md). The [nuScenes paper](https://arxiv.org/abs/1903.11027) provides detailed analysis of the dataset.
 
 ## Object detection task
 For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
@@ -62,5 +63,17 @@ For instructions related to the object detection task (results format, classes a
   The new structure has a top-level package `nuscenes` which contains packages `eval`, `export` and `utils`.
   Therefore, existing imports from `nuscenes_utils` should be replaced by `nuscenes.nuscenes`.
 
+## Citation
+Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):
+```
+@article{nuscenes2019,
+  title={nuScenes: A multimodal dataset for autonomous driving},
+  author={Holger Caesar and Varun Bankiti and Alex H. Lang and Sourabh Vora and 
+          Venice Erin Liong and Qiang Xu and Anush Krishnan and Yu Pan and 
+          Giancarlo Baldan and Oscar Beijbom},
+  journal={arXiv preprint arXiv:1903.11027},
+  year={2019}
+}
+```
 
 ![](https://www.nuscenes.org/public/images/nuscenes-example.png)
