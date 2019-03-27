@@ -8,7 +8,8 @@ RUN apt-get update && \
         libxext6 \
         libxrender-dev \
         libgl1-mesa-glx \
-        libglib2.0-0 && \
+        libglib2.0-0 \
+        xvfb && \
     rm -rf /var/lib/apt/lists/*
 
 
