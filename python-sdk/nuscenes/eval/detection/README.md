@@ -176,11 +176,9 @@ Methods will be compared within these tracks and the winners will be decided for
 * **LIDAR detection track**: 
 This track allows only lidar sensor data as input.
 No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-
 * **VISION detection track**: 
 This track allows only camera sensor data (images) as input.
 No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-
 * **OPEN detection track**: 
 This is where users can go wild.
 We allow any combination of sensors, map and external data as long as these are reported. 
