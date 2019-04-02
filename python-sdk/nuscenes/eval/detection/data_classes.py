@@ -181,7 +181,7 @@ class EvalBoxes:
             return False
         ok = True
         for token in self.sample_tokens:
-            if not len(self[token]) == len(self[token]):
+            if not len(self[token]) == len(other[token]):
                 return False
             for box1, box2 in zip(self[token], other[token]):
                 ok = ok and box1 == box2
