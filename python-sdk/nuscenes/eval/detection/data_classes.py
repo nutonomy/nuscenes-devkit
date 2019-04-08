@@ -359,7 +359,7 @@ class MetricDataList:
         self.md[(detection_name, match_distance)] = data
 
     def serialize(self) -> dict:
-        return {key[0]+':'+str(key[1]): value.serialize() for key, value in self.md.items()}
+        return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
 
     @classmethod
     def deserialize(cls, content):

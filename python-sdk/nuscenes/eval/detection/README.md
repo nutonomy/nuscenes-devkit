@@ -1,5 +1,5 @@
 # nuScenes detection task
-In this document we present the rules, results format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
+In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
 ![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
 
 ## Overview
@@ -11,12 +11,10 @@ In this document we present the rules, results format, classes, evaluation metri
 - [Evaluation metrics](#evaluation-metrics)
 - [Leaderboard](#leaderboard)
 
-
 ## Introduction
 Here we define the 3D object detection task on nuScenes.
 The goal of this task is to place a 3D bounding box around 10 different object categories,
 as well as estimating a set of attributes and the current velocity vector. 
-This document outlines rules, details, and metrics for the task.
 
 ## Challenges
 ### Workshop on Autonomous Driving, CVPR 2019
@@ -24,15 +22,15 @@ The first nuScenes detection challenge will be held at CVPR 2019.
 Submission window opens in April 2019 and closes June 15th.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 
-## General rules
+## Submission rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
-* The maximum time window of past sensor data that may be used is 0.5s.
 * Users make predictions on the test set and submit the results to our eval. server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
-* Every submission provides method information We encourage publishing code, but do not make it a requirement.
+* The maximum time window of past sensor data that may be used is 0.5s.
+* Users must to limit the number of submitted boxes per sample to 500.
+* Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
-* Users must to limit the number of submitted boxes per sample to 500. 
 
 ## Results format
 We define a standardized detection result format that serves as an input to the evaluation code.
@@ -41,6 +39,7 @@ For the train and val sets the evaluation can be performed by the user on their 
 For the test set the user needs to zip the JSON results file and submit it to the official evaluation server.
 The JSON file includes meta data `meta` on the type of inputs used for this method.
 Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
+Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is detected.
 ```
 submission {
     "meta": {
@@ -182,12 +181,12 @@ To enable a fair comparison between methods, the user will be able to filter the
 We define three such filters here which correspond to the tracks in the nuScenes detection challenge.
 Methods will be compared within these tracks and the winners will be decided for each track separately.
 
-* **LIDAR detection track**: 
+* **Lidar detection track**: 
 This track allows only lidar sensor data as input.
 No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-* **VISION detection track**: 
+* **Vision detection track**: 
 This track allows only camera sensor data (images) as input.
 No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-* **OPEN detection track**: 
+* **Open detection track**: 
 This is where users can go wild.
 We allow any combination of sensors, map and external data as long as these are reported. 

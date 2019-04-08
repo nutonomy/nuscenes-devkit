@@ -35,7 +35,7 @@ class NuScenesEval:
     - render: Renders various plots and dumps to disk.
 
     We assume that:
-    - Every sample_token is given in the results, although there may be no predictions for that sample.
+    - Every sample_token is given in the results, although there may be not predictions for that sample.
 
     Please see https://github.com/nutonomy/nuscenes-devkit for more details.
     """
@@ -62,25 +62,25 @@ class NuScenesEval:
         self.verbose = verbose
         self.cfg = config
 
-        # Make dirs
+        # Make dirs.
         self.plot_dir = os.path.join(self.output_dir, 'plots')
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         if not os.path.isdir(self.plot_dir):
             os.makedirs(self.plot_dir)
 
-        # Load data
+        # Load data.
         self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
         self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."
 
-        # Add center distances
+        # Add center distances.
         self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
         self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
 
-        # Filter boxes (distance, points per box, etc.)
+        # Filter boxes (distance, points per box, etc.).
         if verbose:
             print('=> Filtering predictions')
         self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range, verbose=verbose)
@@ -91,13 +91,16 @@ class NuScenesEval:
         self.sample_tokens = self.gt_boxes.sample_tokens
 
     def run(self) -> Tuple[DetectionMetrics, MetricDataList]:
+        """
+        Performs the actual evaluation.
+        :return: A tuple of high-level and the raw metric data.
+        """
 
         start_time = time.time()
 
         # -----------------------------------
-        # Step 1: Accumulate metric data for all classes and distance thresholds
+        # Step 1: Accumulate metric data for all classes and distance thresholds.
         # -----------------------------------
-
         metric_data_list = MetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -105,9 +108,8 @@ class NuScenesEval:
                 metric_data_list.set(class_name, dist_th, md)
 
         # -----------------------------------
-        # Step 2: Calculate metrics from the data
+        # Step 2: Calculate metrics from the data.
         # -----------------------------------
-
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -128,9 +130,8 @@ class NuScenesEval:
         metrics.add_runtime(time.time() - start_time)
 
         # -----------------------------------
-        # Step 3: Dump the metric data and metrics to disk
+        # Step 3: Dump the metric data and metrics to disk.
         # -----------------------------------
-
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics.serialize(), f, indent=2)
 
@@ -139,10 +140,15 @@ class NuScenesEval:
 
         return metrics, metric_data_list
 
-    def render(self, md_list: MetricDataList, metrics: DetectionMetrics):
+    def render(self, md_list: MetricDataList, metrics: DetectionMetrics) -> None:
+        """
+        Renders various PR and TP curves.
+        :param md_list: MetricDataList instance.
+        :param metrics: DetectionMetrics instance.
+        """
 
         def savepath(name):
-            return os.path.join(self.plot_dir, name+'.pdf')
+            return os.path.join(self.plot_dir, name + '.pdf')
 
         summary_plot(md_list, metrics, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
                      dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
@@ -159,7 +165,25 @@ class NuScenesEval:
                           savepath=savepath('dist_pr_'+str(dist_th)))
 
 
-def main(result_path, output_dir, eval_set, dataroot, version, verbose, config_name, plot_examples):
+def main(result_path: str,
+         output_dir: str,
+         eval_set: str,
+         dataroot: str,
+         version: str,
+         verbose: bool,
+         config_name: str,
+         plot_examples: bool) -> None:
+    """
+    Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
+    :param result_path: The JSON submission file.
+    :param output_dir: Folder to store result metrics, graphs and example visualizations.
+    :param eval_set: Dataset split to evaluate on, train, val or test.
+    :param dataroot: The NuScenes dataroot folder.
+    :param version: The NuScenes dataset version.
+    :param verbose: The NuScenes verbose flag.
+    :param config_name: Which configuration file to use, e.g. "cvpr_2019".
+    :param plot_examples: Whether to plot example images with annotations.
+    """
 
     # Init.
     cfg = config_factory(config_name)
@@ -191,7 +215,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='val',
-                        help='Which dataset split to evaluate on, e.g. train or val.')
+                        help='Which dataset split to evaluate on, train, val or test.')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
