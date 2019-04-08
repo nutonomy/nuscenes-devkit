@@ -14,9 +14,8 @@ In this document we present the rules, results format, classes, evaluation metri
 
 ## Introduction
 Here we define the 3D object detection task on nuScenes.
-The goal of this task is to place a 3D bounding box around 10 different categories of object,
+The goal of this task is to place a 3D bounding box around 10 different object categories,
 as well as estimating a set of attributes and the current velocity vector. 
-
 This document outlines rules, details, and metrics for the task.
 
 ## Challenges
@@ -24,7 +23,6 @@ This document outlines rules, details, and metrics for the task.
 The first nuScenes detection challenge will be held at CVPR 2019.
 Submission window opens in April 2019 and closes June 15th.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
-
 
 ## General rules
 * We release annotations for the train and val set, but not for the test set.
@@ -37,18 +35,30 @@ Results and winners will be announced at the Workshop on Autonomous Driving ([WA
 * Users must to limit the number of submitted boxes per sample to 500. 
 
 ## Results format
-We define a standardized detection results format to allow users to submit results to our evaluation server.
-Users need to create single JSON file for the evaluation set, zip the file and upload it to our evaluation server.
-The submission JSON includes a dictionary that maps each sample_token to a list of `sample_result` entries.
+We define a standardized detection result format that serves as an input to the evaluation code.
+The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
+For the train and val sets the evaluation can be performed by the user on their local machine.
+For the test set the user needs to zip the JSON results file and submit it to the official evaluation server.
+The JSON file includes meta data `meta` on the type of inputs used for this method.
+Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
 ```
 submission {
-    sample_token <str>: [sample_result] -- Maps each sample_token to a list of sample_results.
+    "meta": {
+        "use_camera":   <bool>                  -- Whether this submission uses camera data as an input.
+        "use_lidar":    <bool>                  -- Whether this submission uses lidar data as an input.
+        "use_radar":    <bool>                  -- Whether this submission uses radar data as an input.
+        "use_map":      <bool>                  -- Whether this submission uses map data as an input.
+        "use_external": <bool>                  -- Whether this submission uses external data as an input.
+    },
+    "results": {
+        sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
+    }
 }
 ```
-For the result box we create a new database table called `sample_result`.
+For the predictions we create a new database table called `sample_result`.
 The `sample_result` table is designed to mirror the `sample_annotation` table.
 This allows for processing of results and annotations using the same tools.
-A `sample_result` is defined as follows:
+A `sample_result` is a dictionary defined as follows:
 ```
 sample_result {
     "sample_token":       <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
@@ -139,7 +149,7 @@ We use the well-known Average Precision metric,
 but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
 Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
 For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for recalls and precisions > 0.1.
-  We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
+We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
 
 ### True Positive metrics
 Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
@@ -156,7 +166,6 @@ Matching and scoring happen independently per class and each metric is the avera
 All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
 
 The TP metrics are defined per class, and we then take a mean over classes to calculate mATE, mASE, mAOE, mAVE and mAAE.
-
 
 ### nuScenes detection score
 * **nuScenes detection score (NDS)**:
