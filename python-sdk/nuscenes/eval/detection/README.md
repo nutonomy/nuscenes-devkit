@@ -116,7 +116,6 @@ Note that some annotations are missing attributes (0.4% of all sample_annotation
 For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle, 
 but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
 detection radius.
-
 Below we list nuScene class specific rules for annotation and detection ranges. 
 
 |   nuScenes detection class    |   Attributes                                          | Detection Range (meters)  |
@@ -152,10 +151,11 @@ We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute th
 
 ### True Positive metrics
 Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
-All TP metrics are calculated using d = 2m center distance during matching, and they are all designed to be positive scalars.
+All TP metrics are calculated using a threshold of 2m center distance during matching, and they are all designed to be positive scalars.
 
-Matching and scoring happen independently per class and each metric is the average of the cumulative mean at each achieved recall levels above 10%. If 10% recall is not achieved for a particular class, all TP errors for that class is set to 1. The following TP errors are defined
-
+Matching and scoring happen independently per class and each metric is the average of the cumulative mean at each achieved recall level above 10%.
+If 10% recall is not achieved for a particular class, all TP errors for that class are set to 1.
+We define the following TP errors:
 * **Average Translation Error (ATE)**: Euclidean center distance in 2D in meters.
 * **Average Scale Error (ASE)**: Calculated as *1 - IOU* after aligning centers and orientation.
 * **Average Orientation Error (AOE)**: Smallest yaw angle difference between prediction and ground-truth in radians. Orientation error is evaluated at 360 degree for all classes except barriers where it is only evaluated at 180 degrees. Orientation errors for cones are ignored.
