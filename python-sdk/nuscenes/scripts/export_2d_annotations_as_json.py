@@ -15,10 +15,65 @@ import json
 import argparse
 import os
 
-from typing import List
+from typing import List, Tuple
 from pyquaternion.quaternion import Quaternion
+from shapely.geometry import LineString, Point
 from collections import OrderedDict
 from tqdm import tqdm
+
+
+class Corner:
+    def __init__(self, point: Point, min_x=0, max_x=1600, min_y=0, max_y=900):
+        self.point = point
+        self.min_x = min_x
+        self.max_x = max_x
+        self.min_y = min_y
+        self.max_y = max_y
+
+        self.x = self.point.x
+        self.y = self.point.y
+
+    def is_inside_image(self):
+        return (self.min_x < self.x < self.max_x) and (self.min_y < self.y < self.min_y)
+
+
+class Segment:
+    def __init__(self, line_string: LineString, min_x=0, max_x=1600, min_y=0, max_y=900):
+        self.line_string = line_string
+        self.min_x = min_x
+        self.max_x = max_x
+        self.min_y = min_y
+        self.max_y = max_y
+
+        self.right_boundary = LineString([(max_x, min_y), (max_x, max_y)])
+        self.left_boundary = LineString([(min_x, min_y), (min_x, max_y)])
+        self.top_boundary = LineString([(min_x, min_y), (max_x, min_y)])
+        self.bottom_boundary = LineString([(min_x, max_y), (max_x, max_y)])
+
+    def is_left_intersect(self):
+        return self.line_string.intersects(self.left_boundary)
+
+    def is_right_intersect(self):
+        return self.line_string.intersects(self.right_boundary)
+
+    def is_top_intersect(self):
+        return self.line_string.intersects(self.top_boundary)
+
+    def is_bottom_intersect(self):
+        return self.line_string.intersects(self.bottom_boundary)
+
+    def boundary_intersections(self):
+        intersections = []
+        if self.is_left_intersect():
+            intersections.append(Corner(self.line_string.intersection(self.left_boundary)))
+        if self.is_right_intersect():
+            intersections.append(Corner(self.line_string.intersection(self.right_boundary)))
+        if self.is_top_intersect():
+            intersections.append(Corner(self.line_string.intersection(self.top_boundary)))
+        if self.is_bottom_intersect():
+            intersections.append(Corner(self.line_string.intersection(self.bottom_boundary)))
+
+        return intersections
 
 
 def generate_record(ann_rec: dict,
@@ -56,6 +111,45 @@ def generate_record(ann_rec: dict,
     return repro_rec
 
 
+def get_line_segments(corners: np.ndarray) -> List[Segment]:
+    """
+    Draw the 2d bounding boxes, extra logic to handle the case where the 3d box extends outside the image.
+    :param corners: Corners
+    :return:
+    """
+
+    lines = []
+    front_corners = corners[:4]
+    prev = front_corners[-1]
+    for corner in front_corners:
+        x1 = prev[0]
+        y1 = prev[1]
+        x2 = corner[0]
+        y2 = corner[1]
+
+        lines.append(Segment(LineString([(x1, y1), (x2, y2)])))
+
+    rear_corners = corners[:4]
+    prev = rear_corners[-1]
+    for corner in rear_corners:
+        x1 = prev[0]
+        y1 = prev[1]
+        x2 = corner[0]
+        y2 = corner[1]
+
+        lines.append(Segment(LineString([(x1, y1), (x2, y2)])))
+
+    for i in range(4):
+        x1 = corners.T[i][0]
+        y1 = corners.T[i][1]
+        x2 = corners.T[i + 4][0]
+        y2 = corners.T[i + 4][1]
+
+        lines.append(Segment(LineString([(x1, y1), (x2, y2)])))
+
+    return lines
+
+
 def get_2d_boxes(sample_data_token: str) -> List[OrderedDict]:
     """
     Get the 2D annotation records for a given `sample_data_token`.
@@ -79,6 +173,7 @@ def get_2d_boxes(sample_data_token: str) -> List[OrderedDict]:
     ann_recs = [ann_rec for ann_rec in ann_recs if (ann_rec['visibility_token'] in args.visibilities)]
 
     repro_recs = []
+
     for ann_rec in ann_recs:
 
         ann_rec['sample_annotation_token'] = ann_rec['token']
@@ -95,11 +190,18 @@ def get_2d_boxes(sample_data_token: str) -> List[OrderedDict]:
         if not box_in_image(box, camera_intrinsic, (1600, 900), 1):
             continue
 
-        corners = view_points(box.corners(), camera_intrinsic, True)
-        max_x = max(corners[0])
-        min_x = min(corners[0])
-        max_y = max(corners[1])
-        min_y = min(corners[1])
+        corner_coords = view_points(box.corners(), camera_intrinsic, True)
+        segments = get_line_segments(corner_coords)
+        corners = [Corner(Point(corner_coord[0], corner_coord[1])) for corner_coord in corner_coords]
+        for segment in segments:
+            corners.extend(segment.boundary_intersections())
+
+        corners = np.array([[corner.x, corner.y] for corner in corners if corner.is_inside_image()])
+
+        max_x = max(corners[:, 0])
+        min_x = min(corners[:, 0])
+        max_y = max(corners[:, 1])
+        min_y = min(corners[:, 1])
 
         repro_rec = generate_record(ann_rec, min_x, min_y, max_x, max_y, sample_data_token, sd_rec['filename'])
         repro_recs.append(repro_rec)
