@@ -293,7 +293,7 @@ if __name__ == '__main__':
     parser.add_argument('--keyframes_only', type=int, default=True)
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
     parser.add_argument('--version', type=str, default='v1.0-trainval')
-    parser.add_argument('--dest_filename', type=str, default='image_annotations.json')
+    parser.add_argument('--filename', type=str, default='image_annotations.json')
     parser.add_argument('--visibilities', type=str, default=['2', '3', '4'])
     args = parser.parse_args()
 
