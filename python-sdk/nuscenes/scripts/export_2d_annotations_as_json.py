@@ -242,7 +242,7 @@ def get_2d_boxes(sample_data_token: str) -> List[OrderedDict]:
         box.translate(-np.array(cs_rec['translation']))
         box.rotate(Quaternion(cs_rec['rotation']).inverse)
 
-        if not box_in_image(box, camera_intrinsic, (1600, 900), BoxVisibility.Any):
+        if not box_in_image(box, camera_intrinsic, (1600, 900), BoxVisibility.ANY):
             continue
 
         corner_coords = view_points(box.corners(), camera_intrinsic, True)
