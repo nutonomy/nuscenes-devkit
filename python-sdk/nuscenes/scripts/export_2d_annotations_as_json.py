@@ -14,14 +14,22 @@ import json
 import argparse
 import os
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from pyquaternion.quaternion import Quaternion
 from collections import OrderedDict
 from tqdm import tqdm
 from shapely.geometry import MultiPoint, box
 
 
-def post_process_coords(corner_coords: List, imsize: Tuple[int, int] = (1600, 900)):
+def post_process_coords(corner_coords: List,
+                        imsize: Tuple[int, int] = (1600, 900)) -> Union[Tuple[float, float, float, float], None]:
+    """
+    Get the intersection of the convex hull of the reprojected bbox corners and the image canvas, return None if no
+    intersection.
+    :param corner_coords: Corner coordinates of reprojected bounding box.
+    :param imsize: Size of the image canvas
+    :return: Intersection of the
+    """
     polygon_from_2d_box = MultiPoint(corner_coords).convex_hull
     img_canvas = box(0, 0, imsize[0], imsize[1])
 
@@ -140,7 +148,7 @@ def main():
     sample_data_camera_tokens = [s['token'] for s in nusc.sample_data if (s['sensor_modality'] == 'camera') and
                                  s['is_key_frame']]
 
-    print("Generating 2d reprojections of the nuScenes dataset")
+    print("Generating 2D reprojections of the nuScenes dataset")
 
     reprojections = []
     for token in tqdm(sample_data_camera_tokens):
@@ -154,14 +162,17 @@ def main():
     with open(os.path.join(args.dataroot, args.version, args.filename), 'w') as fh:
         json.dump(reprojections, fh, sort_keys=True, indent=4)
 
+    print("Saved the 2D re-projections under {}".format(os.path.join(args.dataroot, args.version, args.filename)))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Export 2D annotations from reprojections to a .json file.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
-    parser.add_argument('--version', type=str, default='v1.0-trainval')
-    parser.add_argument('--filename', type=str, default='image_annotations.json')
-    parser.add_argument('--visibilities', type=str, default=['1', '2', '3', '4'])
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes', help="Path where nuScenes is saved.")
+    parser.add_argument('--version', type=str, default='v1.0-trainval', help='Dataset version.')
+    parser.add_argument('--filename', type=str, default='image_annotations.json', help='Output filename.')
+    parser.add_argument('--visibilities', type=str, default=['1', '2', '3', '4'],
+                        help='Visibility bins, the higher the number the higher the visibility.')
     args = parser.parse_args()
 
     nusc = NuScenes(dataroot=args.dataroot, version=args.version)
