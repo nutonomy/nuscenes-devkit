@@ -99,8 +99,8 @@ class Line:
 
     def is_bottom_intersect(self) -> bool:
         """
-        Returns True if the line segment intersects the top boundary of the image, False otherwise
-        :return: Whether the line segment intersects the top boundary of the image
+        Returns True if the line segment intersects the bottom boundary of the image, False otherwise
+        :return: Whether the line segment intersects the bottom boundary of the image
         """
         return self.line_string.intersects(self.bottom_boundary)
 
@@ -279,10 +279,11 @@ def main():
         reprojection_records = get_2d_boxes(token)
         reprojections.extend(reprojection_records)
 
-    if not os.path.exists(args.dest_path):
-        os.makedirs(args.dest_path)
+    dest_path = os.path.join(args.dataroot, args.version)
+    if not os.path.exists(dest_path):
+        os.makedirs(dest_path)
 
-    with open(os.path.join(args.dataroot, args.version, args.dest_filename), 'w') as fh:
+    with open(os.path.join(args.dataroot, args.version, args.filename), 'w') as fh:
         json.dump(reprojections, fh, sort_keys=True, indent=4)
 
 
@@ -291,7 +292,7 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--keyframes_only', type=int, default=True)
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
-    parser.add_argument('--version', type=str, default='v1.0')
+    parser.add_argument('--version', type=str, default='v1.0-trainval')
     parser.add_argument('--dest_filename', type=str, default='image_annotations.json')
     parser.add_argument('--visibilities', type=str, default=['2', '3', '4'])
     args = parser.parse_args()
