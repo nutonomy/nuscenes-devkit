@@ -20,7 +20,8 @@ from nuscenes.utils.splits import create_splits_scenes
 def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> EvalBoxes:
     """ Loads object predictions from file. """
     with open(result_path) as f:
-        all_results = EvalBoxes.deserialize(json.load(f))
+        data = json.load(f)
+    all_results = EvalBoxes.deserialize(data['results'])
     if verbose:
         print("=> Loaded results from {}. Found detections for {} samples.".format(result_path,
                                                                                    len(all_results.sample_tokens)))
