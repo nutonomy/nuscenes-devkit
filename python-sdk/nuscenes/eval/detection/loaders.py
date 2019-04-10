@@ -186,7 +186,7 @@ def filter_eval_boxes(nusc: NuScenes,
         bike_rack_filter += len(eval_boxes.boxes[sample_token])
     if verbose:
         print("=> Original number of boxes: {}\n=> After distance based filtering: {}\n"
-              "=> After LIDAR points based filtering: {}\n=>After bike racks filtering: {}".
+              "=> After LIDAR points based filtering: {}\n=> After bike racks filtering: {}".
               format(total, dist_filter, point_filter, bike_rack_filter))
 
     return eval_boxes

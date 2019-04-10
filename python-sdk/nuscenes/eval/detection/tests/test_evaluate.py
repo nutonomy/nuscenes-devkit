@@ -117,7 +117,7 @@ class TestMain(unittest.TestCase):
         # 8. Score = 0.24047129251302665. After bike racks bug.
         # 9. Score = 0.24104572227466886. After bug fix in calc_tp. Include the max recall and exclude the min recall.
         # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.19449091580477748)
+        self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
 
 if __name__ == '__main__':

@@ -132,6 +132,7 @@ class NuScenesEval:
         # -----------------------------------
         # Step 3: Dump the metric data and metrics to disk.
         # -----------------------------------
+        print(' => Saving metrics to: %s' % self.output_dir)
         with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
             json.dump(metrics.serialize(), f, indent=2)
 

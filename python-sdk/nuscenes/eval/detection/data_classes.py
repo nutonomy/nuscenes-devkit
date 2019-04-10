@@ -430,7 +430,11 @@ class DetectionMetrics:
         return scores
 
     @property
-    def weighted_sum(self) -> float:
+    def nd_score(self) -> float:
+        """
+        Compute the nuTonomy detection score (NDS, weighted sum of the individual scores).
+        :return: The NDS.
+        """
 
         # Summarize
         total = float(self.cfg.mean_ap_weight * self.mean_ap + np.sum(list(self.tp_scores.values())))
@@ -446,5 +450,5 @@ class DetectionMetrics:
                 'mean_ap': self.mean_ap,
                 'tp_errors': self.tp_errors,
                 'tp_scores': self.tp_scores,
-                'weighted_sum': self.weighted_sum,
+                'nd_score': self.nd_score,
                 'eval_time': self.eval_time}

@@ -318,7 +318,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     tex += 'AOE: average orientation error (${}$), '.format(TP_METRICS_UNITS['orient_err'])
     tex += 'AVE: average velocity error (${}$), '.format(TP_METRICS_UNITS['vel_err'])
     tex += 'AAE: average attribute error (${}$). '.format(TP_METRICS_UNITS['attr_err'])
-    tex += 'nuScenes Detection Score (NDS) = {:.1f} '.format(metrics['weighted_sum'] * 100)
+    tex += 'nuScenes Detection Score (NDS) = {:.1f} '.format(metrics['nd_score'] * 100)
     tex += '}\n'
 
     tex += '\\end{table}\n'
