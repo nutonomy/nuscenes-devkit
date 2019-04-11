@@ -3,7 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
-from typing import Dict
+from typing import Tuple, Dict
 
 import numpy as np
 import tqdm
@@ -17,11 +17,12 @@ from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.splits import create_splits_scenes
 
 
-def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> EvalBoxes:
+def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> Tuple[EvalBoxes, Dict]:
     """ Loads object predictions from file. """
     with open(result_path) as f:
         data = json.load(f)
     all_results = EvalBoxes.deserialize(data['results'])
+    meta = data['meta']
     if verbose:
         print("=> Loaded results from {}. Found detections for {} samples.".format(result_path,
                                                                                    len(all_results.sample_tokens)))
@@ -30,7 +31,7 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool =
         assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, \
             "Error: Only <= %d boxes per sample allowed!" % max_boxes_per_sample
 
-    return all_results
+    return all_results, meta
 
 
 def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:

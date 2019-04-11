@@ -70,7 +70,7 @@ class NuScenesEval:
             os.makedirs(self.plot_dir)
 
         # Load data.
-        self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
         self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
@@ -133,10 +133,17 @@ class NuScenesEval:
         # Step 3: Dump the metric data and metrics to disk.
         # -----------------------------------
         print(' => Saving metrics to: %s' % self.output_dir)
-        with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
-            json.dump(metrics.serialize(), f, indent=2)
 
-        with open(os.path.join(self.output_dir, 'metric_data_list.json'), 'w') as f:
+        # Combine metrics and meta data
+        metrics_summary = metrics.serialize()
+        for (k, v) in self.meta.items():
+            assert k not in metrics_summary, 'Error: Dictionary key %s already exists!' % k
+            metrics_summary[k] = v
+
+        with open(os.path.join(self.output_dir, 'metrics_summary.json'), 'w') as f:
+            json.dump(metrics_summary, f, indent=2)
+
+        with open(os.path.join(self.output_dir, 'metrics_details.json'), 'w') as f:
             json.dump(metric_data_list.serialize(), f, indent=2)
 
         return metrics, metric_data_list
