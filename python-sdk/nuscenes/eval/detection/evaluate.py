@@ -153,10 +153,10 @@ class NuScenesEval:
         # -----------------------------------
         # Step 3: Print high-level metrics.
         # -----------------------------------
-        print('mean_ap: %.2f' % metrics_summary['mean_ap'] * 100)
+        print('mean_ap: %.2f' % (metrics_summary['mean_ap'] * 100))
         for tp_name, tp_val in metrics_summary['tp_errors'].items():
             print('%s: %.4f' % (tp_name, tp_val))
-        print('nd_score: %.2f' % metrics_summary['nd_score'] * 100)
+        print('nd_score: %.2f' % (metrics_summary['nd_score'] * 100))
         print('eval_time: %.1fs' % metrics_summary['eval_time'])
 
         return metrics, metric_data_list
