@@ -56,7 +56,7 @@ def visualize_sample(nusc: NuScenes,
 
     # Add scores to EST boxes.
     for box_est, box_est_global in zip(boxes_est, boxes_est_global):
-        box_est.score = box_est_global['detection_score']
+        box_est.score = box_est_global.detection_score
 
     # Get point cloud in lidar frame.
     pc, _ = LidarPointCloud.from_file_multisweep(nusc, sample_rec, 'LIDAR_TOP', 'LIDAR_TOP', nsweeps=nsweeps)
