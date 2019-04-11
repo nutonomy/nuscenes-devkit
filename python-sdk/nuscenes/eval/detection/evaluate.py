@@ -83,10 +83,10 @@ class NuScenesEval:
 
         # Filter boxes (distance, points per box, etc.).
         if verbose:
-            print('=> Filtering predictions')
+            print('Filtering predictions')
         self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range, verbose=verbose)
         if verbose:
-            print('=> Filtering ground truth annotations')
+            print('Filtering ground truth annotations')
         self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range, verbose=verbose)
 
         self.sample_tokens = self.gt_boxes.sample_tokens
@@ -102,6 +102,8 @@ class NuScenesEval:
         # -----------------------------------
         # Step 1: Accumulate metric data for all classes and distance thresholds.
         # -----------------------------------
+        if self.verbose:
+            print('Accumulating metric data')
         metric_data_list = MetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -111,6 +113,8 @@ class NuScenesEval:
         # -----------------------------------
         # Step 2: Calculate metrics from the data.
         # -----------------------------------
+        if self.verbose:
+            print('Calculating metrics')
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -133,7 +137,8 @@ class NuScenesEval:
         # -----------------------------------
         # Step 3: Dump the metric data and metrics to disk.
         # -----------------------------------
-        print(' => Saving metrics to: %s' % self.output_dir)
+        if self.verbose:
+            print('Saving metrics to: %s' % self.output_dir)
 
         # Combine metrics and meta data
         metrics_summary = metrics.serialize()

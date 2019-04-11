@@ -91,7 +91,7 @@ def visualize_sample(nusc: NuScenes,
 
     # Show / save plot.
     if verbose:
-        print('Rendered sample token %s' % sample_token)
+        print('Rendering sample token %s' % sample_token)
     plt.title(sample_token)
     if savepath is not None:
         plt.savefig(savepath)
