@@ -7,7 +7,7 @@ import json
 import os
 import random
 import time
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 import numpy as np
 
@@ -162,11 +162,12 @@ class NuScenesEval:
 
     def main(self,
              plot_examples: int = 0,
-             render_curves: bool = True) -> Tuple[DetectionMetrics, MetricDataList]:
+             render_curves: bool = True) -> Dict[str, Any]:
         """
         Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
         :param plot_examples: How many example visualizations to write to disk.
         :param render_curves: Whether to render PR and TP curves to disk.
+        :return: A dict that stores the high-level metrics and meta data.
         """
 
         if plot_examples > 0:
