@@ -403,7 +403,7 @@ class DetectionMetrics:
     @property
     def mean_ap(self) -> float:
         """ Calculates the mean AP by averaging over distance thresholds and classes. """
-        return float(np.mean([ap for classname, ap in self.mean_dist_aps]))
+        return float(np.mean(list(self.mean_dist_aps.values())))
 
     @property
     def tp_errors(self) -> Dict[str, float]:
