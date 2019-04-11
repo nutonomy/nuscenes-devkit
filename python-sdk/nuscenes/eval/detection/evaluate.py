@@ -200,7 +200,7 @@ def main(result_path: str,
          version: str,
          verbose: bool,
          config_name: str,
-         plot_examples: bool) -> None:
+         plot_examples: int) -> None:
     """
     Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
     :param result_path: The JSON submission file.
