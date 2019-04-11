@@ -23,11 +23,12 @@ from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_t
 class NuScenesEval:
     """
     This is the official nuScenes detection evaluation code.
+    Results are written to the provided output_dir.
 
     nuScenes uses the following metrics:
     - Mean Average Precision (mAP): Uses center-distance as matching criterion; averaged over distance thresholds.
     - True Positive (TP) metrics: Average of translation, velocity, scale, orientation and attribute errors.
-    - Weighted sum: The weighted sum of the above.
+    - nuScenes Detection Score (NDS): The weighted sum of the above.
 
     Here is an overview of the functions in this method:
     - init: Loads GT annotations an predictions stored in JSON format and filters the boxes.
@@ -161,14 +162,14 @@ class NuScenesEval:
 
         for detection_name in self.cfg.class_names:
             class_pr_curve(md_list, metrics, detection_name, self.cfg.min_precision, self.cfg.min_recall,
-                           savepath=savepath(detection_name+'_pr'))
+                           savepath=savepath(detection_name + '_pr'))
 
             class_tp_curve(md_list, metrics, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
-                           savepath=savepath(detection_name+'_tp'))
+                           savepath=savepath(detection_name + '_tp'))
 
         for dist_th in self.cfg.dist_ths:
             dist_pr_curve(md_list, metrics, dist_th, self.cfg.min_precision, self.cfg.min_recall,
-                          savepath=savepath('dist_pr_'+str(dist_th)))
+                          savepath=savepath('dist_pr_' + str(dist_th)))
 
 
 def main(result_path: str,
@@ -209,7 +210,10 @@ def main(result_path: str,
         if not os.path.isdir(example_dir):
             os.mkdir(example_dir)
         for sample_token in sample_tokens:
-            visualize_sample(nusc_, sample_token, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
+            visualize_sample(nusc_,
+                             sample_token,
+                             nusc_eval.gt_boxes if eval_set != 'test' else [],  # We are not rendering test GT.
+                             nusc_eval.pred_boxes,
                              eval_range=max(nusc_eval.cfg.class_range.values()),
                              savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
@@ -234,7 +238,7 @@ if __name__ == "__main__":
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
     parser.add_argument('--config_name', type=str, default='cvpr_2019',
                         help='Name of the configuration to use for evaluation, e.g. cvpr_2019.')
-    parser.add_argument('--plot_examples', type=int, default=0,
+    parser.add_argument('--plot_examples', type=int, default=10,
                         help='How many example visualizations to write to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
