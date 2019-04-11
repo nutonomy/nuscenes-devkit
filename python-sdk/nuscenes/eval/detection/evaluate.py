@@ -173,7 +173,7 @@ class NuScenesEval:
         if plot_examples > 0:
             # Select a random but fixed subset to plot.
             random.seed(43)
-            sample_tokens = list(nusc_eval.sample_tokens)
+            sample_tokens = list(self.sample_tokens)
             random.shuffle(sample_tokens)
             sample_tokens = sample_tokens[:plot_examples]
 
@@ -184,18 +184,18 @@ class NuScenesEval:
             for sample_token in sample_tokens:
                 visualize_sample(self.nusc,
                                  sample_token,
-                                 nusc_eval.gt_boxes if self.eval_set != 'test' else EvalBoxes(),
+                                 self.gt_boxes if self.eval_set != 'test' else EvalBoxes(),
                                  # Don't render test GT.
-                                 nusc_eval.pred_boxes,
-                                 eval_range=max(nusc_eval.cfg.class_range.values()),
+                                 self.pred_boxes,
+                                 eval_range=max(self.cfg.class_range.values()),
                                  savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
         # Run evaluation.
-        metrics, metric_data_list = nusc_eval.evaluate()
+        metrics, metric_data_list = self.evaluate()
 
         # Render PR and TP curves.
         if render_curves:
-            nusc_eval.render(metrics, metric_data_list)
+            self.render(metrics, metric_data_list)
 
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:
