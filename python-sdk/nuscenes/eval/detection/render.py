@@ -54,6 +54,10 @@ def visualize_sample(nusc: NuScenes,
     # Map EST boxes to lidar.
     boxes_est = boxes_to_sensor(boxes_est_global, pose_record, cs_record)
 
+    # Add scores to EST boxes.
+    for box_est, box_est_global in zip(boxes_est, boxes_est_global):
+        box_est.score = box_est_global['detection_score']
+
     # Get point cloud in lidar frame.
     pc, _ = LidarPointCloud.from_file_multisweep(nusc, sample_rec, 'LIDAR_TOP', 'LIDAR_TOP', nsweeps=nsweeps)
 
@@ -76,6 +80,7 @@ def visualize_sample(nusc: NuScenes,
     # Show EST boxes.
     for box in boxes_est:
         # Show only predictions with a high score.
+        assert not np.isnan(box.score), 'Error: Box score cannot be NaN!'
         if box.score >= conf_th:
             box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'), linewidth=1)
 
