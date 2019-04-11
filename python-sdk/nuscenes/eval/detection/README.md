@@ -27,7 +27,7 @@ Results and winners will be announced at the Workshop on Autonomous Driving ([WA
 * We release sensor data for train, val and test set.
 * Users make predictions on the test set and submit the results to our eval. server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
-* The maximum time window of past sensor data and ego poses that may be used at inference time is 0.5s (<= 10 lidar sweeps, <= 6 camera images). At training time there are no restrictions.
+* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
 * Users must to limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
