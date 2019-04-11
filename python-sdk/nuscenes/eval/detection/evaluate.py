@@ -15,7 +15,7 @@ from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics, EvalBoxes
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
 
@@ -226,7 +226,7 @@ def main(result_path: str,
         for sample_token in sample_tokens:
             visualize_sample(nusc_,
                              sample_token,
-                             nusc_eval.gt_boxes if eval_set != 'test' else [],  # We are not rendering test GT.
+                             nusc_eval.gt_boxes if eval_set != 'test' else EvalBoxes(),  # We are not rendering test GT.
                              nusc_eval.pred_boxes,
                              eval_range=max(nusc_eval.cfg.class_range.values()),
                              savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
