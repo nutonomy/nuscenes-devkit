@@ -153,11 +153,18 @@ class NuScenesEval:
         # -----------------------------------
         # Step 3: Print high-level metrics.
         # -----------------------------------
-        print('mean_ap: %.4f' % (metrics_summary['mean_ap']))
+        print('mAP: %.4f' % (metrics_summary['mean_ap']))
+        err_name_mapping = {
+            'trans_err': 'mATE',
+            'scale_err': 'mASE',
+            'orient_err': 'mAOE',
+            'vel_err': 'mAVE',
+            'attr_err': 'mAAE'
+        }
         for tp_name, tp_val in metrics_summary['tp_errors'].items():
-            print('%s: %.4f' % (tp_name, tp_val))
-        print('nd_score: %.4f' % (metrics_summary['nd_score']))
-        print('eval_time: %.1fs' % metrics_summary['eval_time'])
+            print('%s: %.4f' % (err_name_mapping[tp_name], tp_val))
+        print('NDS: %.4f' % (metrics_summary['nd_score']))
+        print('Eval time: %.1fs' % metrics_summary['eval_time'])
 
         return metrics, metric_data_list
 
