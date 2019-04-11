@@ -136,9 +136,7 @@ class NuScenesEval:
 
         # Combine metrics and meta data
         metrics_summary = metrics.serialize()
-        for (k, v) in self.meta.items():
-            assert k not in metrics_summary, 'Error: Dictionary key %s already exists!' % k
-            metrics_summary[k] = v
+        metrics_summary['meta'] = self.meta.copy()
 
         with open(os.path.join(self.output_dir, 'metrics_summary.json'), 'w') as f:
             json.dump(metrics_summary, f, indent=2)
@@ -190,7 +188,7 @@ def main(result_path: str,
     :param version: The NuScenes dataset version.
     :param verbose: The NuScenes verbose flag.
     :param config_name: Which configuration file to use, e.g. "cvpr_2019".
-    :param plot_examples: Whether to plot example images with annotations.
+    :param plot_examples: How many example visualizations to write to disk.
     """
 
     # Init.
@@ -199,15 +197,21 @@ def main(result_path: str,
     nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
                              verbose=verbose)
 
-    # Visualize samples.
-    random.seed(43)
-    if plot_examples:
-        sample_tokens_ = list(nusc_eval.sample_tokens)
-        random.shuffle(sample_tokens_)
-        for sample_token_ in sample_tokens_:
-            visualize_sample(nusc_, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
+    if plot_examples > 0:
+        # Select a random but fixed subset to plot.
+        random.seed(43)
+        sample_tokens = list(nusc_eval.sample_tokens)
+        random.shuffle(sample_tokens)
+        sample_tokens = sample_tokens[:plot_examples]
+
+        # Visualize samples.
+        example_dir = os.path.join(output_dir, 'examples')
+        if not os.path.isdir(example_dir):
+            os.mkdir(example_dir)
+        for sample_token in sample_tokens:
+            visualize_sample(nusc_, sample_token, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
                              eval_range=max(nusc_eval.cfg.class_range.values()),
-                             savepath=os.path.join(output_dir, '{}.png'.format(sample_token_)))
+                             savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
     # Run evaluation.
     metrics, md_list = nusc_eval.run()
@@ -231,7 +235,7 @@ if __name__ == "__main__":
     parser.add_argument('--config_name', type=str, default='cvpr_2019',
                         help='Name of the configuration to use for evaluation, e.g. cvpr_2019.')
     parser.add_argument('--plot_examples', type=int, default=0,
-                        help='Whether to plot example visualizations to disk.')
+                        help='How many example visualizations to write to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     args = parser.parse_args()
@@ -243,6 +247,6 @@ if __name__ == "__main__":
     version_ = args.version
     verbose_ = bool(args.verbose)
     config_name_ = args.config_name
-    plot_examples_ = bool(args.plot_examples)
+    plot_examples_ = args.plot_examples
 
     main(result_path_, output_dir_, eval_set_, dataroot_, version_, verbose_, config_name_, plot_examples_)
