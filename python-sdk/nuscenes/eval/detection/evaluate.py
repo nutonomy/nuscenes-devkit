@@ -160,10 +160,13 @@ class NuScenesEval:
             dist_pr_curve(md_list, metrics, dist_th, self.cfg.min_precision, self.cfg.min_recall,
                           savepath=savepath('dist_pr_' + str(dist_th)))
 
-    def main(self, plot_examples: int = 0) -> Tuple[DetectionMetrics, MetricDataList]:
+    def main(self,
+             plot_examples: int = 0,
+             render_curves: bool = True) -> Tuple[DetectionMetrics, MetricDataList]:
         """
         Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
         :param plot_examples: How many example visualizations to write to disk.
+        :param render_curves: Whether to render PR and TP curves to disk.
         """
 
         if plot_examples > 0:
@@ -190,7 +193,8 @@ class NuScenesEval:
         metrics, metric_data_list = nusc_eval.evaluate()
 
         # Render PR and TP curves.
-        nusc_eval.render(metrics, metric_data_list)
+        if render_curves:
+            nusc_eval.render(metrics, metric_data_list)
 
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:
@@ -237,6 +241,8 @@ if __name__ == "__main__":
                         help='Name of the configuration to use for evaluation, e.g. cvpr_2019.')
     parser.add_argument('--plot_examples', type=int, default=10,
                         help='How many example visualizations to write to disk.')
+    parser.add_argument('--render_curves', type=int, default=1,
+                        help='Whether to render PR and TP curves to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     args = parser.parse_args()
@@ -246,12 +252,13 @@ if __name__ == "__main__":
     eval_set_ = args.eval_set
     dataroot_ = args.dataroot
     version_ = args.version
-    verbose_ = bool(args.verbose)
     config_name_ = args.config_name
     plot_examples_ = args.plot_examples
+    render_curves_ = bool(args.render_curves)
+    verbose_ = bool(args.verbose)
 
     cfg_ = config_factory(config_name_)
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
     nusc_eval = NuScenesEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
                              output_dir=output_dir_, verbose=verbose_)
-    nusc_eval.main(plot_examples_)
+    nusc_eval.main(plot_examples=plot_examples_, render_curves=render_curves_)
