@@ -24,8 +24,8 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool =
     all_results = EvalBoxes.deserialize(data['results'])
     meta = data['meta']
     if verbose:
-        print("Loaded results from {}. Found detections for {} samples.".format(result_path,
-                                                                                   len(all_results.sample_tokens)))
+        print("Loaded results from {}. Found detections for {} samples."
+              .format(result_path, len(all_results.sample_tokens)))
     # Check that each sample has no more than x predicted boxes.
     for sample_token in all_results.sample_tokens:
         assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, \
