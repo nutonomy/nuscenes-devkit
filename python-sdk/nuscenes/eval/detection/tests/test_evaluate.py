@@ -105,7 +105,7 @@ class TestMain(unittest.TestCase):
 
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=False)
-        metrics, md_list = nusc_eval.run()
+        metrics, md_list = nusc_eval.evaluate()
 
         # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.
         # 2. Score = 0.2199307290627096. Changed to measure center distance from the ego-vehicle.
@@ -117,7 +117,7 @@ class TestMain(unittest.TestCase):
         # 8. Score = 0.24047129251302665. After bike racks bug.
         # 9. Score = 0.24104572227466886. After bug fix in calc_tp. Include the max recall and exclude the min recall.
         # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split.
-        self.assertAlmostEqual(metrics.weighted_sum, 0.19449091580477748)
+        self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 # nuScenes detection task
-In this document we present the rules, results format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
+In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
 ![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
 
 ## Overview
@@ -11,13 +11,10 @@ In this document we present the rules, results format, classes, evaluation metri
 - [Evaluation metrics](#evaluation-metrics)
 - [Leaderboard](#leaderboard)
 
-
 ## Introduction
 Here we define the 3D object detection task on nuScenes.
-The goal of this task is to place a 3D bounding box around 10 different categories of object,
+The goal of this task is to place a 3D bounding box around 10 different object categories,
 as well as estimating a set of attributes and the current velocity vector. 
-
-This document outlines rules, details, and metrics for the task.
 
 ## Challenges
 ### Workshop on Autonomous Driving, CVPR 2019
@@ -25,30 +22,42 @@ The first nuScenes detection challenge will be held at CVPR 2019.
 Submission window opens in April 2019 and closes June 15th.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 
-
-## General rules
+## Submission rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
-* The maximum time window of past sensor data that may be used is 0.5s.
 * Users make predictions on the test set and submit the results to our eval. server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
-* Every submission provides method information We encourage publishing code, but do not make it a requirement.
+* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
+* Users must to limit the number of submitted boxes per sample to 500.
+* Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
-* Users must to limit the number of submitted boxes per sample to 500. 
 
 ## Results format
-We define a standardized detection results format to allow users to submit results to our evaluation server.
-Users need to create single JSON file for the evaluation set, zip the file and upload it to our evaluation server.
-The submission JSON includes a dictionary that maps each sample_token to a list of `sample_result` entries.
+We define a standardized detection result format that serves as an input to the evaluation code.
+The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
+For the train and val sets the evaluation can be performed by the user on their local machine.
+For the test set the user needs to zip the JSON results file and submit it to the official evaluation server.
+The JSON file includes meta data `meta` on the type of inputs used for this method.
+Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
+Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is detected.
 ```
 submission {
-    sample_token <str>: [sample_result] -- Maps each sample_token to a list of sample_results.
+    "meta": {
+        "use_camera":   <bool>                  -- Whether this submission uses camera data as an input.
+        "use_lidar":    <bool>                  -- Whether this submission uses lidar data as an input.
+        "use_radar":    <bool>                  -- Whether this submission uses radar data as an input.
+        "use_map":      <bool>                  -- Whether this submission uses map data as an input.
+        "use_external": <bool>                  -- Whether this submission uses external data as an input.
+    },
+    "results": {
+        sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
+    }
 }
 ```
-For the result box we create a new database table called `sample_result`.
+For the predictions we create a new database table called `sample_result`.
 The `sample_result` table is designed to mirror the `sample_annotation` table.
 This allows for processing of results and annotations using the same tools.
-A `sample_result` is defined as follows:
+A `sample_result` is a dictionary defined as follows:
 ```
 sample_result {
     "sample_token":       <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
@@ -107,7 +116,6 @@ Note that some annotations are missing attributes (0.4% of all sample_annotation
 For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle, 
 but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
 detection radius.
-
 Below we list nuScene class specific rules for annotation and detection ranges. 
 
 |   nuScenes detection class    |   Attributes                                          | Detection Range (meters)  |
@@ -139,14 +147,15 @@ We use the well-known Average Precision metric,
 but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
 Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
 For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for recalls and precisions > 0.1.
-  We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
+We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
 
 ### True Positive metrics
 Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
-All TP metrics are calculated using d = 2m center distance during matching, and they are all designed to be positive scalars.
+All TP metrics are calculated using a threshold of 2m center distance during matching, and they are all designed to be positive scalars.
 
-Matching and scoring happen independently per class and each metric is the average of the cumulative mean at each achieved recall levels above 10%. If 10% recall is not achieved for a particular class, all TP errors for that class is set to 1. The following TP errors are defined
-
+Matching and scoring happen independently per class and each metric is the average of the cumulative mean at each achieved recall level above 10%.
+If 10% recall is not achieved for a particular class, all TP errors for that class are set to 1.
+We define the following TP errors:
 * **Average Translation Error (ATE)**: Euclidean center distance in 2D in meters.
 * **Average Scale Error (ASE)**: Calculated as *1 - IOU* after aligning centers and orientation.
 * **Average Orientation Error (AOE)**: Smallest yaw angle difference between prediction and ground-truth in radians. Orientation error is evaluated at 360 degree for all classes except barriers where it is only evaluated at 180 degrees. Orientation errors for cones are ignored.
@@ -156,7 +165,6 @@ Matching and scoring happen independently per class and each metric is the avera
 All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
 
 The TP metrics are defined per class, and we then take a mean over classes to calculate mATE, mASE, mAOE, mAVE and mAAE.
-
 
 ### nuScenes detection score
 * **nuScenes detection score (NDS)**:
@@ -173,12 +181,12 @@ To enable a fair comparison between methods, the user will be able to filter the
 We define three such filters here which correspond to the tracks in the nuScenes detection challenge.
 Methods will be compared within these tracks and the winners will be decided for each track separately.
 
-* **LIDAR detection track**: 
+* **Lidar detection track**: 
 This track allows only lidar sensor data as input.
 No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-* **VISION detection track**: 
+* **Vision detection track**: 
 This track allows only camera sensor data (images) as input.
 No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-* **OPEN detection track**: 
+* **Open detection track**: 
 This is where users can go wild.
 We allow any combination of sensors, map and external data as long as these are reported. 

@@ -54,6 +54,10 @@ def visualize_sample(nusc: NuScenes,
     # Map EST boxes to lidar.
     boxes_est = boxes_to_sensor(boxes_est_global, pose_record, cs_record)
 
+    # Add scores to EST boxes.
+    for box_est, box_est_global in zip(boxes_est, boxes_est_global):
+        box_est.score = box_est_global.detection_score
+
     # Get point cloud in lidar frame.
     pc, _ = LidarPointCloud.from_file_multisweep(nusc, sample_rec, 'LIDAR_TOP', 'LIDAR_TOP', nsweeps=nsweeps)
 
@@ -76,6 +80,7 @@ def visualize_sample(nusc: NuScenes,
     # Show EST boxes.
     for box in boxes_est:
         # Show only predictions with a high score.
+        assert not np.isnan(box.score), 'Error: Box score cannot be NaN!'
         if box.score >= conf_th:
             box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'), linewidth=1)
 
@@ -86,7 +91,7 @@ def visualize_sample(nusc: NuScenes,
 
     # Show / save plot.
     if verbose:
-        print('Rendered sample token %s' % sample_token)
+        print('Rendering sample token %s' % sample_token)
     plt.title(sample_token)
     if savepath is not None:
         plt.savefig(savepath)
@@ -318,7 +323,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     tex += 'AOE: average orientation error (${}$), '.format(TP_METRICS_UNITS['orient_err'])
     tex += 'AVE: average velocity error (${}$), '.format(TP_METRICS_UNITS['vel_err'])
     tex += 'AAE: average attribute error (${}$). '.format(TP_METRICS_UNITS['attr_err'])
-    tex += 'nuScenes Detection Score (NDS) = {:.1f} '.format(metrics['weighted_sum'] * 100)
+    tex += 'nuScenes Detection Score (NDS) = {:.1f} '.format(metrics['nd_score'] * 100)
     tex += '}\n'
 
     tex += '\\end{table}\n'

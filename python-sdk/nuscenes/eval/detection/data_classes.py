@@ -39,7 +39,7 @@ class DetectionConfig:
         self.class_names = self.class_range.keys()
 
     def serialize(self) -> dict:
-        """ Serialize instance into json-friendly format """
+        """ Serialize instance into json-friendly format. """
         return {
             'class_range': self.class_range,
             'dist_fcn': self.dist_fcn,
@@ -53,7 +53,7 @@ class DetectionConfig:
 
     @classmethod
     def deserialize(cls, content):
-        """ Initialize from serialized dictionary """
+        """ Initialize from serialized dictionary. """
         return cls(content['class_range'],
                    content['dist_fcn'],
                    content['dist_ths'],
@@ -107,7 +107,7 @@ class EvalBox:
 
         assert not np.any(np.isnan(num_pts))
 
-        # Assign
+        # Assign.
         self.sample_token = sample_token
         self.translation = translation
         self.size = size
@@ -135,7 +135,7 @@ class EvalBox:
                 self.num_pts == other.num_pts)
 
     def serialize(self) -> dict:
-        """ Serialize instance into json-friendly format """
+        """ Serialize instance into json-friendly format. """
         return {
             'sample_token': self.sample_token,
             'translation': self.translation,
@@ -151,7 +151,7 @@ class EvalBox:
 
     @classmethod
     def deserialize(cls, content):
-        """ Initialize from serialized content """
+        """ Initialize from serialized content. """
         return cls(sample_token=content['sample_token'],
                    translation=tuple(content['translation']),
                    size=tuple(content['size']),
@@ -165,7 +165,7 @@ class EvalBox:
 
 
 class EvalBoxes:
-    """ Data class that groups EvalBox instances by sample """
+    """ Data class that groups EvalBox instances by sample. """
 
     def __init__(self):
         self.boxes = defaultdict(list)
@@ -189,7 +189,7 @@ class EvalBoxes:
 
     @property
     def all(self) -> List[EvalBox]:
-        """ Returns all EvalBoxes in a list """
+        """ Returns all EvalBoxes in a list. """
         ab = []
         for sample_token in self.sample_tokens:
             ab.extend(self[sample_token])
@@ -197,20 +197,20 @@ class EvalBoxes:
 
     @property
     def sample_tokens(self) -> List[str]:
-        """ Returns a list of all keys """
+        """ Returns a list of all keys. """
         return list(self.boxes.keys())
 
     def add_boxes(self, sample_token: str, boxes: List[EvalBox]) -> None:
-        """ Adds a list of boxes """
+        """ Adds a list of boxes. """
         self.boxes[sample_token].extend(boxes)
 
     def serialize(self) -> dict:
-        """ Serialize instance into json-friendly format """
+        """ Serialize instance into json-friendly format. """
         return {key: [box.serialize() for box in boxes] for key, boxes in self.boxes.items()}
 
     @classmethod
     def deserialize(cls, content):
-        """ Initialize from serialized content """
+        """ Initialize from serialized content. """
         eb = cls()
         for sample_token, boxes in content.items():
             eb.add_boxes(sample_token, [EvalBox.deserialize(box) for box in boxes])
@@ -218,7 +218,7 @@ class EvalBoxes:
 
 
 class MetricData:
-    """ This class holds accumulated and interpolated data required to calculate the metrics """
+    """ This class holds accumulated and interpolated data required to calculate the metrics. """
 
     nelem = 101
 
@@ -244,8 +244,8 @@ class MetricData:
         assert len(attr_err) == self.nelem
 
         # Assert ordering
-        assert all(confidence == sorted(confidence, reverse=True))  # Confidences should be decending.
-        assert all(recall == sorted(recall))  # Recalls should be ascending
+        assert all(confidence == sorted(confidence, reverse=True))  # Confidences should be descending.
+        assert all(recall == sorted(recall))  # Recalls should be ascending.
 
         # Set attributes explicitly to help IDEs figure out what is going on.
         self.recall = recall
@@ -283,7 +283,7 @@ class MetricData:
         return self.recall[self.max_recall_ind]
 
     def serialize(self):
-        """ Serialize instance into json-friendly format """
+        """ Serialize instance into json-friendly format. """
         return {
             'recall': self.recall.tolist(),
             'precision': self.precision.tolist(),
@@ -297,7 +297,7 @@ class MetricData:
 
     @classmethod
     def deserialize(cls, content):
-        """ Initialize from serialized content """
+        """ Initialize from serialized content. """
         return cls(recall=np.array(content['recall']),
                    precision=np.array(content['precision']),
                    confidence=np.array(content['confidence']),
@@ -309,7 +309,7 @@ class MetricData:
 
     @classmethod
     def no_predictions(cls):
-        """ Returns a md instance corresponding to having no predictions """
+        """ Returns a md instance corresponding to having no predictions. """
         return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.zeros(cls.nelem),
                    confidence=np.zeros(cls.nelem),
@@ -355,11 +355,11 @@ class MetricDataList:
         return [(md, detection_name) for (detection_name, dist), md in self.md.items() if dist == dist_th]
 
     def set(self, detection_name: str, match_distance: float, data: MetricData):
-        """ Sets the MetricData entry for a certain detectdion_name and match_distance """
+        """ Sets the MetricData entry for a certain detectdion_name and match_distance. """
         self.md[(detection_name, match_distance)] = data
 
     def serialize(self) -> dict:
-        return {key[0]+':'+str(key[1]): value.serialize() for key, value in self.md.items()}
+        return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
 
     @classmethod
     def deserialize(cls, content):
@@ -396,8 +396,14 @@ class DetectionMetrics:
         self.eval_time = eval_time
 
     @property
+    def mean_dist_aps(self) -> Dict[str, float]:
+        """ Calculates the mean over distance thresholds for each label. """
+        return {class_name: np.mean(list(d.values())) for class_name, d in self._label_aps.items()}
+
+    @property
     def mean_ap(self) -> float:
-        return float(np.mean([np.mean([ap for dist_th, ap in d.items()]) for class_name, d in self._label_aps.items()]))
+        """ Calculates the mean AP by averaging over distance thresholds and classes. """
+        return float(np.mean(list(self.mean_dist_aps.values())))
 
     @property
     def tp_errors(self) -> Dict[str, float]:
@@ -419,7 +425,7 @@ class DetectionMetrics:
         tp_errors = self.tp_errors
         for metric_name in TP_METRICS:
 
-            # We convert the true positive errors to "scores" by 1-error
+            # We convert the true positive errors to "scores" by 1-error.
             score = 1.0 - tp_errors[metric_name]
 
             # Some of the true positive errors are unbounded, so we bound the scores to min 0.
@@ -430,21 +436,26 @@ class DetectionMetrics:
         return scores
 
     @property
-    def weighted_sum(self) -> float:
+    def nd_score(self) -> float:
+        """
+        Compute the nuTonomy detection score (NDS, weighted sum of the individual scores).
+        :return: The NDS.
+        """
 
-        # Summarize
+        # Summarize.
         total = float(self.cfg.mean_ap_weight * self.mean_ap + np.sum(list(self.tp_scores.values())))
 
-        # Normalize
+        # Normalize.
         total = total / float(self.cfg.mean_ap_weight + len(self.tp_scores.keys()))
 
         return total
 
     def serialize(self):
         return {'label_aps': self._label_aps,
-                'label_tp_errors': self._label_tp_errors,
+                'mean_dist_aps': self.mean_dist_aps,
                 'mean_ap': self.mean_ap,
+                'label_tp_errors': self._label_tp_errors,
                 'tp_errors': self.tp_errors,
                 'tp_scores': self.tp_scores,
-                'weighted_sum': self.weighted_sum,
+                'nd_score': self.nd_score,
                 'eval_time': self.eval_time}

@@ -7,7 +7,7 @@ import json
 import os
 import random
 import time
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 import numpy as np
 
@@ -15,7 +15,7 @@ from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics
+from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics, EvalBoxes
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
 
@@ -23,11 +23,12 @@ from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_t
 class NuScenesEval:
     """
     This is the official nuScenes detection evaluation code.
+    Results are written to the provided output_dir.
 
     nuScenes uses the following metrics:
     - Mean Average Precision (mAP): Uses center-distance as matching criterion; averaged over distance thresholds.
     - True Positive (TP) metrics: Average of translation, velocity, scale, orientation and attribute errors.
-    - Weighted sum: The weighted sum of the above.
+    - nuScenes Detection Score (NDS): The weighted sum of the above.
 
     Here is an overview of the functions in this method:
     - init: Loads GT annotations an predictions stored in JSON format and filters the boxes.
@@ -35,7 +36,7 @@ class NuScenesEval:
     - render: Renders various plots and dumps to disk.
 
     We assume that:
-    - Every sample_token is given in the results, although there may be no predictions for that sample.
+    - Every sample_token is given in the results, although there may be not predictions for that sample.
 
     Please see https://github.com/nutonomy/nuscenes-devkit for more details.
     """
@@ -62,42 +63,47 @@ class NuScenesEval:
         self.verbose = verbose
         self.cfg = config
 
-        # Make dirs
+        # Make dirs.
         self.plot_dir = os.path.join(self.output_dir, 'plots')
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         if not os.path.isdir(self.plot_dir):
             os.makedirs(self.plot_dir)
 
-        # Load data
-        self.pred_boxes = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
+        # Load data.
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
         self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."
 
-        # Add center distances
+        # Add center distances.
         self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
         self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
 
-        # Filter boxes (distance, points per box, etc.)
+        # Filter boxes (distance, points per box, etc.).
         if verbose:
-            print('=> Filtering predictions')
+            print('Filtering predictions')
         self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range, verbose=verbose)
         if verbose:
-            print('=> Filtering ground truth annotations')
+            print('Filtering ground truth annotations')
         self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range, verbose=verbose)
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
-    def run(self) -> Tuple[DetectionMetrics, MetricDataList]:
+    def evaluate(self) -> Tuple[DetectionMetrics, MetricDataList]:
+        """
+        Performs the actual evaluation.
+        :return: A tuple of high-level and the raw metric data.
+        """
 
         start_time = time.time()
 
         # -----------------------------------
-        # Step 1: Accumulate metric data for all classes and distance thresholds
+        # Step 1: Accumulate metric data for all classes and distance thresholds.
         # -----------------------------------
-
+        if self.verbose:
+            print('Accumulating metric data')
         metric_data_list = MetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -105,9 +111,10 @@ class NuScenesEval:
                 metric_data_list.set(class_name, dist_th, md)
 
         # -----------------------------------
-        # Step 2: Calculate metrics from the data
+        # Step 2: Calculate metrics from the data.
         # -----------------------------------
-
+        if self.verbose:
+            print('Calculating metrics')
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -127,59 +134,94 @@ class NuScenesEval:
 
         metrics.add_runtime(time.time() - start_time)
 
-        # -----------------------------------
-        # Step 3: Dump the metric data and metrics to disk
-        # -----------------------------------
-
-        with open(os.path.join(self.output_dir, 'metrics.json'), 'w') as f:
-            json.dump(metrics.serialize(), f, indent=2)
-
-        with open(os.path.join(self.output_dir, 'metric_data_list.json'), 'w') as f:
-            json.dump(metric_data_list.serialize(), f, indent=2)
-
         return metrics, metric_data_list
 
-    def render(self, md_list: MetricDataList, metrics: DetectionMetrics):
+    def render(self, metrics: DetectionMetrics, md_list: MetricDataList) -> None:
+        """
+        Renders various PR and TP curves.
+        :param metrics: DetectionMetrics instance.
+        :param md_list: MetricDataList instance.
+        """
 
         def savepath(name):
-            return os.path.join(self.plot_dir, name+'.pdf')
+            return os.path.join(self.plot_dir, name + '.pdf')
 
         summary_plot(md_list, metrics, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
                      dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
 
         for detection_name in self.cfg.class_names:
             class_pr_curve(md_list, metrics, detection_name, self.cfg.min_precision, self.cfg.min_recall,
-                           savepath=savepath(detection_name+'_pr'))
+                           savepath=savepath(detection_name + '_pr'))
 
             class_tp_curve(md_list, metrics, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
-                           savepath=savepath(detection_name+'_tp'))
+                           savepath=savepath(detection_name + '_tp'))
 
         for dist_th in self.cfg.dist_ths:
             dist_pr_curve(md_list, metrics, dist_th, self.cfg.min_precision, self.cfg.min_recall,
-                          savepath=savepath('dist_pr_'+str(dist_th)))
+                          savepath=savepath('dist_pr_' + str(dist_th)))
 
+    def main(self,
+             plot_examples: int = 0,
+             render_curves: bool = True) -> Dict[str, Any]:
+        """
+        Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
+        :param plot_examples: How many example visualizations to write to disk.
+        :param render_curves: Whether to render PR and TP curves to disk.
+        :return: A dict that stores the high-level metrics and meta data.
+        """
 
-def main(result_path, output_dir, eval_set, dataroot, version, verbose, config_name, plot_examples):
+        if plot_examples > 0:
+            # Select a random but fixed subset to plot.
+            random.seed(43)
+            sample_tokens = list(self.sample_tokens)
+            random.shuffle(sample_tokens)
+            sample_tokens = sample_tokens[:plot_examples]
 
-    # Init.
-    cfg = config_factory(config_name)
-    nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
-    nusc_eval = NuScenesEval(nusc_, config=cfg, result_path=result_path, eval_set=eval_set, output_dir=output_dir,
-                             verbose=verbose)
+            # Visualize samples.
+            example_dir = os.path.join(self.output_dir, 'examples')
+            if not os.path.isdir(example_dir):
+                os.mkdir(example_dir)
+            for sample_token in sample_tokens:
+                visualize_sample(self.nusc,
+                                 sample_token,
+                                 self.gt_boxes if self.eval_set != 'test' else EvalBoxes(),
+                                 # Don't render test GT.
+                                 self.pred_boxes,
+                                 eval_range=max(self.cfg.class_range.values()),
+                                 savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
-    # Visualize samples.
-    random.seed(43)
-    if plot_examples:
-        sample_tokens_ = list(nusc_eval.sample_tokens)
-        random.shuffle(sample_tokens_)
-        for sample_token_ in sample_tokens_:
-            visualize_sample(nusc_, sample_token_, nusc_eval.gt_boxes, nusc_eval.pred_boxes,
-                             eval_range=max(nusc_eval.cfg.class_range.values()),
-                             savepath=os.path.join(output_dir, '{}.png'.format(sample_token_)))
+        # Run evaluation.
+        metrics, metric_data_list = self.evaluate()
 
-    # Run evaluation.
-    metrics, md_list = nusc_eval.run()
-    nusc_eval.render(md_list, metrics)
+        # Render PR and TP curves.
+        if render_curves:
+            self.render(metrics, metric_data_list)
+
+        # Dump the metric data, meta and metrics to disk.
+        if self.verbose:
+            print('Saving metrics to: %s' % self.output_dir)
+        metrics_summary = metrics.serialize()
+        metrics_summary['meta'] = self.meta.copy()
+        with open(os.path.join(self.output_dir, 'metrics_summary.json'), 'w') as f:
+            json.dump(metrics_summary, f, indent=2)
+        with open(os.path.join(self.output_dir, 'metrics_details.json'), 'w') as f:
+            json.dump(metric_data_list.serialize(), f, indent=2)
+
+        # Print high-level metrics.
+        print('mAP: %.4f' % (metrics_summary['mean_ap']))
+        err_name_mapping = {
+            'trans_err': 'mATE',
+            'scale_err': 'mASE',
+            'orient_err': 'mAOE',
+            'vel_err': 'mAVE',
+            'attr_err': 'mAAE'
+        }
+        for tp_name, tp_val in metrics_summary['tp_errors'].items():
+            print('%s: %.4f' % (err_name_mapping[tp_name], tp_val))
+        print('NDS: %.4f' % (metrics_summary['nd_score']))
+        print('Eval time: %.1fs' % metrics_summary['eval_time'])
+
+        return metrics_summary
 
 
 if __name__ == "__main__":
@@ -191,15 +233,17 @@ if __name__ == "__main__":
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='val',
-                        help='Which dataset split to evaluate on, e.g. train or val.')
+                        help='Which dataset split to evaluate on, train, val or test.')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
     parser.add_argument('--config_name', type=str, default='cvpr_2019',
                         help='Name of the configuration to use for evaluation, e.g. cvpr_2019.')
-    parser.add_argument('--plot_examples', type=int, default=0,
-                        help='Whether to plot example visualizations to disk.')
+    parser.add_argument('--plot_examples', type=int, default=10,
+                        help='How many example visualizations to write to disk.')
+    parser.add_argument('--render_curves', type=int, default=1,
+                        help='Whether to render PR and TP curves to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     args = parser.parse_args()
@@ -209,8 +253,13 @@ if __name__ == "__main__":
     eval_set_ = args.eval_set
     dataroot_ = args.dataroot
     version_ = args.version
-    verbose_ = bool(args.verbose)
     config_name_ = args.config_name
-    plot_examples_ = bool(args.plot_examples)
+    plot_examples_ = args.plot_examples
+    render_curves_ = bool(args.render_curves)
+    verbose_ = bool(args.verbose)
 
-    main(result_path_, output_dir_, eval_set_, dataroot_, version_, verbose_, config_name_, plot_examples_)
+    cfg_ = config_factory(config_name_)
+    nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
+    nusc_eval = NuScenesEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
+                             output_dir=output_dir_, verbose=verbose_)
+    nusc_eval.main(plot_examples=plot_examples_, render_curves=render_curves_)

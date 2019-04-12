@@ -83,7 +83,7 @@ class TestAlgo(unittest.TestCase):
 
         return gt, pred
 
-    def test_weighted_sum(self):
+    def test_nd_score(self):
         """
         This tests runs the full evaluation for an arbitrary random set of predictions.
         """
@@ -113,7 +113,7 @@ class TestAlgo(unittest.TestCase):
                     tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
-        self.assertEqual(0.08606662159639042, metrics.weighted_sum)
+        self.assertEqual(0.08606662159639042, metrics.nd_score)
 
     def test_calc_tp(self):
         """Test for calc_tp()."""

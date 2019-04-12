@@ -3,7 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
-from typing import Dict
+from typing import Tuple, Dict
 
 import numpy as np
 import tqdm
@@ -17,19 +17,21 @@ from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.splits import create_splits_scenes
 
 
-def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> EvalBoxes:
+def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> Tuple[EvalBoxes, Dict]:
     """ Loads object predictions from file. """
     with open(result_path) as f:
-        all_results = EvalBoxes.deserialize(json.load(f))
+        data = json.load(f)
+    all_results = EvalBoxes.deserialize(data['results'])
+    meta = data['meta']
     if verbose:
-        print("=> Loaded results from {}. Found detections for {} samples.".format(result_path,
-                                                                                   len(all_results.sample_tokens)))
+        print("Loaded results from {}. Found detections for {} samples."
+              .format(result_path, len(all_results.sample_tokens)))
     # Check that each sample has no more than x predicted boxes.
     for sample_token in all_results.sample_tokens:
         assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, \
             "Error: Only <= %d boxes per sample allowed!" % max_boxes_per_sample
 
-    return all_results
+    return all_results, meta
 
 
 def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
@@ -39,7 +41,7 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
     attribute_map = {a['token']: a['name'] for a in nusc.attribute}
 
     if verbose:
-        print('=> Loading annotations for {} split from nuScenes version: {}'.format(eval_split, nusc.version))
+        print('Loading annotations for {} split from nuScenes version: {}'.format(eval_split, nusc.version))
     # Read out all sample_tokens in DB.
     sample_tokens_all = [s['token'] for s in nusc.sample]
     assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
@@ -50,18 +52,22 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
     # Check compatibility of split with nusc versions
     version = nusc.version
     if eval_split in {'train', 'val'}:
-        assert version.endswith('trainval'), 'Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
+        assert version.endswith('trainval'), \
+            'Error: Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
     elif eval_split in {'mini_train', 'mini_val'}:
-        assert version.endswith('mini'), 'Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
+        assert version.endswith('mini'), \
+            'Error: Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
     elif eval_split == 'test':
-        assert version.endswith('test'), 'Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
+        assert version.endswith('test'), \
+            'Error: Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
     else:
-        raise ValueError('Requested split {} which this function cannot map to the correct NuScenes version.'.format(eval_split))
+        raise ValueError('Error: Requested split {} which this function cannot map to the correct NuScenes version.'
+                         .format(eval_split))
 
     if eval_split == 'test':
         # Check that you aren't trying to cheat :)
         assert len(nusc.sample_annotation) > 0, \
-            'You are trying to evaluate on the test set but you do not have the annotations'
+            'Error: You are trying to evaluate on the test set but you do not have the annotations!'
 
     sample_tokens = []
     for sample_token in sample_tokens_all:
@@ -113,7 +119,7 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
         all_annotations.add_boxes(sample_token, sample_boxes)
 
     if verbose:
-        print("=> Loaded ground truth annotations for {} samples.".format(len(all_annotations.sample_tokens)))
+        print("Loaded ground truth annotations for {} samples.".format(len(all_annotations.sample_tokens)))
 
     return all_annotations
 
@@ -180,8 +186,9 @@ def filter_eval_boxes(nusc: NuScenes,
         eval_boxes.boxes[sample_token] = filtered_boxes
         bike_rack_filter += len(eval_boxes.boxes[sample_token])
     if verbose:
-        print("=> Original number of boxes: {}\n=> After distance based filtering: {}\n"
-              "=> After LIDAR points based filtering: {}\n=>After bike racks filtering: {}".
-              format(total, dist_filter, point_filter, bike_rack_filter))
+        print("=> Original number of boxes: %d" % total)
+        print("=> After distance based filtering: %d" % dist_filter)
+        print("=> After LIDAR points based filtering: %d" % point_filter)
+        print("=> After bike rack filtering: %d" % bike_rack_filter)
 
     return eval_boxes
