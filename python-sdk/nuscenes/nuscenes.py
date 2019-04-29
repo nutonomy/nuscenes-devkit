@@ -57,7 +57,7 @@ class NuScenes:
 
         start_time = time.time()
         if verbose:
-            print("======\nLoading NuScenes tables for version {} ...".format(self.version))
+            print("======\nLoading NuScenes tables for version {}...".format(self.version))
 
         # Explicitly assign tables to help the IDE determine valid class members.
         self.category = self.__load_table__('category')
