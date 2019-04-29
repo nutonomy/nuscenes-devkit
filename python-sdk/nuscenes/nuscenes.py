@@ -488,6 +488,8 @@ class NuScenesExplorer:
             desc = record['name'] + ', ' + record['description']
             if len(desc) > 55:
                 desc = desc[:51] + "..."
+            if len(location) > 18:
+                location = location[:18]
 
             print('{:16} [{}] {:4.0f}s, {}, #anns:{}'.format(
                 desc, datetime.utcfromtimestamp(start_time).strftime('%y-%m-%d %H:%M:%S'),
