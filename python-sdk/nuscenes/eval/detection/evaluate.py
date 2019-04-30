@@ -71,6 +71,8 @@ class NuScenesEval:
             os.makedirs(self.plot_dir)
 
         # Load data.
+        if verbose:
+            print('Initializing nuScenes evaluation')
         self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
         self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
 

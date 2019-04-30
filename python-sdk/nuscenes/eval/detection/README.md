@@ -5,7 +5,7 @@ In this document we present the rules, result format, classes, evaluation metric
 ## Overview
 - [Introduction](#introduction)
 - [Challenges](#challenges)
-- [General rules](#general-rules)
+- [Submission rules](#submission-rules)
 - [Results format](#results-format)
 - [Classes and attributes](#classes-attributes-and-detection-ranges)
 - [Evaluation metrics](#evaluation-metrics)
@@ -37,6 +37,7 @@ We define a standardized detection result format that serves as an input to the 
 The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
 For the train and val sets the evaluation can be performed by the user on their local machine.
 For the test set the user needs to zip the JSON results file and submit it to the official evaluation server.
+The ZIP file and the JSON file must have the exact same name, except for the file extension.
 The JSON file includes meta data `meta` on the type of inputs used for this method.
 Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
 Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is detected.
