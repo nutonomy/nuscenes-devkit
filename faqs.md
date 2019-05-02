@@ -24,6 +24,11 @@ On this page we try to answer questions frequently asked by our users.
     - See the overview site for the [object detection challenge](https://www.nuscenes.org/object-detection).
     - See the overview site for the [tracking challenge](https://www.nuscenes.org/tracking).
     
+- What's next for nuScenes?
+    - A map expansion kit with 20+ different semantic layers (e.g. lanes, stop lines, traffic lights).
+    - Raw IMU & GPS data.
+    - Object detection, tracking and other challenges (see above).
+    
 - How can I get more information on the sensors used?
     - Read the [Data collection](https://www.nuscenes.org/data-collection) page.
     - Note that we do not give away the vendor name and model to avoid endorsing a particular vendor. All sensors are publicly available from third-party vendors.
@@ -35,7 +40,4 @@ On this page we try to answer questions frequently asked by our users.
 
 - How can I share my new dataset / paper for Autonomous Driving?
     - Please contact [nuScenes@nuTonomy.com](mailto:nuScenes@nuTonomy.com) to discuss possible collaborations and listing your work on the [Publications](https://www.nuscenes.org/publications) page.
-    - To discuss it with the community, please post in the [nuScenes user forum](https://forum.nuscenes.org/). 
-
-
-    
+    - To discuss it with the community, please post in the [nuScenes user forum](https://forum.nuscenes.org/).
