@@ -552,8 +552,8 @@ class NuScenesExplorer:
         # Grab the depths (camera frame z axis points away from the camera).
         depths = pc.points[2, :]
 
-        # Set the height to be the coloring.
-        coloring = pc.points[2, :]
+        # Retrieve the color from the depth.
+        coloring = depths
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
         points = view_points(pc.points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
