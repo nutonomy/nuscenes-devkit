@@ -63,6 +63,9 @@ class NuScenesEval:
         self.verbose = verbose
         self.cfg = config
 
+        # Check result file exists.
+        assert os.path.exists(result_path), 'Error: The result file does not exist!'
+
         # Make dirs.
         self.plot_dir = os.path.join(self.output_dir, 'plots')
         if not os.path.isdir(self.output_dir):
