@@ -5,7 +5,7 @@ In this document we present the rules, result format, classes, evaluation metric
 ## Overview
 - [Introduction](#introduction)
 - [Challenges](#challenges)
-- [General rules](#general-rules)
+- [Submission rules](#submission-rules)
 - [Results format](#results-format)
 - [Classes and attributes](#classes-attributes-and-detection-ranges)
 - [Evaluation metrics](#evaluation-metrics)
@@ -19,7 +19,7 @@ as well as estimating a set of attributes and the current velocity vector.
 ## Challenges
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge will be held at CVPR 2019.
-Submission window opens in April 2019 and closes June 15th.
+Submission window opens in May 2019 and closes June 15th.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 
 ## Submission rules
