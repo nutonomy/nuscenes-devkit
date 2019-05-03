@@ -1,5 +1,13 @@
 Database schema
 ==========
+This document describes the database schema used in nuScenes.
+All annotations and meta data (including calibration, maps, vehicle coordinates etc.) are covered in a relational database.
+The database tables are listed below.
+Every row can be identified by its unique primary key `token`.
+Foreign keys such as `sample_token` may be used to link to the `token` of the table `sample`.
+Please refer to the [tutorial](https://www.nuscenes.org/tutorial) for an introduction to the most important database tables.
+
+
 category
 ---------
 
@@ -15,7 +23,7 @@ category {
 attribute
 ---------
 
-An attribute is a property of an instance that can change while the category remains the same. 
+An attribute is a property of an instance that can change while the category remains the same.
  Example: a vehicle being parked/stopped/moving, and whether or not a bicycle has a rider.
 ```
 attribute {
@@ -38,8 +46,9 @@ visibility {
 instance
 ---------
 
-An object instance, e.g. particular vehicle. This table is an enumeration of all object 
-instances we observed. Note that instances are not tracked across scenes.
+An object instance, e.g. particular vehicle.
+This table is an enumeration of all object instances we observed.
+Note that instances are not tracked across scenes.
 ```
 instance {
    "token":                   <str> -- Unique record identifier.
@@ -63,15 +72,16 @@ sensor {
 calibrated_sensor
 ---------
 
-Definition of a particular sensor (lidar/radar/camera) as calibrated on a particular vehicle. All extrinsic parameters are 
-given with respect to the ego vehicle body frame.
+Definition of a particular sensor (lidar/radar/camera) as calibrated on a particular vehicle.
+All extrinsic parameters are given with respect to the ego vehicle body frame.
+All camera images come undistorted and rectified.
 ```
 calibrated_sensor {
    "token":                   <str> -- Unique record identifier.
    "sensor_token":            <str> -- Foreign key pointing to the sensor type.
-   "translation":             <float> [3] -- Coordinate system origin: x, y, z.
+   "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z.
    "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
-   "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration + rectification matrix. Empty for sensors that are not cameras.
+   "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration. Empty for sensors that are not cameras.
 }
 ```
 ego_pose
@@ -81,7 +91,7 @@ Ego vehicle pose at a particular timestamp. Given with respect to global coordin
 ```
 ego_pose {
    "token":                   <str> -- Unique record identifier.
-   "translation":             <float> [3] -- Coordinate system origin: x, y, z.
+   "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z.
    "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
    "timestamp":               <int> -- Unix time stamp.
 }
@@ -132,9 +142,9 @@ sample {
 sample_data
 ---------
 
-A sensor data e.g. image, point cloud or radar return. For sample_data with is_key_frame=True, the time-stamps 
-should be very close to the sample it points to. For non key-frames the sample_data points to the 
-sample that follows closest in time.
+A sensor data e.g. image, point cloud or radar return. 
+For sample_data with is_key_frame=True, the time-stamps should be very close to the sample it points to.
+For non key-frames the sample_data points to the sample that follows closest in time.
 ```
 sample_data {
    "token":                   <str> -- Unique record identifier.
@@ -154,8 +164,8 @@ sample_data {
 sample_annotation
 ---------
 
-A bounding box defining the position of an object seen in a sample. All location data is given with respect 
-to the global coordinate system.
+A bounding box defining the position of an object seen in a sample.
+All location data is given with respect to the global coordinate system.
 ```
 sample_annotation {
    "token":                   <str> -- Unique record identifier.
@@ -163,8 +173,8 @@ sample_annotation {
    "instance_token":          <str> -- Foreign key. Which object instance is this annotating. An instance can have multiple annotations over time.
    "attribute_tokens":        <str> [n] -- Foreign keys. List of attributes for this annotation. Attributes can change over time, so they belong here, not in the object table.
    "visibility_token":        <str> -- Foreign key. Visibility may also change over time. If no visibility is annotated, the token is an empty string.
-   "translation":             <float> [3] -- Bounding box location as center_x, center_y, center_z.
-   "size":                    <float> [3] -- Bounding box size as width, length, height.
+   "translation":             <float> [3] -- Bounding box location in meters as center_x, center_y, center_z.
+   "size":                    <float> [3] -- Bounding box size in meters as width, length, height.
    "rotation":                <float> [4] -- Bounding box orientation as quaternion: w, x, y, z.
    "num_lidar_pts":           <int> -- Number of lidar points in this box. Points are counted during the lidar sweep identified with this sample.
    "num_radar_pts":           <int> -- Number of radar points in this box. Points are counted during the radar sweep identified with this sample. This number is summed across all radar sensors without any invalid point filtering.
@@ -180,7 +190,7 @@ Map data that is stored as binary semantic masks from a top-down view.
 map {
    "token":                   <str> -- Unique record identifier.
    "log_tokens":              <str> [n] -- Foreign keys.
-   "category":                <str> -- Map category, currently only semantic_prior for drivable surface and sidewalk
+   "category":                <str> -- Map category, currently only semantic_prior for drivable surface and sidewalk.
    "filename":                <str> -- Relative path to the file with the map mask.
 }
 ```

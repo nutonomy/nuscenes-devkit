@@ -19,13 +19,13 @@ as well as estimating a set of attributes and the current velocity vector.
 ## Challenges
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge will be held at CVPR 2019.
-Submission window opens in April 2019 and closes June 15th.
+Submission window opens in May 2019 and closes June 15th.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 
 ## Submission rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
-* Users make predictions on the test set and submit the results to our eval. server, which returns the metrics listed below.
+* Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
 * The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
 * Users must to limit the number of submitted boxes per sample to 500.
@@ -36,8 +36,7 @@ Results and winners will be announced at the Workshop on Autonomous Driving ([WA
 We define a standardized detection result format that serves as an input to the evaluation code.
 The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
 For the train and val sets the evaluation can be performed by the user on their local machine.
-For the test set the user needs to zip the JSON results file and submit it to the official evaluation server.
-The ZIP file and the JSON file must have the exact same name, except for the file extension.
+For the test set the user needs to zip the single JSON result file and submit it to the official evaluation server.
 The JSON file includes meta data `meta` on the type of inputs used for this method.
 Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
 Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is detected.
