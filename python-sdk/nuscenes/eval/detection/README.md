@@ -17,10 +17,16 @@ The goal of this task is to place a 3D bounding box around 10 different object c
 as well as estimating a set of attributes and the current velocity vector. 
 
 ## Challenges
+To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](#leaderboard) all-year round.
+Additionally we organize a number of challenges at leading Computer Vision conference workshops.
+Users that submit their results during the challenge period are eligible for awards.
+Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
+
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge will be held at CVPR 2019.
-Submission window opens in May 2019 and closes June 15th.
+**Submission opens May 6** and closes June 12.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
+Please note that this workshop is not related to the similarly named [Workshop on Autonomous Driving Beyond Single-Frame Perception](wad.ai).
 
 ## Submission rules
 * We release annotations for the train and val set, but not for the test set.
@@ -31,9 +37,13 @@ Results and winners will be announced at the Workshop on Autonomous Driving ([WA
 * Users must to limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
+* Each user or team can have at most one one account on the evaluation server.
+* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges. 
 
 ## Results format
 We define a standardized detection result format that serves as an input to the evaluation code.
+Results are evaluated for each 2Hz keyframe, also known as `sample`.
 The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
 For the train and val sets the evaluation can be performed by the user on their local machine.
 For the test set the user needs to zip the single JSON result file and submit it to the official evaluation server.
