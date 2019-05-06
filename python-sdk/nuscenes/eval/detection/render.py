@@ -107,7 +107,19 @@ def setup_axis(xlabel: str = None,
                title: str = None,
                min_precision: float = None,
                min_recall: float = None,
-               ax=None):
+               ax = None):
+    """
+    Helper method that sets up the axis for a plot.
+    :param xlabel: x label text.
+    :param ylabel: y label text.
+    :param xlim: Upper limit for x axis.
+    :param ylim: Upper limit for y axis.
+    :param title: Axis title.
+    :param min_precision: Visualize minimum precision as horizontal line.
+    :param min_recall: Visualize minimum recall as vertical line.
+    :param ax: (optional) an existing axis to be modified.
+    :return: The axes object.
+    """
 
     if ax is None:
         ax = plt.subplot()
@@ -272,7 +284,6 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     Renders a detailed results table in tex.
     :param metrics_path: path to a serialized DetectionMetrics file.
     :param output_path: path to the output file.
-    :return:
     """
 
     with open(metrics_path, 'r') as f:
@@ -287,7 +298,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
            '\\textbf{AAE}   \\\\ \\hline ' \
            '\\hline\n'
     for name in DETECTION_NAMES:
-        ap = metrics['label_aps'][name]['2.0'] * 100
+        ap = np.mean(metrics['label_aps'][name].values())
         ate = metrics['label_tp_errors'][name]['trans_err']
         ase = metrics['label_tp_errors'][name]['scale_err']
         aoe = metrics['label_tp_errors'][name]['orient_err']
@@ -304,7 +315,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
             tex += '{}  &   {:.1f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  &   {:.2f}  \\\\ ' \
                    '\\hline\n'.format(tex_name, ap, ate, ase, aoe, ave, aae)
 
-    map_ = metrics['mean_ap'] * 100
+    map_ = metrics['mean_ap']
     mate = metrics['tp_errors']['trans_err']
     mase = metrics['tp_errors']['scale_err']
     maoe = metrics['tp_errors']['orient_err']
@@ -317,7 +328,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
 
     # All one line
     tex += '\\caption{Detailed detection performance. '
-    tex += 'AP: average precision (\%), '
+    tex += 'AP: average precision, '
     tex += 'ATE: average translation error (${}$), '.format(TP_METRICS_UNITS['trans_err'])
     tex += 'ASE: average scale error (${}$), '.format(TP_METRICS_UNITS['scale_err'])
     tex += 'AOE: average orientation error (${}$), '.format(TP_METRICS_UNITS['orient_err'])
