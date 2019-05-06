@@ -1,5 +1,4 @@
 # Frequently asked questions
-
 On this page we try to answer questions frequently asked by our users.
 
 - How can I get in contact?
