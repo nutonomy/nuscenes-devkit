@@ -19,13 +19,20 @@ from nuscenes.utils.splits import create_splits_scenes
 
 def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> Tuple[EvalBoxes, Dict]:
     """ Loads object predictions from file. """
+
+    # Load from file and check that the format is correct.
     with open(result_path) as f:
         data = json.load(f)
+    assert 'results' in data, 'Error: No field `results` in result file. Please note that the result format changed.' \
+                              'See https://www.nuscenes.org/object-detection for more information.'
+
+    # Deserialize results and get meta data.
     all_results = EvalBoxes.deserialize(data['results'])
     meta = data['meta']
     if verbose:
         print("Loaded results from {}. Found detections for {} samples."
               .format(result_path, len(all_results.sample_tokens)))
+
     # Check that each sample has no more than x predicted boxes.
     for sample_token in all_results.sample_tokens:
         assert len(all_results.boxes[sample_token]) <= max_boxes_per_sample, \

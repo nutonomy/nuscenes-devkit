@@ -148,6 +148,9 @@ class NuScenesEval:
         :param md_list: MetricDataList instance.
         """
 
+        if self.verbose:
+            print('Rendering PR and TP curves')
+
         def savepath(name):
             return os.path.join(self.plot_dir, name + '.pdf')
 

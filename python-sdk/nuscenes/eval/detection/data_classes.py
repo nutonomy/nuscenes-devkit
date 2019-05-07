@@ -80,32 +80,34 @@ class EvalBox:
                  num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
 
         # Assert data for shape and NaNs.
-        assert type(sample_token) == str
+        assert type(sample_token) == str, 'Error: sample_token must be a string!'
 
-        assert len(translation) == 3
-        assert not np.any(np.isnan(translation))
+        assert len(translation) == 3, 'Error: Translation must have 3 elements!'
+        assert not np.any(np.isnan(translation)), 'Error: Translation may not be NaN!'
 
-        assert len(size) == 3
-        assert not np.any(np.isnan(size))
+        assert len(size) == 3, 'Error: Size must have 3 elements!'
+        assert not np.any(np.isnan(size)), 'Error: Size may not be NaN!'
 
-        assert len(rotation) == 4
-        assert not np.any(np.isnan(rotation))
+        assert len(rotation) == 4, 'Error: Rotation must have 4 elements!'
+        assert not np.any(np.isnan(rotation)), 'Error: Rotation may not be NaN!'
 
-        assert len(velocity) == 2  # Velocity can be NaN from our database for certain annotations.
+        # Velocity can be NaN from our database for certain annotations.
+        assert len(velocity) == 2, 'Error: Rotation must have 2 elements!'
 
-        assert detection_name in DETECTION_NAMES
+        assert detection_name is not None, 'Error: detection_name cannot be empty!'
+        assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
 
-        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == ''
+        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == '', \
+            'Error: Unknown attribute_name %s' % attribute_name
 
-        assert type(ego_dist) == float
-        assert not np.any(np.isnan(ego_dist))
+        assert type(ego_dist) == float, 'Error: ego_dist must be a float!'
+        assert not np.any(np.isnan(ego_dist)), 'Error: ego_dist may not be NaN!'
 
-        assert type(detection_score) == float
-        assert not np.any(np.isnan(detection_score))
+        assert type(detection_score) == float, 'Error: detection_score must be a float!'
+        assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
 
-        assert type(num_pts) == int
-
-        assert not np.any(np.isnan(num_pts))
+        assert type(num_pts) == int, 'Error: num_pts must be int!'
+        assert not np.any(np.isnan(num_pts)), 'Error: num_pts may not be NaN!'
 
         # Assign.
         self.sample_token = sample_token
