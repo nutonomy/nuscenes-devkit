@@ -1,9 +1,23 @@
 """
 This script converts nuScenes data to KITTI format and vice versa.
+It is used for compatibility with software that uses KITTI-style annotations.
+
+We do not encourage this, as:
+- KITTI has only front-facing cameras, whereas nuTonomy has a 360 degree horizontal fov.
+- KITTI has no radar data.
+- The nuScenes database format is more modular.
+- KITTI fields like occluded and truncated cannot be exactly reproduced from nuScenes data.
+- We don't specify the KITTI imu_to_velo_kitti projection in this code base.
+- KITTI has different categories.
+
+To validate the outcome we do the following:
+- Test that the roundtrip conversion (nuScenes -> KITTI -> nuScenes and vice versa) leads to the original outcome.
+- Visualize KITTI examples.
 """
 import os
 import json
 from typing import List, Tuple
+import argparse
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -17,7 +31,9 @@ from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.splits import create_splits_logs
 
 
-def nuscenes_roundtrip(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: str) -> None:
+def nuscenes_roundtrip(nusc: NuScenes,
+                       splits: Tuple[str, ...],
+                       kitti_fake_dir: str) -> None:
     """
     Check that boxes can be converted from nuScenes to KITTI and back.
     :param nusc: NuScenes instance.
@@ -33,13 +49,14 @@ def nuscenes_roundtrip(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: 
     print('Passed nuScenes roundtrip check!')
 
 
-def kitti_roundtrip(kitti_dir: str) -> None:
+def kitti_roundtrip(kitti_dir: str, image_count: int = 10) -> None:
     """
-    Check that boxes can be converted from KITTI to nuscenes and back.
+    Check that boxes can be converted from KITTI to nuScenes and back.
     :param kitti_dir: Original KITTI folder.
+    :param image_count: Number of images to convert.
     """
     kitti = KittiDB(root=kitti_dir)
-    tokens = kitti.tokens[:IMAGE_COUNT]
+    tokens = kitti.tokens[:image_count]
     for forward_itt, token in enumerate(tokens):
         print('Processing token %d of %d: %s' % (forward_itt, len(tokens), token))
 
@@ -72,12 +89,16 @@ def kitti_roundtrip(kitti_dir: str) -> None:
     print('Passed KITTI roundtrip check!')
 
 
-def kitti_file_to_nuscenes_check(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: str) -> None:
+def kitti_file_to_nuscenes_check(nusc: NuScenes,
+                                 splits: Tuple[str, ...],
+                                 kitti_fake_dir: str,
+                                 image_count: int = 10) -> None:
     """
     Check whether a generated KITTI file has the same content as the original annotations.
     :param nusc: A NuScenes object.
     :param splits: The list of relevant splits (e.g. train, val).
     :param kitti_fake_dir: Where to write the KITTI-style annotations.
+    :param image_count: Number of images to convert.
     """
     kitti = KittiDB(root=kitti_fake_dir)
 
@@ -87,19 +108,21 @@ def kitti_file_to_nuscenes_check(nusc: NuScenes, splits: Tuple[str, ...], kitti_
 
         # Use only the samples from the current split.
         sample_tokens = split_to_samples(nusc, split_logs)
-        sample_tokens = sample_tokens[:IMAGE_COUNT]
+        sample_tokens = sample_tokens[:image_count]
 
         for sample_token in sample_tokens:
 
             # Get sample data.
             sample = nusc.get('sample', sample_token)
-            lidar_token = sample['data'][LIDAR_TOP_NAME]
+            lidar_token = sample['data'][LIDAR_NAME]
             sample_annotation_tokens = sample['anns']
 
             # Retrieve the token from the lidar.
             sd_record_lid = nusc.get('sample_data', lidar_token)
             filename_lid_full = sd_record_lid['filename']
-            token = os.path.basename(filename_lid_full).replace('.pcd.bin', '').replace('__%s__' % LIDAR_TOP_NAME, '-')
+            token = os.path.basename(filename_lid_full) \
+                .replace('.pcd.bin', '') \
+                .replace('__%s__' % LIDAR_NAME, '-')
 
             boxes_gt = []
             for sample_annotation_token in sample_annotation_tokens:
@@ -135,34 +158,26 @@ def kitti_file_to_nuscenes_check(nusc: NuScenes, splits: Tuple[str, ...], kitti_
                 assert np.sum((box_gt.orientation.rotation_matrix - box_verify.orientation.rotation_matrix) ** 2) < 0.04
 
 
-def nuscenes_to_kitti_file(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: str) -> None:
+def nuscenes_to_kitti_file(nusc: NuScenes,
+                           splits: Tuple[str, ...],
+                           kitti_fake_dir: str,
+                           image_count: int = 10) -> None:
     """
     Convert nuScenes GT annotations to KITTI format.
-
-    This script is used for compatibility with software that uses KITTI-style annotations. The resulting files should be
-    treated with care, as KITTI has a single camera, whereas nuScenes has 6 cameras. Furthermore fields like occluded
-    and truncated cannot be reproduced from nuScenes data.
 
     :param nusc: A NuScenes object.
     :param splits: The list of relevant splits (e.g. train, val).
     :param kitti_fake_dir: Where to write the KITTI-style annotations.
+    :param image_count: Number of images to convert.
 
     To compare the calibration files use:
     t1 = KittiDB().get_transforms(token='train_000000', root=kitti_dir)
     t2 = KittiDB().get_transforms(token='train_n008-2018-05-21-11-06-59-0400-1526915243047392', root=kitti_fake_dir)
 
-    velo_to_cam_trans should be:
+    velo_to_cam_trans should be similar to:
     -    KITTI: [-0.00, -0.07, -0.27] (0 right, 7 down, 27 forward)
     - nuScenes: [ 0.01, -0.32, -0.75] (1 right, 29-32 down, 65-75 forward)
     """
-
-    # visibility_map = {  # From nuScenes to KITTI.
-    #     0: 2,  # largely occluded
-    #     1: 2,  # largely occluded
-    #     2: 1,  # partly occluded
-    #     3: 1,  # partly occluded
-    #     4: 0   # fully visible
-    # }
     kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi / 2)
     kitti_to_nu_lidar_inv = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse
     image_size = [1600, 900]
@@ -184,7 +199,7 @@ def nuscenes_to_kitti_file(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_d
 
         # Use only the samples from the current split.
         sample_tokens = split_to_samples(nusc, split_logs)
-        sample_tokens = sample_tokens[:IMAGE_COUNT]
+        sample_tokens = sample_tokens[:image_count]
 
         tokens = []
         for sample_token in sample_tokens:
@@ -192,8 +207,8 @@ def nuscenes_to_kitti_file(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_d
             # Get sample data.
             sample = nusc.get('sample', sample_token)
             sample_annotation_tokens = sample['anns']
-            cam_front_token = sample['data'][CAM_FRONT_NAME]
-            lidar_token = sample['data'][LIDAR_TOP_NAME]
+            cam_front_token = sample['data'][CAM_NAME]
+            lidar_token = sample['data'][LIDAR_NAME]
 
             # Retrieve sensor records.
             sd_record_cam = nusc.get('sample_data', cam_front_token)
@@ -233,7 +248,7 @@ def nuscenes_to_kitti_file(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_d
             # not the camera.
             filename_cam_full = sd_record_cam['filename']
             filename_lid_full = sd_record_lid['filename']
-            token = os.path.basename(filename_lid_full).replace('.pcd.bin', '').replace('__%s__' % LIDAR_TOP_NAME, '-')
+            token = os.path.basename(filename_lid_full).replace('.pcd.bin', '').replace('__%s__' % LIDAR_NAME, '-')
             # token = '%06d' % token_idx # Alternative to use KITTI names.
             token_idx += 1
 
@@ -358,15 +373,23 @@ def split_to_samples(nusc: NuScenes, split_logs: List[str]):
 if __name__ == '__main__':
 
     # Settings.
-    _kitti_dir = '/data/sets/kitti'
-    _kitti_fake_dir = os.path.expanduser('~/kitti_fake_splits')
-    IMAGE_COUNT = 10
-    is_mini = False
-    CAM_FRONT_NAME = 'CAM_FRONT'
-    LIDAR_TOP_NAME = 'LIDAR_TOP'
+    parser = argparse.ArgumentParser(description='Prints out the scenes for each split.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--kitti_dir', type=str, default='/data/sets/kitti',
+                        help='Path to the KITTI directory on the local disk.')
+    parser.add_argument('--kitti_fake_dir', type=str, default='~/kitti_fake_splits',
+                        help='Path to output the nuScenes dataset in KITTI format.')
+    parser.add_argument('--image_count', type=int, default=10,
+                        help='Number of images to convert.')
+    parser.add_argument('--is_mini', type=int, default=0,
+                        help='Whether to use only the mini split.')
+    args = parser.parse_args()
+
+    CAM_NAME = 'CAM_FRONT'
+    LIDAR_NAME = 'LIDAR_TOP'
 
     # Select subset of the data to look at.
-    if is_mini:
+    if bool(args.is_mini):
         _nusc = NuScenes(version='v1.0-mini')
         _splits = ('mini_train', 'mini_val')
     else:
@@ -374,7 +397,7 @@ if __name__ == '__main__':
         _splits = ('train', 'val')
 
     # nuScenes roundtrip.
-    nuscenes_roundtrip(_nusc, _splits, _kitti_fake_dir)
+    nuscenes_roundtrip(_nusc, _splits, os.path.expanduser(args.kitti_fake_dir))
 
     # KITTI roundtrip.
-    kitti_roundtrip(_kitti_dir)
+    kitti_roundtrip(args.kitti_dir)
