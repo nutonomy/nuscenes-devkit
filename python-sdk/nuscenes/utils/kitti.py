@@ -502,6 +502,7 @@ class KittiDB:
         ax.set_aspect('equal')
 
         # Render to disk.
+        plt.tight_layout()
         if out_path is not None:
             plt.savefig(out_path)
 

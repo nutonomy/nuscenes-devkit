@@ -53,11 +53,13 @@ def nuscenes_roundtrip(nusc: NuScenes,
 
 
 def kitti_roundtrip(kitti_dir: str,
-                    image_count: int = 10) -> None:
+                    image_count: int = 10,
+                    save_images: bool = True) -> None:
     """
     Check that boxes can be converted from KITTI to nuScenes and back.
     :param kitti_dir: Original KITTI folder.
     :param image_count: Number of images to convert.
+    :param save_images: Whether to render the camera/lidar images to disk.
     """
     kitti = KittiDB(root=kitti_dir)
     tokens = kitti.tokens[:image_count]
@@ -91,8 +93,9 @@ def kitti_roundtrip(kitti_dir: str,
                 assert line_est[field] == line_gt[field]
 
         # Render images to disk.
-        for sensor in ['lidar', 'camera']:
-            kitti.render_sample_data(token, sensor_modality=sensor, out_path='%s_%s' % (token, sensor))
+        if save_images:
+            for sensor in ['lidar', 'camera']:
+                kitti.render_sample_data(token, sensor_modality=sensor, out_path='%s_%s' % (token, sensor))
 
     print('Passed KITTI roundtrip check!')
 
@@ -390,6 +393,8 @@ if __name__ == '__main__':
                         help='Number of images to convert.')
     parser.add_argument('--is_mini', type=int, default=0,
                         help='Whether to use only the mini split.')
+    parser.add_argument('--save_images', type=int, default=1,
+                        help='Whether to use only the mini split.')
     args = parser.parse_args()
 
     CAM_NAME = 'CAM_FRONT'
@@ -407,4 +412,4 @@ if __name__ == '__main__':
     nuscenes_roundtrip(_nusc, _splits, os.path.expanduser(args.kitti_fake_dir))
 
     # KITTI roundtrip.
-    kitti_roundtrip(args.kitti_dir)
+    kitti_roundtrip(args.kitti_dir, image_count=args.image_count, save_images=args.save_images)
