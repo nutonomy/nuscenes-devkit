@@ -90,11 +90,11 @@ def kitti_roundtrip(kitti_dir: str,
             for field in ['name', 'xyz_camera', 'wlh', 'yaw_camera']:
                 assert line_est[field] == line_gt[field]
 
-    print('Passed KITTI roundtrip check!')
+        # Render images to disk.
+        for sensor in ['lidar', 'camera']:
+            kitti.render_sample_data(token, sensor_modality=sensor, out_path='%s_%s' % (token, sensor))
 
-    # Render images to disk.
-    for sensor in ['lidar', 'camera']:
-        kitti.render_sample_data(tokens[0], sensor_modality=sensor, out_path='%s_%s' % (tokens[0], sensor))
+    print('Passed KITTI roundtrip check!')
 
 
 def kitti_file_to_nuscenes_check(nusc: NuScenes,
