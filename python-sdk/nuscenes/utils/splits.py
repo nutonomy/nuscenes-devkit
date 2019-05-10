@@ -153,7 +153,7 @@ def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:
           others removed in the full dataset, that code is incompatible and was removed.
     :param split: NuScenes split.
     :param nusc: NuScenes instance.
-    :return: A mapping from split name to a list of logs in that split.
+    :return: A list of logs in that split.
     """
 
     # Load splits on a scene-level.
