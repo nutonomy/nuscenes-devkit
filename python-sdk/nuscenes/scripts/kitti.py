@@ -177,7 +177,7 @@ class KittiDB:
         :param box: 3D box in KITTI reference frame.
         :param p_left: <np.float: 3, 4>. Projection matrix.
         :param imsize: (width , height). Image size.
-        :return: (xmin , ymin, xmax, ymax). Bounding box in image plane.
+        :return: (xmin, ymin, xmax, ymax). Bounding box in image plane.
         """
 
         # Create a new box.
@@ -405,7 +405,8 @@ class KittiDB:
 
         return points_fov
 
-    def render_sample_data(self, token: str,
+    def render_sample_data(self,
+                           token: str,
                            sensor_modality: str = 'lidar',
                            with_anns: bool = True,
                            axes_limit: float = 30,
@@ -415,7 +416,8 @@ class KittiDB:
                            augment_previous: bool = False,
                            box_linewidth: int = 2,
                            filter_classes: List[str] = None,
-                           max_dist: float = None) -> None:
+                           max_dist: float = None,
+                           out_path: str = None) -> None:
         """
         Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
         :param token: KITTI token.
@@ -429,6 +431,7 @@ class KittiDB:
         :param box_linewidth: Width of the box lines.
         :param filter_classes: Optionally filter the classes to render.
         :param max_dist: Maximum distance in m to still draw a box.
+        :param out_path: Optional path to save the rendered figure to disk.
         """
         # Default settings.
         if color_func is None:
@@ -497,6 +500,10 @@ class KittiDB:
         ax.axis('off')
         ax.set_title(token)
         ax.set_aspect('equal')
+
+        # Render to disk.
+        if out_path is not None:
+            plt.savefig(out_path)
 
     @staticmethod
     def get_color(category_name: str) -> Tuple[int, int, int]:

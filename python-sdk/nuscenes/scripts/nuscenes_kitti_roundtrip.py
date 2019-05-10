@@ -13,6 +13,9 @@ We do not encourage this, as:
 To validate the outcome we do the following:
 - Test that the roundtrip conversion (nuScenes -> KITTI -> nuScenes and vice versa) leads to the original outcome.
 - Visualize KITTI examples.
+
+How to use this file:
+-
 """
 import os
 import json
@@ -49,7 +52,8 @@ def nuscenes_roundtrip(nusc: NuScenes,
     print('Passed nuScenes roundtrip check!')
 
 
-def kitti_roundtrip(kitti_dir: str, image_count: int = 10) -> None:
+def kitti_roundtrip(kitti_dir: str,
+                    image_count: int = 10) -> None:
     """
     Check that boxes can be converted from KITTI to nuScenes and back.
     :param kitti_dir: Original KITTI folder.
@@ -87,6 +91,10 @@ def kitti_roundtrip(kitti_dir: str, image_count: int = 10) -> None:
                 assert line_est[field] == line_gt[field]
 
     print('Passed KITTI roundtrip check!')
+
+    # Render images to disk.
+    for sensor in ['lidar', 'camera']:
+        kitti.render_sample_data(tokens[0], sensor_modality=sensor, out_path='%s_%s' % (tokens[0], sensor))
 
 
 def kitti_file_to_nuscenes_check(nusc: NuScenes,
@@ -337,8 +345,7 @@ def nuscenes_to_kitti_file(nusc: NuScenes,
                     output = KittiDB.box_to_string(name=kitti_name, box=box_cam_kitti, truncation=truncated,
                                                    occlusion=occluded)
 
-                    # Write to stdout and disk.
-                    print(output)
+                    # Write to disk.
                     label_file.write(output + '\n')
 
         # Write tokens.txt for each split.
@@ -373,7 +380,7 @@ def split_to_samples(nusc: NuScenes, split_logs: List[str]):
 if __name__ == '__main__':
 
     # Settings.
-    parser = argparse.ArgumentParser(description='Prints out the scenes for each split.',
+    parser = argparse.ArgumentParser(description='Convert nuScenes annotations to KITTI or vice versa.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--kitti_dir', type=str, default='/data/sets/kitti',
                         help='Path to the KITTI directory on the local disk.')
