@@ -27,11 +27,11 @@ from pyquaternion import Quaternion
 from PIL import Image
 
 from nuscenes.nuscenes import NuScenes
-from nuscenes.scripts.kitti import KittiDB
 from nuscenes.utils.geometry_utils import transform_matrix
 from nuscenes.utils.geometry_utils import BoxVisibility
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.splits import create_splits_logs
+from nuscenes.utils.kitti import KittiDB
 
 
 def nuscenes_roundtrip(nusc: NuScenes,
