@@ -358,7 +358,7 @@ if __name__ == '__main__':
     _kitti_dir = '/data/sets/kitti'
     _kitti_fake_dir = os.path.expanduser('~/kitti_fake_splits')
     IMAGE_COUNT = 10
-    is_mini = True
+    is_mini = False
     CAM_FRONT_NAME = 'CAM_FRONT'
     LIDAR_TOP_NAME = 'LIDAR_TOP'
 
@@ -368,7 +368,7 @@ if __name__ == '__main__':
         splits = ['mini_train', 'mini_val']
     else:
         _nusc = NuScenes(version='v1.0-trainval')
-        splits = ['train', 'val']
+        splits = ['train', 'val', 'test']
 
     # nuScenes roundtrip.
     nuscenes_roundtrip(_nusc, _kitti_fake_dir)
