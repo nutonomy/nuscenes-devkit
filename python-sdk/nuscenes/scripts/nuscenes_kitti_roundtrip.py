@@ -3,7 +3,7 @@ This script converts nuScenes data to KITTI format and vice versa.
 """
 import os
 import json
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -17,17 +17,18 @@ from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.splits import create_splits_logs
 
 
-def nuscenes_roundtrip(nusc: NuScenes, kitti_fake_dir: str) -> None:
+def nuscenes_roundtrip(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: str) -> None:
     """
     Check that boxes can be converted from nuScenes to KITTI and back.
     :param nusc: NuScenes instance.
+    :param splits: The list of relevant splits (e.g. train, val).
     :param kitti_fake_dir: Where to write the KITTI-style annotations.
     """
     # Convert to KITTI files.
-    nuscenes_to_kitti_file(nusc, kitti_fake_dir=kitti_fake_dir)
+    nuscenes_to_kitti_file(nusc=nusc, splits=splits, kitti_fake_dir=kitti_fake_dir)
 
     # Check if the input can be reconstructed.
-    kitti_file_to_nuscenes_check(nusc, kitti_fake_dir=kitti_fake_dir)
+    kitti_file_to_nuscenes_check(nusc=nusc, splits=splits, kitti_fake_dir=kitti_fake_dir)
 
     print('Passed nuScenes roundtrip check!')
 
@@ -71,10 +72,11 @@ def kitti_roundtrip(kitti_dir: str) -> None:
     print('Passed KITTI roundtrip check!')
 
 
-def kitti_file_to_nuscenes_check(nusc: NuScenes, kitti_fake_dir: str) -> None:
+def kitti_file_to_nuscenes_check(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: str) -> None:
     """
     Check whether a generated KITTI file has the same content as the original annotations.
     :param nusc: A NuScenes object.
+    :param splits: The list of relevant splits (e.g. train, val).
     :param kitti_fake_dir: Where to write the KITTI-style annotations.
     """
     kitti = KittiDB(root=kitti_fake_dir)
@@ -133,7 +135,7 @@ def kitti_file_to_nuscenes_check(nusc: NuScenes, kitti_fake_dir: str) -> None:
                 assert np.sum((box_gt.orientation.rotation_matrix - box_verify.orientation.rotation_matrix) ** 2) < 0.04
 
 
-def nuscenes_to_kitti_file(nusc: NuScenes, kitti_fake_dir: str) -> None:
+def nuscenes_to_kitti_file(nusc: NuScenes, splits: Tuple[str, ...], kitti_fake_dir: str) -> None:
     """
     Convert nuScenes GT annotations to KITTI format.
 
@@ -142,6 +144,7 @@ def nuscenes_to_kitti_file(nusc: NuScenes, kitti_fake_dir: str) -> None:
     and truncated cannot be reproduced from nuScenes data.
 
     :param nusc: A NuScenes object.
+    :param splits: The list of relevant splits (e.g. train, val).
     :param kitti_fake_dir: Where to write the KITTI-style annotations.
 
     To compare the calibration files use:
@@ -365,13 +368,13 @@ if __name__ == '__main__':
     # Select subset of the data to look at.
     if is_mini:
         _nusc = NuScenes(version='v1.0-mini')
-        splits = ['mini_train', 'mini_val']
+        _splits = ('mini_train', 'mini_val')
     else:
         _nusc = NuScenes(version='v1.0-trainval')
-        splits = ['train', 'val', 'test']
+        _splits = ('train', 'val')
 
     # nuScenes roundtrip.
-    nuscenes_roundtrip(_nusc, _kitti_fake_dir)
+    nuscenes_roundtrip(_nusc, _splits, _kitti_fake_dir)
 
     # KITTI roundtrip.
     kitti_roundtrip(_kitti_dir)

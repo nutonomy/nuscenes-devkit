@@ -41,19 +41,22 @@ class KittiDB:
         - We use the MV3D splits, not the official KITTI splits (which doesn't have any val).
     """
 
-    def __init__(self, root: str = '/data/sets/kitti', verbose: bool = False):
+    def __init__(self,
+                 root: str = '/data/sets/kitti',
+                 splits: Tuple[str, ...] = ('train', 'val'),
+                 verbose: bool = False):
         """
         :param root: Base folder for all KITTI data.
+        :param splits: Which splits to load.
         :param verbose: Whether to provide details during loading.
         """
         self.root = root
         self.tables = ('calib', 'image', 'label', 'velodyne')
-        self._kitti_splits = ('train', 'val', 'test')
         self._kitti_fileext = {'calib': 'txt', 'image': 'png', 'label': 'txt', 'velodyne': 'bin'}
 
         # Grab all the expected tokens,
         self._kitti_tokens = {}
-        for split in self._kitti_splits:
+        for split in splits:
             with open(osp.join(self.root, '{}/tokens.txt'.format(split)), 'r') as f:
                 lines = f.read().splitlines()
             lines.sort()
