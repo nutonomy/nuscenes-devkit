@@ -2,7 +2,7 @@ import glob
 import json
 import warnings
 from os import path as osp
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -270,7 +270,7 @@ class KittiDB:
         return pc
 
     def get_boxes(self, token: str,
-                  filter_classes: List = None,
+                  filter_classes: List[str] = None,
                   max_dist: float = None) -> List[Box]:
         """
         Load up all the boxes associated with a sample.
@@ -408,10 +408,10 @@ class KittiDB:
                            axes_limit: float = 30,
                            ax: Axes = None,
                            view_3d: np.ndarray = np.eye(4),
-                           color_func = None,
+                           color_func: Any = None,
                            augment_previous: bool = False,
                            box_linewidth: int = 2,
-                           filter_classes = None,
+                           filter_classes: List[str] = None,
                            max_dist: float = None) -> None:
         """
         Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
@@ -431,7 +431,7 @@ class KittiDB:
         if color_func is None:
             color_func = self.get_color
 
-        boxes = self.get_boxes(token, filter_classes=filter_classes, max_dist=max_dist)  # In nuScenes lidar frame
+        boxes = self.get_boxes(token, filter_classes=filter_classes, max_dist=max_dist)  # In nuScenes lidar frame.
 
         if sensor_modality == 'lidar':
             # Load pointcloud.
