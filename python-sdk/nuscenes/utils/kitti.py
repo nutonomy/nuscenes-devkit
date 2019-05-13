@@ -17,19 +17,20 @@ from nuscenes.utils.data_classes import Box, LidarPointCloud
 class KittiDB:
     """
     KITTI database that abstracts away interactions with KITTI files and handles all required transformations.
+    This file exists as a utility class for `nuscenes_kitti_roundtrip.py`. It may not support more general use cases.
 
     NOTES about KITTI:
-        - setup is defined here: http://www.cvlibs.net/datasets/kitti/setup.php
-        - box annotations live in CamRect frame
+        - Setup is defined here: http://www.cvlibs.net/datasets/kitti/setup.php
+        - Box annotations live in CamRect frame
         - KITTI lidar frame is 90 degrees rotated from nuScenes lidar frame
         - To export to KITTI format from nuScenes lidar requires:
-            - rotate to KITTI lidar
-            - transform lidar to camera
-            - transform camera to camera rectified
+            - Rotate to KITTI lidar
+            - Transform lidar to camera
+            - Transform camera to camera rectified
         - To transform from box annotations to nuScenes lidar requires:
-            - inverse of camera rectification
-            - inverse transform of lidar to camera
-            - rotate to nuScenes lidar
+            - Inverse of camera rectification
+            - Inverse transform of lidar to camera
+            - Rotate to nuScenes lidar
         - KITTI 2D boxes cannot always be obtained from the 3D box. The size of a 3D box was fixed for a tracklet
             so it can be large for walking pedestrians that stop moving. Those loose 2D boxes were then corrected
             using Mechanical Turk.

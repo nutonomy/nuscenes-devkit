@@ -188,7 +188,7 @@ def nuscenes_to_kitti_file(nusc: NuScenes,
 
     To compare the calibration files use:
     t1 = KittiDB().get_transforms(token='train_000000', root=kitti_dir)
-    t2 = KittiDB().get_transforms(token='train_n008-2018-05-21-11-06-59-0400-1526915243047392', root=kitti_fake_dir)
+    t2 = KittiDB().get_transforms(token='train_n008-...', root=kitti_fake_dir)
 
     velo_to_cam_trans should be similar to:
     -    KITTI: [-0.00, -0.07, -0.27] (0 right, 7 down, 27 forward)

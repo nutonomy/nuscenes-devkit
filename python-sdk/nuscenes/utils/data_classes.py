@@ -637,6 +637,6 @@ class Box:
     def copy(self) -> 'Box':
         """
         Create a copy of self.
-        :return: <Box>. A copy.
+        :return: A copy.
         """
         return copy.deepcopy(self)
