@@ -1,3 +1,8 @@
+# nuScenes dev-kit.
+# Code written by Alex Lang and Holger Caesar, 2019.
+# Licensed under the Creative Commons [see licence.txt]
+
+
 import glob
 import json
 import warnings
