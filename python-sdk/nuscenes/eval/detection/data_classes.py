@@ -38,6 +38,12 @@ class DetectionConfig:
 
         self.class_names = self.class_range.keys()
 
+    def __eq__(self, other):
+        eq = True
+        for key in self.serialize().keys():
+            eq = eq and np.array_equal(getattr(self, key), getattr(other, key))
+        return eq
+
     def serialize(self) -> dict:
         """ Serialize instance into json-friendly format. """
         return {
@@ -460,4 +466,34 @@ class DetectionMetrics:
                 'tp_errors': self.tp_errors,
                 'tp_scores': self.tp_scores,
                 'nd_score': self.nd_score,
-                'eval_time': self.eval_time}
+                'eval_time': self.eval_time,
+                'cfg': self.cfg.serialize()}
+
+    @classmethod
+    def deserialize(cls, content):
+        """ Initialize from serialized dictionary. """
+
+        cfg = DetectionConfig.deserialize(content['cfg'])
+
+        metrics = cls(cfg=cfg)
+        metrics.add_runtime(content['eval_time'])
+
+        for detection_name, label_aps in content['label_aps'].items():
+            for dist_th, ap in label_aps.items():
+                metrics.add_label_ap(detection_name=detection_name, dist_th=float(dist_th), ap=float(ap))
+
+        for detection_name, label_tps in content['label_tp_errors'].items():
+            for metric_name, tp in label_tps.items():
+                metrics.add_label_tp(detection_name=detection_name, metric_name=metric_name, tp=float(tp))
+
+        return metrics
+
+    def __eq__(self, other):
+
+        eq = True
+        eq = eq and self._label_aps == other._label_aps
+        eq = eq and self._label_tp_errors == other._label_tp_errors
+        eq = eq and self.eval_time == other.eval_time
+        eq = eq and self.cfg == other.cfg
+
+        return eq
