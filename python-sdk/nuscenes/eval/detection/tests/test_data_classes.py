@@ -1,11 +1,31 @@
 # nuScenes dev-kit.
-# Code written by Oscar Beijbom, 2019.
+# Code written by Oscar Beijbom and Alex Lang, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
+import os
 import unittest
 
-from nuscenes.eval.detection.data_classes import MetricData, EvalBox, EvalBoxes, MetricDataList
+from nuscenes.eval.detection.data_classes import MetricData, EvalBox, EvalBoxes, MetricDataList, DetectionConfig
+
+
+class TestDetectionConfig(unittest.TestCase):
+
+    def test_serialization(self):
+        """ test that instance serialization protocol works with json encoding """
+
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg_name = 'cvpr_2019.json'
+        config_path = os.path.join(this_dir, '../configs/{}'.format(cfg_name))
+
+        cfg = json.load(open(config_path))
+
+        detect_cfg = DetectionConfig.deserialize(cfg)
+
+        self.assertEqual(cfg, detect_cfg.serialize())
+
+        recovered = DetectionConfig.deserialize(json.loads(json.dumps(detect_cfg.serialize())))
+        self.assertEqual(detect_cfg, recovered)
 
 
 class TestMetricData(unittest.TestCase):

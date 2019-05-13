@@ -13,7 +13,6 @@ import numpy as np
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
-from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics, EvalBoxes
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
@@ -246,8 +245,9 @@ if __name__ == "__main__":
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
-    parser.add_argument('--config_name', type=str, default='cvpr_2019',
-                        help='Name of the configuration to use for evaluation, e.g. cvpr_2019.')
+    parser.add_argument('--config_path', type=str, default='',
+                        help='Path to the configuration file.'
+                             'If no path given, the CVPR 2019 configuration will be used.')
     parser.add_argument('--plot_examples', type=int, default=10,
                         help='How many example visualizations to write to disk.')
     parser.add_argument('--render_curves', type=int, default=1,
@@ -261,12 +261,17 @@ if __name__ == "__main__":
     eval_set_ = args.eval_set
     dataroot_ = args.dataroot
     version_ = args.version
-    config_name_ = args.config_name
+    config_path = args.config_path
     plot_examples_ = args.plot_examples
     render_curves_ = bool(args.render_curves)
     verbose_ = bool(args.verbose)
 
-    cfg_ = config_factory(config_name_)
+    if config_path == '':
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg_name = 'cvpr_2019.json'
+        config_path = os.path.join(this_dir, 'configs/{}'.format(cfg_name))
+    cfg_ = DetectionConfig.deserialize(json.load(open(config_path)))
+
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
     nusc_eval = NuScenesEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
                              output_dir=output_dir_, verbose=verbose_)
