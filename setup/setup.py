@@ -28,7 +28,7 @@ packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='1.0.0',
+    version='1.0.2',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
            'Chris Li, Sergi Widjaja et al.',
     author_email='nuscenes@nutonomy.com',
@@ -40,7 +40,7 @@ setuptools.setup(
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
-    package_data={'': '../python-sdk/nuscenes/eval/detection/config.json'},
+    package_data={'': '*.json'},
     include_package_data=True,
     classifiers=[
         'Programming Language :: Python :: 3.6',

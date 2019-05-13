@@ -18,7 +18,7 @@ class TestDetectionConfig(unittest.TestCase):
 
         this_dir = os.path.dirname(os.path.abspath(__file__))
         cfg_name = 'cvpr_2019.json'
-        config_path = os.path.join(this_dir, '../configs/{}'.format(cfg_name))
+        config_path = os.path.join(this_dir, '..', 'configs', cfg_name)
 
         with open(config_path) as f:
             cfg = json.load(f)

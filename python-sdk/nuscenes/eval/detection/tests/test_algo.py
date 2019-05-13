@@ -22,7 +22,7 @@ class TestAlgo(unittest.TestCase):
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
     cfg_name = 'cvpr_2019.json'
-    cfg_path = os.path.join(this_dir, '../configs/{}'.format(cfg_name))
+    cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
     cfg = DetectionConfig.deserialize(json.load(open(cfg_path)))
 
     @staticmethod
