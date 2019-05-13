@@ -14,8 +14,12 @@ To validate the outcome we do the following:
 - Test that the roundtrip conversion (nuScenes -> KITTI -> nuScenes and vice versa) leads to the original outcome.
 - Visualize KITTI examples.
 
-How to use this file:
--
+The two main methods here are:
+- `nuscenes_roundtrip`: Converts nuScenes to KITTI files, converts them back and checks equivalence.
+                        The resulting KITTI files can be used in other codebases designed for KITTI.
+- `kitti_roundtrip`:    Converts KITTI boxes to nuScenes boxes and checks equivalence.
+                        This script exists only for instructional purposes and does not create a valid nuScenes-style
+                        dataset.
 """
 import os
 import json
@@ -73,6 +77,7 @@ def kitti_roundtrip(kitti_dir: str,
         velo_to_cam_trans = np.array(transforms['velo_to_cam']['T'])
         r0_rect = Quaternion(matrix=transforms['r0_rect'])
 
+        # Read KITTI data.
         output_gts = []
         with open(KittiDB.get_filepath(token, 'label', root=kitti_dir), 'r') as f:
             for line in f:
@@ -86,8 +91,8 @@ def kitti_roundtrip(kitti_dir: str,
             box_cam_kitti = KittiDB.box_nuscenes_to_kitti(box_lidar_nut, velo_to_cam_rot, velo_to_cam_trans, r0_rect)
             output_est = KittiDB.box_to_string(name=box_lidar_nut.name, box=box_cam_kitti)
             output_gt = output_gts[backward_itt]
-            line_est = KittiDB._parse_label_line(output_est)
-            line_gt = KittiDB._parse_label_line(output_gt)
+            line_est = KittiDB.parse_label_line(output_est)
+            line_gt = KittiDB.parse_label_line(output_gt)
 
             for field in ['name', 'xyz_camera', 'wlh', 'yaw_camera']:
                 assert line_est[field] == line_gt[field]
@@ -385,6 +390,8 @@ if __name__ == '__main__':
     # Settings.
     parser = argparse.ArgumentParser(description='Convert nuScenes annotations to KITTI or vice versa.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--mode', type=str, default='nuscenes',
+                        help='Whether to perform a `nuscenes` (default) or `kitti` roundtrip.')
     parser.add_argument('--kitti_dir', type=str, default='/data/sets/kitti',
                         help='Path to the KITTI directory on the local disk.')
     parser.add_argument('--kitti_fake_dir', type=str, default='~/kitti_fake_splits',
@@ -408,8 +415,11 @@ if __name__ == '__main__':
         _nusc = NuScenes(version='v1.0-trainval')
         _splits = ('train', 'val')
 
-    # nuScenes roundtrip.
-    nuscenes_roundtrip(_nusc, _splits, os.path.expanduser(args.kitti_fake_dir))
-
-    # KITTI roundtrip.
-    kitti_roundtrip(args.kitti_dir, image_count=args.image_count, save_images=args.save_images)
+    if args.mode == 'nuscenes':
+        # nuScenes roundtrip.
+        nuscenes_roundtrip(_nusc, _splits, os.path.expanduser(args.kitti_fake_dir))
+    elif args.mode == 'kitti':
+        # KITTI roundtrip.
+        kitti_roundtrip(args.kitti_dir, image_count=args.image_count, save_images=args.save_images)
+    else:
+        raise Exception('Error: Invalid mode: %s' % args.mode)

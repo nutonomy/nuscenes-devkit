@@ -114,7 +114,7 @@ class KittiDB:
         return folder, filename
 
     @staticmethod
-    def _parse_label_line(label_line) -> dict:
+    def parse_label_line(label_line) -> dict:
         """
         Parses single line from label file into a dict. Boxes are in camera frame. See KITTI devkit for details and
         http://www.cvlibs.net/datasets/kitti/setup.php for visualizations of the setup.
@@ -295,7 +295,7 @@ class KittiDB:
 
             for line in f:
                 # Parse this line into box information.
-                parsed_line = self._parse_label_line(line)
+                parsed_line = self.parse_label_line(line)
 
                 if parsed_line['name'] in {'DontCare', 'Misc'}:
                     continue
