@@ -107,7 +107,7 @@ pipeline {
       steps {
         container('docker') {
           sh """#!/bin/bash
-            python -m unittest discover
+            source activate nuscenes && python -m unittest discover
             bash setup/test_tutorial.sh
           """
         } // container
@@ -159,7 +159,7 @@ pipeline {
       steps {
         container('docker') {
           sh """#!/bin/bash
-            python -m unittest discover
+            source activate nuscenes && python -m unittest discover
             bash setup/test_tutorial.sh
           """
         } // container
