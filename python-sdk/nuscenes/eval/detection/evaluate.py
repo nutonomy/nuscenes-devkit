@@ -270,7 +270,9 @@ if __name__ == "__main__":
         this_dir = os.path.dirname(os.path.abspath(__file__))
         cfg_name = 'cvpr_2019.json'
         config_path = os.path.join(this_dir, 'configs', cfg_name)
-    cfg_ = DetectionConfig.deserialize(json.load(open(config_path)))
+
+    with open(config_path, 'r') as f:
+        cfg_ = DetectionConfig.deserialize(json.load(f))
 
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
     nusc_eval = NuScenesEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
