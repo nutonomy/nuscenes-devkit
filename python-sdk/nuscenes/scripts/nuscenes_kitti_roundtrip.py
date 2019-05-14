@@ -45,18 +45,18 @@ from nuscenes.utils.kitti import KittiDB
 
 def nuscenes_roundtrip(nusc: NuScenes,
                        splits: Tuple[str, ...],
-                       kitti_fake_dir: str) -> None:
+                       nusc_kitti_dir: str) -> None:
     """
     Check that boxes can be converted from nuScenes to KITTI and back.
     :param nusc: NuScenes instance.
     :param splits: The list of relevant splits (e.g. train, val).
-    :param kitti_fake_dir: Where to write the KITTI-style annotations.
+    :param nusc_kitti_dir: Where to write the KITTI-style annotations.
     """
     # Convert to KITTI files.
-    nuscenes_to_kitti_file(nusc=nusc, splits=splits, kitti_fake_dir=kitti_fake_dir)
+    nuscenes_to_kitti_file(nusc=nusc, splits=splits, nusc_kitti_dir=nusc_kitti_dir)
 
     # Check if the input can be reconstructed.
-    kitti_file_to_nuscenes_check(nusc=nusc, splits=splits, kitti_fake_dir=kitti_fake_dir)
+    kitti_file_to_nuscenes_check(nusc=nusc, splits=splits, nusc_kitti_dir=nusc_kitti_dir)
 
     print('Passed nuScenes roundtrip check!')
 
@@ -112,16 +112,16 @@ def kitti_roundtrip(kitti_dir: str,
 
 def kitti_file_to_nuscenes_check(nusc: NuScenes,
                                  splits: Tuple[str, ...],
-                                 kitti_fake_dir: str,
+                                 nusc_kitti_dir: str,
                                  image_count: int = 10) -> None:
     """
     Check whether a generated KITTI file has the same content as the original annotations.
     :param nusc: A NuScenes object.
     :param splits: The list of relevant splits (e.g. train, val).
-    :param kitti_fake_dir: Where to write the KITTI-style annotations.
+    :param nusc_kitti_dir: Where to write the KITTI-style annotations.
     :param image_count: Number of images to convert.
     """
-    kitti = KittiDB(root=kitti_fake_dir)
+    kitti = KittiDB(root=nusc_kitti_dir)
 
     for split in splits:
         # Get assignment of scenes to splits.
@@ -181,19 +181,19 @@ def kitti_file_to_nuscenes_check(nusc: NuScenes,
 
 def nuscenes_to_kitti_file(nusc: NuScenes,
                            splits: Tuple[str, ...],
-                           kitti_fake_dir: str,
+                           nusc_kitti_dir: str,
                            image_count: int = 10) -> None:
     """
     Convert nuScenes GT annotations to KITTI format.
 
     :param nusc: A NuScenes object.
     :param splits: The list of relevant splits (e.g. train, val).
-    :param kitti_fake_dir: Where to write the KITTI-style annotations.
+    :param nusc_kitti_dir: Where to write the KITTI-style annotations.
     :param image_count: Number of images to convert.
 
     To compare the calibration files use:
     t1 = KittiDB().get_transforms(token='train_000000', root=kitti_dir)
-    t2 = KittiDB().get_transforms(token='train_n008-...', root=kitti_fake_dir)
+    t2 = KittiDB().get_transforms(token='train_n008-...', root=nusc_kitti_dir)
 
     velo_to_cam_trans should be similar to:
     -    KITTI: [-0.00, -0.07, -0.27] (0 right, 7 down, 27 forward)
@@ -210,10 +210,10 @@ def nuscenes_to_kitti_file(nusc: NuScenes,
         split_logs = create_splits_logs(split, nusc)
 
         # Create output folders.
-        label_folder = os.path.join(kitti_fake_dir, split, 'label')
-        calib_folder = os.path.join(kitti_fake_dir, split, 'calib')
-        image_folder = os.path.join(kitti_fake_dir, split, 'image')
-        lidar_folder = os.path.join(kitti_fake_dir, split, 'velodyne')
+        label_folder = os.path.join(nusc_kitti_dir, split, 'label')
+        calib_folder = os.path.join(nusc_kitti_dir, split, 'calib')
+        image_folder = os.path.join(nusc_kitti_dir, split, 'image')
+        lidar_folder = os.path.join(nusc_kitti_dir, split, 'velodyne')
         for folder in [label_folder, calib_folder, image_folder, lidar_folder]:
             if not os.path.isdir(folder):
                 os.makedirs(folder)
@@ -362,13 +362,13 @@ def nuscenes_to_kitti_file(nusc: NuScenes,
                     label_file.write(output + '\n')
 
         # Write tokens.txt for each split.
-        tok_path = os.path.join(kitti_fake_dir, split, 'tokens.txt')
+        tok_path = os.path.join(nusc_kitti_dir, split, 'tokens.txt')
         with open(tok_path, "w") as tok_file:
             for tok in tokens:
                 tok_file.write(tok + '\n')
 
     # Write image_sizes.json for all splits.
-    image_sizes_path = os.path.join(kitti_fake_dir, 'image_sizes.json')
+    image_sizes_path = os.path.join(nusc_kitti_dir, 'image_sizes.json')
     with open(image_sizes_path, 'w') as image_sizes_file:
         json.dump(image_sizes, image_sizes_file)
 
@@ -399,14 +399,14 @@ if __name__ == '__main__':
                         help='Whether to perform a `nuscenes` (default) or `kitti` roundtrip.')
     parser.add_argument('--kitti_dir', type=str, default='/data/sets/kitti',
                         help='Path to the KITTI directory on the local disk.')
-    parser.add_argument('--kitti_fake_dir', type=str, default='~/kitti_fake_splits',
+    parser.add_argument('--nusc_kitti_dir', type=str, default='~/nusc_kitti',
                         help='Path to output the nuScenes dataset in KITTI format.')
     parser.add_argument('--image_count', type=int, default=10,
                         help='Number of images to convert.')
     parser.add_argument('--is_mini', type=int, default=0,
                         help='Whether to use only the mini split.')
     parser.add_argument('--save_images', type=int, default=1,
-                        help='Whether to use only the mini split.')
+                        help='Whether to render the camera/lidar images to disk.')
     args = parser.parse_args()
 
     CAM_NAME = 'CAM_FRONT'
@@ -422,7 +422,7 @@ if __name__ == '__main__':
 
     if args.mode == 'nuscenes':
         # nuScenes roundtrip.
-        nuscenes_roundtrip(_nusc, _splits, os.path.expanduser(args.kitti_fake_dir))
+        nuscenes_roundtrip(_nusc, _splits, os.path.expanduser(args.nusc_kitti_dir))
     elif args.mode == 'kitti':
         # KITTI roundtrip.
         kitti_roundtrip(args.kitti_dir, image_count=args.image_count, save_images=args.save_images)
