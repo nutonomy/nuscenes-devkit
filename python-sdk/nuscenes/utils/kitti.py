@@ -349,8 +349,11 @@ class KittiDB:
                 # 4: Transform to nuScenes LIDAR coord system.
                 box.rotate(self.kitti_to_nu_lidar)
 
-                # Add score or NaN.
+                # Set score or NaN.
                 box.score = score
+
+                # Set dummy velocity.
+                box.velocity = (0.0, 0.0, 0.0)
 
                 # Optional: Filter by max_dist
                 if max_dist is not None:

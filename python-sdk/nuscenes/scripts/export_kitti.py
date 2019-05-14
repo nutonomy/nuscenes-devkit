@@ -15,7 +15,8 @@ We do not encourage this, as:
 
 Limitations:
 - We don't specify the KITTI imu_to_velo_kitti projection in this code base.
-- We don't map to KITTI category names.
+- We don't map to KITTI category names or back.
+- Attributes are not part of KITTI and therefore not output in the nuScenes result format.
 
 This script includes two main functions:
 - nuscenes_to_kitti_gt(): Converts nuScenes GT annotations to KITTI format.
