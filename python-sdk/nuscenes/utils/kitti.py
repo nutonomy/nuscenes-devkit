@@ -144,7 +144,7 @@ class KittiDB:
 
         # Add score if specified
         if len(label_line) > 15:
-            output['score'] = parts[15]
+            output['score'] = float(parts[15])
         else:
             output['score'] = np.nan
 
