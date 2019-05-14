@@ -29,7 +29,7 @@ To participate in the challenge, please create an account at [EvalAI](http://eva
 Then upload your results file in JSON format and provide all of the meta data if possible: method name, description, project URL and publication URL.
 The leaderboard will remain private until the end of the challenge.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
-Please note that this workshop is not related to the similarly named [Workshop on Autonomous Driving Beyond Single-Frame Perception](wad.ai).
+Please note that this workshop is not related to the similarly named [Workshop on Autonomous Driving Beyond Single-Frame Perception](http://www.wad.ai).
 
 ## Submission rules
 * We release annotations for the train and val set, but not for the test set.
@@ -196,13 +196,44 @@ To enable a fair comparison between methods, the user will be able to filter the
  
 We define three such filters here which correspond to the tracks in the nuScenes detection challenge.
 Methods will be compared within these tracks and the winners will be decided for each track separately.
+Furthermore, there will also be an award for novel ideas, as well as the best student submission.
 
-* **Lidar detection track**: 
-This track allows only lidar sensor data as input.
-No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-* **Vision detection track**: 
-This track allows only camera sensor data (images) as input.
-No external data or map data is allowed. The only exception is that ImageNet may be used for pre-training (initialization).
-* **Open detection track**: 
-This is where users can go wild.
-We allow any combination of sensors, map and external data as long as these are reported. 
+**Lidar detection track**: 
+* Only lidar input allowed.
+* No external data or map data allowed.
+* May use pre-training.
+  
+**Vision detection track**: 
+* Only camera input allowed.
+* No external data or map data is allowed.
+* May use pre-training.
+ 
+**Open detection track**: 
+* Any sensor input allowed.
+* External data and map data allowed.  
+* May use pre-training.
+
+**Details**:
+* *Sensor input:*
+For the lidar and vision detection tracks we restrict the type of sensor input that may be used.
+Note that this restriction applies only at test time.
+At training time any sensor input may be used.
+In particular this also means that at training time you are allowed to filter the GT boxes using `num_lidar_pts` and `num_radar_pts`, regardless of the track.
+However, during testing the predicted boxes may *not* be filtered based on input from other sensor modalities.
+
+* *Map data:*
+By `map data` we mean using the *semantic* map provided in nuScenes. 
+
+* *Meta data:*
+Other meta data included in the dataset may be used without restrictions.
+E.g. calibration parameters, ego poses, `location`, `timestamp`, `num_lidar_pts`, `num_radar_pts`, `translation`, `rotation` and `size`.
+Note that `instance`, `sample_annotation` and `scene` description are not provided for the test set.
+
+* *Pre-training:*
+By pre-training we mean training a network for the task of image classification using only image-level labels,
+as done in [[Krizhevsky NIPS 2012]](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networ).
+The pre-training may not involve bounding box, mask or other localized annotations.
+
+* *Reporting:* 
+Users are required to report detailed information on their method regarding sensor input, map data, meta data and pre-training.
+Users that fail to adequately report this information may be excluded from the challenge. 
