@@ -2,7 +2,7 @@
 set -eux
 
 # This script is to be executed inside a Docker container
-source activate nuenv
+source activate nuscenes
 
 # Generate python script from Jupyter notebook and then copy into Docker image.
 jupyter nbconvert --to python python-sdk/tutorial.ipynb || { echo "Failed to convert notebook to python script"; exit 1; }

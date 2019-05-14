@@ -6,6 +6,7 @@ pipeline {
     PROD_IMAGE = "nuscenes:production"
     TEST_IMAGE_3_6 = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
     TEST_IMAGE_3_7 = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
+    NUSCENES = "/data/sets/nuscenes"
   }
 
   stages {
@@ -99,7 +100,7 @@ pipeline {
                   claimName: nudeep-ci
               env:
               - name: NUSCENES
-                value: /data/sets/nuscenes
+                value: $NUSCENES
           """
         }// kubernetes
       } // agent
@@ -152,7 +153,7 @@ pipeline {
                   claimName: nudeep-ci
               env:
               - name: NUSCENES
-                value: /data/sets/nuscenes
+                value: $NUSCENES
           """
         }// kubernetes
       } // agent
