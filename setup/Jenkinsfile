@@ -107,6 +107,7 @@ pipeline {
       steps {
         container('docker') {
           sh """#!/bin/bash
+            set -e
             source activate nuscenes && python -m unittest discover
             bash setup/test_tutorial.sh
           """
@@ -159,12 +160,13 @@ pipeline {
       steps {
         container('docker') {
           sh """#!/bin/bash
+            set -e
             source activate nuscenes && python -m unittest discover
             bash setup/test_tutorial.sh
           """
         } // container
       }
-    } // stage('Test notebook 3.7')
+    }
     stage('Deploy') {
       agent {
         kubernetes {

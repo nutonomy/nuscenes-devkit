@@ -1,4 +1,5 @@
 import importlib
+import os
 import unittest
 import warnings
 
@@ -6,7 +7,10 @@ import warnings
 class TestRequirements(unittest.TestCase):
 
     def setUp(self):
-        with open('requirements.txt', 'r') as f:
+
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        requirements = os.path.join(this_dir, 'requirements.txt')
+        with open(requirements, 'r') as f:
             requirements = f.readlines()
 
         specifiers = ['==', '>=', '<=', '>', '<']  # types of specifiers allowed by pip
