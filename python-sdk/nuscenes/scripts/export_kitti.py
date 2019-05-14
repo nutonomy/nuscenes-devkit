@@ -11,8 +11,11 @@ We do not encourage this, as:
 - KITTI has no radar data.
 - The nuScenes database format is more modular.
 - KITTI fields like occluded and truncated cannot be exactly reproduced from nuScenes data.
-- We don't specify the KITTI imu_to_velo_kitti projection in this code base.
 - KITTI has different categories.
+
+Limitations:
+- We don't specify the KITTI imu_to_velo_kitti projection in this code base.
+- We don't map to KITTI category names.
 
 This script includes two main functions:
 - nuscenes_to_kitti_gt(): Converts nuScenes GT annotations to KITTI format.
@@ -217,18 +220,6 @@ class KittiConverter:
                     for sample_annotation_token in sample_annotation_tokens:
                         sample_annotation = self.nusc.get('sample_annotation', sample_annotation_token)
 
-                        # Type: Only use classes from KITTI that are used in competitions.
-                        category = sample_annotation['category_name']
-                        if category.startswith('human.pedestrian.'):
-                            kitti_name = 'Pedestrian'
-                        elif category == 'vehicle.car':
-                            kitti_name = 'Car'
-                        elif category == 'vehicle.bicycle':
-                            kitti_name = 'Cyclist'
-                        else:
-                            # Ignore other categories.
-                            continue
-
                         # Get box in LIDAR frame.
                         _, box_lidar_nusc, _ = self.nusc.get_sample_data(lidar_token, box_vis_level=BoxVisibility.NONE,
                                                                          selected_anntokens=[sample_annotation_token])
@@ -243,7 +234,9 @@ class KittiConverter:
                         # Convert to KITTI 3d and 2d box and KITTI output format.
                         box_cam_kitti = KittiDB.box_nuscenes_to_kitti(
                             box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot), velo_to_cam_trans, r0_rect)
-                        output = KittiDB.box_to_string(name=kitti_name, box=box_cam_kitti, truncation=truncated,
+                        box_cam_kitti.score = 0 # Set dummy score so we can use this file as result.
+                        category = sample_annotation['category_name']
+                        output = KittiDB.box_to_string(name=category, box=box_cam_kitti, truncation=truncated,
                                                        occlusion=occluded)
 
                         # Write to disk.
@@ -258,7 +251,7 @@ class KittiConverter:
         # Write image_sizes.json for all splits.
         image_sizes_path = os.path.join(self.nusc_kitti_dir, 'image_sizes.json')
         with open(image_sizes_path, 'w') as image_sizes_file:
-            json.dump(image_sizes, image_sizes_file)
+            json.dump(image_sizes, image_sizes_file, indent=2)
 
     def kitti_res_to_nuscenes(self) -> None:
         """
@@ -316,7 +309,7 @@ class KittiConverter:
         }
         submission_path = os.path.join(self.nusc_kitti_dir, 'submission.json')
         with open(submission_path, 'w') as f:
-            json.dump(submission, f)
+            json.dump(submission, f, indent=2)
 
     def _box_to_sample_result(self, sample_token: str, box: Box, attribute_name: str = '') -> Dict[str, Any]:
         # Prepare data
