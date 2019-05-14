@@ -353,7 +353,7 @@ class KittiDB:
                 box.score = score
 
                 # Set dummy velocity.
-                box.velocity = (0.0, 0.0, 0.0)
+                box.velocity = np.array((0.0, 0.0, 0.0))
 
                 # Optional: Filter by max_dist
                 if max_dist is not None:
