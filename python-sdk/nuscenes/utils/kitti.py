@@ -116,7 +116,9 @@ class KittiDB:
         :param token: KittiDB unique id.
         :return: folder (ex. train, val, test), filename (ex. 000001)
         """
-        folder, filename = token.split('_')
+        splits = token.split('_')
+        folder = '_'.join(splits[:-1])
+        filename = splits[-1]
         return folder, filename
 
     @staticmethod
