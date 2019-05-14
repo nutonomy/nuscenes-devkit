@@ -58,6 +58,10 @@ class KittiConverter:
         self.image_count = image_count
         self.image_size = image_size
 
+        # Create nusc_kitti_dir.
+        if not os.path.isdir(self.nusc_kitti_dir):
+            os.makedirs(nusc_kitti_dir)
+
         # Select subset of the data to look at.
         if self.is_mini:
             self.nusc = NuScenes(version='v1.0-mini')
