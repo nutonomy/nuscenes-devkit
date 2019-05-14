@@ -21,6 +21,16 @@ This script includes two main functions:
 To launch these scripts run:
 - python export_kitti.py nuscenes_to_kitti_gt --nusc_kitti_dir ~/nusc_kitti
 - python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
+
+To visualize the KITTI data, run:
+```
+kitti = KittiDB(root='/data/sets/kitti')
+for token in kitti.tokens:
+    for sensor in ['lidar', 'camera']:
+        kitti.render_sample_data(token, sensor_modality=sensor, out_path='%s_%s' % (token, sensor))
+```
+
+See https://www.nuscenes.org/object-detection for more information on the nuScenes result format.
 """
 import os
 import json
@@ -267,7 +277,7 @@ class KittiConverter:
         results = {}
 
         # Load the KITTI dataset.
-        kitti = KittiDB(root=self.nusc_kitti_dir)
+        kitti = KittiDB(root=self.nusc_kitti_dir, splits=self.splits)
 
         for split in self.splits:
             # Get assignment of scenes to splits.
