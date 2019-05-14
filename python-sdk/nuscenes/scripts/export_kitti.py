@@ -28,7 +28,9 @@ To launch these scripts run:
 
 To visualize the KITTI data, run:
 ```
-kitti = KittiDB(root='/data/sets/kitti')
+import os
+from nuscenes.utils.kitti import KittiDB
+kitti = KittiDB(root=os.path.expanduser('~/nusc_kitti'), splits=('mini_train', 'mini_val'))
 for token in kitti.tokens:
     for sensor in ['lidar', 'camera']:
         kitti.render_sample_data(token, sensor_modality=sensor, out_path='%s_%s' % (token, sensor))
