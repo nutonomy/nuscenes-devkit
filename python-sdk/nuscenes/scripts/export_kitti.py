@@ -37,8 +37,8 @@ from nuscenes.utils.kitti import KittiDB
 
 class KittiConverter:
     def __init__(self,
-                 nusc_kitti_dir: str,
-                 is_mini: bool,
+                 nusc_kitti_dir: str = '~/nusc_kitti',
+                 is_mini: bool = True,
                  cam_name: str = 'CAM_FRONT',
                  lidar_name: str = 'LIDAR_TOP',
                  image_count: int = 10,
@@ -51,7 +51,7 @@ class KittiConverter:
         :param lidar_name: Name of the lidar sensor.
         :param image_count: Number of images to convert.
         """
-        self.nusc_kitti_dir = nusc_kitti_dir
+        self.nusc_kitti_dir = os.path.expanduser(nusc_kitti_dir)
         self.is_mini = is_mini
         self.cam_name = cam_name
         self.lidar_name = lidar_name
