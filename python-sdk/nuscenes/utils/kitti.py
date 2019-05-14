@@ -149,7 +149,7 @@ class KittiDB:
                               kitti_to_nu_lidar_inv: Quaternion = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse) \
             -> Box:
         """
-        Transform from nupylib (nuScenes lidar frame) to KITTI reference frame.
+        Transform from nuScenes lidar frame to KITTI reference frame.
         :param box: Instance in nuScenes lidar frame.
         :param velo_to_cam_rot: Quaternion to rotate from lidar to camera frame.
         :param velo_to_cam_trans: <np.float: 3>. Translate from lidar to camera frame.

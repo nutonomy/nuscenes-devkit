@@ -8,7 +8,7 @@ This script converts nuScenes data to KITTI format and vice versa.
 It is used for compatibility with software that uses KITTI-style annotations.
 
 We do not encourage this, as:
-- KITTI has only front-facing cameras, whereas nuTonomy has a 360 degree horizontal fov.
+- KITTI has only front-facing cameras, whereas nuScenes has a 360 degree horizontal fov.
 - KITTI has no radar data.
 - The nuScenes database format is more modular.
 - KITTI fields like occluded and truncated cannot be exactly reproduced from nuScenes data.
@@ -92,9 +92,9 @@ def kitti_roundtrip(kitti_dir: str,
                     output_gts.append(line)
 
         # Convert back to KITTI and check equivalence.
-        for backward_itt, box_lidar_nut in enumerate(boxes):
-            box_cam_kitti = KittiDB.box_nuscenes_to_kitti(box_lidar_nut, velo_to_cam_rot, velo_to_cam_trans, r0_rect)
-            output_est = KittiDB.box_to_string(name=box_lidar_nut.name, box=box_cam_kitti)
+        for backward_itt, box_lidar_nusc in enumerate(boxes):
+            box_cam_kitti = KittiDB.box_nuscenes_to_kitti(box_lidar_nusc, velo_to_cam_rot, velo_to_cam_trans, r0_rect)
+            output_est = KittiDB.box_to_string(name=box_lidar_nusc.name, box=box_cam_kitti)
             output_gt = output_gts[backward_itt]
             line_est = KittiDB.parse_label_line(output_est)
             line_gt = KittiDB.parse_label_line(output_gt)
@@ -341,9 +341,9 @@ def nuscenes_to_kitti_file(nusc: NuScenes,
                         continue
 
                     # Get box in LIDAR frame.
-                    _, box_lidar_nut, _ = nusc.get_sample_data(lidar_token, box_vis_level=BoxVisibility.NONE,
-                                                               selected_anntokens=[sample_annotation_token])
-                    box_lidar_nut = box_lidar_nut[0]
+                    _, box_lidar_nusc, _ = nusc.get_sample_data(lidar_token, box_vis_level=BoxVisibility.NONE,
+                                                                selected_anntokens=[sample_annotation_token])
+                    box_lidar_nusc = box_lidar_nusc[0]
 
                     # Truncated: Set all objects to 0 which means untruncated.
                     truncated = 0.0
@@ -353,7 +353,7 @@ def nuscenes_to_kitti_file(nusc: NuScenes,
                     # Alternatively use: visibility_map[int(sample_annotation['visibility_token'])]
 
                     # Convert to KITTI 3d and 2d box and KITTI output format.
-                    box_cam_kitti = KittiDB.box_nuscenes_to_kitti(box_lidar_nut, Quaternion(matrix=velo_to_cam_rot),
+                    box_cam_kitti = KittiDB.box_nuscenes_to_kitti(box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot),
                                                                   velo_to_cam_trans, r0_rect)
                     output = KittiDB.box_to_string(name=kitti_name, box=box_cam_kitti, truncation=truncated,
                                                    occlusion=occluded)
