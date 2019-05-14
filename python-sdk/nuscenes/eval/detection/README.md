@@ -216,7 +216,7 @@ For the lidar and vision detection tracks we restrict the type of sensor input t
 Note that this restriction applies only at test time.
 At training time any sensor input may be used.
 In particular this also means that at training time you are allowed to filter the GT boxes using `num_lidar_pts` and `num_radar_pts`, regardless of the track.
-However, during testing, the predicted boxes may *not* be filtered based on input from other sensor modalities.
+However, during testing the predicted boxes may *not* be filtered based on input from other sensor modalities.
 
 * *Map data:*
 By `map data` we mean using the *semantic* map provided in nuScenes. 
