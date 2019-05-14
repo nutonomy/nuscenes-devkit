@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-with open("../README.md", "r") as fh:
+with open('../README.md', 'r') as fh:
     long_description = fh.read()
 
 with open('requirements.txt') as f:
@@ -28,20 +28,22 @@ packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='1.0.0',
-    author="Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, "
-           "Chris Li, Sergi Widjaja et al.",
-    author_email="nuscenes@nutonomy.com",
-    description="The official devkit of the nuScenes dataset (www.nuscenes.org).",
+    version='1.0.2',
+    author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
+           'Chris Li, Sergi Widjaja et al.',
+    author_email='nuscenes@nutonomy.com',
+    description='The official devkit of the nuScenes dataset (www.nuscenes.org).',
     long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/nutonomy/nuscenes-devkit",
+    long_description_content_type='text/markdown',
+    url='https://github.com/nutonomy/nuscenes-devkit',
     python_requires='>=3.6',
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
+    package_data={'': '*.json'},
+    include_package_data=True,
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Operating System :: OS Independent",
+        'Programming Language :: Python :: 3.6',
+        'Operating System :: OS Independent',
     ],
 )
