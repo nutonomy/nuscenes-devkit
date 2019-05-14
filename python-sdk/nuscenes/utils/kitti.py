@@ -331,7 +331,7 @@ class KittiDB:
                 box.translate(center + np.array([0, -wlh[2] / 2, 0]))
 
                 # 3: Transform to KITTI LIDAR coord system. First transform from rectified camera to camera, then
-                # camera to KTITI lidar.
+                # camera to KITTI lidar.
                 box.rotate(Quaternion(matrix=transforms['r0_rect']).inverse)
                 box.translate(-transforms['velo_to_cam']['T'])
                 box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']).inverse)

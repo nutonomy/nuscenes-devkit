@@ -17,6 +17,10 @@ We do not encourage this, as:
 This script includes two main functions:
 - nuscenes_to_kitti_gt(): Converts nuScenes GT annotations to KITTI format.
 - kitti_res_to_nuscenes(): Converts a KITTI detection result to the nuScenes detection results format.
+
+To launch these scripts run:
+- python export_kitti.py nuscenes_to_kitti_gt --nusc_kitti_dir ~/nusc_kitti
+- python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
 """
 import os
 import json
