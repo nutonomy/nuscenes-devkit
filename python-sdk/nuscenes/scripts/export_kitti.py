@@ -308,6 +308,7 @@ class KittiConverter:
             'results': results
         }
         submission_path = os.path.join(self.nusc_kitti_dir, 'submission.json')
+        print('Writing submission to: %s' % submission_path)
         with open(submission_path, 'w') as f:
             json.dump(submission, f, indent=2)
 

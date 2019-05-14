@@ -142,6 +142,12 @@ class KittiDB:
             'alpha': float(parts[3])
         }
 
+        # Add score if specified
+        if len(label_line) > 15:
+            output['score'] = parts[15]
+        else:
+            output['score'] = np.nan
+
         return output
 
     @staticmethod
@@ -280,7 +286,8 @@ class KittiDB:
 
         return pc
 
-    def get_boxes(self, token: str,
+    def get_boxes(self,
+                  token: str,
                   filter_classes: List[str] = None,
                   max_dist: float = None) -> List[Box]:
         """
@@ -312,6 +319,7 @@ class KittiDB:
                 wlh = parsed_line['wlh']
                 yaw_camera = parsed_line['yaw_camera']
                 name = parsed_line['name']
+                score = parsed_line['score']
 
                 # Optional: Filter classes.
                 if filter_classes is not None and name not in filter_classes:
@@ -340,6 +348,9 @@ class KittiDB:
 
                 # 4: Transform to nuScenes LIDAR coord system.
                 box.rotate(self.kitti_to_nu_lidar)
+
+                # Add score or NaN.
+                box.score = score
 
                 # Optional: Filter by max_dist
                 if max_dist is not None:
