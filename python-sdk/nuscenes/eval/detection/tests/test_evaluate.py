@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection import NuScenesEval
-from nuscenes.eval.detection.config import config_factory
+from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.utils.splits import create_splits_scenes
 
@@ -30,10 +30,10 @@ class TestMain(unittest.TestCase):
             shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
-    def _mock_results(nusc, split) -> Dict[str, list]:
+    def _mock_submission(nusc, split) -> Dict[str, dict]:
         """
-        Creates "reasonable" results by looping through the full val-set, and adding 1 prediction per GT.
-        Predictions will be permuted randomly along all axes.
+        Creates "reasonable" submission (results and metadata) by looping through the full val-set, and adding 1
+        prediction per GT. Predictions will be permuted randomly along all axes.
         """
 
         def random_class(category_name):
@@ -60,6 +60,13 @@ class TestMain(unittest.TestCase):
                 # Pick a random attribute otherwise.
                 return rel_attributes[np.random.randint(0, len(rel_attributes))]
 
+        mock_meta = {
+            'use_camera': False,
+            'use_lidar': True,
+            'use_radar': False,
+            'use_map': False,
+            'use_external': False,
+        }
         mock_results = {}
         splits = create_splits_scenes()
         val_samples = []
@@ -84,7 +91,11 @@ class TestMain(unittest.TestCase):
                         'attribute_name': random_attr(detection_name)
                     })
             mock_results[sample['token']] = sample_res
-        return mock_results
+        mock_submission = {
+            'meta': mock_meta,
+            'results': mock_results
+        }
+        return mock_submission
 
     def test_delta(self):
         """
@@ -99,9 +110,13 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_results(nusc, 'mini_val'), f, indent=2)
+            json.dump(self._mock_submission(nusc, 'mini_val'), f, indent=2)
 
-        cfg = config_factory('cvpr_2019')
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg_name = 'cvpr_2019.json'
+        cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
+        with open(cfg_path, 'r') as f:
+            cfg = DetectionConfig.deserialize(json.load(f))
 
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=False)

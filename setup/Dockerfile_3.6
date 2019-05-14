@@ -16,7 +16,7 @@ RUN apt-get update && \
 WORKDIR /nuscenes-dev
 COPY setup/requirements.txt /nuscenes-dev
 # Install Python dependencies inside of the Docker image via Conda.
-RUN bash -c "conda create -y -n nuenv python=3.6; source activate nuenv && \
+RUN bash -c "conda create -y -n nuscenes python=3.6; source activate nuscenes && \
     pip install -r /nuscenes-dev/requirements.txt \
     && conda clean --yes --all"
 

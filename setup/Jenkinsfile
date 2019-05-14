@@ -6,6 +6,7 @@ pipeline {
     PROD_IMAGE = "nuscenes:production"
     TEST_IMAGE_3_6 = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
     TEST_IMAGE_3_7 = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
+    NUSCENES = "/data/sets/nuscenes"
   }
 
   stages {
@@ -99,7 +100,7 @@ pipeline {
                   claimName: nudeep-ci
               env:
               - name: NUSCENES
-                value: /data/sets/nuscenes
+                value: $NUSCENES
           """
         }// kubernetes
       } // agent
@@ -107,13 +108,14 @@ pipeline {
       steps {
         container('docker') {
           sh """#!/bin/bash
-            python -m unittest
+            set -e
+            source activate nuscenes && python -m unittest discover python-sdk
             bash setup/test_tutorial.sh
           """
         } // container
       }
-    } // stage('Test 3.7')
-    stage('Test notebook 3.7'){
+    }
+    stage('Test 3.7'){
       agent {
         kubernetes {
           label 'nuscenes-builder'
@@ -151,7 +153,7 @@ pipeline {
                   claimName: nudeep-ci
               env:
               - name: NUSCENES
-                value: /data/sets/nuscenes
+                value: $NUSCENES
           """
         }// kubernetes
       } // agent
@@ -159,12 +161,13 @@ pipeline {
       steps {
         container('docker') {
           sh """#!/bin/bash
-            python -m unittest
+            set -e
+            source activate nuscenes && python -m unittest discover python-sdk
             bash setup/test_tutorial.sh
           """
         } // container
       }
-    } // stage('Test notebook 3.7')
+    }
     stage('Deploy') {
       agent {
         kubernetes {

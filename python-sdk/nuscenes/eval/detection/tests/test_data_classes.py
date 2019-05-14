@@ -3,11 +3,32 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
+import os
 import unittest
 
 from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import MetricData, EvalBox, EvalBoxes, MetricDataList, DetectionConfig, \
     DetectionMetrics
+
+
+class TestDetectionConfig(unittest.TestCase):
+
+    def test_serialization(self):
+        """ test that instance serialization protocol works with json encoding """
+
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg_name = 'cvpr_2019.json'
+        config_path = os.path.join(this_dir, '..', 'configs', cfg_name)
+
+        with open(config_path) as f:
+            cfg = json.load(f)
+
+        detect_cfg = DetectionConfig.deserialize(cfg)
+
+        self.assertEqual(cfg, detect_cfg.serialize())
+
+        recovered = DetectionConfig.deserialize(json.loads(json.dumps(detect_cfg.serialize())))
+        self.assertEqual(detect_cfg, recovered)
 
 
 class TestEvalBox(unittest.TestCase):

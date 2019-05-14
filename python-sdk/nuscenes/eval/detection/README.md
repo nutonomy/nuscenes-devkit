@@ -185,6 +185,9 @@ We consolidate the above metrics by computing a weighted sum: mAP, mATE, mASE, m
 As a first step we convert the TP errors to TP scores as *TP_score = max(1 - TP_error, 0.0)*.
 We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
 
+### Configuration
+The default evaluation metrics configurations can be found in `nuscenes/eval/detection/configs/cvpr_2019.json`. 
+
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the detection task.
 For each submission the leaderboard will list method aspects and evaluation metrics.

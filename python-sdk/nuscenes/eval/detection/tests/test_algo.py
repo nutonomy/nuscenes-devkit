@@ -2,6 +2,7 @@
 # Code written by Oscar Beijbom and Varun Bankiti, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
+import json
 import os
 import random
 import unittest
@@ -11,8 +12,8 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
-from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.constants import TP_METRICS
+from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox, MetricDataList, DetectionMetrics, MetricData
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 
@@ -20,7 +21,10 @@ from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 class TestAlgo(unittest.TestCase):
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg = config_factory('cvpr_2019')
+    cfg_name = 'cvpr_2019.json'
+    cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
+    with open(cfg_path, 'r') as f:
+        cfg = DetectionConfig.deserialize(json.load(f))
 
     @staticmethod
     def _mock_results(nsamples, ngt, npred, detection_name):

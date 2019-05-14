@@ -2,11 +2,12 @@
 # Code written by Sourabh Vora, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
+import json
 import os
 import unittest
 
 from nuscenes import NuScenes
-from nuscenes.eval.detection.config import eval_detection_configs
+from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.detection.data_classes import EvalBox, EvalBoxes
 from nuscenes.eval.detection.loaders import filter_eval_boxes
 
@@ -18,6 +19,15 @@ class TestLoader(unittest.TestCase):
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         """
+
+        # Get the maximum distance from the config
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg_name = 'cvpr_2019.json'
+        cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
+        with open(cfg_path, 'r') as f:
+            cfg = DetectionConfig.deserialize(json.load(f))
+        max_dist = cfg.class_range
+
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
 
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
@@ -27,8 +37,6 @@ class TestLoader(unittest.TestCase):
         # 'translation': [683.681, 1592.002, 0.809],
         # 'size': [1.641, 14.465, 1.4],
         # 'rotation': [0.3473693995546558, 0.0, 0.0, 0.9377283723195315]
-
-        max_dist = eval_detection_configs['cvpr_2019']['class_range']
 
         # Test bicycle filtering by creating a box at the same position as the bike rack.
         box1 = EvalBox(sample_token=sample_token,
