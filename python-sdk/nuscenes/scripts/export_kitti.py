@@ -74,7 +74,7 @@ class KittiConverter:
 
         # Create nusc_kitti_dir.
         if not os.path.isdir(self.nusc_kitti_dir):
-            os.makedirs(nusc_kitti_dir)
+            os.makedirs(self.nusc_kitti_dir)
 
         # Select subset of the data to look at.
         if self.is_mini:
