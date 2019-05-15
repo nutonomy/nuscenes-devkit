@@ -421,10 +421,13 @@ class NuScenesExplorer:
 
     @staticmethod
     def get_color(category_name: str) -> Tuple[int, int, int]:
-        """ Provides the default colors based on the category names. """
+        """
+        Provides the default colors based on the category names.
+        This method also works for the detection categories.
+        """
         if 'bicycle' in category_name or 'motorcycle' in category_name:
             return 255, 61, 99  # Red
-        elif 'vehicle' in category_name:
+        elif 'vehicle' in category_name or category_name in ['bus', 'car', 'construction_vehicle', 'trailer', 'truck']:
             return 255, 158, 0  # Orange
         elif 'pedestrian' in category_name:
             return 0, 0, 230  # Blue
