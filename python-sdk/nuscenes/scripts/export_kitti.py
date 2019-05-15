@@ -247,7 +247,7 @@ class KittiConverter:
 
         # Create output folder.
         render_dir = os.path.join(self.nusc_kitti_dir, 'render')
-        if ~os.path.isdir(render_dir):
+        if not os.path.isdir(render_dir):
             os.mkdir(render_dir)
 
         # Render each image.
