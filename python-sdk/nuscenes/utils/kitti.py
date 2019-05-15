@@ -4,7 +4,6 @@
 
 
 import glob
-import json
 import warnings
 from os import path as osp
 from typing import List, Tuple, Any
@@ -57,7 +56,7 @@ class KittiDB:
         :param verbose: Whether to provide details during loading.
         """
         self.root = root
-        self.tables = ('calib', 'image', 'label', 'velodyne')
+        self.tables = ('calib', 'image_2', 'label_2', 'velodyne')
         self._kitti_fileext = {'calib': 'txt', 'image': 'png', 'label': 'txt', 'velodyne': 'bin'}
 
         # Grab all the expected tokens,
@@ -92,7 +91,7 @@ class KittiDB:
         for split, expected_tokens in self._kitti_tokens.items():
 
             for table in self.tables:
-                if split == 'test' and table == 'label':
+                if split == 'test' and table == 'label_2':
                     # No labels for the test set.
                     pass
                 else:
@@ -300,7 +299,7 @@ class KittiDB:
             # No boxes to return for the test set.
             return boxes
 
-        with open(KittiDB.get_filepath(token, 'label', root=self.root), 'r') as f:
+        with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
 
             for line in f:
                 # Parse this line into box information.

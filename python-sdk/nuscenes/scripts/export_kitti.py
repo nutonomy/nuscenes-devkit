@@ -97,7 +97,7 @@ class KittiConverter:
         # Create output folders.
         label_folder = os.path.join(self.nusc_kitti_dir, self.split, 'label_2')
         calib_folder = os.path.join(self.nusc_kitti_dir, self.split, 'calib')
-        image_folder = os.path.join(self.nusc_kitti_dir, self.split, 'image')
+        image_folder = os.path.join(self.nusc_kitti_dir, self.split, 'image_2')
         lidar_folder = os.path.join(self.nusc_kitti_dir, self.split, 'velodyne')
         for folder in [label_folder, calib_folder, image_folder, lidar_folder]:
             if not os.path.isdir(folder):
@@ -207,7 +207,6 @@ class KittiConverter:
             else:
                 print('Writing file: %s' % label_path)
             with open(label_path, "w") as label_file:
-
                 for sample_annotation_token in sample_annotation_tokens:
                     sample_annotation = self.nusc.get('sample_annotation', sample_annotation_token)
 
