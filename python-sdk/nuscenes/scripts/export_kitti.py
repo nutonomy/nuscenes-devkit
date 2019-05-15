@@ -226,6 +226,10 @@ class KittiConverter:
                     # Convert nuScenes category to nuScenes detection challenge category.
                     detection_name = category_to_detection_name(sample_annotation['category_name'])
 
+                    # Skip categories that are not part of the nuScenes detection challenge.
+                    if detection_name is None:
+                        continue
+
                     # Convert to KITTI 3d and 2d box and KITTI output format.
                     box_cam_kitti = KittiDB.box_nuscenes_to_kitti(
                         box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot), velo_to_cam_trans, r0_rect)
