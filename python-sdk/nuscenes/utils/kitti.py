@@ -80,12 +80,6 @@ class KittiDB:
         for split, tokens in self._kitti_tokens.items():
             self.tokens += ['{}_{}'.format(split, token) for token in tokens]
 
-        # This table stores the image sizes for all tokens corresponding to train, val and test sets in the KITTI DB.
-        # This table isn't actually provided by KITTI. It was created to speed up dataloading so that we don't have to
-        # open an image to figure out its size.
-        with open(osp.join(root, 'image_sizes.json'), 'r') as f:
-            self.image_sizes = json.load(f)
-
         # KITTI LIDAR has the x-axis pointing forward, but our LIDAR points to the right. So we need to apply a
         # 90 degree rotation around to yaw (z-axis) in order to align.
         # The quaternions will be used a lot of time. We store them as instance variables so that we don't have

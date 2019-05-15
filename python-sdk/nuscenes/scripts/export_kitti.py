@@ -17,6 +17,7 @@ Limitations:
 - We don't specify the KITTI imu_to_velo_kitti projection in this code base.
 - We don't map to KITTI category names or back.
 - Attributes are not part of KITTI and therefore not output in the nuScenes result format.
+- This script uses the `train` and `val` splits of nuScenes, whereas standard KITTI has `training` and `testing` splits.
 
 This script includes three main functions:
 - nuscenes_gt_to_kitti(): Converts nuScenes GT annotations to KITTI format.
@@ -54,12 +55,10 @@ class KittiConverter:
                  is_mini: bool = True,
                  cam_name: str = 'CAM_FRONT',
                  lidar_name: str = 'LIDAR_TOP',
-                 image_count: int = 10,
-                 image_size: Tuple[int, int] = (1600, 900)):
+                 image_count: int = 10):
         """
         :param nusc_kitti_dir: Where to write the KITTI-style annotations.
         :param is_mini: Whether to use only the mini split
-
         :param cam_name: Name of the camera to export. Note that only one camera is allowed in KITTI.
         :param lidar_name: Name of the lidar sensor.
         :param image_count: Number of images to convert.
@@ -69,7 +68,6 @@ class KittiConverter:
         self.cam_name = cam_name
         self.lidar_name = lidar_name
         self.image_count = image_count
-        self.image_size = image_size
 
         # Create nusc_kitti_dir.
         if not os.path.isdir(self.nusc_kitti_dir):
@@ -90,14 +88,13 @@ class KittiConverter:
         kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi / 2)
         kitti_to_nu_lidar_inv = kitti_to_nu_lidar.inverse
 
-        image_sizes = dict()  # Includes images from all splits.
         token_idx = 0  # Start tokens from 0.
         for split in self.splits:
             # Get assignment of scenes to splits.
             split_logs = create_splits_logs(split, self.nusc)
 
             # Create output folders.
-            label_folder = os.path.join(self.nusc_kitti_dir, split, 'label')
+            label_folder = os.path.join(self.nusc_kitti_dir, split, 'label_2')
             calib_folder = os.path.join(self.nusc_kitti_dir, split, 'calib')
             image_folder = os.path.join(self.nusc_kitti_dir, split, 'image')
             lidar_folder = os.path.join(self.nusc_kitti_dir, split, 'velodyne')
@@ -180,9 +177,6 @@ class KittiConverter:
                 with open(dst_lid_path, "w") as lid_file:
                     pcl.points.T.tofile(lid_file)
 
-                # Add to image_sizes.
-                image_sizes[token] = self.image_size
-
                 # Add to tokens.
                 tokens.append(token)
 
@@ -243,11 +237,6 @@ class KittiConverter:
             with open(tok_path, "w") as tok_file:
                 for tok in tokens:
                     tok_file.write(tok + '\n')
-
-        # Write image_sizes.json for all splits.
-        image_sizes_path = os.path.join(self.nusc_kitti_dir, 'image_sizes.json')
-        with open(image_sizes_path, 'w') as image_sizes_file:
-            json.dump(image_sizes, image_sizes_file, indent=2)
 
     def render_kitti(self) -> None:
         """
