@@ -18,23 +18,15 @@ Limitations:
 - We don't map to KITTI category names or back.
 - Attributes are not part of KITTI and therefore not output in the nuScenes result format.
 
-This script includes two main functions:
-- nuscenes_to_kitti_gt(): Converts nuScenes GT annotations to KITTI format.
+This script includes three main functions:
+- nuscenes_gt_to_kitti(): Converts nuScenes GT annotations to KITTI format.
+- render_kitti(): Render the annotations of the (generated or real) KITTI dataset.
 - kitti_res_to_nuscenes(): Converts a KITTI detection result to the nuScenes detection results format.
 
 To launch these scripts run:
-- python export_kitti.py nuscenes_to_kitti_gt --nusc_kitti_dir ~/nusc_kitti
+- python export_kitti.py nuscenes_gt_to_kitti --nusc_kitti_dir ~/nusc_kitti
+- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti
 - python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
-
-To visualize the KITTI data, run:
-```
-import os
-from nuscenes.utils.kitti import KittiDB
-kitti = KittiDB(root=os.path.expanduser('~/nusc_kitti'), splits=('mini_train', 'mini_val'))
-for token in kitti.tokens:
-    for sensor in ['lidar', 'camera']:
-        kitti.render_sample_data(token, sensor_modality=sensor, out_path='%s_%s' % (token, sensor))
-```
 
 See https://www.nuscenes.org/object-detection for more information on the nuScenes result format.
 """
@@ -90,7 +82,7 @@ class KittiConverter:
             self.nusc = NuScenes(version='v1.0-trainval')
             self.splits = ('train', 'val')
 
-    def nuscenes_to_kitti_gt(self) -> None:
+    def nuscenes_gt_to_kitti(self) -> None:
         """
         Converts nuScenes GT annotations to KITTI format.
         """
@@ -255,6 +247,24 @@ class KittiConverter:
         image_sizes_path = os.path.join(self.nusc_kitti_dir, 'image_sizes.json')
         with open(image_sizes_path, 'w') as image_sizes_file:
             json.dump(image_sizes, image_sizes_file, indent=2)
+
+    def render_kitti(self) -> None:
+        """
+        Renders the annotations in the KITTI dataset from a lidar and a camera view.
+        """
+        # Load the KITTI dataset.
+        kitti = KittiDB(root=self.nusc_kitti_dir, splits=self.splits)
+
+        # Create output folder.
+        render_dir = os.path.join(self.nusc_kitti_dir, 'render')
+        if ~os.path.isdir(render_dir):
+            os.makedirs(render_dir)
+
+        # Render each image.
+        for token in kitti.tokens:
+            for sensor in ['lidar', 'camera']:
+                out_path = os.path.join(render_dir, '%s_%s.png' % (token, sensor))
+                kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path)
 
     def kitti_res_to_nuscenes(self) -> None:
         """

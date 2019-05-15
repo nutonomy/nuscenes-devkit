@@ -22,7 +22,7 @@ from nuscenes.utils.data_classes import Box, LidarPointCloud
 class KittiDB:
     """
     KITTI database that abstracts away interactions with KITTI files and handles all required transformations.
-    This file exists as a utility class for `nuscenes_kitti_roundtrip.py`. It may not support more general use cases.
+    This file exists as a utility class for `export_kitti.py`. It may not support more general use cases.
 
     NOTES about KITTI:
         - Setup is defined here: http://www.cvlibs.net/datasets/kitti/setup.php
