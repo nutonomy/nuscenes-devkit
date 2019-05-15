@@ -67,13 +67,6 @@ class KittiDB:
             lines.sort()
             self._kitti_tokens[split] = lines
 
-        # Verify the tables.
-        if verbose:
-            print('Verifying database tables now...')
-        self._verify()
-        if verbose:
-            print('Passed verification.')
-
         # Creating the tokens.
         self.tokens = []
         for split, tokens in self._kitti_tokens.items():
@@ -85,22 +78,6 @@ class KittiDB:
         # to create a new one every single time.
         self.kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi / 2)
         self.kitti_to_nu_lidar_inv = Quaternion(axis=(0, 0, 1), angle=np.pi / 2).inverse
-
-    def _verify(self) -> None:
-        """ Verifies that all tables have expected tokens. """
-        for split, expected_tokens in self._kitti_tokens.items():
-
-            for table in self.tables:
-                if split == 'test' and table == 'label_2':
-                    # No labels for the test set.
-                    pass
-                else:
-                    fileext = self._kitti_fileext[table]
-                    localnames = [filename.split('/')[-1] for filename in
-                                  glob.glob(osp.join(self.root, split, table, '*.{}'.format(fileext)))]
-                    tokens = [localname.split('.')[0] for localname in localnames]
-                    if set(expected_tokens) != set(tokens):
-                        warnings.warn('Split {} is missing tokens for the {} table.'.format(split, table))
 
     @staticmethod
     def standardize_sample_token(token: str) -> Tuple[str, str]:
