@@ -15,8 +15,9 @@ We do not encourage this, as:
 
 Limitations:
 - We don't specify the KITTI imu_to_velo_kitti projection in this code base.
-- We don't map to KITTI category names or back.
-- Attributes are not part of KITTI and therefore not output in the nuScenes result format.
+- We map nuScenes categories to nuScenes detection categories, rather than KITTI categories.
+- Attributes are not part of KITTI and therefore set to '' in the nuScenes result format.
+- Velocities are not part of KITTI and therefore set to 0 in the nuScenes result format.
 - This script uses the `train` and `val` splits of nuScenes, whereas standard KITTI has `training` and `testing` splits.
 
 This script includes three main functions:
@@ -47,6 +48,7 @@ from nuscenes.utils.geometry_utils import BoxVisibility
 from nuscenes.utils.data_classes import LidarPointCloud, Box
 from nuscenes.utils.splits import create_splits_logs
 from nuscenes.utils.kitti import KittiDB
+from nuscenes.eval.detection.utils import category_to_detection_name
 
 
 class KittiConverter:
@@ -221,12 +223,14 @@ class KittiConverter:
                     # Occluded: Hard-coded: Full visibility.
                     occluded = 0
 
+                    # Convert nuScenes category to nuScenes detection challenge category.
+                    detection_name = category_to_detection_name(sample_annotation['category_name'])
+
                     # Convert to KITTI 3d and 2d box and KITTI output format.
                     box_cam_kitti = KittiDB.box_nuscenes_to_kitti(
                         box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot), velo_to_cam_trans, r0_rect)
                     box_cam_kitti.score = 0  # Set dummy score so we can use this file as result.
-                    category = sample_annotation['category_name']
-                    output = KittiDB.box_to_string(name=category, box=box_cam_kitti, truncation=truncated,
+                    output = KittiDB.box_to_string(name=detection_name, box=box_cam_kitti, truncation=truncated,
                                                    occlusion=occluded)
 
                     # Write to disk.
