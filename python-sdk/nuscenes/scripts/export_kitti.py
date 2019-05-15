@@ -38,6 +38,7 @@ from pyquaternion import Quaternion
 import numpy as np
 import fire
 from PIL import Image
+import matplotlib.pyplot as plt
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import transform_matrix
@@ -229,7 +230,7 @@ class KittiConverter:
                         # Convert to KITTI 3d and 2d box and KITTI output format.
                         box_cam_kitti = KittiDB.box_nuscenes_to_kitti(
                             box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot), velo_to_cam_trans, r0_rect)
-                        box_cam_kitti.score = 0 # Set dummy score so we can use this file as result.
+                        box_cam_kitti.score = 0  # Set dummy score so we can use this file as result.
                         category = sample_annotation['category_name']
                         output = KittiDB.box_to_string(name=category, box=box_cam_kitti, truncation=truncated,
                                                        occlusion=occluded)
@@ -261,10 +262,12 @@ class KittiConverter:
             os.makedirs(render_dir)
 
         # Render each image.
-        for token in kitti.tokens:
+        for token in kitti.tokens[:self.image_count]:
             for sensor in ['lidar', 'camera']:
                 out_path = os.path.join(render_dir, '%s_%s.png' % (token, sensor))
+                print('Rendering file to disk: %s' % out_path)
                 kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path)
+                plt.close()  # Close the windows to avoid a warning of too many open windows.
 
     def kitti_res_to_nuscenes(self) -> None:
         """
