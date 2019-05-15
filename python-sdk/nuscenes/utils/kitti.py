@@ -57,7 +57,7 @@ class KittiDB:
         """
         self.root = root
         self.tables = ('calib', 'image_2', 'label_2', 'velodyne')
-        self._kitti_fileext = {'calib': 'txt', 'image': 'png', 'label': 'txt', 'velodyne': 'bin'}
+        self._kitti_fileext = {'calib': 'txt', 'image_2': 'png', 'label_2': 'txt', 'velodyne': 'bin'}
 
         # Grab all the expected tokens,
         self._kitti_tokens = {}
@@ -195,7 +195,7 @@ class KittiDB:
 
         ending = kitti_fileext[table]
 
-        if token.startswith('test_') and table == 'label':
+        if token.startswith('test_') and table == 'label_2':
             filepath = None
             print('No cheating! The test set has no labels.')
         else:
@@ -459,7 +459,7 @@ class KittiDB:
 
         elif sensor_modality == 'camera':
             transforms = self.get_transforms(token, self.root)
-            im_path = KittiDB.get_filepath(token, 'image', root=self.root)
+            im_path = KittiDB.get_filepath(token, 'image_2', root=self.root)
             im = Image.open(im_path)
 
             if ax is None:
