@@ -191,7 +191,7 @@ class KittiDB:
         :return: Full get_filepath to desired data.
         """
         folder, filename = KittiDB.standardize_sample_token(token)
-        kitti_fileext = {'calib': 'txt', 'image': 'png', 'label': 'txt', 'velodyne': 'bin'}
+        kitti_fileext = {'calib': 'txt', 'image_2': 'png', 'label_2': 'txt', 'velodyne': 'bin'}
 
         ending = kitti_fileext[table]
 
