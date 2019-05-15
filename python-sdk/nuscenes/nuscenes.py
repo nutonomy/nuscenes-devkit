@@ -423,7 +423,7 @@ class NuScenesExplorer:
     def get_color(category_name: str) -> Tuple[int, int, int]:
         """
         Provides the default colors based on the category names.
-        This method also works for the detection categories.
+        This method works for the general nuScenes categories, as well as the nuScenes detection categories.
         """
         if 'bicycle' in category_name or 'motorcycle' in category_name:
             return 255, 61, 99  # Red
