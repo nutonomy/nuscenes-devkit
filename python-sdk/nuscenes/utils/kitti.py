@@ -2,9 +2,6 @@
 # Code written by Alex Lang and Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-
-import glob
-import warnings
 from os import path as osp
 from typing import List, Tuple, Any
 
@@ -16,6 +13,7 @@ from pyquaternion import Quaternion
 
 from nuscenes.utils.geometry_utils import box_in_image, BoxVisibility, view_points
 from nuscenes.utils.data_classes import Box, LidarPointCloud
+from nuscenes.nuscenes import NuScenesExplorer
 
 
 class KittiDB:
@@ -48,12 +46,10 @@ class KittiDB:
 
     def __init__(self,
                  root: str = '/data/sets/kitti',
-                 splits: Tuple[str, ...] = ('train', 'val'),
-                 verbose: bool = False):
+                 splits: Tuple[str, ...] = ('train',)):
         """
         :param root: Base folder for all KITTI data.
         :param splits: Which splits to load.
-        :param verbose: Whether to provide details during loading.
         """
         self.root = root
         self.tables = ('calib', 'image_2', 'label_2', 'velodyne')
@@ -427,7 +423,7 @@ class KittiDB:
         """
         # Default settings.
         if color_func is None:
-            color_func = self.get_color
+            color_func = NuScenesExplorer.get_color
 
         boxes = self.get_boxes(token, filter_classes=filter_classes, max_dist=max_dist)  # In nuScenes lidar frame.
 
@@ -497,16 +493,3 @@ class KittiDB:
         plt.tight_layout()
         if out_path is not None:
             plt.savefig(out_path)
-
-    @staticmethod
-    def get_color(category_name: str) -> Tuple[int, int, int]:
-        """ Provides the default colors based on the category names. """
-        if 'Cyclist' in category_name:
-            return 255, 61, 99  # Red.
-        elif 'Car' in category_name:
-            return 255, 158, 0  # Orange.
-        elif 'Pedestrian' in category_name:
-            return 0, 0, 230  # Blue.
-        else:
-            # Contrary to nuScenes we show all vehicles as orange.
-            return 255, 158, 0  # Orange.
