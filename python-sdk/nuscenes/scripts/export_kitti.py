@@ -259,7 +259,7 @@ class KittiConverter:
         # Create output folder.
         render_dir = os.path.join(self.nusc_kitti_dir, 'render')
         if ~os.path.isdir(render_dir):
-            os.makedirs(render_dir)
+            os.mkdir(render_dir)
 
         # Render each image.
         for token in kitti.tokens[:self.image_count]:
