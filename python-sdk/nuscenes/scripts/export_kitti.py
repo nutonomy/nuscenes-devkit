@@ -244,7 +244,7 @@ class KittiConverter:
         Renders the annotations in the KITTI dataset from a lidar and a camera view.
         """
         # Load the KITTI dataset.
-        kitti = KittiDB(root=self.nusc_kitti_dir, splits=self.splits)
+        kitti = KittiDB(root=self.nusc_kitti_dir, splits=(self.split,))
 
         # Create output folder.
         render_dir = os.path.join(self.nusc_kitti_dir, 'render')
