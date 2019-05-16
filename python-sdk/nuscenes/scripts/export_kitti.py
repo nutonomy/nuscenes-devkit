@@ -238,12 +238,6 @@ class KittiConverter:
                     # Write to disk.
                     label_file.write(output + '\n')
 
-        # Write tokens.txt for each split.
-        tok_path = os.path.join(self.nusc_kitti_dir, self.split, 'tokens.txt')
-        with open(tok_path, "w") as tok_file:
-            for tok in tokens:
-                tok_file.write(tok + '\n')
-
     def render_kitti(self) -> None:
         """
         Renders the annotations in the KITTI dataset from a lidar and a camera view.

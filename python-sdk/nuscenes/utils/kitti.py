@@ -2,6 +2,7 @@
 # Code written by Alex Lang and Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
+import os
 from os import path as osp
 from typing import List, Tuple, Any
 
@@ -58,10 +59,10 @@ class KittiDB:
         # Grab all the expected tokens,
         self._kitti_tokens = {}
         for split in splits:
-            with open(osp.join(self.root, '{}/tokens.txt'.format(split)), 'r') as f:
-                lines = f.read().splitlines()
-            lines.sort()
-            self._kitti_tokens[split] = lines
+            split_dir = osp.join(self.root, split, 'image_2')
+            _tokens = os.listdir(split_dir)
+            _tokens.sort()
+            self._kitti_tokens[split] = _tokens
 
         # Creating the tokens.
         self.tokens = []
