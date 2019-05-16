@@ -54,7 +54,6 @@ from nuscenes.eval.detection.utils import category_to_detection_name
 class KittiConverter:
     def __init__(self,
                  nusc_kitti_dir: str = '~/nusc_kitti',
-                 is_mini: bool = True,
                  cam_name: str = 'CAM_FRONT',
                  lidar_name: str = 'LIDAR_TOP',
                  image_count: int = 10,
@@ -62,7 +61,6 @@ class KittiConverter:
                  split: str = 'mini_train'):
         """
         :param nusc_kitti_dir: Where to write the KITTI-style annotations.
-        :param is_mini: Whether to use only the mini split
         :param cam_name: Name of the camera to export. Note that only one camera is allowed in KITTI.
         :param lidar_name: Name of the lidar sensor.
         :param image_count: Number of images to convert.
@@ -70,7 +68,6 @@ class KittiConverter:
         :param split: Dataset split to use.
         """
         self.nusc_kitti_dir = os.path.expanduser(nusc_kitti_dir)
-        self.is_mini = is_mini
         self.cam_name = cam_name
         self.lidar_name = lidar_name
         self.image_count = image_count
