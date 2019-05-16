@@ -30,6 +30,9 @@ To launch these scripts run:
 - python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti
 - python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
 
+To work with the original KITTI dataset, use these parameters:
+ --nusc_kitti_dir /data/sets/kitti --split training
+
 See https://www.nuscenes.org/object-detection for more information on the nuScenes result format.
 """
 import os
