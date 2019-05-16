@@ -292,7 +292,8 @@ class KittiConverter:
 
         for sample_token in sample_tokens:
             # Get the KITTI boxes we just generated in LIDAR frame.
-            boxes = kitti.get_boxes(token=sample_token)
+            kitti_token = '%s_%s' % (self.split, sample_token)
+            boxes = kitti.get_boxes(token=kitti_token)
 
             # Convert KITTI boxes to nuScenes detection challenge result format.
             sample_results = [self._box_to_sample_result(sample_token, box) for box in boxes]
