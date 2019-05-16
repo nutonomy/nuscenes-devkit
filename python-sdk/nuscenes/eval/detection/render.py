@@ -298,7 +298,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
            '\\textbf{AAE}   \\\\ \\hline ' \
            '\\hline\n'
     for name in DETECTION_NAMES:
-        ap = np.mean(metrics['label_aps'][name].values())
+        ap = np.mean(metrics['label_aps'][name].values()) * 100
         ate = metrics['label_tp_errors'][name]['trans_err']
         ase = metrics['label_tp_errors'][name]['scale_err']
         aoe = metrics['label_tp_errors'][name]['orient_err']
@@ -327,14 +327,14 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     tex += '\\end{tabular}\n'
 
     # All one line
-    tex += '\\caption{Detailed detection performance. '
-    tex += 'AP: average precision, '
-    tex += 'ATE: average translation error (${}$), '.format(TP_METRICS_UNITS['trans_err'])
-    tex += 'ASE: average scale error (${}$), '.format(TP_METRICS_UNITS['scale_err'])
-    tex += 'AOE: average orientation error (${}$), '.format(TP_METRICS_UNITS['orient_err'])
-    tex += 'AVE: average velocity error (${}$), '.format(TP_METRICS_UNITS['vel_err'])
-    tex += 'AAE: average attribute error (${}$). '.format(TP_METRICS_UNITS['attr_err'])
-    tex += 'nuScenes Detection Score (NDS) = {:.1f} '.format(metrics['nd_score'] * 100)
+    tex += '\\caption{Detailed detection performance for best lidar network on the val set. \n'
+    tex += 'AP: average precision averaged over distance thresholds (\%), \n'
+    tex += 'ATE: average translation error (${}$), \n'.format(TP_METRICS_UNITS['trans_err'])
+    tex += 'ASE: average scale error (${}$), \n'.format(TP_METRICS_UNITS['scale_err'])
+    tex += 'AOE: average orientation error (${}$), \n'.format(TP_METRICS_UNITS['orient_err'])
+    tex += 'AVE: average velocity error (${}$), \n'.format(TP_METRICS_UNITS['vel_err'])
+    tex += 'AAE: average attribute error (${}$). \n'.format(TP_METRICS_UNITS['attr_err'])
+    tex += 'nuScenes Detection Score (NDS) = {:.1f} \n'.format(metrics['nd_score'] * 100)
     tex += '}\n'
 
     tex += '\\end{table}\n'
