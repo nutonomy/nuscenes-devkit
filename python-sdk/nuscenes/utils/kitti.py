@@ -56,11 +56,12 @@ class KittiDB:
         self.tables = ('calib', 'image_2', 'label_2', 'velodyne')
         self._kitti_fileext = {'calib': 'txt', 'image_2': 'png', 'label_2': 'txt', 'velodyne': 'bin'}
 
-        # Grab all the expected tokens,
+        # Grab all the expected tokens.
         self._kitti_tokens = {}
         for split in splits:
             split_dir = osp.join(self.root, split, 'image_2')
             _tokens = os.listdir(split_dir)
+            _tokens = [t.replace('.png', '') for t in _tokens]
             _tokens.sort()
             self._kitti_tokens[split] = _tokens
 
