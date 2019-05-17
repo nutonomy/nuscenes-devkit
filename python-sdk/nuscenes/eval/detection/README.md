@@ -26,7 +26,7 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 The first nuScenes detection challenge will be held at CVPR 2019.
 **Submission opened May 6 and closes June 12**.
 To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356).
-Then upload your results file in JSON format and provide all of the meta data if possible: method name, description, project URL and publication URL.
+Then upload your zipped result file and provide all of the meta data if possible: method name, description, project URL and publication URL.
 The leaderboard will remain private until the end of the challenge.
 Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 Please note that this workshop is not related to the similarly named [Workshop on Autonomous Driving Beyond Single-Frame Perception](http://www.wad.ai).
