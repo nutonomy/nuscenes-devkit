@@ -171,9 +171,7 @@ class KittiConverter:
             src_lid_path = os.path.join(self.nusc.dataroot, filename_lid_full)
             dst_lid_path = os.path.join(lidar_folder, sample_token + '.bin')
             assert not dst_lid_path.endswith('.pcd.bin')
-            scan = np.fromfile(src_lid_path, dtype=np.float32)
-            points = scan.reshape((-1, 5))[:, :4].T
-            pcl = LidarPointCloud(points)
+            pcl = LidarPointCloud.from_file(src_lid_path)
             pcl.rotate(kitti_to_nu_lidar_inv.rotation_matrix)  # In KITTI lidar frame.
             with open(dst_lid_path, "w") as lid_file:
                 pcl.points.T.tofile(lid_file)
@@ -258,18 +256,20 @@ class KittiConverter:
                 kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path)
                 plt.close()  # Close the windows to avoid a warning of too many open windows.
 
-    def kitti_res_to_nuscenes(self) -> None:
+    def kitti_res_to_nuscenes(self, meta: Dict[str, bool] = None) -> None:
         """
         Converts a KITTI detection result to the nuScenes detection results format.
+        :param meta: Meta data describing the method used to generate the result. See nuscenes.org/object-detection.
         """
         # Dummy meta data, please adjust accordingly.
-        meta = {
-            'use_camera': False,
-            'use_lidar': True,
-            'use_radar': False,
-            'use_map': False,
-            'use_external': False,
-        }
+        if meta is None:
+            meta = {
+                'use_camera': False,
+                'use_lidar': True,
+                'use_radar': False,
+                'use_map': False,
+                'use_external': False,
+            }
 
         # Init.
         results = {}
