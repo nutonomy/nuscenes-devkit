@@ -4,7 +4,7 @@
 
 import os
 from os import path as osp
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -154,7 +154,7 @@ class KittiDB:
 
     @staticmethod
     def project_kitti_box_to_image(box: Box, p_left: np.ndarray, imsize: Tuple[int, int]) \
-            -> Optional[None, Tuple[int, int, int, int]]:
+            -> Union[None, Tuple[int, int, int, int]]:
         """
         Projects 3D box into KITTI image FOV.
         :param box: 3D box in KITTI reference frame.
