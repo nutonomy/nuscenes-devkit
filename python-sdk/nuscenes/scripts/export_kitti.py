@@ -246,9 +246,10 @@ class KittiConverter:
                     # Write to disk.
                     label_file.write(output + '\n')
 
-    def render_kitti(self) -> None:
+    def render_kitti(self, render_2d: bool) -> None:
         """
         Renders the annotations in the KITTI dataset from a lidar and a camera view.
+        :param render_2d: Whether to render 2d boxes (only works for camera data).
         """
         # Load the KITTI dataset.
         kitti = KittiDB(root=self.nusc_kitti_dir, splits=(self.split,))
@@ -263,7 +264,7 @@ class KittiConverter:
             for sensor in ['lidar', 'camera']:
                 out_path = os.path.join(render_dir, '%s_%s.png' % (token, sensor))
                 print('Rendering file to disk: %s' % out_path)
-                kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path)
+                kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path, render_2d=render_2d)
                 plt.close()  # Close the windows to avoid a warning of too many open windows.
 
     def kitti_res_to_nuscenes(self, meta: Dict[str, bool] = None) -> None:

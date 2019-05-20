@@ -288,7 +288,6 @@ class KittiDB:
             return boxes
 
         with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
-
             for line in f:
                 # Parse this line into box information.
                 parsed_line = self.parse_label_line(line)
@@ -345,6 +344,38 @@ class KittiDB:
                 boxes.append(box)
 
         return boxes
+
+    def get_boxes_2d(self,
+                     token: str,
+                     filter_classes: List[str] = None) -> Tuple[
+            List[Tuple[float, float, float, float]],
+            List[str]
+        ]:
+        """
+        Get the 2d boxes associated with a sample.
+        :return: A list of boxes in KITTI format (xmin, ymin, xmax, ymax) and a list of the class names.
+        """
+        boxes = []
+        names = []
+        with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
+            for line in f:
+                # Parse this line into box information.
+                parsed_line = self.parse_label_line(line)
+
+                if parsed_line['name'] in {'DontCare', 'Misc'}:
+                    continue
+
+                bbox_2d = parsed_line['bbox_camera']
+                name = parsed_line['name']
+
+                # Optional: Filter classes.
+                if filter_classes is not None and name not in filter_classes:
+                    continue
+
+                boxes.append(bbox_2d)
+                names.append(name)
+        return boxes, names
+
 
     @staticmethod
     def box_to_string(name: str,
@@ -421,7 +452,8 @@ class KittiDB:
                            box_linewidth: int = 2,
                            filter_classes: List[str] = None,
                            max_dist: float = None,
-                           out_path: str = None) -> None:
+                           out_path: str = None,
+                           render_2d: bool = False) -> None:
         """
         Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
         :param token: KITTI token.
@@ -436,6 +468,7 @@ class KittiDB:
         :param filter_classes: Optionally filter the classes to render.
         :param max_dist: Maximum distance in m to still draw a box.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param render_2d: Whether to render 2d boxes (only works for camera data).
         """
         # Default settings.
         if color_func is None:
@@ -470,7 +503,6 @@ class KittiDB:
                     box.render(ax, view=view_3d, colors=(color, color, 'k'), linewidth=box_linewidth)
 
         elif sensor_modality == 'camera':
-            transforms = self.get_transforms(token, self.root)
             im_path = KittiDB.get_filepath(token, 'image_2', root=self.root)
             im = Image.open(im_path)
 
@@ -483,21 +515,33 @@ class KittiDB:
                 ax.set_ylim(im.size[1], 0)
 
             if with_anns:
-                for box in boxes:
-                    # Undo the transformations in get_boxes() to get back to the camera frame.
-                    box.rotate(self.kitti_to_nu_lidar_inv)  # In KITTI lidar frame.
-                    box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']))
-                    box.translate(transforms['velo_to_cam']['T'])  # In KITTI camera frame, un-rectified.
-                    box.rotate(Quaternion(matrix=transforms['r0_rect']))  # In KITTI camera frame, rectified.
+                if render_2d:
+                    # Use KITTI's 2d boxes.
+                    boxes_2d, names = self.get_boxes_2d(token, filter_classes=filter_classes)
+                    for box, name in zip(boxes_2d, names):
+                        color = np.array(color_func(name)) / 255
+                        ax.plot([box[0], box[0]], [box[1], box[3]], color=color, linewidth=box_linewidth)
+                        ax.plot([box[2], box[2]], [box[1], box[3]], color=color, linewidth=box_linewidth)
+                        ax.plot([box[0], box[2]], [box[1], box[1]], color=color, linewidth=box_linewidth)
+                        ax.plot([box[0], box[2]], [box[3], box[3]], color=color, linewidth=box_linewidth)
+                else:
+                    # Project 3d boxes to 2d.
+                    transforms = self.get_transforms(token, self.root)
+                    for box in boxes:
+                        # Undo the transformations in get_boxes() to get back to the camera frame.
+                        box.rotate(self.kitti_to_nu_lidar_inv)  # In KITTI lidar frame.
+                        box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']))
+                        box.translate(transforms['velo_to_cam']['T'])  # In KITTI camera frame, un-rectified.
+                        box.rotate(Quaternion(matrix=transforms['r0_rect']))  # In KITTI camera frame, rectified.
 
-                    # Filter boxes outside the image (relevant when visualizing nuScenes data in KITTI format).
-                    if not box_in_image(box, transforms['p_left'][:3, :3], im.size, vis_level=BoxVisibility.ANY):
-                        continue
+                        # Filter boxes outside the image (relevant when visualizing nuScenes data in KITTI format).
+                        if not box_in_image(box, transforms['p_left'][:3, :3], im.size, vis_level=BoxVisibility.ANY):
+                            continue
 
-                    # Render.
-                    color = np.array(color_func(box.name)) / 255
-                    box.render(ax, view=transforms['p_left'][:3, :3], normalize=True, colors=(color, color, 'k'),
-                               linewidth=box_linewidth)
+                        # Render.
+                        color = np.array(color_func(box.name)) / 255
+                        box.render(ax, view=transforms['p_left'][:3, :3], normalize=True, colors=(color, color, 'k'),
+                                   linewidth=box_linewidth)
         else:
             raise ValueError("Unrecognized modality {}.".format(sensor_modality))
 
