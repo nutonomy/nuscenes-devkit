@@ -17,6 +17,7 @@ from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics, EvalBoxes
 from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
+from nuscenes.eval.detection.config import config_factory
 
 
 class NuScenesEval:
@@ -267,12 +268,10 @@ if __name__ == "__main__":
     verbose_ = bool(args.verbose)
 
     if config_path == '':
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_name = 'cvpr_2019.json'
-        config_path = os.path.join(this_dir, 'configs', cfg_name)
-
-    with open(config_path, 'r') as f:
-        cfg_ = DetectionConfig.deserialize(json.load(f))
+        cfg_ = config_factory('cvpr_2019')
+    else:
+        with open(config_path, 'r') as f:
+            cfg_ = DetectionConfig.deserialize(json.load(f))
 
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
     nusc_eval = NuScenesEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,

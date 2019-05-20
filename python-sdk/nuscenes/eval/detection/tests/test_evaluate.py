@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.detection import NuScenesEval
-from nuscenes.eval.detection.data_classes import DetectionConfig
+from nuscenes.eval.detection.config import config_factory
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
 from nuscenes.utils.splits import create_splits_scenes
 
@@ -112,12 +112,7 @@ class TestMain(unittest.TestCase):
         with open(self.res_mockup, 'w') as f:
             json.dump(self._mock_submission(nusc, 'mini_val'), f, indent=2)
 
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_name = 'cvpr_2019.json'
-        cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
-        with open(cfg_path, 'r') as f:
-            cfg = DetectionConfig.deserialize(json.load(f))
-
+        cfg = config_factory('cvpr_2019')
         nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=False)
         metrics, md_list = nusc_eval.evaluate()
