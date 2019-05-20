@@ -179,10 +179,17 @@ class KittiDB:
         imcorners = view_points(corners, p_left, normalize=True)[:2]
         bbox = (np.min(imcorners[0]), np.min(imcorners[1]), np.max(imcorners[0]), np.max(imcorners[1]))
 
-        # Crop bbox to prevent it extending outside image
-        bbox_crop = (max(0, bbox[0]), max(0, bbox[1]), min(imsize[0], bbox[2]), min(imsize[1], bbox[3]))
+        # Crop bbox to prevent it extending outside image.
+        bbox_crop = tuple(max(0, b) for b in bbox)
+        bbox_crop = (min(imsize[0], bbox_crop[0]),
+                     min(imsize[0], bbox_crop[1]),
+                     min(imsize[0], bbox_crop[2]),
+                     min(imsize[1], bbox_crop[3]))
 
-        assert bbox_crop[0] < bbox_crop[2] and bbox_crop[1] < bbox_crop[3], 'Error: Box conversion error!'
+        # Detect if a cropped box is empty.
+        if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
+            return None
+
         return bbox_crop
 
     @staticmethod
