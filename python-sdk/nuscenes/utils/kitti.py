@@ -182,6 +182,7 @@ class KittiDB:
         # Crop bbox to prevent it extending outside image
         bbox_crop = (max(0, bbox[0]), max(0, bbox[1]), min(imsize[0], bbox[2]), min(imsize[1], bbox[3]))
 
+        assert bbox_crop[0] < bbox_crop[2] and bbox_crop[1] < bbox_crop[3], 'Error: Box conversion error!'
         return bbox_crop
 
     @staticmethod
@@ -362,13 +363,13 @@ class KittiDB:
 
         # Prepare output.
         name += ' '
-        trunc = '{:.3f} '.format(truncation)
+        trunc = '{:.2f} '.format(truncation)
         occ = '{:d} '.format(occlusion)
-        a = '{:.3f} '.format(alpha)
-        bb = '{:.3f} {:.3f} {:.3f} {:.3f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
-        hwl = '{:.3f} {:.3f} {:.3f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
-        xyz = '{:.3f} {:.3f} {:.3f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
-        y = '{:.3f}'.format(yaw)  # Yaw angle.
+        a = '{:.2f} '.format(alpha)
+        bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
+        hwl = '{:.2} {:.2f} {:.2f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
+        xyz = '{:.2f} {:.2f} {:.2f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
+        y = '{:.2f}'.format(yaw)  # Yaw angle.
         s = ' {:.4f}'.format(box.score)  # Classification score.
 
         output = name + trunc + occ + a + bb + hwl + xyz + y

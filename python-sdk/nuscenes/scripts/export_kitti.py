@@ -217,7 +217,7 @@ class KittiConverter:
                     # Truncated: Set all objects to 0 which means untruncated.
                     truncated = 0.0
 
-                    # Occluded: Hard-coded: Full visibility.
+                    # Occluded: Set all objects to full visibility as this information is not available in nuScenes.
                     occluded = 0
 
                     # Convert nuScenes category to nuScenes detection challenge category.
