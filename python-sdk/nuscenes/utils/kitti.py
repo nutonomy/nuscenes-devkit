@@ -336,7 +336,7 @@ class KittiDB:
     @staticmethod
     def box_to_string(name: str,
                       box: Box,
-                      bbox: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
+                      bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
                       truncation: float = -1.0,
                       occlusion: int = -1,
                       alpha: float = -10.0) -> str:
@@ -344,7 +344,8 @@ class KittiDB:
         Convert box in KITTI image frame to official label string fromat.
         :param name: KITTI name of the box.
         :param box: Box class in KITTI image frame.
-        :param bbox: Optional, 2D bounding box obtained by projected Box into image. Otherwise set to KITTI default.
+        :param bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
+            Otherwise set to KITTI default.
         :param truncation: Optional truncation, otherwise set to KITTI default.
         :param occlusion: Optional occlusion, otherwise set to KITTI default.
         :param alpha: Optional alpha, otherwise set to KITTI default.
@@ -359,7 +360,7 @@ class KittiDB:
         trunc = '{:.3f} '.format(truncation)
         occ = '{:d} '.format(occlusion)
         a = '{:.3f} '.format(alpha)
-        bb = '{:.3f} {:.3f} {:.3f} {:.3f} '.format(bbox[0], bbox[1], bbox[2], bbox[3])  # bbox (xmin, ymin, xmax, ymax).
+        bb = '{:.3f} {:.3f} {:.3f} {:.3f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
         hwl = '{:.3f} {:.3f} {:.3f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
         xyz = '{:.3f} {:.3f} {:.3f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
         y = '{:.3f}'.format(yaw)  # Yaw angle.
