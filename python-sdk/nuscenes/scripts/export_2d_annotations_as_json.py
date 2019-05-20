@@ -3,7 +3,12 @@
 # Licensed under the Creative Commons [see license.txt]
 
 """
-Export 2D annotations (xmin, ymin,xmax, ymax) from re-projections of our annotated 3D bounding boxes to a .json file.
+Export 2D annotations (xmin, ymin, xmax, ymax) from re-projections of our annotated 3D bounding boxes to a .json file.
+
+Note: Projecting tight 3d boxes to 2d generally leads to non-tight boxes.
+      Furthermore it is non-trivial to determine whether a box falls into the image, rather than behind or around it.
+      Finally some of the objects may be occluded by other objects, in particular when the lidar can see them, but the
+      cameras cannot.
 """
 
 from nuscenes.nuscenes import NuScenes
@@ -138,7 +143,7 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
         in_front = np.argwhere(corners_3d[2, :] > 0).flatten()
         corners_3d = corners_3d[:, in_front]
 
-        # Applying the re-projection algorithm post-processing step..
+        # Applying the re-projection algorithm post-processing step.
         corner_coords = view_points(corners_3d, camera_intrinsic, True).T[:, :2].tolist()
         final_coords = post_process_coords(corner_coords)
 
