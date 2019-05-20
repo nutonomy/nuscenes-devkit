@@ -27,9 +27,9 @@ This script includes three main functions:
 
 To launch these scripts run:
 - python export_kitti.py nuscenes_gt_to_kitti --nusc_kitti_dir ~/nusc_kitti
-- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti
-- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti --render_2d True
+- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti --render_2d False
 - python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
+Note: The parameter --render_2d specifies whether to draw 2d or 3d boxes.
 
 To work with the original KITTI dataset, use these parameters:
  --nusc_kitti_dir /data/sets/kitti --split training
