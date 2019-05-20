@@ -227,9 +227,6 @@ class KittiConverter:
                     if detection_name is None:
                         continue
 
-                    # Set dummy score so we can use this file as result.
-                    box_cam_kitti.score = 0
-
                     # Convert from nuScenes to KITTI box format.
                     box_cam_kitti = KittiDB.box_nuscenes_to_kitti(
                         box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot), velo_to_cam_trans, r0_rect)
@@ -238,6 +235,9 @@ class KittiConverter:
                     bbox_2d = KittiDB.project_kitti_box_to_image(box_cam_kitti, p_left_kitti, imsize=imsize)
                     if bbox_2d is None:
                         continue
+
+                    # Set dummy score so we can use this file as result.
+                    box_cam_kitti.score = 0
 
                     # Convert box to output string format.
                     output = KittiDB.box_to_string(name=detection_name, box=box_cam_kitti, bbox_2d=bbox_2d,
