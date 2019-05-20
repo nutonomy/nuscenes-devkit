@@ -158,7 +158,7 @@ class KittiDB:
         Projects 3D box into KITTI image FOV.
         :param box: 3D box in KITTI reference frame.
         :param p_left: <np.float: 3, 4>. Projection matrix.
-        :param imsize: (width , height). Image size.
+        :param imsize: (width, height). Image size.
         :return: (xmin, ymin, xmax, ymax). Bounding box in image plane.
         """
 
@@ -169,8 +169,8 @@ class KittiDB:
         # We use the true center, so we need to adjust half height in negative y direction.
         box.translate(np.array([0, -box.wlh[2] / 2, 0]))
 
-        # Project corners to 2d to get bbox in pixel coords.
-        corners = np.array([corner for corner in box.corners().T if corner[2] > 0]).T
+        # Project corners that are in front of the camera to 2d to get bbox in pixel coords.
+        corners = np.array([corner for corner in box.corners().T if -corner[2] > 0]).T
         imcorners = view_points(corners, p_left, normalize=True)[:2]
         bbox = (np.min(imcorners[0]), np.min(imcorners[1]), np.max(imcorners[0]), np.max(imcorners[1]))
 
