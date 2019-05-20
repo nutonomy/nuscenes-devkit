@@ -27,8 +27,9 @@ This script includes three main functions:
 
 To launch these scripts run:
 - python export_kitti.py nuscenes_gt_to_kitti --nusc_kitti_dir ~/nusc_kitti
-- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti
+- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti --render_2d False
 - python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
+Note: The parameter --render_2d specifies whether to draw 2d or 3d boxes.
 
 To work with the original KITTI dataset, use these parameters:
  --nusc_kitti_dir /data/sets/kitti --split training
@@ -90,6 +91,7 @@ class KittiConverter:
         """
         kitti_to_nu_lidar = Quaternion(axis=(0, 0, 1), angle=np.pi / 2)
         kitti_to_nu_lidar_inv = kitti_to_nu_lidar.inverse
+        imsize = (1600, 900)
 
         token_idx = 0  # Start tokens from 0.
 
@@ -216,7 +218,7 @@ class KittiConverter:
                     # Truncated: Set all objects to 0 which means untruncated.
                     truncated = 0.0
 
-                    # Occluded: Hard-coded: Full visibility.
+                    # Occluded: Set all objects to full visibility as this information is not available in nuScenes.
                     occluded = 0
 
                     # Convert nuScenes category to nuScenes detection challenge category.
@@ -226,20 +228,35 @@ class KittiConverter:
                     if detection_name is None:
                         continue
 
-                    # Convert to KITTI 3d and 2d box and KITTI output format.
+                    # Convert from nuScenes to KITTI box format.
                     box_cam_kitti = KittiDB.box_nuscenes_to_kitti(
                         box_lidar_nusc, Quaternion(matrix=velo_to_cam_rot), velo_to_cam_trans, r0_rect)
-                    box_cam_kitti.score = 0  # Set dummy score so we can use this file as result.
-                    output = KittiDB.box_to_string(name=detection_name, box=box_cam_kitti, truncation=truncated,
-                                                   occlusion=occluded)
+
+                    # Project 3d box to 2d box in image, ignore box if it does not fall inside.
+                    bbox_2d = KittiDB.project_kitti_box_to_image(box_cam_kitti, p_left_kitti, imsize=imsize)
+                    if bbox_2d is None:
+                        continue
+
+                    # Set dummy score so we can use this file as result.
+                    box_cam_kitti.score = 0
+
+                    # Convert box to output string format.
+                    output = KittiDB.box_to_string(name=detection_name, box=box_cam_kitti, bbox_2d=bbox_2d,
+                                                   truncation=truncated, occlusion=occluded)
 
                     # Write to disk.
                     label_file.write(output + '\n')
 
-    def render_kitti(self) -> None:
+    def render_kitti(self, render_2d: bool) -> None:
         """
         Renders the annotations in the KITTI dataset from a lidar and a camera view.
+        :param render_2d: Whether to render 2d boxes (only works for camera data).
         """
+        if render_2d:
+            print('Rendering 2d boxes from KITTI format')
+        else:
+            print('Rendering 3d boxes projected from 3d KITTI format')
+
         # Load the KITTI dataset.
         kitti = KittiDB(root=self.nusc_kitti_dir, splits=(self.split,))
 
@@ -253,7 +270,7 @@ class KittiConverter:
             for sensor in ['lidar', 'camera']:
                 out_path = os.path.join(render_dir, '%s_%s.png' % (token, sensor))
                 print('Rendering file to disk: %s' % out_path)
-                kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path)
+                kitti.render_sample_data(token, sensor_modality=sensor, out_path=out_path, render_2d=render_2d)
                 plt.close()  # Close the windows to avoid a warning of too many open windows.
 
     def kitti_res_to_nuscenes(self, meta: Dict[str, bool] = None) -> None:

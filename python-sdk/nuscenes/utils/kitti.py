@@ -4,7 +4,7 @@
 
 import os
 from os import path as osp
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -153,13 +153,14 @@ class KittiDB:
         return box
 
     @staticmethod
-    def project_kitti_box_to_image(box: Box, p_left: np.ndarray, imsize: Tuple[int, int]) -> Tuple[int, int, int, int]:
+    def project_kitti_box_to_image(box: Box, p_left: np.ndarray, imsize: Tuple[int, int]) \
+            -> Union[None, Tuple[int, int, int, int]]:
         """
         Projects 3D box into KITTI image FOV.
         :param box: 3D box in KITTI reference frame.
         :param p_left: <np.float: 3, 4>. Projection matrix.
-        :param imsize: (width , height). Image size.
-        :return: (xmin, ymin, xmax, ymax). Bounding box in image plane.
+        :param imsize: (width, height). Image size.
+        :return: (xmin, ymin, xmax, ymax). Bounding box in image plane or None if box is not in the image.
         """
 
         # Create a new box.
@@ -169,13 +170,25 @@ class KittiDB:
         # We use the true center, so we need to adjust half height in negative y direction.
         box.translate(np.array([0, -box.wlh[2] / 2, 0]))
 
-        # Project corners to 2d to get bbox in pixel coords.
+        # Check that some corners are inside the image.
         corners = np.array([corner for corner in box.corners().T if corner[2] > 0]).T
+        if len(corners) == 0:
+            return None
+
+        # Project corners that are in front of the camera to 2d to get bbox in pixel coords.
         imcorners = view_points(corners, p_left, normalize=True)[:2]
         bbox = (np.min(imcorners[0]), np.min(imcorners[1]), np.max(imcorners[0]), np.max(imcorners[1]))
 
-        # Crop bbox to prevent it extending outside image
-        bbox_crop = (max(0, bbox[0]), max(0, bbox[1]), min(imsize[0], bbox[2]), min(imsize[1], bbox[3]))
+        # Crop bbox to prevent it extending outside image.
+        bbox_crop = tuple(max(0, b) for b in bbox)
+        bbox_crop = (min(imsize[0], bbox_crop[0]),
+                     min(imsize[0], bbox_crop[1]),
+                     min(imsize[0], bbox_crop[2]),
+                     min(imsize[1], bbox_crop[3]))
+
+        # Detect if a cropped box is empty.
+        if bbox_crop[0] >= bbox_crop[2] or bbox_crop[1] >= bbox_crop[3]:
+            return None
 
         return bbox_crop
 
@@ -275,7 +288,6 @@ class KittiDB:
             return boxes
 
         with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
-
             for line in f:
                 # Parse this line into box information.
                 parsed_line = self.parse_label_line(line)
@@ -333,10 +345,42 @@ class KittiDB:
 
         return boxes
 
+    def get_boxes_2d(self,
+                     token: str,
+                     filter_classes: List[str] = None) -> Tuple[
+            List[Tuple[float, float, float, float]],
+            List[str]
+        ]:
+        """
+        Get the 2d boxes associated with a sample.
+        :return: A list of boxes in KITTI format (xmin, ymin, xmax, ymax) and a list of the class names.
+        """
+        boxes = []
+        names = []
+        with open(KittiDB.get_filepath(token, 'label_2', root=self.root), 'r') as f:
+            for line in f:
+                # Parse this line into box information.
+                parsed_line = self.parse_label_line(line)
+
+                if parsed_line['name'] in {'DontCare', 'Misc'}:
+                    continue
+
+                bbox_2d = parsed_line['bbox_camera']
+                name = parsed_line['name']
+
+                # Optional: Filter classes.
+                if filter_classes is not None and name not in filter_classes:
+                    continue
+
+                boxes.append(bbox_2d)
+                names.append(name)
+        return boxes, names
+
+
     @staticmethod
     def box_to_string(name: str,
                       box: Box,
-                      bbox: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
+                      bbox_2d: Tuple[float, float, float, float] = (-1.0, -1.0, -1.0, -1.0),
                       truncation: float = -1.0,
                       occlusion: int = -1,
                       alpha: float = -10.0) -> str:
@@ -344,7 +388,8 @@ class KittiDB:
         Convert box in KITTI image frame to official label string fromat.
         :param name: KITTI name of the box.
         :param box: Box class in KITTI image frame.
-        :param bbox: Optional, 2D bounding box obtained by projected Box into image. Otherwise set to KITTI default.
+        :param bbox_2d: Optional, 2D bounding box obtained by projected Box into image (xmin, ymin, xmax, ymax).
+            Otherwise set to KITTI default.
         :param truncation: Optional truncation, otherwise set to KITTI default.
         :param occlusion: Optional occlusion, otherwise set to KITTI default.
         :param alpha: Optional alpha, otherwise set to KITTI default.
@@ -356,13 +401,13 @@ class KittiDB:
 
         # Prepare output.
         name += ' '
-        trunc = '{:.3f} '.format(truncation)
+        trunc = '{:.2f} '.format(truncation)
         occ = '{:d} '.format(occlusion)
-        a = '{:.3f} '.format(alpha)
-        bb = '{:.3f} {:.3f} {:.3f} {:.3f} '.format(bbox[0], bbox[1], bbox[2], bbox[3])  # bbox (xmin, ymin, xmax, ymax).
-        hwl = '{:.3f} {:.3f} {:.3f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
-        xyz = '{:.3f} {:.3f} {:.3f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
-        y = '{:.3f}'.format(yaw)  # Yaw angle.
+        a = '{:.2f} '.format(alpha)
+        bb = '{:.2f} {:.2f} {:.2f} {:.2f} '.format(bbox_2d[0], bbox_2d[1], bbox_2d[2], bbox_2d[3])
+        hwl = '{:.2} {:.2f} {:.2f} '.format(box.wlh[2], box.wlh[0], box.wlh[1])  # height, width, length.
+        xyz = '{:.2f} {:.2f} {:.2f} '.format(box.center[0], box.center[1], box.center[2])  # x, y, z.
+        y = '{:.2f}'.format(yaw)  # Yaw angle.
         s = ' {:.4f}'.format(box.score)  # Classification score.
 
         output = name + trunc + occ + a + bb + hwl + xyz + y
@@ -407,7 +452,8 @@ class KittiDB:
                            box_linewidth: int = 2,
                            filter_classes: List[str] = None,
                            max_dist: float = None,
-                           out_path: str = None) -> None:
+                           out_path: str = None,
+                           render_2d: bool = False) -> None:
         """
         Render sample data onto axis. Visualizes lidar in nuScenes lidar frame and camera in camera frame.
         :param token: KITTI token.
@@ -422,6 +468,7 @@ class KittiDB:
         :param filter_classes: Optionally filter the classes to render.
         :param max_dist: Maximum distance in m to still draw a box.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param render_2d: Whether to render 2d boxes (only works for camera data).
         """
         # Default settings.
         if color_func is None:
@@ -456,7 +503,6 @@ class KittiDB:
                     box.render(ax, view=view_3d, colors=(color, color, 'k'), linewidth=box_linewidth)
 
         elif sensor_modality == 'camera':
-            transforms = self.get_transforms(token, self.root)
             im_path = KittiDB.get_filepath(token, 'image_2', root=self.root)
             im = Image.open(im_path)
 
@@ -469,21 +515,33 @@ class KittiDB:
                 ax.set_ylim(im.size[1], 0)
 
             if with_anns:
-                for box in boxes:
-                    # Undo the transformations in get_boxes() to get back to the camera frame.
-                    box.rotate(self.kitti_to_nu_lidar_inv)  # In KITTI lidar frame.
-                    box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']))
-                    box.translate(transforms['velo_to_cam']['T'])  # In KITTI camera frame, un-rectified.
-                    box.rotate(Quaternion(matrix=transforms['r0_rect']))  # In KITTI camera frame, rectified.
+                if render_2d:
+                    # Use KITTI's 2d boxes.
+                    boxes_2d, names = self.get_boxes_2d(token, filter_classes=filter_classes)
+                    for box, name in zip(boxes_2d, names):
+                        color = np.array(color_func(name)) / 255
+                        ax.plot([box[0], box[0]], [box[1], box[3]], color=color, linewidth=box_linewidth)
+                        ax.plot([box[2], box[2]], [box[1], box[3]], color=color, linewidth=box_linewidth)
+                        ax.plot([box[0], box[2]], [box[1], box[1]], color=color, linewidth=box_linewidth)
+                        ax.plot([box[0], box[2]], [box[3], box[3]], color=color, linewidth=box_linewidth)
+                else:
+                    # Project 3d boxes to 2d.
+                    transforms = self.get_transforms(token, self.root)
+                    for box in boxes:
+                        # Undo the transformations in get_boxes() to get back to the camera frame.
+                        box.rotate(self.kitti_to_nu_lidar_inv)  # In KITTI lidar frame.
+                        box.rotate(Quaternion(matrix=transforms['velo_to_cam']['R']))
+                        box.translate(transforms['velo_to_cam']['T'])  # In KITTI camera frame, un-rectified.
+                        box.rotate(Quaternion(matrix=transforms['r0_rect']))  # In KITTI camera frame, rectified.
 
-                    # Filter boxes outside the image (relevant when visualizing nuScenes data in KITTI format).
-                    if not box_in_image(box, transforms['p_left'][:3, :3], im.size, vis_level=BoxVisibility.ANY):
-                        continue
+                        # Filter boxes outside the image (relevant when visualizing nuScenes data in KITTI format).
+                        if not box_in_image(box, transforms['p_left'][:3, :3], im.size, vis_level=BoxVisibility.ANY):
+                            continue
 
-                    # Render.
-                    color = np.array(color_func(box.name)) / 255
-                    box.render(ax, view=transforms['p_left'][:3, :3], normalize=True, colors=(color, color, 'k'),
-                               linewidth=box_linewidth)
+                        # Render.
+                        color = np.array(color_func(box.name)) / 255
+                        box.render(ax, view=transforms['p_left'][:3, :3], normalize=True, colors=(color, color, 'k'),
+                                   linewidth=box_linewidth)
         else:
             raise ValueError("Unrecognized modality {}.".format(sensor_modality))
 
