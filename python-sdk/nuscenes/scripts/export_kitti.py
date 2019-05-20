@@ -28,6 +28,7 @@ This script includes three main functions:
 To launch these scripts run:
 - python export_kitti.py nuscenes_gt_to_kitti --nusc_kitti_dir ~/nusc_kitti
 - python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti
+- python export_kitti.py render_kitti --nusc_kitti_dir ~/nusc_kitti --render_2d True
 - python export_kitti.py kitti_res_to_nuscenes --nusc_kitti_dir ~/nusc_kitti
 
 To work with the original KITTI dataset, use these parameters:
@@ -251,6 +252,11 @@ class KittiConverter:
         Renders the annotations in the KITTI dataset from a lidar and a camera view.
         :param render_2d: Whether to render 2d boxes (only works for camera data).
         """
+        if render_2d:
+            print('Rendering 2d boxes from KITTI format')
+        else:
+            print('Rendering 3d boxes projected from 3d KITTI format')
+
         # Load the KITTI dataset.
         kitti = KittiDB(root=self.nusc_kitti_dir, splits=(self.split,))
 
