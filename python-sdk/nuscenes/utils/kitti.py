@@ -170,8 +170,12 @@ class KittiDB:
         # We use the true center, so we need to adjust half height in negative y direction.
         box.translate(np.array([0, -box.wlh[2] / 2, 0]))
 
-        # Project corners that are in front of the camera to 2d to get bbox in pixel coords.
+        # Check that some corners are inside the image.
         corners = np.array([corner for corner in box.corners().T if corner[2] > 0]).T
+        if len(corners) == 0:
+            return None
+
+        # Project corners that are in front of the camera to 2d to get bbox in pixel coords.
         imcorners = view_points(corners, p_left, normalize=True)[:2]
         bbox = (np.min(imcorners[0]), np.min(imcorners[1]), np.max(imcorners[0]), np.max(imcorners[1]))
 
