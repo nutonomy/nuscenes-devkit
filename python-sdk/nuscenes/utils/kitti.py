@@ -4,7 +4,7 @@
 
 import os
 from os import path as osp
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -153,13 +153,14 @@ class KittiDB:
         return box
 
     @staticmethod
-    def project_kitti_box_to_image(box: Box, p_left: np.ndarray, imsize: Tuple[int, int]) -> Tuple[int, int, int, int]:
+    def project_kitti_box_to_image(box: Box, p_left: np.ndarray, imsize: Tuple[int, int]) \
+            -> Optional[None, Tuple[int, int, int, int]]:
         """
         Projects 3D box into KITTI image FOV.
         :param box: 3D box in KITTI reference frame.
         :param p_left: <np.float: 3, 4>. Projection matrix.
         :param imsize: (width, height). Image size.
-        :return: (xmin, ymin, xmax, ymax). Bounding box in image plane.
+        :return: (xmin, ymin, xmax, ymax). Bounding box in image plane or None if box is not in the image.
         """
 
         # Create a new box.
@@ -170,7 +171,7 @@ class KittiDB:
         box.translate(np.array([0, -box.wlh[2] / 2, 0]))
 
         # Project corners that are in front of the camera to 2d to get bbox in pixel coords.
-        corners = np.array([corner for corner in box.corners().T if -corner[2] > 0]).T
+        corners = np.array([corner for corner in box.corners().T if corner[2] > 0]).T
         imcorners = view_points(corners, p_left, normalize=True)[:2]
         bbox = (np.min(imcorners[0]), np.min(imcorners[1]), np.max(imcorners[0]), np.max(imcorners[1]))
 
