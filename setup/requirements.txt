@@ -9,3 +9,4 @@ scikit-learn
 scipy
 Shapely
 tqdm
+descartes
