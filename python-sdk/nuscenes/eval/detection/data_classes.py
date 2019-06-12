@@ -98,7 +98,7 @@ class EvalBox:
         assert not np.any(np.isnan(rotation)), 'Error: Rotation may not be NaN!'
 
         # Velocity can be NaN from our database for certain annotations.
-        assert len(velocity) == 2, 'Error: Rotation must have 2 elements!'
+        assert len(velocity) == 2, 'Error: Velocity must have 2 elements!'
 
         assert detection_name is not None, 'Error: detection_name cannot be empty!'
         assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
