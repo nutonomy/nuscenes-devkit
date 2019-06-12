@@ -569,7 +569,8 @@ class MapGraphExplorer:
         for hole in polygon_record['holes']:
             interior_coords = [(self.map_graph.get('node', token)['x'], self.map_graph.get('node', token)['y'])
                                for token in hole['node_tokens']]
-            interiors.append(interior_coords)
+            if len(interior_coords) > 0:  # Add only non-empty holes.
+                interiors.append(interior_coords)
 
         return Polygon(exterior_coords, interiors)
 
@@ -795,6 +796,8 @@ class MapGraphExplorer:
             else:
                 label = None
             line = self.map_graph.extract_line(record['line_token'])
+            if line.is_empty:  # Skip lines without nodes
+                continue
             xs, ys = line.xy
 
             if layer_name == 'traffic_light':
