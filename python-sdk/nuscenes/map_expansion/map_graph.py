@@ -21,7 +21,26 @@ plt.style.use('seaborn-whitegrid')
 
 
 class MapGraph:
-    """ MapGraph database class for querying and retrieving information from the database. """
+    """
+    MapGraph database class for querying and retrieving information from the semantic maps.
+    Before using this class please use the provided tutorial in `map_demo.ipynb`.
+
+    Below you can find the map origins (south eastern corner, in [lat, lon]) for each of the 4 maps in nuScenes:
+    boston-seaport: [42.336849169438615, -71.05785369873047]
+    singapore-onenorth: [1.2882100868743724, 103.78475189208984]
+    singapore-hollandvillage: [1.2993652317780957, 103.78217697143555]
+    singapore-queenstown: [1.2782562240223188, 103.76741409301758]
+
+    The dimensions of the maps are as follows ([width, height] in meters):
+    singapore-onenorth: [1585.6, 2025.0]
+    singapore-hollandvillage: [2808.3, 2922.9]
+    singapore-queenstown: [3228.6, 3687.1]
+    boston-seaport: [2979.5, 2118.1]
+    The rasterized semantic maps (e.g. singapore-onenorth.png) published with nuScenes v1.0 have a scale of 10px/m,
+    hence the above numbers are the image dimensions divided by 10.
+
+    We use the same WGS 84 Web Mercator (EPSG:3857) projection as Google Maps/Earth.
+    """
 
     def __init__(self,
                  dataroot: str = '/data/sets/nuscenes',
