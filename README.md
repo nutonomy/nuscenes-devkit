@@ -36,7 +36,7 @@ Eventually you should have the following folder structure:
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
 ## Map expansion
-In July 2019 we published a map expansion pack with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.)
+In July 2019 we published a map expansion pack with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
 To install this expansion, please follow these steps:
 - Download the expansion pack from the [Download page](https://www.nuscenes.org/download),
 - Move the four .json files to your nuScenes maps folder (e.g. `/data/sets/nuscenes/maps`).
@@ -64,7 +64,7 @@ jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 - [Download](https://www.nuscenes.org/download) the dataset. 
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Read the [nuScenes paper](https://www.nuscenes.org/publications) for a detailed analysis of the dataset.
-- For a tutorial of the map expansion pack please open [this Jupyter Notebook](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/map_expansion/map_demo.ipynb).
+- Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/map_expansion/map_demo.ipynb).
 - Take a look at the [experimental scripts](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/scripts).
 - For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
 - See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
