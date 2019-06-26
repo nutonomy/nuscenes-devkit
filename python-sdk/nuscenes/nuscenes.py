@@ -562,8 +562,10 @@ class NuScenesExplorer:
         points = view_points(pc.points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
 
         # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
+        # Also make sure points are at least 10cm in front of the camera to avoid seeing the lidar points on the camera
+        # casing for non-keyframes which are slightly out of sync.
         mask = np.ones(depths.shape[0], dtype=bool)
-        mask = np.logical_and(mask, depths > 0)
+        mask = np.logical_and(mask, depths > 0.1)
         mask = np.logical_and(mask, points[0, :] > 1)
         mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
         mask = np.logical_and(mask, points[1, :] > 1)
