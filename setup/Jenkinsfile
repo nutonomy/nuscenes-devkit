@@ -1,6 +1,11 @@
 pipeline {
 
-  agent none
+  agent {
+    kubernetes {
+      label 'nuscenes-builder-' + UUID.randomUUID().toString()
+      yamlFile 'setup/docker.yaml'
+    }// kubernetes
+  } // agent
 
   environment {
     PROD_IMAGE = "nuscenes:production"
@@ -11,13 +16,6 @@ pipeline {
 
   stages {
     stage('Build'){
-      agent {
-        kubernetes {
-          label 'nuscenes-builder-' + UUID.randomUUID().toString()
-          yamlFile 'setup/docker.yaml'
-        }// kubernetes
-      } // agent
-
       steps {
         container('docker') {
           // Build the Docker image, and then run python -m unittest inside
@@ -148,16 +146,10 @@ pipeline {
     } // stage
 
     stage('Deploy') {
-      agent {
-        kubernetes {
-          label 'nuscenes-' + UUID.randomUUID().toString()
-          yamlFile 'setup/docker.yaml'
-        }// kubernetes
-      }
-
       when {
         branch 'master'
       }
+
       steps {
         // TODO: determine where to deploy Docker images.
         container('docker'){
