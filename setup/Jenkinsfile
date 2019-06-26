@@ -40,7 +40,7 @@ pipeline {
         stage('Test 3.6'){
           agent {
             kubernetes {
-              label 'nuscenes-builder'
+              label 'nuscenes-test3.6-' + UUID.randomUUID().toString()
               defaultContainer 'jnlp'
               yaml """
                 apiVersion: v1
@@ -94,7 +94,7 @@ pipeline {
         stage('Test 3.7'){
           agent {
             kubernetes {
-              label 'nuscenes-builder'
+              label 'nuscenes-test3.7-' + UUID.randomUUID().toString()
               defaultContainer 'jnlp'
               yaml """
                 apiVersion: v1
