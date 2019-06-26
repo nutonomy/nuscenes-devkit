@@ -57,12 +57,12 @@ For an advanced installation, see [installation](https://github.com/nutonomy/nus
 Please follow these steps to make yourself familiar with the nuScenes dataset:
 - Read the [dataset description](https://www.nuscenes.org/overview).
 - [Explore](https://www.nuscenes.org/explore/scene-0011/0) the lidar viewer and videos.
-- Read the [tutorial](https://www.nuscenes.org/tutorial) or run it yourself using:
+- [Download](https://www.nuscenes.org/download) the dataset. 
+- Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
+- Read the [online tutorial](https://www.nuscenes.org/tutorial) or run it yourself using:
 ```
 jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 ```
-- [Download](https://www.nuscenes.org/download) the dataset. 
-- Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Read the [nuScenes paper](https://www.nuscenes.org/publications) for a detailed analysis of the dataset.
 - Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/map_expansion/map_demo.ipynb).
 - Take a look at the [experimental scripts](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/scripts).
