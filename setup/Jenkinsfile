@@ -13,8 +13,8 @@ pipeline {
     stage('Build'){
       agent {
         kubernetes {
-          label 'nuscenes-builder' + UUID.randomUUID().toString()
-          yamlFile 'docker.yaml'
+          label 'nuscenes-builder-' + UUID.randomUUID().toString()
+          yamlFile 'setup/docker.yaml'
         }// kubernetes
       } // agent
 
@@ -151,7 +151,7 @@ pipeline {
       agent {
         kubernetes {
           label 'nuscenes-' + UUID.randomUUID().toString()
-          yamlFile 'docker.yaml'
+          yamlFile 'setup/docker.yaml'
         }// kubernetes
       }
 
