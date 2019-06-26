@@ -74,6 +74,10 @@ class NuScenes:
         self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
 
+        # If available, also load the image_annotations table created by export_2d_annotations_as_json().
+        if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
+            self.image_annotations = self.__load_table__('image_annotations')
+
         # Initialize map mask for each map record.
         for map_record in self.map:
             map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']), resolution=map_resolution)
