@@ -395,14 +395,16 @@ class MapAPIExplorer:
         ax.set_xlim(0, canvas_size[1])
         ax.set_ylim(0, canvas_size[0])
 
-        n_row = 3
+        n_row = 2
         n_col = len(masked_map) // n_row
         gs = gridspec.GridSpec(n_row, n_col)
         for i in range(len(masked_map)):
             r = i // n_col
             c = i - r * n_col
             ax = plt.subplot(gs[r, c])
-            ax.imshow(masked_map[i])
+            ax.imshow(masked_map[i], origin='lower')
+            ax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
+            ax.grid(False)
 
         return fig, ax
 
@@ -973,7 +975,7 @@ class MapAPIExplorer:
         """
         coords = np.asarray(list(lines.coords), np.int32)
         coords = coords.reshape((-1, 2))
-        cv2.polylines(mask, [coords], False, 1, 10)
+        cv2.polylines(mask, [coords], False, 1, 1)
 
         return mask
 
