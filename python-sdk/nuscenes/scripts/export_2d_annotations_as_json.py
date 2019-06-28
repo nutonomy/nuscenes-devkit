@@ -66,7 +66,7 @@ def generate_record(ann_rec: dict,
     :param y1: Minimum value of the y coordinate.
     :param x2: Maximum value of the x coordinate.
     :param y2: Maximum value of the y coordinate.
-    :param sample_data_token: Sample data tolk
+    :param sample_data_token: Sample data token.
     :param filename:The corresponding image file where the annotation is present.
     :return: A sample 2D annotation record.
     """
@@ -181,7 +181,7 @@ def main(args):
         reprojection_records = get_2d_boxes(token, args.visibilities)
         reprojections.extend(reprojection_records)
 
-    # Save to a .json file
+    # Save to a .json file.
     dest_path = os.path.join(args.dataroot, args.version)
     if not os.path.exists(dest_path):
         os.makedirs(dest_path)
