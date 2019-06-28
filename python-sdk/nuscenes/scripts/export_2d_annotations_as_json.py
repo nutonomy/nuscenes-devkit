@@ -66,7 +66,7 @@ def generate_record(ann_rec: dict,
     :param y1: Minimum value of the y coordinate.
     :param x2: Maximum value of the x coordinate.
     :param y2: Maximum value of the y coordinate.
-    :param sample_data_token: Sample data tolk
+    :param sample_data_token: Sample data token.
     :param filename:The corresponding image file where the annotation is present.
     :return: A sample 2D annotation record.
     """
@@ -104,7 +104,7 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
     :return: List of 2D annotation record that belongs to the input `sample_data_token`
     """
 
-    # Get the sample data, and the sample corresponding to that sample data.
+    # Get the sample data and the sample corresponding to that sample data.
     sd_rec = nusc.get('sample_data', sample_data_token)
 
     if not sd_rec['is_key_frame']:
@@ -117,7 +117,7 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
     pose_rec = nusc.get('ego_pose', sd_rec['ego_pose_token'])
     camera_intrinsic = np.array(cs_rec['camera_intrinsic'])
 
-    # Get all the annotation that fulfills the visibilty values.
+    # Get all the annotation with the specified visibilties.
     ann_recs = [nusc.get('sample_annotation', token) for token in s_rec['anns']]
     ann_recs = [ann_rec for ann_rec in ann_recs if (ann_rec['visibility_token'] in visibilities)]
 
@@ -138,13 +138,15 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
         box.translate(-np.array(cs_rec['translation']))
         box.rotate(Quaternion(cs_rec['rotation']).inverse)
 
-        # Filter out the corners that is not in front of the calibrated sensor.
+        # Filter out the corners that are not in front of the calibrated sensor.
         corners_3d = box.corners()
         in_front = np.argwhere(corners_3d[2, :] > 0).flatten()
         corners_3d = corners_3d[:, in_front]
 
-        # Applying the re-projection algorithm post-processing step.
+        # Project 3d box to 2d.
         corner_coords = view_points(corners_3d, camera_intrinsic, True).T[:, :2].tolist()
+
+        # Keep only corners that fall within the image.
         final_coords = post_process_coords(corner_coords)
 
         # Skip if the convex hull of the re-projected corners does not intersect the image canvas.
@@ -163,22 +165,26 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
 def main(args):
     """Generates 2D re-projections of the 3D bounding boxes present in the dataset."""
 
+    print("Generating 2D reprojections of the nuScenes dataset")
+
+    # Get tokens for all camera images.
     sample_data_camera_tokens = [s['token'] for s in nusc.sample_data if (s['sensor_modality'] == 'camera') and
                                  s['is_key_frame']]
 
-    print("Generating 2D reprojections of the nuScenes dataset")
+    # For debugging purposes: Only produce the first n images.
+    if args.image_limit != -1:
+         sample_data_camera_tokens = sample_data_camera_tokens[:args.image_limit]
 
-    # Loop through the records and apply the re-projection algorithm
+    # Loop through the records and apply the re-projection algorithm.
     reprojections = []
     for token in tqdm(sample_data_camera_tokens):
         reprojection_records = get_2d_boxes(token, args.visibilities)
         reprojections.extend(reprojection_records)
 
+    # Save to a .json file.
     dest_path = os.path.join(args.dataroot, args.version)
     if not os.path.exists(dest_path):
         os.makedirs(dest_path)
-
-    # Save to a .json file
     with open(os.path.join(args.dataroot, args.version, args.filename), 'w') as fh:
         json.dump(reprojections, fh, sort_keys=True, indent=4)
 
@@ -193,6 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('--filename', type=str, default='image_annotations.json', help='Output filename.')
     parser.add_argument('--visibilities', type=str, default=['1', '2', '3', '4'],
                         help='Visibility bins, the higher the number the higher the visibility.', nargs='+')
+    parser.add_argument('--image_limit', type=int, default=-1, help='Number of images to process or -1 to process all.')
     args = parser.parse_args()
 
     nusc = NuScenes(dataroot=args.dataroot, version=args.version)
