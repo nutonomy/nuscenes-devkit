@@ -9,6 +9,7 @@ import random
 import descartes
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 from typing import Dict, List, Tuple
 from matplotlib.patches import Rectangle, Arrow
@@ -384,6 +385,26 @@ class MapAPIExplorer:
         :return: The matplotlib figure and axes of the rendered layers.
         """
 
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_layers
+
+        masked_map = self.get_map_patch_mask(patch_center, patch_angle, layer_names, canvas_size)
+
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.set_xlim(0, canvas_size[1])
+        ax.set_ylim(0, canvas_size[0])
+
+        n_row = 3
+        n_col = len(masked_map) // n_row
+        gs = gridspec.GridSpec(n_row, n_col)
+        for i in range(len(masked_map)):
+            r = i // n_col
+            c = i - r * n_col
+            ax = plt.subplot(gs[r, c])
+            ax.imshow(masked_map[i])
+
+        return fig, ax
 
     def get_map_patch_mask(self,
                            patch_center: Tuple[float, float, float, float],
