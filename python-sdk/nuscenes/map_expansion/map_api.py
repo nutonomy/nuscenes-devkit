@@ -233,7 +233,8 @@ class NuscenesMap:
                         patch_angle: float,
                         layer_names: List[str] = None,
                         figsize: Tuple[int, int] = (15, 15),
-                        canvas_size: Tuple[int, int] = (100, 100)) -> Tuple[Figure, Axes]:
+                        canvas_size: Tuple[int, int] = (100, 100),
+                        n_row: int = 2) -> Tuple[Figure, Axes]:
         """
         Render map mask of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
@@ -241,6 +242,7 @@ class NuscenesMap:
         :param layer_names: A list of layer names to be returned.
         :param figsize: Size of the figure.
         :param canvas_size: Size of the output mask.
+        :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
         """
         return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, figsize, canvas_size)
@@ -375,7 +377,8 @@ class NuscenesMapExplorer:
                         patch_angle: float,
                         layer_names: List[str],
                         figsize: Tuple[int, int],
-                        canvas_size: Tuple[int, int]) -> Tuple[Figure, Axes]:
+                        canvas_size: Tuple[int, int],
+                        n_row: int = 2) -> Tuple[Figure, Axes]:
         """
         Render map mask of the patch specified by patch_box, and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
@@ -383,6 +386,7 @@ class NuscenesMapExplorer:
         :param layer_names: A list of layer names to be extracted.
         :param figsize: Size of the figure.
         :param canvas_size: Size of the output mask.
+        :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
         """
 
@@ -396,7 +400,6 @@ class NuscenesMapExplorer:
         ax.set_xlim(0, canvas_size[1])
         ax.set_ylim(0, canvas_size[0])
 
-        n_row = 2
         n_col = len(map_mask) // n_row
         gs = gridspec.GridSpec(n_row, n_col)
         for i in range(len(map_mask)):
