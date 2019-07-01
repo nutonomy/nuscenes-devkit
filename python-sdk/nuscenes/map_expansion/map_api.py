@@ -232,20 +232,21 @@ class NuscenesMap:
                         patch_box: Tuple[float, float, float, float],
                         patch_angle: float,
                         layer_names: List[str] = None,
-                        figsize: Tuple[int, int] = (15, 15),
                         canvas_size: Tuple[int, int] = (100, 100),
+                        figsize: Tuple[int, int] = (15, 15),
                         n_row: int = 2) -> Tuple[Figure, Axes]:
         """
         Render map mask of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be returned.
-        :param figsize: Size of the figure.
         :param canvas_size: Size of the output mask.
+        :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, figsize, canvas_size, n_row=n_row)
+        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, canvas_size,
+                                             figsize=figsize, n_row=n_row)
 
     def get_map_mask(self,
                      patch_box: Tuple[float, float, float, float],
@@ -376,20 +377,19 @@ class NuscenesMapExplorer:
                         patch_box: Tuple[float, float, float, float],
                         patch_angle: float,
                         layer_names: List[str],
-                        figsize: Tuple[int, int],
                         canvas_size: Tuple[int, int],
+                        figsize: Tuple[int, int],
                         n_row: int = 2) -> Tuple[Figure, Axes]:
         """
         Render map mask of the patch specified by patch_box, and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be extracted.
-        :param figsize: Size of the figure.
         :param canvas_size: Size of the output mask.
+        :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
 
@@ -539,7 +539,10 @@ class NuscenesMapExplorer:
 
         return fig, (global_ax, local_ax)
 
-    def render_layers(self, layer_names: List[str], alpha: float, figsize: Tuple[int, int]) -> Tuple[Figure, Axes]:
+    def render_layers(self,
+                      layer_names: List[str],
+                      alpha: float,
+                      figsize: Tuple[int, int]) -> Tuple[Figure, Axes]:
         """
         Render a list of layers.
         :param layer_names: A list of layer names.
