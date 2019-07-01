@@ -245,7 +245,7 @@ class NuscenesMap:
         :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, figsize, canvas_size)
+        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, figsize, canvas_size, n_row=n_row)
 
     def get_map_mask(self,
                      patch_box: Tuple[float, float, float, float],
