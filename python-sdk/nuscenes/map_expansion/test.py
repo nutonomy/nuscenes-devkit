@@ -1,11 +1,10 @@
 from nuscenes.map_expansion.map_api import NuscenesMap
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
-map_graph = NuscenesMap(dataroot='/data/sets/nuscenes', map_name='singapore-onenorth')
+nusc_map = NuscenesMap(dataroot='/data/sets/nuscenes', map_name='singapore-onenorth')
 
-patch_box = (400, 1500, 500, 500)
-patch_angle = 0
-layer_names = None
-figsize = (40, 10)
-canvas_size = (1000, 1000)
-fig, ax = map_graph.render_map_mask(patch_box, patch_angle, layer_names, figsize, canvas_size)
+patch_box = None
+patch_angle = 0  # Default orientation where North is up
+layer_names = ['drivable_area', 'ped_crossing']
+canvas_size = None
+map_mask = nusc_map.explorer.render_map_mask(patch_box, patch_angle, layer_names, canvas_size, figsize=(15, 15))
