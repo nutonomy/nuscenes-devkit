@@ -1,17 +1,17 @@
 # nuScenes dev-kit.
 # Code written by Sergi Adipraja Widjaja, 2019.
-# + masked map by Kiwoo Shin, 2019.
+# + Map mask by Kiwoo Shin, 2019.
 # Licensed under the Creative Commons [see license.txt]
 
 import os
 import json
 import random
+from typing import Dict, List, Tuple, Optional
+
 import descartes
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-
-from typing import Dict, List, Tuple
 from matplotlib.patches import Rectangle, Arrow
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -228,35 +228,36 @@ class NuscenesMap:
         """
         return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize)
 
-    def render_masked_map(self,
-                          patch_center: Tuple[float, float, float, float],
-                          patch_angle: float,
-                          layer_names: List[str] = None,
-                          figsize: Tuple[int, int] = (15, 15),
-                          canvas_size: Tuple[int, int] = (100, 100)) -> Tuple[Figure, Axes]:
+    def render_map_mask(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_names: List[str] = None,
+                        figsize: Tuple[int, int] = (15, 15),
+                        canvas_size: Tuple[int, int] = (100, 100)) -> Tuple[Figure, Axes]:
         """
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: angle of patch(degree)
-        :param layer_names: A list of layer names
-        :param figsize: Size of the whole figure.
-        :param canvas_size: Size of numpy array of masked map
+        Render map mask of the patch specified by patch_box and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: A list of layer names to be returned.
+        :param figsize: Size of the figure.
+        :param canvas_size: Size of the output mask.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_masked_map(patch_center, patch_angle, layer_names, figsize, canvas_size)
+        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, figsize, canvas_size)
 
-    def get_masked_map(self,
-                       patch_center: Tuple[float, float, float, float],
-                       patch_angle: float,
-                       layer_names: List[str] = None,
-                       canvas_size: Tuple[int, int] = (100, 100)) -> List[np.ndarray]:
+    def get_map_mask(self,
+                     patch_box: Tuple[float, float, float, float],
+                     patch_angle: float,
+                     layer_names: List[str] = None,
+                     canvas_size: Tuple[int, int] = (100, 100)) -> List[np.ndarray]:
         """
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: angle of patch(degree)
-        :param layer_names: List of name of map layers to be extracted
-        :param canvas_size: Size of numpy array of masked map
-        :return: List of numpy array with size of canvas_size
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: List of name of map layers to be extracted.
+        :param canvas_size: Size of the output mask.
+        :return: List of numpy array with size of canvas_size.
         """
-        return self.explorer.get_map_patch_mask(patch_center, patch_angle, layer_names, canvas_size)
+        return self.explorer.get_map_patch_mask(patch_box, patch_angle, layer_names, canvas_size)
 
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
@@ -369,26 +370,26 @@ class NuscenesMapExplorer:
         self.canvas_min_y = 0
         self.canvas_aspect_ratio = (self.canvas_max_x - self.canvas_min_x) / (self.canvas_max_y - self.canvas_min_y)
 
-    def render_masked_map(self,
-                          patch_center: Tuple[float, float, float, float],
-                          patch_angle: float,
-                          layer_names: List[str],
-                          figsize: Tuple[int, int],
-                          canvas_size: Tuple[int, int]) -> Tuple[Figure, Axes]:
+    def render_map_mask(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_names: List[str],
+                        figsize: Tuple[int, int],
+                        canvas_size: Tuple[int, int]) -> Tuple[Figure, Axes]:
         """
-        Render masked map in the patch specified by patch_center, and patch_angle
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: angle of patch(degree)
-        :param layer_names: List of name of map layers to be extracted
-        :param figsize: Size of figure
-        :param canvas_size: Size of numpy array of masked map
+        Render map mask of the patch specified by patch_box, and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: A list of layer names to be extracted.
+        :param figsize: Size of the figure.
+        :param canvas_size: Size of the output mask.
         :return: The matplotlib figure and axes of the rendered layers.
         """
 
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
 
-        masked_map = self.get_map_patch_mask(patch_center, patch_angle, layer_names, canvas_size)
+        map_mask = self.get_map_patch_mask(patch_box, patch_angle, layer_names, canvas_size)
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes([0, 0, 1, 1])
@@ -396,30 +397,30 @@ class NuscenesMapExplorer:
         ax.set_ylim(0, canvas_size[0])
 
         n_row = 2
-        n_col = len(masked_map) // n_row
+        n_col = len(map_mask) // n_row
         gs = gridspec.GridSpec(n_row, n_col)
-        for i in range(len(masked_map)):
+        for i in range(len(map_mask)):
             r = i // n_col
             c = i - r * n_col
             ax = plt.subplot(gs[r, c])
-            ax.imshow(masked_map[i], origin='lower')
+            ax.imshow(map_mask[i], origin='lower')
             ax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
             ax.grid(False)
 
         return fig, ax
 
     def get_map_patch_mask(self,
-                           patch_center: Tuple[float, float, float, float],
+                           patch_box: Tuple[float, float, float, float],
                            patch_angle: float,
                            layer_names: List[str],
                            canvas_size: Tuple[int, int]) -> List[np.ndarray]:
         """
-        Return list of masked map layers in the patch specified by patch_center and patch_angle
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: angle of patch(degree)
-        :param layer_names: List of name of map layers to be extracted
-        :param canvas_size: Size of numpy array of masked map
-        :return: List of numpy array with size of canvas_size
+        Return list of map mask layers of the patch specified by patch_box and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: A list of layer names to be extracted.
+        :param canvas_size: Size of the output mask.
+        :return: List of numpy array with size of canvas_size.
         """
 
         if layer_names is None:
@@ -428,7 +429,7 @@ class NuscenesMapExplorer:
         map_mask = []
 
         for layer_name in layer_names:
-            layer_mask = self._get_layer_mask(patch_center, patch_angle, layer_name, canvas_size)
+            layer_mask = self._get_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
             if layer_mask is not None:
                 map_mask.append(layer_mask)
 
@@ -441,8 +442,9 @@ class NuscenesMapExplorer:
                       figsize: Tuple[int, int],
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
-        Render a single map graph record . By default will also render 3 layers which are `drivable_area`, `lane`,
-        and `walkway` unless specified by `other_layers`.
+        Render a single map graph record.
+        By default will also render 3 layers which are `drivable_area`, `lane`, and `walkway` unless specified by
+        `other_layers`.
         :param layer_name: Name of the layer that we are interested in.
         :param token: Token of the record that you want to render.
         :param alpha: The opacity of each layer that gets rendered.
@@ -927,22 +929,22 @@ class NuscenesMapExplorer:
                 ax.plot(xs, ys, color=self.color_map[layer_name], alpha=alpha, label=label)
 
     def _get_layer_mask(self,
-                        patch_center: Tuple[float, float, float, float],
+                        patch_box: Tuple[float, float, float, float],
                         patch_angle: float,
                         layer_name: str,
                         canvas_size: Tuple[int, int]) -> np.ndarray:
         """
-        Wrapper method that getting a binary masked map patch for each layer.
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: rotation of patch
-        :param layer_name: name of map layer to be converted to binary masked map patch.
-        :param canvas_size: size of numpy array of masked map
-        :return: binary masked map patch for given layer
+        Wrapper method that gets a binary map mask patch for each layer.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: Name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask.
+        :return: Binary map mask patch for given layer.
         """
         if layer_name in self.map_api.non_geometric_polygon_layers:
-            return self._get_polygon_layer_mask(patch_center, patch_angle, layer_name, canvas_size)
+            return self._get_polygon_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
         elif layer_name in self.map_api.non_geometric_line_layers:
-            return self._get_line_layer_mask(patch_center, patch_angle, layer_name, canvas_size)
+            return self._get_line_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
 
@@ -950,14 +952,16 @@ class NuscenesMapExplorer:
     def mask_for_polygons(polygons: MultiPolygon, mask: np.ndarray) -> np.ndarray:
         """
         Convert a polygon or multipolygon list to an image mask ndarray.
-        :param polygons: list of shapely polygons to be converted to numpy array
+        :param polygons: list of shapely polygons to be converted to numpy array.
         :param mask: canvas where mask will be generated.
-        :return: numpy ndarray masked inside polygon
+        :return: Numpy ndarray polygon mask.
         """
         if not polygons:
             return mask
-        # function to round and convert to int
-        int_coords = lambda x: np.array(x).round().astype(np.int32)
+
+        def int_coords(x):
+            # function to round and convert to int
+            np.array(x).round().astype(np.int32)
         exteriors = [int_coords(poly.exterior.coords) for poly in polygons]
         interiors = [int_coords(pi.coords) for poly in polygons
                      for pi in poly.interiors]
@@ -968,10 +972,10 @@ class NuscenesMapExplorer:
     @staticmethod
     def mask_for_lines(lines: LineString, mask: np.ndarray) -> np.ndarray:
         """
-        Convert a linestring of shapely back to an image mask ndarray
-        :param lines: list of shapely linesting to be converted to numpy array
-        :param mask: canvas where mask will be generated.
-        :return: numpy ndarray masked with line
+        Convert a Shapely LineString back to an image mask ndarray.
+        :param lines: List of shapely LineStrings to be converted to a numpy array.
+        :param mask: Canvas where mask will be generated.
+        :return: Numpy ndarray line mask.
         """
         coords = np.asarray(list(lines.coords), np.int32)
         coords = coords.reshape((-1, 2))
@@ -980,28 +984,27 @@ class NuscenesMapExplorer:
         return mask
 
     def _get_polygon_layer_mask(self,
-                                patch_center: Tuple[float, float, float, float],
+                                patch_box: Tuple[float, float, float, float],
                                 patch_angle: float,
                                 layer_name: str,
                                 canvas_size: Tuple[int, int]) -> np.ndarray:
         """
         Convert polygon inside patch to binary mask and return the map patch.
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: rotation of patch
-        :param layer_name: name of map layer to be converted to binary masked map patch.
-        :param canvas_size: size of numpy array of masked map
-        :return: binary masked map patch in a canvas size
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask.
+        :return: Binary map mask patch with the size canvas_size.
         """
-
         if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
-        patch_x, patch_y, patch_h, patch_w = patch_center
+        patch_x, patch_y, patch_h, patch_w = patch_box
 
-        x_min = patch_x - patch_w/2.0
-        y_min = patch_y - patch_h/2.0
-        x_max = patch_x + patch_w/2.0
-        y_max = patch_y + patch_h/2.0
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
 
         patch = box(x_min, y_min, x_max, y_max)
         patch = affinity.rotate(patch, patch_angle, origin=(patch_x, patch_y), use_radians=False)
@@ -1009,15 +1012,15 @@ class NuscenesMapExplorer:
         canvas_h = canvas_size[0]
         canvas_w = canvas_size[1]
 
-        scale_height = canvas_h/patch_h
-        scale_width = canvas_w/patch_w
+        scale_height = canvas_h / patch_h
+        scale_width = canvas_w / patch_w
 
         records = getattr(self.map_api, layer_name)
 
         trans_x = -patch_x + patch_w / 2.0
         trans_y = -patch_y + patch_h / 2.0
 
-        masked_map = np.zeros(canvas_size, np.uint8)
+        map_mask = np.zeros(canvas_size, np.uint8)
 
         if layer_name == 'drivable_area':
             for record in records:
@@ -1034,7 +1037,7 @@ class NuscenesMapExplorer:
                         if new_polygon.geom_type is 'Polygon':
                             new_polygon = MultiPolygon([new_polygon])
 
-                        masked_map = self.mask_for_polygons(new_polygon, masked_map)
+                            map_mask = self.mask_for_polygons(new_polygon, map_mask)
         else:
             for record in records:
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
@@ -1050,27 +1053,27 @@ class NuscenesMapExplorer:
                         if new_polygon.geom_type is 'Polygon':
                             new_polygon = MultiPolygon([new_polygon])
 
-                        masked_map = self.mask_for_polygons(new_polygon, masked_map)
+                            map_mask = self.mask_for_polygons(new_polygon, map_mask)
 
-        return masked_map
+        return map_mask
 
     def _get_line_layer_mask(self,
-                             patch_center: Tuple[float, float, float, float],
+                             patch_box: Tuple[float, float, float, float],
                              patch_angle: float,
                              layer_name: str,
-                             canvas_size: Tuple[int, int]) -> np.ndarray:
+                             canvas_size: Tuple[int, int]) -> Optional[np.ndarray]:
         """
         Convert line inside patch to binary mask and return the map patch.
-        :param patch_center: [x_center, y_center, height, width] of patch
-        :param patch_angle: rotation of patch
-        :param layer_name: name of map layer to be converted to binary masked map patch.
-        :param canvas_size: size of numpy array of masked map
-        :return: binary masked map patch in a canvas size
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask.
+        :return: Binary map mask patch in a canvas size.
         """
         if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
-        patch_x, patch_y, patch_h, patch_w = patch_center
+        patch_x, patch_y, patch_h, patch_w = patch_box
 
         x_min = patch_x - patch_w / 2.0
         y_min = patch_y - patch_h / 2.0
@@ -1087,7 +1090,7 @@ class NuscenesMapExplorer:
         trans_x = -patch_x + patch_w / 2.0
         trans_y = -patch_y + patch_h / 2.0
 
-        masked_map = np.zeros(canvas_size, np.uint8)
+        map_mask = np.zeros(canvas_size, np.uint8)
 
         if layer_name is 'traffic_light':
             return None
@@ -1095,7 +1098,7 @@ class NuscenesMapExplorer:
         records = getattr(self.map_api, layer_name)
         for record in records:
             line = self.map_api.extract_line(record['line_token'])
-            if line.is_empty:  # Skip lines without nodes
+            if line.is_empty:  # Skip lines without nodes.
                 continue
 
             new_line = line.intersection(patch)
@@ -1105,5 +1108,5 @@ class NuscenesMapExplorer:
                                                      [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
                 new_line = affinity.scale(new_line, xfact=scale_width, yfact=scale_height, origin=(0, 0))
 
-                masked_map = self.mask_for_lines(new_line, masked_map)
-        return masked_map
+                map_mask = self.mask_for_lines(new_line, map_mask)
+        return map_mask
