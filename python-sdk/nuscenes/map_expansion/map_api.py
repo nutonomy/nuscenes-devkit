@@ -952,8 +952,8 @@ class NuscenesMapExplorer:
     def mask_for_polygons(polygons: MultiPolygon, mask: np.ndarray) -> np.ndarray:
         """
         Convert a polygon or multipolygon list to an image mask ndarray.
-        :param polygons: list of shapely polygons to be converted to numpy array.
-        :param mask: canvas where mask will be generated.
+        :param polygons: List of Shapely polygons to be converted to numpy array.
+        :param mask: Canvas where mask will be generated.
         :return: Numpy ndarray polygon mask.
         """
         if not polygons:
@@ -961,10 +961,9 @@ class NuscenesMapExplorer:
 
         def int_coords(x):
             # function to round and convert to int
-            np.array(x).round().astype(np.int32)
+            return np.array(x).round().astype(np.int32)
         exteriors = [int_coords(poly.exterior.coords) for poly in polygons]
-        interiors = [int_coords(pi.coords) for poly in polygons
-                     for pi in poly.interiors]
+        interiors = [int_coords(pi.coords) for poly in polygons for pi in poly.interiors]
         cv2.fillPoly(mask, exteriors, 1)
         cv2.fillPoly(mask, interiors, 0)
         return mask
