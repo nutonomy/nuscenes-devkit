@@ -395,6 +395,10 @@ class NuscenesMapExplorer:
 
         map_mask = self.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
 
+        # If no canvas_size is specified, retrieve the default from the output of get_map_mask.
+        if canvas_size is None:
+            canvas_size = map_mask.shape[1:]
+
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes([0, 0, 1, 1])
         ax.set_xlim(0, canvas_size[1])
