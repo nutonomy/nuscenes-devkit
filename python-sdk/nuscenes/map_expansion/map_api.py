@@ -251,13 +251,13 @@ class NuscenesMap:
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
                      layer_names: List[str] = None,
-                     canvas_size: Tuple[int, int] = (100, 100)) -> List[np.ndarray]:
+                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
         """
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: List of name of map layers to be extracted.
         :param canvas_size: Size of the output mask.
-        :return: List of numpy array with size of canvas_size.
+        :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
         """
         return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
 
@@ -424,7 +424,7 @@ class NuscenesMapExplorer:
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be extracted.
         :param canvas_size: Size of the output mask [w x h].
-        :return: Stacked numpy array of size [c x w h] with c channels and the same width/height as the canvas.
+        :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
         """
 
         if layer_names is None:
