@@ -452,7 +452,8 @@ class NuscenesMapExplorer:
         # If None, return in the original scale of 10px/m.
         if canvas_size is None:
             map_scale = 10
-            canvas_size = tuple(np.array(map_dims) * map_scale)
+            canvas_size = np.array(map_dims) * map_scale
+            canvas_size = tuple(np.round(canvas_size).astype(np.int32))
 
         # Get each layer and stack them into a numpy tensor.
         map_mask = []
