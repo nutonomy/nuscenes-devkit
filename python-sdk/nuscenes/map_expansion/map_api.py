@@ -430,13 +430,13 @@ class NuscenesMapExplorer:
         """
 
         # For some combination of parameters, we need to know the size of the current map.
-        if self.map_api.map_name == 'singapore_onenorth':
+        if self.map_api.map_name == 'singapore-onenorth':
             map_dims = [1585.6, 2025.0]
-        elif self.map_api.map_name == 'singapore_hollandvillage':
+        elif self.map_api.map_name == 'singapore-hollandvillage':
             map_dims = [2808.3, 2922.9]
-        elif self.map_api.map_name == 'singapore_queenstown':
+        elif self.map_api.map_name == 'singapore-queenstown':
             map_dims = [3228.6, 3687.1]
-        elif self.map_api.map_name == 'boston_seaport':
+        elif self.map_api.map_name == 'boston-seaport':
             map_dims = [2979.5, 2118.1]
         else:
             raise Exception('Error: Invalid map!')
