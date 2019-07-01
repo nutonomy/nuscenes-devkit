@@ -414,24 +414,48 @@ class NuscenesMapExplorer:
         return fig, ax
 
     def get_map_mask(self,
-                           patch_box: Tuple[float, float, float, float],
-                           patch_angle: float,
-                           layer_names: List[str],
-                           canvas_size: Tuple[int, int]) -> np.ndarray:
+                     patch_box: Tuple[float, float, float, float],
+                     patch_angle: float,
+                     layer_names: List[str],
+                     canvas_size: Tuple[int, int]) -> np.ndarray:
         """
         Return list of map mask layers of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
+                          If None, this plots the entire map.
         :param patch_angle: Patch orientation in degrees.
-        :param layer_names: A list of layer names to be extracted.
+                            North-facing corresponds to 0.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
         :param canvas_size: Size of the output mask [w x h].
         :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
         """
 
+        # For some combination of parameters, we need to know the size of the current map.
+        if self.map_api.map_name == 'singapore_onenorth':
+            map_dims = [1585.6, 2025.0]
+        elif self.map_api.map_name == 'singapore_hollandvillage':
+            map_dims = [2808.3, 2922.9]
+        elif self.map_api.map_name == 'singapore_queenstown':
+            map_dims = [3228.6, 3687.1]
+        elif self.map_api.map_name == 'boston_seaport':
+            map_dims = [2979.5, 2118.1]
+        else:
+            raise Exception('Error: Invalid map!')
+
+        # If None, return the entire map.
+        if patch_box is None:
+            patch_box = [map_dims[0] / 2, map_dims[1] / 2, map_dims[1], map_dims[0]]
+
+        # If None, return all geometric layers.
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
 
-        map_mask = []
+        # If None, return in the original scale of 10px/m.
+        if canvas_size is None:
+            map_scale = 10
+            canvas_size = tuple(np.array(map_dims) * map_scale)
 
+        # Get each layer and stack them into a numpy tensor.
+        map_mask = []
         for layer_name in layer_names:
             layer_mask = self._get_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
             if layer_mask is not None:
