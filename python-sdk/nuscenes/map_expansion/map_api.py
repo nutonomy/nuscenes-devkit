@@ -259,7 +259,7 @@ class NuscenesMap:
         :param canvas_size: Size of the output mask.
         :return: List of numpy array with size of canvas_size.
         """
-        return self.explorer.get_map_patch_mask(patch_box, patch_angle, layer_names, canvas_size)
+        return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
 
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
@@ -393,7 +393,7 @@ class NuscenesMapExplorer:
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
 
-        map_mask = self.get_map_patch_mask(patch_box, patch_angle, layer_names, canvas_size)
+        map_mask = self.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
 
         fig = plt.figure(figsize=figsize)
         ax = fig.add_axes([0, 0, 1, 1])
@@ -413,18 +413,18 @@ class NuscenesMapExplorer:
 
         return fig, ax
 
-    def get_map_patch_mask(self,
+    def get_map_mask(self,
                            patch_box: Tuple[float, float, float, float],
                            patch_angle: float,
                            layer_names: List[str],
-                           canvas_size: Tuple[int, int]) -> List[np.ndarray]:
+                           canvas_size: Tuple[int, int]) -> np.ndarray:
         """
         Return list of map mask layers of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be extracted.
-        :param canvas_size: Size of the output mask.
-        :return: List of numpy array with size of canvas_size.
+        :param canvas_size: Size of the output mask [w x h].
+        :return: Stacked numpy array of size [c x w h] with c channels and the same width/height as the canvas.
         """
 
         if layer_names is None:
@@ -437,7 +437,7 @@ class NuscenesMapExplorer:
             if layer_mask is not None:
                 map_mask.append(layer_mask)
 
-        return map_mask
+        return np.array(map_mask)
 
     def render_record(self,
                       layer_name: str,
