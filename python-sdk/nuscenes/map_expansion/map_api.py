@@ -81,7 +81,7 @@ class NuscenesMap:
         self._make_token2ind()
         self._make_shortcuts()
 
-        self.explorer = MapAPIExplorer(self)
+        self.explorer = NuscenesMapExplorer(self)
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -334,7 +334,7 @@ class NuscenesMap:
         return self.explorer.get_bounds(layer_name, token)
 
 
-class MapAPIExplorer:
+class NuscenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
     def __init__(self,
                  map_api: NuscenesMap,
