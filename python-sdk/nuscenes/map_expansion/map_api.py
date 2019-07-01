@@ -1037,7 +1037,7 @@ class NuscenesMapExplorer:
                         if new_polygon.geom_type is 'Polygon':
                             new_polygon = MultiPolygon([new_polygon])
 
-                            map_mask = self.mask_for_polygons(new_polygon, map_mask)
+                        map_mask = self.mask_for_polygons(new_polygon, map_mask)
         else:
             for record in records:
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
@@ -1053,7 +1053,7 @@ class NuscenesMapExplorer:
                         if new_polygon.geom_type is 'Polygon':
                             new_polygon = MultiPolygon([new_polygon])
 
-                            map_mask = self.mask_for_polygons(new_polygon, map_mask)
+                        map_mask = self.mask_for_polygons(new_polygon, map_mask)
 
         return map_mask
 
