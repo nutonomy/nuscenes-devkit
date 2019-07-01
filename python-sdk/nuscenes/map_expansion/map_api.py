@@ -402,6 +402,7 @@ class NuscenesMapExplorer:
 
         n_col = len(map_mask) // n_row
         gs = gridspec.GridSpec(n_row, n_col)
+        gs.update(wspace=0.025, hspace=0.05)
         for i in range(len(map_mask)):
             r = i // n_col
             c = i - r * n_col
