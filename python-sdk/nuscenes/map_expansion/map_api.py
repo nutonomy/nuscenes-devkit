@@ -240,7 +240,7 @@ class NuscenesMap:
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be returned.
-        :param canvas_size: Size of the output mask.
+        :param canvas_size: Size of the output mask (h, w).
         :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
@@ -257,7 +257,7 @@ class NuscenesMap:
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: List of name of map layers to be extracted.
-        :param canvas_size: Size of the output mask.
+        :param canvas_size: Size of the output mask (h, w).
         :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
         """
         return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
@@ -385,7 +385,7 @@ class NuscenesMapExplorer:
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be extracted.
-        :param canvas_size: Size of the output mask.
+        :param canvas_size: Size of the output mask (h, w).
         :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
         :return: The matplotlib figure and axes of the rendered layers.
@@ -429,7 +429,7 @@ class NuscenesMapExplorer:
         :param patch_angle: Patch orientation in degrees.
                             North-facing corresponds to 0.
         :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
-        :param canvas_size: Size of the output mask [w x h].
+        :param canvas_size: Size of the output mask (h, w).
         :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
         """
 
@@ -456,7 +456,7 @@ class NuscenesMapExplorer:
         # If None, return in the original scale of 10px/m.
         if canvas_size is None:
             map_scale = 10
-            canvas_size = np.array(map_dims) * map_scale
+            canvas_size = np.array(map_dims[::-1]) * map_scale
             canvas_size = tuple(np.round(canvas_size).astype(np.int32))
 
         # Get each layer and stack them into a numpy tensor.
@@ -974,7 +974,7 @@ class NuscenesMapExplorer:
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_name: Name of map layer to be converted to binary map mask patch.
-        :param canvas_size: Size of the output mask.
+        :param canvas_size: Size of the output mask (h, w).
         :return: Binary map mask patch for given layer.
         """
         if layer_name in self.map_api.non_geometric_polygon_layers:
@@ -1028,7 +1028,7 @@ class NuscenesMapExplorer:
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_name: name of map layer to be converted to binary map mask patch.
-        :param canvas_size: Size of the output mask.
+        :param canvas_size: Size of the output mask (h, w).
         :return: Binary map mask patch with the size canvas_size.
         """
         if layer_name not in self.map_api.non_geometric_polygon_layers:
@@ -1102,7 +1102,7 @@ class NuscenesMapExplorer:
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_name: name of map layer to be converted to binary map mask patch.
-        :param canvas_size: Size of the output mask.
+        :param canvas_size: Size of the output mask (h, w).
         :return: Binary map mask patch in a canvas size.
         """
         if layer_name not in self.map_api.non_geometric_line_layers:
