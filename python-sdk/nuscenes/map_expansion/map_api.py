@@ -1,26 +1,30 @@
 # nuScenes dev-kit.
 # Code written by Sergi Adipraja Widjaja, 2019.
+# + Map mask by Kiwoo Shin, 2019.
 # Licensed under the Creative Commons [see license.txt]
 
 import os
 import json
 import random
+from typing import Dict, List, Tuple, Optional
+
 import descartes
 import numpy as np
 import matplotlib.pyplot as plt
-
-from typing import Dict, List, Tuple
+import matplotlib.gridspec as gridspec
 from matplotlib.patches import Rectangle, Arrow
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
+from shapely import affinity
+import cv2
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
 
 
-class MapGraph:
+class NuscenesMap:
     """
     MapGraph database class for querying and retrieving information from the semantic maps.
     Before using this class please use the provided tutorial in `map_demo.ipynb`.
@@ -77,7 +81,7 @@ class MapGraph:
         self._make_token2ind()
         self._make_shortcuts()
 
-        self.explorer = MapGraphExplorer(self)
+        self.explorer = NuscenesMapExplorer(self)
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -224,6 +228,40 @@ class MapGraph:
         """
         return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize)
 
+    def render_map_mask(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_names: List[str] = None,
+                        canvas_size: Tuple[int, int] = (100, 100),
+                        figsize: Tuple[int, int] = (15, 15),
+                        n_row: int = 2) -> Tuple[Figure, Axes]:
+        """
+        Render map mask of the patch specified by patch_box and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: A list of layer names to be returned.
+        :param canvas_size: Size of the output mask (h, w).
+        :param figsize: Size of the figure.
+        :param n_row: Number of rows with plots.
+        :return: The matplotlib figure and axes of the rendered layers.
+        """
+        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, canvas_size,
+                                             figsize=figsize, n_row=n_row)
+
+    def get_map_mask(self,
+                     patch_box: Tuple[float, float, float, float],
+                     patch_angle: float,
+                     layer_names: List[str] = None,
+                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
+        """
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: List of name of map layers to be extracted.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
+        """
+        return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
+
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
                              layer_names: List[str] = None,
@@ -300,14 +338,14 @@ class MapGraph:
         return self.explorer.get_bounds(layer_name, token)
 
 
-class MapGraphExplorer:
+class NuscenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
     def __init__(self,
-                 map_graph: MapGraph,
+                 map_api: NuscenesMap,
                  representative_layers: Tuple[str] = ('drivable_area', 'lane', 'walkway'),
                  color_map: dict = None):
         """
-        :param map_graph: MapGraph database class.
+        :param map_api: MapGraph database class.
         :param representative_layers: These are the layers that we feel are representative of the whole mapping data.
         :param color_map: Color map.
         """
@@ -325,15 +363,110 @@ class MapGraphExplorer:
                              lane_divider='#6a3d9a',
                              traffic_light='#7e772e')
 
-        self.map_graph = map_graph
+        self.map_api = map_api
         self.representative_layers = representative_layers
         self.color_map = color_map
 
-        self.canvas_max_x = self.map_graph.canvas_edge[0]
+        self.canvas_max_x = self.map_api.canvas_edge[0]
         self.canvas_min_x = 0
-        self.canvas_max_y = self.map_graph.canvas_edge[1]
+        self.canvas_max_y = self.map_api.canvas_edge[1]
         self.canvas_min_y = 0
         self.canvas_aspect_ratio = (self.canvas_max_x - self.canvas_min_x) / (self.canvas_max_y - self.canvas_min_y)
+
+    def render_map_mask(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_names: List[str],
+                        canvas_size: Tuple[int, int],
+                        figsize: Tuple[int, int],
+                        n_row: int = 2) -> Tuple[Figure, Axes]:
+        """
+        Render map mask of the patch specified by patch_box, and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: A list of layer names to be extracted.
+        :param canvas_size: Size of the output mask (h, w).
+        :param figsize: Size of the figure.
+        :param n_row: Number of rows with plots.
+        :return: The matplotlib figure and axes of the rendered layers.
+        """
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_layers
+
+        map_mask = self.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
+
+        # If no canvas_size is specified, retrieve the default from the output of get_map_mask.
+        if canvas_size is None:
+            canvas_size = map_mask.shape[1:]
+
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.set_xlim(0, canvas_size[1])
+        ax.set_ylim(0, canvas_size[0])
+
+        n_col = len(map_mask) // n_row
+        gs = gridspec.GridSpec(n_row, n_col)
+        gs.update(wspace=0.025, hspace=0.05)
+        for i in range(len(map_mask)):
+            r = i // n_col
+            c = i - r * n_col
+            ax = plt.subplot(gs[r, c])
+            ax.imshow(map_mask[i], origin='lower')
+            ax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
+            ax.grid(False)
+
+        return fig, ax
+
+    def get_map_mask(self,
+                     patch_box: Tuple[float, float, float, float],
+                     patch_angle: float,
+                     layer_names: List[str],
+                     canvas_size: Tuple[int, int]) -> np.ndarray:
+        """
+        Return list of map mask layers of the patch specified by patch_box and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+                          If None, this plots the entire map.
+        :param patch_angle: Patch orientation in degrees.
+                            North-facing corresponds to 0.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
+        """
+
+        # For some combination of parameters, we need to know the size of the current map.
+        if self.map_api.map_name == 'singapore-onenorth':
+            map_dims = [1585.6, 2025.0]
+        elif self.map_api.map_name == 'singapore-hollandvillage':
+            map_dims = [2808.3, 2922.9]
+        elif self.map_api.map_name == 'singapore-queenstown':
+            map_dims = [3228.6, 3687.1]
+        elif self.map_api.map_name == 'boston-seaport':
+            map_dims = [2979.5, 2118.1]
+        else:
+            raise Exception('Error: Invalid map!')
+
+        # If None, return the entire map.
+        if patch_box is None:
+            patch_box = [map_dims[0] / 2, map_dims[1] / 2, map_dims[1], map_dims[0]]
+
+        # If None, return all geometric layers.
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_layers
+
+        # If None, return in the original scale of 10px/m.
+        if canvas_size is None:
+            map_scale = 10
+            canvas_size = np.array(map_dims[::-1]) * map_scale
+            canvas_size = tuple(np.round(canvas_size).astype(np.int32))
+
+        # Get each layer and stack them into a numpy tensor.
+        map_mask = []
+        for layer_name in layer_names:
+            layer_mask = self._get_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
+            if layer_mask is not None:
+                map_mask.append(layer_mask)
+
+        return np.array(map_mask)
 
     def render_record(self,
                       layer_name: str,
@@ -342,8 +475,9 @@ class MapGraphExplorer:
                       figsize: Tuple[int, int],
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
-        Render a single map graph record . By default will also render 3 layers which are `drivable_area`, `lane`,
-        and `walkway` unless specified by `other_layers`.
+        Render a single map graph record.
+        By default will also render 3 layers which are `drivable_area`, `lane`, and `walkway` unless specified by
+        `other_layers`.
         :param layer_name: Name of the layer that we are interested in.
         :param token: Token of the record that you want to render.
         :param alpha: The opacity of each layer that gets rendered.
@@ -356,10 +490,10 @@ class MapGraphExplorer:
             other_layers = list(self.representative_layers)
 
         for other_layer in other_layers:
-            if other_layer not in self.map_graph.non_geometric_layers:
+            if other_layer not in self.map_api.non_geometric_layers:
                 raise ValueError("{} is not a non geometric layer".format(layer_name))
 
-        x1, y1, x2, y2 = self.map_graph.get_bounds(layer_name, token)
+        x1, y1, x2, y2 = self.map_api.get_bounds(layer_name, token)
 
         local_width = x2 - x1
         local_height = y2 - y1
@@ -409,7 +543,10 @@ class MapGraphExplorer:
 
         return fig, (global_ax, local_ax)
 
-    def render_layers(self, layer_names: List[str], alpha: float, figsize: Tuple[int, int]) -> Tuple[Figure, Axes]:
+    def render_layers(self,
+                      layer_names: List[str],
+                      alpha: float,
+                      figsize: Tuple[int, int]) -> Tuple[Figure, Axes]:
         """
         Render a list of layers.
         :param layer_names: A list of layer names.
@@ -449,7 +586,7 @@ class MapGraphExplorer:
         x_min, y_min, x_max, y_max = box_coords
 
         if layer_names is None:
-            layer_names = self.map_graph.non_geometric_layers
+            layer_names = self.map_api.non_geometric_layers
 
         fig = plt.figure(figsize=figsize)
 
@@ -490,12 +627,12 @@ class MapGraphExplorer:
             raise ValueError("Mode {} is not valid, choice=('intersect', 'within')".format(mode))
 
         if layer_names is None:
-            layer_names = self.map_graph.non_geometric_layers
+            layer_names = self.map_api.non_geometric_layers
 
         records_in_patch = dict()
         for layer_name in layer_names:
             layer_records = []
-            for record in getattr(self.map_graph, layer_name):
+            for record in getattr(self.map_api, layer_name):
                 token = record['token']
                 if self.is_record_in_patch(layer_name, token, box_coords, mode):
                     layer_records.append(token)
@@ -521,9 +658,9 @@ class MapGraphExplorer:
         if mode not in ['intersect', 'within']:
             raise ValueError("Mode {} is not valid, choice=('intersect', 'within')".format(mode))
 
-        if layer_name in self.map_graph.non_geometric_polygon_layers:
+        if layer_name in self.map_api.non_geometric_polygon_layers:
             return self._is_polygon_record_in_patch(token, layer_name, box_coords, mode)
-        elif layer_name in self.map_graph.non_geometric_line_layers:
+        elif layer_name in self.map_api.non_geometric_line_layers:
             return self._is_line_record_in_patch(token, layer_name, box_coords,  mode)
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
@@ -536,7 +673,7 @@ class MapGraphExplorer:
         :return: All the polygonal layers that a particular point is on.
         """
         layers_on_point = dict()
-        for layer_name in self.map_graph.non_geometric_polygon_layers:
+        for layer_name in self.map_api.non_geometric_polygon_layers:
             layers_on_point.update({layer_name: self.record_on_point(x, y, layer_name)})
 
         return layers_on_point
@@ -549,15 +686,15 @@ class MapGraphExplorer:
         :param layer_name: The non geometric polygonal layer name that we are interested in.
         :return: The first token of a layer a particular point is on or '' if no layer is found.
         """
-        if layer_name not in self.map_graph.non_geometric_polygon_layers:
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError("{} is not a polygon layer".format(layer_name))
 
         point = Point(x, y)
-        records = getattr(self.map_graph, layer_name)
+        records = getattr(self.map_api, layer_name)
 
         if layer_name == 'drivable_area':
             for record in records:
-                polygons = [self.map_graph.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
+                polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
                 for polygon in polygons:
                     if point.within(polygon):
                         return record['token']
@@ -565,7 +702,7 @@ class MapGraphExplorer:
                         pass
         else:
             for record in records:
-                polygon = self.map_graph.extract_polygon(record['polygon_token'])
+                polygon = self.map_api.extract_polygon(record['polygon_token'])
                 if point.within(polygon):
                     return record['token']
                 else:
@@ -580,13 +717,13 @@ class MapGraphExplorer:
         :param polygon_token: The token of the polygon record.
         :return: The polygon wrapped in a shapely Polygon object.
         """
-        polygon_record = self.map_graph.get('polygon', polygon_token)
-        exterior_coords = [(self.map_graph.get('node', token)['x'], self.map_graph.get('node', token)['y'])
+        polygon_record = self.map_api.get('polygon', polygon_token)
+        exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                            for token in polygon_record['exterior_node_tokens']]
 
         interiors = []
         for hole in polygon_record['holes']:
-            interior_coords = [(self.map_graph.get('node', token)['x'], self.map_graph.get('node', token)['y'])
+            interior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                                for token in hole['node_tokens']]
             if len(interior_coords) > 0:  # Add only non-empty holes.
                 interiors.append(interior_coords)
@@ -599,8 +736,8 @@ class MapGraphExplorer:
         :param line_token: The token of the line record.
         :return: The line wrapped in a LineString object.
         """
-        line_record = self.map_graph.get('line', line_token)
-        line_nodes = [(self.map_graph.get('node', token)['x'], self.map_graph.get('node', token)['y'])
+        line_record = self.map_api.get('line', line_token)
+        line_nodes = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                       for token in line_record['node_tokens']]
 
         return LineString(line_nodes)
@@ -612,9 +749,9 @@ class MapGraphExplorer:
         :param token: Token of the record.
         :return: min_x, min_y, max_x, max_y of the line representation.
         """
-        if layer_name in self.map_graph.non_geometric_polygon_layers:
+        if layer_name in self.map_api.non_geometric_polygon_layers:
             return self._get_polygon_bounds(layer_name, token)
-        elif layer_name in self.map_graph.non_geometric_line_layers:
+        elif layer_name in self.map_api.non_geometric_line_layers:
             return self._get_line_bounds(layer_name, token)
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
@@ -626,23 +763,23 @@ class MapGraphExplorer:
         :param token: Token of the record.
         :return: min_x, min_y, max_x, max_y of of the polygon or polygons (for drivable_area) representation.
         """
-        if layer_name not in self.map_graph.non_geometric_polygon_layers:
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError("{} is not a record with polygon representation".format(token))
 
-        record = self.map_graph.get(layer_name, token)
+        record = self.map_api.get(layer_name, token)
 
         if layer_name == 'drivable_area':
-            polygons = [self.map_graph.get('polygon', polygon_token) for polygon_token in record['polygon_tokens']]
+            polygons = [self.map_api.get('polygon', polygon_token) for polygon_token in record['polygon_tokens']]
             exterior_node_coords = []
 
             for polygon in polygons:
-                nodes = [self.map_graph.get('node', node_token) for node_token in polygon['exterior_node_tokens']]
+                nodes = [self.map_api.get('node', node_token) for node_token in polygon['exterior_node_tokens']]
                 node_coords = [(node['x'], node['y']) for node in nodes]
                 exterior_node_coords.extend(node_coords)
 
             exterior_node_coords = np.array(exterior_node_coords)
         else:
-            exterior_nodes = [self.map_graph.get('node', token) for token in record['exterior_node_tokens']]
+            exterior_nodes = [self.map_api.get('node', token) for token in record['exterior_node_tokens']]
             exterior_node_coords = np.array([(node['x'], node['y']) for node in exterior_nodes])
 
         xs = exterior_node_coords[:, 0]
@@ -662,11 +799,11 @@ class MapGraphExplorer:
         :param token: Token of the record.
         :return: min_x, min_y, max_x, max_y of of the line representation.
         """
-        if layer_name not in self.map_graph.non_geometric_line_layers:
+        if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a record with line representation".format(token))
 
-        record = self.map_graph.get(layer_name, token)
-        nodes = [self.map_graph.get('node', node_token) for node_token in record['node_tokens']]
+        record = self.map_api.get(layer_name, token)
+        nodes = [self.map_api.get('node', node_token) for node_token in record['node_tokens']]
         node_coords = [(node['x'], node['y']) for node in nodes]
         node_coords = np.array(node_coords)
 
@@ -694,18 +831,18 @@ class MapGraphExplorer:
         otherwise, "within" will return True if the geometric object is within the patch and False otherwise.
         :return: Boolean value on whether a particular polygon record intersects or is within a particular patch.
         """
-        if layer_name not in self.map_graph.non_geometric_polygon_layers:
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
         x_min, y_min, x_max, y_max = box_coords
-        record = self.map_graph.get(layer_name, token)
+        record = self.map_api.get(layer_name, token)
         rectangular_patch = box(x_min, y_min, x_max, y_max)
 
         if layer_name == 'drivable_area':
-            polygons = [self.map_graph.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
+            polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
             geom = MultiPolygon(polygons)
         else:
-            geom = self.map_graph.extract_polygon(record['polygon_token'])
+            geom = self.map_api.extract_polygon(record['polygon_token'])
 
         if mode == 'intersect':
             return geom.intersects(rectangular_patch)
@@ -726,13 +863,13 @@ class MapGraphExplorer:
         otherwise, "within" will return True if the geometric object is within the patch and False otherwise.
         :return: Boolean value on whether a particular line  record intersects or is within a particular patch.
         """
-        if layer_name not in self.map_graph.non_geometric_line_layers:
+        if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
         x_min, y_min, x_max, y_max = box_coords
 
-        record = self.map_graph.get(layer_name, token)
-        node_recs = [self.map_graph.get('node', node_token) for node_token in record['node_tokens']]
+        record = self.map_api.get(layer_name, token)
+        node_recs = [self.map_api.get('node', node_token) for node_token in record['node_tokens']]
         node_coords = [[node['x'], node['y']] for node in node_recs]
         node_coords = np.array(node_coords)
 
@@ -752,9 +889,9 @@ class MapGraphExplorer:
         :param layer_name: Name of the layer that we are interested in.
         :param alpha: The opacity of the layer to be rendered.
         """
-        if layer_name in self.map_graph.non_geometric_polygon_layers:
+        if layer_name in self.map_api.non_geometric_polygon_layers:
             self._render_polygon_layer(ax, layer_name, alpha)
-        elif layer_name in self.map_graph.non_geometric_line_layers:
+        elif layer_name in self.map_api.non_geometric_line_layers:
             self._render_line_layer(ax, layer_name, alpha)
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
@@ -766,14 +903,14 @@ class MapGraphExplorer:
         :param layer_name: Name of the layer that we are interested in.
         :param alpha: The opacity of the layer to be rendered.
         """
-        if layer_name not in self.map_graph.non_geometric_polygon_layers:
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
         first_time = True
-        records = getattr(self.map_graph, layer_name)
+        records = getattr(self.map_api, layer_name)
         if layer_name == 'drivable_area':
             for record in records:
-                polygons = [self.map_graph.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
+                polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
 
                 for polygon in polygons:
                     if first_time:
@@ -785,7 +922,7 @@ class MapGraphExplorer:
                                                         label=label))
         else:
             for record in records:
-                polygon = self.map_graph.extract_polygon(record['polygon_token'])
+                polygon = self.map_api.extract_polygon(record['polygon_token'])
 
                 if first_time:
                     label = layer_name
@@ -803,18 +940,18 @@ class MapGraphExplorer:
         :param layer_name: Name of the layer that we are interested in.
         :param alpha: The opacity of the layer to be rendered.
         """
-        if layer_name not in self.map_graph.non_geometric_line_layers:
+        if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
         first_time = True
-        records = getattr(self.map_graph, layer_name)
+        records = getattr(self.map_api, layer_name)
         for record in records:
             if first_time:
                 label = layer_name
                 first_time = False
             else:
                 label = None
-            line = self.map_graph.extract_line(record['line_token'])
+            line = self.map_api.extract_line(record['line_token'])
             if line.is_empty:  # Skip lines without nodes
                 continue
             xs, ys = line.xy
@@ -826,3 +963,185 @@ class MapGraphExplorer:
                                    label=label))
             else:
                 ax.plot(xs, ys, color=self.color_map[layer_name], alpha=alpha, label=label)
+
+    def _get_layer_mask(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_name: str,
+                        canvas_size: Tuple[int, int]) -> np.ndarray:
+        """
+        Wrapper method that gets a binary map mask patch for each layer.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: Name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Binary map mask patch for given layer.
+        """
+        if layer_name in self.map_api.non_geometric_polygon_layers:
+            return self._get_polygon_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
+        elif layer_name in self.map_api.non_geometric_line_layers:
+            return self._get_line_layer_mask(patch_box, patch_angle, layer_name, canvas_size)
+        else:
+            raise ValueError("{} is not a valid layer".format(layer_name))
+
+    @staticmethod
+    def mask_for_polygons(polygons: MultiPolygon, mask: np.ndarray) -> np.ndarray:
+        """
+        Convert a polygon or multipolygon list to an image mask ndarray.
+        :param polygons: List of Shapely polygons to be converted to numpy array.
+        :param mask: Canvas where mask will be generated.
+        :return: Numpy ndarray polygon mask.
+        """
+        if not polygons:
+            return mask
+
+        def int_coords(x):
+            # function to round and convert to int
+            return np.array(x).round().astype(np.int32)
+        exteriors = [int_coords(poly.exterior.coords) for poly in polygons]
+        interiors = [int_coords(pi.coords) for poly in polygons for pi in poly.interiors]
+        cv2.fillPoly(mask, exteriors, 1)
+        cv2.fillPoly(mask, interiors, 0)
+        return mask
+
+    @staticmethod
+    def mask_for_lines(lines: LineString, mask: np.ndarray) -> np.ndarray:
+        """
+        Convert a Shapely LineString back to an image mask ndarray.
+        :param lines: List of shapely LineStrings to be converted to a numpy array.
+        :param mask: Canvas where mask will be generated.
+        :return: Numpy ndarray line mask.
+        """
+        coords = np.asarray(list(lines.coords), np.int32)
+        coords = coords.reshape((-1, 2))
+        cv2.polylines(mask, [coords], False, 1, 1)
+
+        return mask
+
+    def _get_polygon_layer_mask(self,
+                                patch_box: Tuple[float, float, float, float],
+                                patch_angle: float,
+                                layer_name: str,
+                                canvas_size: Tuple[int, int]) -> np.ndarray:
+        """
+        Convert polygon inside patch to binary mask and return the map patch.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Binary map mask patch with the size canvas_size.
+        """
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
+            raise ValueError('{} is not a polygonal layer'.format(layer_name))
+
+        patch_x, patch_y, patch_h, patch_w = patch_box
+
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
+
+        patch = box(x_min, y_min, x_max, y_max)
+        patch = affinity.rotate(patch, patch_angle, origin=(patch_x, patch_y), use_radians=False)
+
+        canvas_h = canvas_size[0]
+        canvas_w = canvas_size[1]
+
+        scale_height = canvas_h / patch_h
+        scale_width = canvas_w / patch_w
+
+        records = getattr(self.map_api, layer_name)
+
+        trans_x = -patch_x + patch_w / 2.0
+        trans_y = -patch_y + patch_h / 2.0
+
+        map_mask = np.zeros(canvas_size, np.uint8)
+
+        if layer_name == 'drivable_area':
+            for record in records:
+                polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
+
+                for polygon in polygons:
+                    new_polygon = polygon.intersection(patch)
+                    if new_polygon.is_empty is False:
+                        new_polygon = affinity.rotate(new_polygon, -patch_angle,
+                                                      origin=(patch_x, patch_y), use_radians=False)
+                        new_polygon = affinity.affine_transform(new_polygon,
+                                                                [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                        new_polygon = affinity.scale(new_polygon, xfact=scale_width, yfact=scale_height, origin=(0, 0))
+                        if new_polygon.geom_type is 'Polygon':
+                            new_polygon = MultiPolygon([new_polygon])
+
+                        map_mask = self.mask_for_polygons(new_polygon, map_mask)
+        else:
+            for record in records:
+                polygon = self.map_api.extract_polygon(record['polygon_token'])
+
+                if polygon.is_valid is True:
+                    new_polygon = polygon.intersection(patch)
+                    if new_polygon.is_empty is False:
+                        new_polygon = affinity.rotate(new_polygon, -patch_angle,
+                                                      origin=(patch_x, patch_y), use_radians=False)
+                        new_polygon = affinity.affine_transform(new_polygon,
+                                                                [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                        new_polygon = affinity.scale(new_polygon, xfact=scale_width, yfact=scale_height, origin=(0, 0))
+                        if new_polygon.geom_type is 'Polygon':
+                            new_polygon = MultiPolygon([new_polygon])
+
+                        map_mask = self.mask_for_polygons(new_polygon, map_mask)
+
+        return map_mask
+
+    def _get_line_layer_mask(self,
+                             patch_box: Tuple[float, float, float, float],
+                             patch_angle: float,
+                             layer_name: str,
+                             canvas_size: Tuple[int, int]) -> Optional[np.ndarray]:
+        """
+        Convert line inside patch to binary mask and return the map patch.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Binary map mask patch in a canvas size.
+        """
+        if layer_name not in self.map_api.non_geometric_line_layers:
+            raise ValueError("{} is not a line layer".format(layer_name))
+
+        patch_x, patch_y, patch_h, patch_w = patch_box
+
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
+
+        patch = box(x_min, y_min, x_max, y_max)
+        patch = affinity.rotate(patch, patch_angle, origin=(patch_x, patch_y), use_radians=False)
+        canvas_h = canvas_size[0]
+        canvas_w = canvas_size[1]
+        scale_height = canvas_h/patch_h
+        scale_width = canvas_w/patch_w
+
+        trans_x = -patch_x + patch_w / 2.0
+        trans_y = -patch_y + patch_h / 2.0
+
+        map_mask = np.zeros(canvas_size, np.uint8)
+
+        if layer_name is 'traffic_light':
+            return None
+
+        records = getattr(self.map_api, layer_name)
+        for record in records:
+            line = self.map_api.extract_line(record['line_token'])
+            if line.is_empty:  # Skip lines without nodes.
+                continue
+
+            new_line = line.intersection(patch)
+            if new_line.is_empty is False:
+                new_line = affinity.rotate(new_line, -patch_angle, origin=(patch_x, patch_y), use_radians=False)
+                new_line = affinity.affine_transform(new_line,
+                                                     [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                new_line = affinity.scale(new_line, xfact=scale_width, yfact=scale_height, origin=(0, 0))
+
+                map_mask = self.mask_for_lines(new_line, map_mask)
+        return map_mask
