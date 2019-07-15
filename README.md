@@ -5,13 +5,13 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 ## Overview
 - [Changelog](#changelog)
 - [Dataset download](#dataset-download)
+- [Map expansion](#map-expansion)
 - [Devkit setup](#devkit-setup)
-- [Tutorial](#tutorial)
-- [Frequently asked questions](#frequently-asked-questions)
-- [Object detection task](#object-detection-task)
+- [Getting started](#getting-started)
 - [Citation](#citation)
 
 ## Changelog
+- Jul. 1, 2019: Map expansion pack released.
 - Apr. 30, 2019: Devkit v1.0.1: loosen PIP requirements, refine detection challenge, export 2d annotation script. 
 - Mar. 26, 2019: Full dataset, paper, & devkit v1.0.0 released. Support dropped for teaser data.
 - Dec. 20, 2018: Initial evaluation code released. Devkit folders restructured, which breaks backward compatibility.
@@ -30,10 +30,18 @@ Eventually you should have the following folder structure:
 /data/sets/nuscenes
     samples	-	Sensor data for keyframes.
     sweeps	-	Sensor data for intermediate frames.
-    maps	-	Large image files (~500 Gigapixel) that depict the drivable surface and sidewalks in the scene.
+    maps	-	Folder for all map files: rasterized .png images and vectorized .json files.
     v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (trainval, test, mini) is provided in a separate folder.
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
+
+## Map expansion
+In July 2019 we published a map expansion pack with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
+To install this expansion, please follow these steps:
+- Download the expansion pack from the [Download page](https://www.nuscenes.org/download),
+- Move the four .json files to your nuScenes maps folder (e.g. `/data/sets/nuscenes/maps`).
+- Get the latest version of the nuscenes-devkit.
+- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7.
@@ -45,20 +53,22 @@ pip install nuscenes-devkit
 ```
 For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md) for detailed instructions.
 
-## Tutorial
-To get started with the nuScenes devkit, please run the tutorial as an IPython notebook:
+## Getting started
+Please follow these steps to make yourself familiar with the nuScenes dataset:
+- Read the [dataset description](https://www.nuscenes.org/overview).
+- [Explore](https://www.nuscenes.org/explore/scene-0011/0) the lidar viewer and videos.
+- [Download](https://www.nuscenes.org/download) the dataset. 
+- Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
+- Read the [online tutorial](https://www.nuscenes.org/tutorial) or run it yourself using:
 ```
 jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorial.ipynb
 ```
-In case you want to avoid downloading and setting up the data, you can also take a look at the [rendered notebook on nuScenes.org](https://www.nuscenes.org/tutorial).
-To learn more about the dataset, go to [nuScenes.org](https://www.nuscenes.org) or take a look at the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
-The [nuScenes paper](https://arxiv.org/abs/1903.11027) provides detailed analysis of the dataset.
-
-## Frequently asked questions
-See [FAQs](https://github.com/nutonomy/nuscenes-devkit/blob/master/faqs.md).
-
-## Object detection task
-For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
+- Read the [nuScenes paper](https://www.nuscenes.org/publications) for a detailed analysis of the dataset.
+- Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/map_expansion/map_demo.ipynb).
+- Take a look at the [experimental scripts](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/scripts).
+- For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
+- See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
+- See the [FAQs](https://github.com/nutonomy/nuscenes-devkit/blob/master/faqs.md).
 
 ## Citation
 Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):
