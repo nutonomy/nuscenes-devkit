@@ -26,11 +26,14 @@ os.chdir('..')
 rootdir = 'python-sdk'
 packages = [d.replace('/', '.').replace('{}.'.format(rootdir), '') for d in get_dirlist(rootdir)]
 
+# Filter out Python cache folders
+packages = [p for p in packages if not p.endswith('__pycache__')]
+
 setuptools.setup(
     name='nuscenes-devkit',
     version='1.0.2',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
-           'Chris Li, Sergi Widjaja et al.',
+           'Chris Li, Sergi Widjaja, Kiwoo Shin et al.',
     author_email='nuscenes@nutonomy.com',
     description='The official devkit of the nuScenes dataset (www.nuscenes.org).',
     long_description=long_description,
