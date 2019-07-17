@@ -48,5 +48,7 @@ setuptools.setup(
     classifiers=[
         'Programming Language :: Python :: 3.6',
         'Operating System :: OS Independent',
+        'License :: Free for non-commercial use'
     ],
+    license='cc-by-nc-sa-4.0'
 )
