@@ -866,17 +866,21 @@ class NuscenesMapExplorer:
         if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
-        x_min, y_min, x_max, y_max = box_coords
-
+        # Retrieve nodes of this line.
         record = self.map_api.get(layer_name, token)
         node_recs = [self.map_api.get('node', node_token) for node_token in record['node_tokens']]
         node_coords = [[node['x'], node['y']] for node in node_recs]
         node_coords = np.array(node_coords)
 
+        # A few lines in Queenstown have zero nodes. In this case we return False.
+        if len(node_coords) == 0:
+            return False
+
+        # Check that nodes fall inside the path.
+        x_min, y_min, x_max, y_max = box_coords
         cond_x = np.logical_and(node_coords[:, 0] < x_max, node_coords[:, 0] > x_min)
         cond_y = np.logical_and(node_coords[:, 1] < y_max, node_coords[:, 0] > y_min)
         cond = np.logical_and(cond_x, cond_y)
-
         if mode == 'intersect':
             return np.any(cond)
         elif mode == 'within':
