@@ -269,7 +269,7 @@ class NuscenesMap:
         """
         Get all the record token that intersects or is within a particular rectangular patch.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
-        :param layer_names: Names of the layers that we want to retrieve in a particular patch. By  default will always
+        :param layer_names: Names of the layers that we want to retrieve in a particular patch. By default will always
         look at the all non geometric layers.
         :param mode: "intersect" will return all non geometric records that intersects the patch, "within" will return
         all non geometric records that are within the patch.
@@ -471,8 +471,8 @@ class NuscenesMapExplorer:
     def render_record(self,
                       layer_name: str,
                       token: str,
-                      alpha: float,
-                      figsize: Tuple[int, int],
+                      alpha: float = 0.5,
+                      figsize: Tuple[int, int] = (15, 15),
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
         Render a single map graph record.
@@ -485,7 +485,6 @@ class NuscenesMapExplorer:
         :param other_layers: What other layers to render aside from the one specified in `layer_name`.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-
         if other_layers is None:
             other_layers = list(self.representative_layers)
 
@@ -866,17 +865,21 @@ class NuscenesMapExplorer:
         if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
-        x_min, y_min, x_max, y_max = box_coords
-
+        # Retrieve nodes of this line.
         record = self.map_api.get(layer_name, token)
         node_recs = [self.map_api.get('node', node_token) for node_token in record['node_tokens']]
         node_coords = [[node['x'], node['y']] for node in node_recs]
         node_coords = np.array(node_coords)
 
+        # A few lines in Queenstown have zero nodes. In this case we return False.
+        if len(node_coords) == 0:
+            return False
+
+        # Check that nodes fall inside the path.
+        x_min, y_min, x_max, y_max = box_coords
         cond_x = np.logical_and(node_coords[:, 0] < x_max, node_coords[:, 0] > x_min)
         cond_y = np.logical_and(node_coords[:, 1] < y_max, node_coords[:, 0] > y_min)
         cond = np.logical_and(cond_x, cond_y)
-
         if mode == 'intersect':
             return np.any(cond)
         elif mode == 'within':
