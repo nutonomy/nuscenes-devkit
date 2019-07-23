@@ -640,7 +640,7 @@ class NuScenesMapExplorer:
         """
         # TODO
         alpha = 0.5
-        patch_radius = 50
+        patch_radius = 100
 
         # Check that NuScenesMap was loaded for the correct location.
         sample_record = nusc.get('sample', sample_token)
@@ -668,8 +668,7 @@ class NuScenesMapExplorer:
         records_in_patch = self.get_records_in_patch(box_coords, layer_names, 'intersect')
 
         # Init axes.
-        fig = plt.figure(figsize=(9, 16))
-        ax = fig.add_axes([0, 0, 1, 1])  # TODO: adjust aspect ratio
+        _, ax = plt.subplots(1, 1, figsize=(9, 16))
         ax.imshow(im)
 
         # Retrieve and render each record.
