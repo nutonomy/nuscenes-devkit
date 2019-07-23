@@ -16,15 +16,18 @@ from matplotlib.patches import Rectangle, Arrow
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+from PIL import Image
 from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
 from shapely import affinity
 import cv2
+
+from nuscenes.nuscenes import NuScenes
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
 
 
-class NuscenesMap:
+class NuScenesMap:
     """
     MapGraph database class for querying and retrieving information from the semantic maps.
     Before using this class please use the provided tutorial in `map_demo.ipynb`.
@@ -81,7 +84,7 @@ class NuscenesMap:
         self._make_token2ind()
         self._make_shortcuts()
 
-        self.explorer = NuscenesMapExplorer(self)
+        self.explorer = NuScenesMapExplorer(self)
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -228,6 +231,20 @@ class NuscenesMap:
         """
         return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize)
 
+    def render_map_in_image(self,
+                            nusc: NuScenes,
+                            sample_token: str,
+                            camera_channel: str = 'CAM_FRONT',
+                            out_path: str = None) -> None:
+        """
+        Render a nuScenes camera image and overlay the polygons for the specified map layers.
+        :param nusc: The NuScenes instance to load the image from.
+        :param sample_token: The image's corresponding sample_token.
+        :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, out_path=out_path)
+
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
                         patch_angle: float,
@@ -338,10 +355,10 @@ class NuscenesMap:
         return self.explorer.get_bounds(layer_name, token)
 
 
-class NuscenesMapExplorer:
+class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
     def __init__(self,
-                 map_api: NuscenesMap,
+                 map_api: NuScenesMap,
                  representative_layers: Tuple[str] = ('drivable_area', 'lane', 'walkway'),
                  color_map: dict = None):
         """
@@ -608,6 +625,44 @@ class NuscenesMapExplorer:
         ax.legend()
 
         return fig, ax
+
+    def render_map_in_image(self,
+                            nusc: NuScenes,
+                            sample_token: str,
+                            camera_channel: str = 'CAM_FRONT',
+                            out_path: str = None) -> None:
+        """
+        Render a nuScenes camera image and overlay the polygons for the specified map layers.
+        :param nusc: The NuScenes instance to load the image from.
+        :param sample_token: The image's corresponding sample_token.
+        :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        # Check that NuScenesMap was loaded for the correct location.
+        sample_record = nusc.get('sample', sample_token)
+        scene_record = nusc.get('scene', sample_record['scene_token'])
+        log_record = nusc.get('log', scene_record['log_token'])
+        log_location = log_record['location']
+        assert self.map_api.map_name == log_location, \
+            'Error: NuScenesMap loaded for location %s, should be %s!' % (self.map_api.map_name, log_location)
+
+        # Grab the front camera image.
+        camera_token = sample_record['data'][camera_channel]
+        cam_path = nusc.get_sample_data_path(camera_token)
+        im = Image.open(cam_path)
+
+        # Retrieve the current map.
+
+        # Overlay the map.
+        
+
+        # Display the image.
+        plt.figure(figsize=(9, 16))
+        plt.imshow(im)
+        plt.axis('off')
+
+        if out_path is not None:
+            plt.savefig(out_path)
 
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
