@@ -638,6 +638,10 @@ class NuScenesMapExplorer:
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
         :param out_path: Optional path to save the rendered figure to disk.
         """
+        # TODO
+        alpha = 0.5
+        patch_radius = 50
+
         # Check that NuScenesMap was loaded for the correct location.
         sample_record = nusc.get('sample', sample_token)
         scene_record = nusc.get('scene', sample_record['scene_token'])
@@ -652,13 +656,39 @@ class NuScenesMapExplorer:
         im = Image.open(cam_path)
 
         # Retrieve the current map.
+        camera_record = nusc.get('sample_data', camera_token)
+        ego_pose = nusc.get('ego_pose', camera_record['ego_pose_token'])['translation']
+        box_coords = (
+            ego_pose[0] - patch_radius,
+            ego_pose[1] - patch_radius,
+            ego_pose[0] + patch_radius,
+            ego_pose[1] + patch_radius,
+        )
+        layer_names = ['lane']
+        records_in_patch = self.get_records_in_patch(box_coords, layer_names, 'intersect')
 
-        # Overlay the map.
-        
+        # Init axes.
+        fig = plt.figure(figsize=(9, 16))
+        ax = fig.add_axes([0, 0, 1, 1])  # TODO: adjust aspect ratio
+        ax.imshow(im)
+
+        # Retrieve and render each record.
+        for layer_name in layer_names:
+            first_time = True
+            assert layer_name != 'drivable_area'
+            for token in records_in_patch[layer_name]:
+                record = self.map_api.get(layer_name, token)
+                polygon = self.map_api.extract_polygon(record['polygon_token'])
+
+                if first_time:
+                    label = layer_name
+                    first_time = False
+                else:
+                    label = None
+
+                ax.add_patch(descartes.PolygonPatch(polygon, fc=self.color_map[layer_name], alpha=alpha, label=label))
 
         # Display the image.
-        plt.figure(figsize=(9, 16))
-        plt.imshow(im)
         plt.axis('off')
 
         if out_path is not None:
