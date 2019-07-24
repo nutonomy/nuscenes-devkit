@@ -23,7 +23,6 @@ import cv2
 from pyquaternion import Quaternion
 
 from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
 
 # Recommended style to use as the plots will show grids.
@@ -238,15 +237,22 @@ class NuScenesMap:
                             nusc: NuScenes,
                             sample_token: str,
                             camera_channel: str = 'CAM_FRONT',
+                            alpha: float = 0.5,
+                            patch_radius: float = 100,
+                            layer_names: List[str] = None,
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
         :param nusc: The NuScenes instance to load the image from.
         :param sample_token: The image's corresponding sample_token.
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
+        :param alpha: The transparency value of the layers to render in [0, 1].
+        :param patch_radius: The radius in meters around the ego car in which to select map records.
+        :param layer_names: The names of the layers to render, e.g. ['lane'].
         :param out_path: Optional path to save the rendered figure to disk.
         """
-        self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, out_path=out_path)
+        self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
+                                          patch_radius=patch_radius, layer_names=layer_names, out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -633,17 +639,23 @@ class NuScenesMapExplorer:
                             nusc: NuScenes,
                             sample_token: str,
                             camera_channel: str = 'CAM_FRONT',
+                            alpha: float = 0.5,
+                            patch_radius: float = 100,
+                            layer_names: List[str] = None,
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
         :param nusc: The NuScenes instance to load the image from.
         :param sample_token: The image's corresponding sample_token.
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
+        :param alpha: The transparency value of the layers to render in [0, 1].
+        :param patch_radius: The radius in meters around the ego car in which to select map records.
+        :param layer_names: The names of the layers to render, e.g. ['lane'].
         :param out_path: Optional path to save the rendered figure to disk.
         """
-        # TODO
-        alpha = 0.5
-        patch_radius = 100
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_polygon_layers
+            layer_names = [layer for layer in layer_names if layer != 'driveable_area']
 
         # Check that NuScenesMap was loaded for the correct location.
         sample_record = nusc.get('sample', sample_token)
@@ -660,7 +672,6 @@ class NuScenesMapExplorer:
         im = Image.open(cam_path)
         im_size = im.size
         cs_record = nusc.get('calibrated_sensor', cam_record['calibrated_sensor_token'])
-        cam_height = cs_record['translation'][2]
         cam_intrinsic = np.array(cs_record['camera_intrinsic'])
 
         # Retrieve the current map.
@@ -672,7 +683,6 @@ class NuScenesMapExplorer:
             ego_pose[0] + patch_radius,
             ego_pose[1] + patch_radius,
         )
-        layer_names = ['lane']
         records_in_patch = self.get_records_in_patch(box_coords, layer_names, 'intersect')
 
         # Init axes.
@@ -684,14 +694,18 @@ class NuScenesMapExplorer:
 
         # Retrieve and render each record.
         for layer_name in layer_names:
-            assert layer_name != 'drivable_area'
+            if layer_name == 'drivable_area':  # TODO: Deal with driveable_area
+                continue
+
+            records_in_patch[layer_name] = [records_in_patch[layer_name][1]]  # TODO: Remove this - debugging only
+
             for token in records_in_patch[layer_name]:
                 record = self.map_api.get(layer_name, token)
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
 
                 # Prepare pointcloud and set height to camera height.
                 points = np.array(polygon.exterior.xy)
-                points = np.vstack((points, -cam_height * np.ones((1, points.shape[1]))))
+                points = np.vstack((points, 0 * np.ones((1, points.shape[1]))))  # TODO: what height?
 
                 # Transform into the ego vehicle frame for the timestamp of the image.
                 points = points - np.array(poserecord['translation']).reshape((-1, 1))
@@ -701,28 +715,33 @@ class NuScenesMapExplorer:
                 points = points - np.array(cs_record['translation']).reshape((-1, 1))
                 points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
 
+                # Grab the depths (camera frame z axis points away from the camera).
+                depths = points[2, :]
+
                 # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
                 points = view_points(points, cam_intrinsic, normalize=True)
 
                 # Remove points that are either outside or behind the camera.
                 # Leave a margin of 1 pixel for aesthetic reasons.
                 # Also make sure points are in front of the camera.
-                depths = points[2, :]
                 mask = np.ones(depths.shape[0], dtype=bool)
                 mask = np.logical_and(mask, depths > 0)
-                mask = np.logical_and(mask, points[0, :] > 1)
-                mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
-                mask = np.logical_and(mask, points[1, :] > 1)
-                mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
-                points = points[:, mask]
+                #mask = np.logical_and(mask, points[0, :] > 1)
+                #mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
+                #mask = np.logical_and(mask, points[1, :] > 1)
+                #mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
 
-                # Skip polygons where any points are outside the image.
+                # Skip polygons where ANY points are outside the image.
                 if np.any(np.logical_not(mask)):
-                    print('Skipping empty polygon!')
+                    print('Skipping polygon outside the image!')
                     continue
 
                 points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
                 polygon_proj = Polygon(points)
+
+                if polygon_proj.area < 100:
+                    print('Skipping small polygons!')
+                    continue
 
                 label = layer_name
                 ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
