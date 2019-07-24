@@ -20,8 +20,11 @@ from PIL import Image
 from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
 from shapely import affinity
 import cv2
+from pyquaternion import Quaternion
 
 from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.data_classes import LidarPointCloud
+from nuscenes.utils.geometry_utils import view_points
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
@@ -650,14 +653,19 @@ class NuScenesMapExplorer:
         assert self.map_api.map_name == log_location, \
             'Error: NuScenesMap loaded for location %s, should be %s!' % (self.map_api.map_name, log_location)
 
-        # Grab the front camera image.
-        camera_token = sample_record['data'][camera_channel]
-        cam_path = nusc.get_sample_data_path(camera_token)
+        # Grab the front camera image and intrinsics.
+        cam_token = sample_record['data'][camera_channel]
+        cam_record = nusc.get('sample_data', cam_token)
+        cam_path = nusc.get_sample_data_path(cam_token)
         im = Image.open(cam_path)
+        im_size = im.size
+        cs_record = nusc.get('calibrated_sensor', cam_record['calibrated_sensor_token'])
+        cam_height = cs_record['translation'][2]
+        cam_intrinsic = np.array(cs_record['camera_intrinsic'])
 
         # Retrieve the current map.
-        camera_record = nusc.get('sample_data', camera_token)
-        ego_pose = nusc.get('ego_pose', camera_record['ego_pose_token'])['translation']
+        poserecord = nusc.get('ego_pose', cam_record['ego_pose_token'])
+        ego_pose = poserecord['translation']
         box_coords = (
             ego_pose[0] - patch_radius,
             ego_pose[1] - patch_radius,
@@ -669,8 +677,10 @@ class NuScenesMapExplorer:
 
         # Init axes.
         fig = plt.figure(figsize=(9, 16))
-        ax = fig.add_axes([0, 0, 2000, 2000 / self.canvas_aspect_ratio]) # TODO
-        #ax.imshow(im)
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.set_xlim(0, im_size[0])
+        ax.set_ylim(0, im_size[1])
+        ax.imshow(im)
 
         # Retrieve and render each record.
         for layer_name in layer_names:
@@ -679,22 +689,48 @@ class NuScenesMapExplorer:
                 record = self.map_api.get(layer_name, token)
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
 
-                # Project points to image view.
+                # Prepare pointcloud and set height to camera height.
                 points = np.array(polygon.exterior.xy)
-                points = points #/ points.max()
+                points = np.vstack((points, -cam_height * np.ones((1, points.shape[1]))))
+
+                # Transform into the ego vehicle frame for the timestamp of the image.
+                points = points - np.array(poserecord['translation']).reshape((-1, 1))
+                points = np.dot(Quaternion(poserecord['rotation']).rotation_matrix.T, points)
+
+                # Transform into the camera.
+                points = points - np.array(cs_record['translation']).reshape((-1, 1))
+                points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
+
+                # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
+                points = view_points(points, cam_intrinsic, normalize=True)
+
+                # Remove points that are either outside or behind the camera.
+                # Leave a margin of 1 pixel for aesthetic reasons.
+                # Also make sure points are in front of the camera.
+                depths = points[2, :]
+                mask = np.ones(depths.shape[0], dtype=bool)
+                mask = np.logical_and(mask, depths > 0)
+                mask = np.logical_and(mask, points[0, :] > 1)
+                mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
+                mask = np.logical_and(mask, points[1, :] > 1)
+                mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
+                points = points[:, mask]
+
+                # Skip polygons where any points are outside the image.
+                if np.any(np.logical_not(mask)):
+                    print('Skipping empty polygon!')
+                    continue
+
                 points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
                 polygon_proj = Polygon(points)
 
-                # Debug: Test triangle
-                #polygon_proj = Polygon([(0, 0), (1, 0), (0, 1)], [])
-
-                # TODO: check first_Time
-
                 label = layer_name
-                ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha, label=label))
+                ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
+                                                    label=label))
 
         # Display the image.
         plt.axis('off')
+        ax.invert_yaxis()
 
         if out_path is not None:
             plt.savefig(out_path)
