@@ -668,24 +668,30 @@ class NuScenesMapExplorer:
         records_in_patch = self.get_records_in_patch(box_coords, layer_names, 'intersect')
 
         # Init axes.
-        _, ax = plt.subplots(1, 1, figsize=(9, 16))
-        ax.imshow(im)
+        fig = plt.figure(figsize=(9, 16))
+        ax = fig.add_axes([0, 0, 2000, 2000 / self.canvas_aspect_ratio]) # TODO
+        #ax.imshow(im)
 
         # Retrieve and render each record.
         for layer_name in layer_names:
-            first_time = True
             assert layer_name != 'drivable_area'
             for token in records_in_patch[layer_name]:
                 record = self.map_api.get(layer_name, token)
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
 
-                if first_time:
-                    label = layer_name
-                    first_time = False
-                else:
-                    label = None
+                # Project points to image view.
+                points = np.array(polygon.exterior.xy)
+                points = points #/ points.max()
+                points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
+                polygon_proj = Polygon(points)
 
-                ax.add_patch(descartes.PolygonPatch(polygon, fc=self.color_map[layer_name], alpha=alpha, label=label))
+                # Debug: Test triangle
+                #polygon_proj = Polygon([(0, 0), (1, 0), (0, 1)], [])
+
+                # TODO: check first_Time
+
+                label = layer_name
+                ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha, label=label))
 
         # Display the image.
         plt.axis('off')
