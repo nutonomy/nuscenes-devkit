@@ -237,8 +237,8 @@ class NuScenesMap:
                             nusc: NuScenes,
                             sample_token: str,
                             camera_channel: str = 'CAM_FRONT',
-                            alpha: float = 0.5,
-                            patch_radius: float = 100,
+                            alpha: float = 0.3,
+                            patch_radius: float = 10000,
                             layer_names: List[str] = None,
                             out_path: str = None) -> None:
         """
@@ -639,8 +639,8 @@ class NuScenesMapExplorer:
                             nusc: NuScenes,
                             sample_token: str,
                             camera_channel: str = 'CAM_FRONT',
-                            alpha: float = 0.5,
-                            patch_radius: float = 100,
+                            alpha: float = 0.3,
+                            patch_radius: float = 10000,
                             layer_names: List[str] = None,
                             out_path: str = None) -> None:
         """
@@ -653,9 +653,10 @@ class NuScenesMapExplorer:
         :param layer_names: The names of the layers to render, e.g. ['lane'].
         :param out_path: Optional path to save the rendered figure to disk.
         """
-
-        near_plane = 0.0001
+        near_plane = 1e-8
+        min_polygon_area = 1000
         render_behind_cam = True
+        render_outside_im = True
 
         if layer_names is None:
             layer_names = self.map_api.non_geometric_polygon_layers
@@ -701,8 +702,6 @@ class NuScenesMapExplorer:
             if layer_name == 'drivable_area':  # TODO: Deal with driveable_area
                 continue
 
-            #records_in_patch[layer_name] = [records_in_patch[layer_name][1]]  # TODO: Remove this - debugging only
-
             for token in records_in_patch[layer_name]:
                 record = self.map_api.get(layer_name, token)
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
@@ -719,57 +718,18 @@ class NuScenesMapExplorer:
                 points = points - np.array(cs_record['translation']).reshape((-1, 1))
                 points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
 
+                # Remove points that are partially behind the camera.
+                depths = points[2, :]
+                behind = depths < near_plane
+                if np.all(behind):
+                    continue
+
                 # Perform clipping on polygons that are partially behind the camera.
-                points_clipped = []
                 if render_behind_cam:
-                    # Loop through each line on the polygon.
-                    # For each line where exactly 1 endpoints is behind the camera, move the point along the line until
-                    # it hits the near plane of the camera (clipping).
-                    for line1 in range(len(points)):
-                        line2 = (line1 + 1) % len(points)
-                        point1 = points[:, line1]
-                        point2 = points[:, line2]
-                        z1 = point1[2]
-                        z2 = point2[2]
-
-                        print(z1, z2)
-                        if z1 >= near_plane and z2 >= near_plane:
-                            # Both points are in front.
-                            # Add the first point, the second will be added for the next line.
-                            points_clipped.append(point1)
-                        elif z1 < near_plane and z2 < near_plane:
-                            # Both points are in behind.
-                            # Don't add anything.
-                            continue
-                        else:
-                            # One point is in front, one behind.
-                            # By convention pointA is behind the camera and pointB in front.
-                            if z1 <= z2:
-                                pointA = points[:, line1]
-                                pointB = points[:, line2]
-                            else:
-                                pointA = points[:, line2]
-                                pointB = points[:, line1]
-                            zA = pointA[2]
-                            zB = pointB[2]
-
-                            # Clip line along near plane.
-                            pointdiff = pointB - pointA
-                            alpha = (near_plane - zB) / (zA - zB)
-                            clipped = pointA + (1 - alpha) * pointdiff
-                            assert np.abs(clipped[2] - near_plane) < 1e-6
-
-                            # Add the first point (if valid) and the clipped point.
-                            if z1 >= near_plane:
-                                points_clipped.append(point1)
-                            points_clipped.append(clipped)
-
-                if render_behind_cam:
-                    points = np.array(points_clipped).transpose()
+                    points = self._clip_points_behind_camera(points, near_plane)
 
                 # Ignore polygons with less than 3 points after clipping.
                 if len(points) == 0 or points.shape[1] < 3:
-                    print('Skipping degenerate polygon after clipping!')
                     continue
 
                 # Grab the depths before performing the projection (camera frame z axis points away from the camera).
@@ -778,12 +738,6 @@ class NuScenesMapExplorer:
                 # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
                 points = view_points(points, cam_intrinsic, normalize=True)
 
-                # Remove points that are behind the camera.
-                behind = depths < 0
-                if np.any(behind):
-                    print('Skipping polygon with at least one node behind camera!')
-                    continue
-
                 # Skip polygons where all points are outside the image.
                 # Leave a margin of 1 pixel for aesthetic reasons.
                 inside = np.ones(depths.shape[0], dtype=bool)
@@ -791,17 +745,19 @@ class NuScenesMapExplorer:
                 inside = np.logical_and(inside, points[0, :] < im.size[0] - 1)
                 inside = np.logical_and(inside, points[1, :] > 1)
                 inside = np.logical_and(inside, points[1, :] < im.size[1] - 1)
-                if np.all(np.logical_not(inside)):
-                    print('Skipping polygon outside the image!')
-                    continue
+                if render_outside_im:
+                    if np.all(np.logical_not(inside)):
+                        continue
+                else:
+                    if np.any(np.logical_not(inside)):
+                        continue
 
                 points = points[:2, :]
                 points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
                 polygon_proj = Polygon(points)
 
                 # Filter small polygons
-                if polygon_proj.area < 100:
-                    print('Skipping small polygons!')
+                if polygon_proj.area < min_polygon_area:
                     continue
 
                 label = layer_name
@@ -813,7 +769,62 @@ class NuScenesMapExplorer:
         ax.invert_yaxis()
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.tight_layout()
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
+
+    def _clip_points_behind_camera(self, points, near_plane):
+        # Perform clipping on polygons that are partially behind the camera.
+
+        points_clipped = []
+        # Loop through each line on the polygon.
+        # For each line where exactly 1 endpoints is behind the camera, move the point along the line until
+        # it hits the near plane of the camera (clipping).
+        assert points.shape[0] == 3
+        point_count = points.shape[1]
+        for line1 in range(point_count):
+            line2 = (line1 + 1) % point_count
+            point1 = points[:, line1]
+            point2 = points[:, line2]
+            z1 = point1[2]
+            z2 = point2[2]
+
+            if z1 >= near_plane and z2 >= near_plane:
+                # Both points are in front.
+                # Add both points unless the first is already added.
+                if len(points_clipped) == 0 or all(points_clipped[-1] != point1):
+                    points_clipped.append(point1)
+                points_clipped.append(point2)
+            elif z1 < near_plane and z2 < near_plane:
+                # Both points are in behind.
+                # Don't add anything.
+                continue
+            else:
+                # One point is in front, one behind.
+                # By convention pointA is behind the camera and pointB in front.
+                if z1 <= z2:
+                    pointA = points[:, line1]
+                    pointB = points[:, line2]
+                else:
+                    pointA = points[:, line2]
+                    pointB = points[:, line1]
+                zA = pointA[2]
+                zB = pointB[2]
+
+                # Clip line along near plane.
+                pointdiff = pointB - pointA
+                alpha = (near_plane - zB) / (zA - zB)
+                clipped = pointA + (1 - alpha) * pointdiff
+                assert np.abs(clipped[2] - near_plane) < 1e-6
+
+                # Add the first point (if valid and not duplicate), the clipped point and the second point (if valid).
+                if z1 >= near_plane and (len(points_clipped) == 0 or all(points_clipped[-1] != point1)):
+                    points_clipped.append(point1)
+                points_clipped.append(clipped)
+                if z2 >= near_plane:
+                    points_clipped.append(point2)
+
+        points_clipped = np.array(points_clipped).transpose()
+        return points_clipped
 
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
