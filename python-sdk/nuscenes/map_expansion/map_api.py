@@ -653,6 +653,10 @@ class NuScenesMapExplorer:
         :param layer_names: The names of the layers to render, e.g. ['lane'].
         :param out_path: Optional path to save the rendered figure to disk.
         """
+
+        near_plane = 0.0001
+        render_behind_cam = True
+
         if layer_names is None:
             layer_names = self.map_api.non_geometric_polygon_layers
             layer_names = [layer for layer in layer_names if layer != 'driveable_area']
@@ -697,7 +701,7 @@ class NuScenesMapExplorer:
             if layer_name == 'drivable_area':  # TODO: Deal with driveable_area
                 continue
 
-            records_in_patch[layer_name] = [records_in_patch[layer_name][1]]  # TODO: Remove this - debugging only
+            #records_in_patch[layer_name] = [records_in_patch[layer_name][1]]  # TODO: Remove this - debugging only
 
             for token in records_in_patch[layer_name]:
                 record = self.map_api.get(layer_name, token)
@@ -705,7 +709,7 @@ class NuScenesMapExplorer:
 
                 # Prepare pointcloud and set height to camera height.
                 points = np.array(polygon.exterior.xy)
-                points = np.vstack((points, 0 * np.ones((1, points.shape[1]))))  # TODO: what height?
+                points = np.vstack((points, np.zeros((1, points.shape[1]))))
 
                 # Transform into the ego vehicle frame for the timestamp of the image.
                 points = points - np.array(poserecord['translation']).reshape((-1, 1))
@@ -715,30 +719,87 @@ class NuScenesMapExplorer:
                 points = points - np.array(cs_record['translation']).reshape((-1, 1))
                 points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
 
-                # Grab the depths (camera frame z axis points away from the camera).
+                # Perform clipping on polygons that are partially behind the camera.
+                points_clipped = []
+                if render_behind_cam:
+                    # Loop through each line on the polygon.
+                    # For each line where exactly 1 endpoints is behind the camera, move the point along the line until
+                    # it hits the near plane of the camera (clipping).
+                    for line1 in range(len(points)):
+                        line2 = (line1 + 1) % len(points)
+                        point1 = points[:, line1]
+                        point2 = points[:, line2]
+                        z1 = point1[2]
+                        z2 = point2[2]
+
+                        print(z1, z2)
+                        if z1 >= near_plane and z2 >= near_plane:
+                            # Both points are in front.
+                            # Add the first point, the second will be added for the next line.
+                            points_clipped.append(point1)
+                        elif z1 < near_plane and z2 < near_plane:
+                            # Both points are in behind.
+                            # Don't add anything.
+                            continue
+                        else:
+                            # One point is in front, one behind.
+                            # By convention pointA is behind the camera and pointB in front.
+                            if z1 <= z2:
+                                pointA = points[:, line1]
+                                pointB = points[:, line2]
+                            else:
+                                pointA = points[:, line2]
+                                pointB = points[:, line1]
+                            zA = pointA[2]
+                            zB = pointB[2]
+
+                            # Clip line along near plane.
+                            pointdiff = pointB - pointA
+                            alpha = (near_plane - zB) / (zA - zB)
+                            clipped = pointA + (1 - alpha) * pointdiff
+                            assert np.abs(clipped[2] - near_plane) < 1e-6
+
+                            # Add the first point (if valid) and the clipped point.
+                            if z1 >= near_plane:
+                                points_clipped.append(point1)
+                            points_clipped.append(clipped)
+
+                if render_behind_cam:
+                    points = np.array(points_clipped).transpose()
+
+                # Ignore polygons with less than 3 points after clipping.
+                if len(points) == 0 or points.shape[1] < 3:
+                    print('Skipping degenerate polygon after clipping!')
+                    continue
+
+                # Grab the depths before performing the projection (camera frame z axis points away from the camera).
                 depths = points[2, :]
 
                 # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
                 points = view_points(points, cam_intrinsic, normalize=True)
 
-                # Remove points that are either outside or behind the camera.
-                # Leave a margin of 1 pixel for aesthetic reasons.
-                # Also make sure points are in front of the camera.
-                mask = np.ones(depths.shape[0], dtype=bool)
-                mask = np.logical_and(mask, depths > 0)
-                #mask = np.logical_and(mask, points[0, :] > 1)
-                #mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
-                #mask = np.logical_and(mask, points[1, :] > 1)
-                #mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
+                # Remove points that are behind the camera.
+                behind = depths < 0
+                if np.any(behind):
+                    print('Skipping polygon with at least one node behind camera!')
+                    continue
 
-                # Skip polygons where ANY points are outside the image.
-                if np.any(np.logical_not(mask)):
+                # Skip polygons where all points are outside the image.
+                # Leave a margin of 1 pixel for aesthetic reasons.
+                inside = np.ones(depths.shape[0], dtype=bool)
+                inside = np.logical_and(inside, points[0, :] > 1)
+                inside = np.logical_and(inside, points[0, :] < im.size[0] - 1)
+                inside = np.logical_and(inside, points[1, :] > 1)
+                inside = np.logical_and(inside, points[1, :] < im.size[1] - 1)
+                if np.all(np.logical_not(inside)):
                     print('Skipping polygon outside the image!')
                     continue
 
+                points = points[:2, :]
                 points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
                 polygon_proj = Polygon(points)
 
+                # Filter small polygons
                 if polygon_proj.area < 100:
                     print('Skipping small polygons!')
                     continue
