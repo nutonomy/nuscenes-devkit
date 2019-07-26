@@ -239,6 +239,9 @@ class NuScenesMap:
                             camera_channel: str = 'CAM_FRONT',
                             alpha: float = 0.3,
                             patch_radius: float = 10000,
+                            min_polygon_area: float = 1000,
+                            render_behind_cam: bool = True,
+                            render_outside_im: bool = True,
                             layer_names: List[str] = None,
                             out_path: str = None) -> None:
         """
@@ -248,7 +251,11 @@ class NuScenesMap:
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
         :param alpha: The transparency value of the layers to render in [0, 1].
         :param patch_radius: The radius in meters around the ego car in which to select map records.
+        :param min_polygon_area: Minimum area a polygon needs to have to be rendered.
+        :param render_behind_cam: Whether to render polygons where any point is behind the camera.
+        :param render_outside_im: Whether to render polygons where any point is outside the image.
         :param layer_names: The names of the layers to render, e.g. ['lane'].
+            If set to None, the recommended setting will be used.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
@@ -641,6 +648,9 @@ class NuScenesMapExplorer:
                             camera_channel: str = 'CAM_FRONT',
                             alpha: float = 0.3,
                             patch_radius: float = 10000,
+                            min_polygon_area: float = 1000,
+                            render_behind_cam: bool = True,
+                            render_outside_im: bool = True,
                             layer_names: List[str] = None,
                             out_path: str = None) -> None:
         """
@@ -650,17 +660,23 @@ class NuScenesMapExplorer:
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
         :param alpha: The transparency value of the layers to render in [0, 1].
         :param patch_radius: The radius in meters around the ego car in which to select map records.
+        :param min_polygon_area: Minimum area a polygon needs to have to be rendered.
+        :param render_behind_cam: Whether to render polygons where any point is behind the camera.
+        :param render_outside_im: Whether to render polygons where any point is outside the image.
         :param layer_names: The names of the layers to render, e.g. ['lane'].
+            If set to None, the recommended setting will be used.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         near_plane = 1e-8
-        min_polygon_area = 1000
-        render_behind_cam = True
-        render_outside_im = True
 
+        # Default layers.
         if layer_names is None:
-            layer_names = self.map_api.non_geometric_polygon_layers
-            layer_names = [layer for layer in layer_names if layer != 'driveable_area']
+            layer_names = ['road_segment', 'lane', 'ped_crossing', 'walkway', 'stop_line', 'carpark_area']
+
+        # Check layers whether we can render them.
+        for layer_name in layer_names:
+            assert layer_name in self.map_api.non_geometric_polygon_layers, \
+                'Error: Can only render non-geometry polygons: %s' % layer_names
 
         # Check that NuScenesMap was loaded for the correct location.
         sample_record = nusc.get('sample', sample_token)
@@ -735,7 +751,7 @@ class NuScenesMapExplorer:
                     if len(points) == 0 or points.shape[1] < 3:
                         continue
 
-                    # Grab the depths before performing the projection (camera frame z axis points away from the camera).
+                    # Grab the depths before performing the projection (z axis points away from the camera).
                     depths = points[2, :]
 
                     # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
