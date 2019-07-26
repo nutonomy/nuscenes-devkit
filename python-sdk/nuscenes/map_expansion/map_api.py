@@ -699,70 +699,73 @@ class NuScenesMapExplorer:
 
         # Retrieve and render each record.
         for layer_name in layer_names:
-            if layer_name == 'drivable_area':  # TODO: Deal with driveable_area
-                continue
-
             for token in records_in_patch[layer_name]:
                 record = self.map_api.get(layer_name, token)
-                polygon = self.map_api.extract_polygon(record['polygon_token'])
-
-                # Prepare pointcloud and set height to camera height.
-                points = np.array(polygon.exterior.xy)
-                points = np.vstack((points, np.zeros((1, points.shape[1]))))
-
-                # Transform into the ego vehicle frame for the timestamp of the image.
-                points = points - np.array(poserecord['translation']).reshape((-1, 1))
-                points = np.dot(Quaternion(poserecord['rotation']).rotation_matrix.T, points)
-
-                # Transform into the camera.
-                points = points - np.array(cs_record['translation']).reshape((-1, 1))
-                points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
-
-                # Remove points that are partially behind the camera.
-                depths = points[2, :]
-                behind = depths < near_plane
-                if np.all(behind):
-                    continue
-
-                # Perform clipping on polygons that are partially behind the camera.
-                if render_behind_cam:
-                    points = self._clip_points_behind_camera(points, near_plane)
-
-                # Ignore polygons with less than 3 points after clipping.
-                if len(points) == 0 or points.shape[1] < 3:
-                    continue
-
-                # Grab the depths before performing the projection (camera frame z axis points away from the camera).
-                depths = points[2, :]
-
-                # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
-                points = view_points(points, cam_intrinsic, normalize=True)
-
-                # Skip polygons where all points are outside the image.
-                # Leave a margin of 1 pixel for aesthetic reasons.
-                inside = np.ones(depths.shape[0], dtype=bool)
-                inside = np.logical_and(inside, points[0, :] > 1)
-                inside = np.logical_and(inside, points[0, :] < im.size[0] - 1)
-                inside = np.logical_and(inside, points[1, :] > 1)
-                inside = np.logical_and(inside, points[1, :] < im.size[1] - 1)
-                if render_outside_im:
-                    if np.all(np.logical_not(inside)):
-                        continue
+                if layer_name == 'drivable_area':
+                    polygon_tokens = record['polygon_tokens']
                 else:
-                    if np.any(np.logical_not(inside)):
+                    polygon_tokens = [record['polygon_token']]
+
+                for polygon_token in polygon_tokens:
+                    polygon = self.map_api.extract_polygon(polygon_token)
+
+                    # Prepare pointcloud and set height to camera height.
+                    points = np.array(polygon.exterior.xy)
+                    points = np.vstack((points, np.zeros((1, points.shape[1]))))
+
+                    # Transform into the ego vehicle frame for the timestamp of the image.
+                    points = points - np.array(poserecord['translation']).reshape((-1, 1))
+                    points = np.dot(Quaternion(poserecord['rotation']).rotation_matrix.T, points)
+
+                    # Transform into the camera.
+                    points = points - np.array(cs_record['translation']).reshape((-1, 1))
+                    points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
+
+                    # Remove points that are partially behind the camera.
+                    depths = points[2, :]
+                    behind = depths < near_plane
+                    if np.all(behind):
                         continue
 
-                points = points[:2, :]
-                points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
-                polygon_proj = Polygon(points)
+                    # Perform clipping on polygons that are partially behind the camera.
+                    if render_behind_cam:
+                        points = self._clip_points_behind_camera(points, near_plane)
 
-                # Filter small polygons
-                if polygon_proj.area < min_polygon_area:
-                    continue
+                    # Ignore polygons with less than 3 points after clipping.
+                    if len(points) == 0 or points.shape[1] < 3:
+                        continue
 
-                label = layer_name
-                ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
-                                                    label=label))
+                    # Grab the depths before performing the projection (camera frame z axis points away from the camera).
+                    depths = points[2, :]
+
+                    # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
+                    points = view_points(points, cam_intrinsic, normalize=True)
+
+                    # Skip polygons where all points are outside the image.
+                    # Leave a margin of 1 pixel for aesthetic reasons.
+                    inside = np.ones(depths.shape[0], dtype=bool)
+                    inside = np.logical_and(inside, points[0, :] > 1)
+                    inside = np.logical_and(inside, points[0, :] < im.size[0] - 1)
+                    inside = np.logical_and(inside, points[1, :] > 1)
+                    inside = np.logical_and(inside, points[1, :] < im.size[1] - 1)
+                    if render_outside_im:
+                        if np.all(np.logical_not(inside)):
+                            continue
+                    else:
+                        if np.any(np.logical_not(inside)):
+                            continue
+
+                    points = points[:2, :]
+                    points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
+                    polygon_proj = Polygon(points)
+
+                    # Filter small polygons
+                    if polygon_proj.area < min_polygon_area:
+                        continue
+
+                    label = layer_name
+                    ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
+                                                        label=label))
 
         # Display the image.
         plt.axis('off')
