@@ -791,9 +791,18 @@ class NuScenesMapExplorer:
             plt.tight_layout()
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
-    def _clip_points_behind_camera(self, points, near_plane):
-        # Perform clipping on polygons that are partially behind the camera.
-
+    def _clip_points_behind_camera(self, points, near_plane: float):
+        """
+        Perform clipping on polygons that are partially behind the camera.
+        This method is necessary as the projection does not work for points behind the camera.
+        Hence we compute the line between the point and the camera and follow that line until we hit the near plane of
+        the camera. Then we use that point.
+        :param points: <np.float32: 3, n> Matrix of points, where each point (x, y, z) is along each column.
+        :param near_plane: If we set the near_plane distance of the camera to 0 then some points will project to
+            infinity. Therefore we need to clip these points at the near plane.
+        :return: The clipped version of the polygon. This may have fewer points than the original polygon if some lines
+            were entirely behind the polygon.
+        """
         points_clipped = []
         # Loop through each line on the polygon.
         # For each line where exactly 1 endpoints is behind the camera, move the point along the line until
