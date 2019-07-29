@@ -839,6 +839,11 @@ class NuScenesMapExplorer:
         map_poses = []
         print('Adding ego poses to map...')
         for scene_token in tqdm(scene_tokens_location):
+            # Check that the scene is from the correct location.
+            scene_record = nusc.get('scene', scene_token)
+            log_record = nusc.get('log', scene_record['log_token'])
+            assert log_record['location'] == log_location, \
+                'Error: The provided scene_tokens do not correspond to the provided map location!'
 
             # For each sample in the scene, store the ego pose.
             sample_tokens = nusc.field2token('sample', 'scene_token', scene_token)
@@ -851,6 +856,9 @@ class NuScenesMapExplorer:
 
                 # Calculate the pose on the map and append
                 map_poses.append(pose_record['translation'])
+
+        # Check that ego poses aren't empty.
+        assert len(map_poses) > 0, 'Error: Found 0 ego poses. Please check the inputs.'
 
         # Compute number of close ego poses.
         print('Creating plot...')
