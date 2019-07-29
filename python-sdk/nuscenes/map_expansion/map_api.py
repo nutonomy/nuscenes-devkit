@@ -655,10 +655,10 @@ class NuScenesMapExplorer:
         ax.set_ylim(y_min - local_height / 3, y_max + local_height / 3)
         ax.add_patch(Rectangle((x_min, y_min), local_width, local_height, fill=False, linestyle='-.', color='red',
                                lw=2))
-        ax.text(x_min, y_min + local_height / 2, "{} m".format(local_height), dict(fontsize=12))
-        ax.text(x_min + local_width / 2, y_min, "{} m".format(local_width), dict(fontsize=12))
+        ax.text(x_min + local_width / 100, y_min + local_height / 2, "{} m".format(local_height), dict(fontsize=12))
+        ax.text(x_min + local_width / 2, y_min + local_height / 100, "{} m".format(local_width), dict(fontsize=12))
 
-        ax.legend()
+        ax.legend(frameon=True, loc='upper right')
 
         return fig, ax
 
@@ -858,17 +858,26 @@ class NuScenesMapExplorer:
 
         # Render the map patch with the current ego poses.
         # If the map is rendered with semi transparent layers, the ego poses are hard to see.
-        min_patch = np.floor(map_poses.min(axis=0) - 20)
-        max_patch = np.ceil(map_poses.max(axis=0) + 20)
+        patch_margin = 5
+        min_patch_diff = 30
+        min_patch = np.floor(map_poses.min(axis=0) - patch_margin)
+        max_patch = np.ceil(map_poses.max(axis=0) + patch_margin)
+        diff_patch = max_patch - min_patch
+        if any(diff_patch < min_patch_diff):
+            center_patch = (min_patch + max_patch) / 2
+            diff_patch = np.maximum(diff_patch, min_patch_diff)
+            min_patch = center_patch - diff_patch
+            max_patch = center_patch + diff_patch
         my_patch = (min_patch[0], min_patch[1], max_patch[0], max_patch[1])
-        fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10), alpha=1.0)
+        fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10))
 
         # Plot in the same axis as the map.
         # Make sure these are plotted "on top".
-        ax.scatter(map_poses[:, 0], map_poses[:, 1], s=20, c='k', alpha=1.0, zorder=0)
+        ax.scatter(map_poses[:, 0], map_poses[:, 1], s=20, c='k', alpha=1.0, zorder=2)
+        plt.axis('off')
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
     def _clip_points_behind_camera(self, points, near_plane: float):
         """
