@@ -259,7 +259,9 @@ class NuScenesMap:
         :param out_path: Optional path to save the rendered figure to disk.
         """
         self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
-                                          patch_radius=patch_radius, layer_names=layer_names, out_path=out_path)
+                                          patch_radius=patch_radius, min_polygon_area=min_polygon_area,
+                                          render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
+                                          layer_names=layer_names, out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
