@@ -9,6 +9,8 @@ import random
 from typing import Dict, List, Tuple, Optional
 
 import descartes
+from tqdm import tqdm
+import sklearn.metrics
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -260,6 +262,23 @@ class NuScenesMap:
         """
         self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
                                           patch_radius=patch_radius, layer_names=layer_names, out_path=out_path)
+
+    def render_egoposes_on_fancy_map(self,
+                               nusc: NuScenes,
+                               log_location: str,
+                               scene_tokens: List = None,
+                               out_path: str = None) -> None:
+        """
+        Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
+        This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
+        :param nusc: The NuScenes instance to load the ego poses from.
+        :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
+                             "singapore-queenstown' and "boston-seaport".
+        :param scene_tokens: Optional list of scene tokens.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        self.explorer.render_egoposes_on_fancy_map(nusc, log_location=log_location, scene_tokens=scene_tokens,
+                                                   out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -529,6 +548,7 @@ class NuScenesMapExplorer:
 
         local_width = x2 - x1
         local_height = y2 - y1
+        assert local_height > 0, 'Error: Map patch has 0 height!'
         local_aspect_ratio = local_width / local_height
 
         # We obtained the values 0.65 and 0.66 by trials.
@@ -614,7 +634,6 @@ class NuScenesMapExplorer:
         :param figsize: Size of the whole figure.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-
         x_min, y_min, x_max, y_max = box_coords
 
         if layer_names is None:
@@ -624,6 +643,7 @@ class NuScenesMapExplorer:
 
         local_width = x_max - x_min
         local_height = y_max - y_min
+        assert local_height > 0, 'Error: Map patch has 0 height!'
         local_aspect_ratio = local_width / local_height
 
         ax = fig.add_axes([0, 0, 1, 1 / local_aspect_ratio])
@@ -790,6 +810,65 @@ class NuScenesMapExplorer:
         if out_path is not None:
             plt.tight_layout()
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
+
+    def render_egoposes_on_fancy_map(self,
+                                     nusc: NuScenes,
+                                     log_location: str,
+                                     scene_tokens: List = None,
+                                     out_path: str = None) -> None:
+        """
+        Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
+        This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
+        :param nusc: The NuScenes instance to load the ego poses from.
+        :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
+                             "singapore-queenstown' and "boston-seaport".
+        :param scene_tokens: Optional list of scene tokens.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        # Get logs by location
+        log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
+        assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
+
+        # Filter scenes
+        scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
+        if scene_tokens is not None:
+            scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
+        if len(scene_tokens_location) == 0:
+            print('Warning: Found 0 valid scenes for location %s!' % log_location)
+
+        map_poses = []
+        print('Adding ego poses to map...')
+        for scene_token in tqdm(scene_tokens_location):
+
+            # For each sample in the scene, store the ego pose.
+            sample_tokens = nusc.field2token('sample', 'scene_token', scene_token)
+            for sample_token in sample_tokens:
+                sample_record = nusc.get('sample', sample_token)
+
+                # Poses are associated with the sample_data. Here we use the lidar sample_data.
+                sample_data_record = nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
+                pose_record = nusc.get('ego_pose', sample_data_record['ego_pose_token'])
+
+                # Calculate the pose on the map and append
+                map_poses.append(pose_record['translation'])
+
+        # Compute number of close ego poses.
+        print('Creating plot...')
+        map_poses = np.vstack(map_poses)[:, :2]
+
+        # Render the map patch with the current ego poses.
+        # If the map is rendered with semi transparent layers, the ego poses are hard to see.
+        min_patch = np.floor(map_poses.min(axis=0) - 20)
+        max_patch = np.ceil(map_poses.max(axis=0) + 20)
+        my_patch = (min_patch[0], min_patch[1], max_patch[0], max_patch[1])
+        fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10), alpha=1.0)
+
+        # Plot in the same axis as the map.
+        # Make sure these are plotted "on top".
+        ax.scatter(map_poses[:, 0], map_poses[:, 1], s=20, c='k', alpha=1.0, zorder=0)
+
+        if out_path is not None:
+            plt.savefig(out_path)
 
     def _clip_points_behind_camera(self, points, near_plane: float):
         """

@@ -1074,7 +1074,8 @@ class NuScenesExplorer:
         if out_path is not None:
             out.release()
 
-    def render_egoposes_on_map(self, log_location: str,
+    def render_egoposes_on_map(self,
+                               log_location: str,
                                scene_tokens: List = None,
                                close_dist: float = 100,
                                color_fg: Tuple[int, int, int] = (167, 174, 186),
