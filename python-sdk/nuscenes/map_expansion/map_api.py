@@ -270,6 +270,7 @@ class NuScenesMap:
                                      nusc: NuScenes,
                                      log_location: str,
                                      scene_tokens: List = None,
+                                     debug: bool = True,
                                      out_path: str = None) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
@@ -278,11 +279,12 @@ class NuScenesMap:
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
+        :param debug: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         return self.explorer.render_egoposes_on_fancy_map(nusc, log_location=log_location, scene_tokens=scene_tokens,
-                                                          out_path=out_path)
+                                                          debug=debug, out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -829,6 +831,7 @@ class NuScenesMapExplorer:
                                      nusc: NuScenes,
                                      log_location: str,
                                      scene_tokens: List = None,
+                                     debug: bool = True,
                                      out_path: str = None) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
@@ -837,6 +840,7 @@ class NuScenesMapExplorer:
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
+        :param debug: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
@@ -852,12 +856,12 @@ class NuScenesMapExplorer:
         scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
         if scene_tokens is not None:
             scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
-        if len(scene_tokens_location) == 0:
-            print('Warning: Found 0 valid scenes for location %s!' % log_location)
+        assert len(scene_tokens_location) > 0, 'Error: Found 0 valid scenes for location %s!' % log_location
 
         map_poses = []
-        print('Adding ego poses to map...')
-        for scene_token in tqdm(scene_tokens_location):
+        if debug:
+            print('Adding ego poses to map...')
+        for scene_token in tqdm(scene_tokens_location, disable=not debug):
             # Check that the scene is from the correct location.
             scene_record = nusc.get('scene', scene_token)
             log_record = nusc.get('log', scene_record['log_token'])
@@ -880,7 +884,8 @@ class NuScenesMapExplorer:
         assert len(map_poses) > 0, 'Error: Found 0 ego poses. Please check the inputs.'
 
         # Compute number of close ego poses.
-        print('Creating plot...')
+        if debug:
+            print('Creating plot...')
         map_poses = np.vstack(map_poses)[:, :2]
 
         # Render the map patch with the current ego poses.
