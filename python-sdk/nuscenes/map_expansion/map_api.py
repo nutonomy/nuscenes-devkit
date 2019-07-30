@@ -749,9 +749,12 @@ class NuScenesMapExplorer:
                     if np.all(behind):
                         continue
 
-                    # Perform clipping on polygons that are partially behind the camera.
                     if render_behind_cam:
+                        # Perform clipping on polygons that are partially behind the camera.
                         points = self._clip_points_behind_camera(points, near_plane)
+                    elif np.any(behind):
+                        # Otherwise ignore any polygon that is partially behind the camera.
+                        continue
 
                     # Ignore polygons with less than 3 points after clipping.
                     if len(points) == 0 or points.shape[1] < 3:
