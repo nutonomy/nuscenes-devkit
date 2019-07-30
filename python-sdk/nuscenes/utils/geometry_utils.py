@@ -44,7 +44,7 @@ def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.nda
 
     nbr_points = points.shape[1]
 
-    # Do operation in homogenous coordinates
+    # Do operation in homogenous coordinates.
     points = np.concatenate((points, np.ones((1, nbr_points))))
     points = np.dot(viewpad, points)
     points = points[:3, :]

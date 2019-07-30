@@ -16,17 +16,22 @@ from matplotlib.patches import Rectangle, Arrow
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+from PIL import Image
 from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
 from shapely import affinity
 import cv2
+from pyquaternion import Quaternion
+
+from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.geometry_utils import view_points
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
 
 
-class NuscenesMap:
+class NuScenesMap:
     """
-    MapGraph database class for querying and retrieving information from the semantic maps.
+    NuScenesMap database class for querying and retrieving information from the semantic maps.
     Before using this class please use the provided tutorial in `map_demo.ipynb`.
 
     Below you can find the map origins (south eastern corner, in [lat, lon]) for each of the 4 maps in nuScenes:
@@ -81,7 +86,7 @@ class NuscenesMap:
         self._make_token2ind()
         self._make_shortcuts()
 
-        self.explorer = NuscenesMapExplorer(self)
+        self.explorer = NuScenesMapExplorer(self)
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -189,7 +194,7 @@ class NuscenesMap:
                       figsize: Tuple[int, int] = (15, 15),
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
-         Render a single map graph record. By default will also render 3 layers which are `drivable_area`, `lane`,
+         Render a single map record. By default will also render 3 layers which are `drivable_area`, `lane`,
          and `walkway` unless specified by `other_layers`.
          :param layer_name: Name of the layer that we are interested in.
          :param token: Token of the record that you want to render.
@@ -227,6 +232,37 @@ class NuscenesMap:
         :return: The matplotlib figure and axes of the rendered layers.
         """
         return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize)
+
+    def render_map_in_image(self,
+                            nusc: NuScenes,
+                            sample_token: str,
+                            camera_channel: str = 'CAM_FRONT',
+                            alpha: float = 0.3,
+                            patch_radius: float = 10000,
+                            min_polygon_area: float = 1000,
+                            render_behind_cam: bool = True,
+                            render_outside_im: bool = True,
+                            layer_names: List[str] = None,
+                            out_path: str = None) -> None:
+        """
+        Render a nuScenes camera image and overlay the polygons for the specified map layers.
+        Note that the projections are not always accurate as the localization is in 2d.
+        :param nusc: The NuScenes instance to load the image from.
+        :param sample_token: The image's corresponding sample_token.
+        :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
+        :param alpha: The transparency value of the layers to render in [0, 1].
+        :param patch_radius: The radius in meters around the ego car in which to select map records.
+        :param min_polygon_area: Minimum area a polygon needs to have to be rendered.
+        :param render_behind_cam: Whether to render polygons where any point is behind the camera.
+        :param render_outside_im: Whether to render polygons where any point is outside the image.
+        :param layer_names: The names of the layers to render, e.g. ['lane'].
+            If set to None, the recommended setting will be used.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
+                                          patch_radius=patch_radius, min_polygon_area=min_polygon_area,
+                                          render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
+                                          layer_names=layer_names, out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -338,14 +374,14 @@ class NuscenesMap:
         return self.explorer.get_bounds(layer_name, token)
 
 
-class NuscenesMapExplorer:
+class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
     def __init__(self,
-                 map_api: NuscenesMap,
+                 map_api: NuScenesMap,
                  representative_layers: Tuple[str] = ('drivable_area', 'lane', 'walkway'),
                  color_map: dict = None):
         """
-        :param map_api: MapGraph database class.
+        :param map_api: NuScenesMap database class.
         :param representative_layers: These are the layers that we feel are representative of the whole mapping data.
         :param color_map: Color map.
         """
@@ -475,7 +511,7 @@ class NuscenesMapExplorer:
                       figsize: Tuple[int, int] = (15, 15),
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
-        Render a single map graph record.
+        Render a single map record.
         By default will also render 3 layers which are `drivable_area`, `lane`, and `walkway` unless specified by
         `other_layers`.
         :param layer_name: Name of the layer that we are interested in.
@@ -608,6 +644,224 @@ class NuscenesMapExplorer:
         ax.legend()
 
         return fig, ax
+
+    def render_map_in_image(self,
+                            nusc: NuScenes,
+                            sample_token: str,
+                            camera_channel: str = 'CAM_FRONT',
+                            alpha: float = 0.3,
+                            patch_radius: float = 10000,
+                            min_polygon_area: float = 1000,
+                            render_behind_cam: bool = True,
+                            render_outside_im: bool = True,
+                            layer_names: List[str] = None,
+                            out_path: str = None) -> None:
+        """
+        Render a nuScenes camera image and overlay the polygons for the specified map layers.
+        Note that the projections are not always accurate as the localization is in 2d.
+        :param nusc: The NuScenes instance to load the image from.
+        :param sample_token: The image's corresponding sample_token.
+        :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
+        :param alpha: The transparency value of the layers to render in [0, 1].
+        :param patch_radius: The radius in meters around the ego car in which to select map records.
+        :param min_polygon_area: Minimum area a polygon needs to have to be rendered.
+        :param render_behind_cam: Whether to render polygons where any point is behind the camera.
+        :param render_outside_im: Whether to render polygons where any point is outside the image.
+        :param layer_names: The names of the layers to render, e.g. ['lane'].
+            If set to None, the recommended setting will be used.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        near_plane = 1e-8
+
+        print('Warning: Note that the projections are not always accurate as the localization is in 2d.')
+
+        # Default layers.
+        if layer_names is None:
+            layer_names = ['road_segment', 'lane', 'ped_crossing', 'walkway', 'stop_line', 'carpark_area']
+
+        # Check layers whether we can render them.
+        for layer_name in layer_names:
+            assert layer_name in self.map_api.non_geometric_polygon_layers, \
+                'Error: Can only render non-geometry polygons: %s' % layer_names
+
+        # Check that NuScenesMap was loaded for the correct location.
+        sample_record = nusc.get('sample', sample_token)
+        scene_record = nusc.get('scene', sample_record['scene_token'])
+        log_record = nusc.get('log', scene_record['log_token'])
+        log_location = log_record['location']
+        assert self.map_api.map_name == log_location, \
+            'Error: NuScenesMap loaded for location %s, should be %s!' % (self.map_api.map_name, log_location)
+
+        # Grab the front camera image and intrinsics.
+        cam_token = sample_record['data'][camera_channel]
+        cam_record = nusc.get('sample_data', cam_token)
+        cam_path = nusc.get_sample_data_path(cam_token)
+        im = Image.open(cam_path)
+        im_size = im.size
+        cs_record = nusc.get('calibrated_sensor', cam_record['calibrated_sensor_token'])
+        cam_intrinsic = np.array(cs_record['camera_intrinsic'])
+
+        # Retrieve the current map.
+        poserecord = nusc.get('ego_pose', cam_record['ego_pose_token'])
+        ego_pose = poserecord['translation']
+        box_coords = (
+            ego_pose[0] - patch_radius,
+            ego_pose[1] - patch_radius,
+            ego_pose[0] + patch_radius,
+            ego_pose[1] + patch_radius,
+        )
+        records_in_patch = self.get_records_in_patch(box_coords, layer_names, 'intersect')
+
+        # Init axes.
+        fig = plt.figure(figsize=(9, 16))
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.set_xlim(0, im_size[0])
+        ax.set_ylim(0, im_size[1])
+        ax.imshow(im)
+
+        # Retrieve and render each record.
+        for layer_name in layer_names:
+            for token in records_in_patch[layer_name]:
+                record = self.map_api.get(layer_name, token)
+                if layer_name == 'drivable_area':
+                    polygon_tokens = record['polygon_tokens']
+                else:
+                    polygon_tokens = [record['polygon_token']]
+
+                for polygon_token in polygon_tokens:
+                    polygon = self.map_api.extract_polygon(polygon_token)
+
+                    # Convert polygon nodes to pointcloud with 0 height.
+                    points = np.array(polygon.exterior.xy)
+                    points = np.vstack((points, np.zeros((1, points.shape[1]))))
+
+                    # Transform into the ego vehicle frame for the timestamp of the image.
+                    points = points - np.array(poserecord['translation']).reshape((-1, 1))
+                    points = np.dot(Quaternion(poserecord['rotation']).rotation_matrix.T, points)
+
+                    # Transform into the camera.
+                    points = points - np.array(cs_record['translation']).reshape((-1, 1))
+                    points = np.dot(Quaternion(cs_record['rotation']).rotation_matrix.T, points)
+
+                    # Remove points that are partially behind the camera.
+                    depths = points[2, :]
+                    behind = depths < near_plane
+                    if np.all(behind):
+                        continue
+
+                    if render_behind_cam:
+                        # Perform clipping on polygons that are partially behind the camera.
+                        points = self._clip_points_behind_camera(points, near_plane)
+                    elif np.any(behind):
+                        # Otherwise ignore any polygon that is partially behind the camera.
+                        continue
+
+                    # Ignore polygons with less than 3 points after clipping.
+                    if len(points) == 0 or points.shape[1] < 3:
+                        continue
+
+                    # Grab the depths before performing the projection (z axis points away from the camera).
+                    depths = points[2, :]
+
+                    # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
+                    points = view_points(points, cam_intrinsic, normalize=True)
+
+                    # Skip polygons where all points are outside the image.
+                    # Leave a margin of 1 pixel for aesthetic reasons.
+                    inside = np.ones(depths.shape[0], dtype=bool)
+                    inside = np.logical_and(inside, points[0, :] > 1)
+                    inside = np.logical_and(inside, points[0, :] < im.size[0] - 1)
+                    inside = np.logical_and(inside, points[1, :] > 1)
+                    inside = np.logical_and(inside, points[1, :] < im.size[1] - 1)
+                    if render_outside_im:
+                        if np.all(np.logical_not(inside)):
+                            continue
+                    else:
+                        if np.any(np.logical_not(inside)):
+                            continue
+
+                    points = points[:2, :]
+                    points = [(p0, p1) for (p0, p1) in zip(points[0], points[1])]
+                    polygon_proj = Polygon(points)
+
+                    # Filter small polygons
+                    if polygon_proj.area < min_polygon_area:
+                        continue
+
+                    label = layer_name
+                    ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
+                                                        label=label))
+
+        # Display the image.
+        plt.axis('off')
+        ax.invert_yaxis()
+
+        if out_path is not None:
+            plt.tight_layout()
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
+
+    def _clip_points_behind_camera(self, points, near_plane: float):
+        """
+        Perform clipping on polygons that are partially behind the camera.
+        This method is necessary as the projection does not work for points behind the camera.
+        Hence we compute the line between the point and the camera and follow that line until we hit the near plane of
+        the camera. Then we use that point.
+        :param points: <np.float32: 3, n> Matrix of points, where each point (x, y, z) is along each column.
+        :param near_plane: If we set the near_plane distance of the camera to 0 then some points will project to
+            infinity. Therefore we need to clip these points at the near plane.
+        :return: The clipped version of the polygon. This may have fewer points than the original polygon if some lines
+            were entirely behind the polygon.
+        """
+        points_clipped = []
+        # Loop through each line on the polygon.
+        # For each line where exactly 1 endpoints is behind the camera, move the point along the line until
+        # it hits the near plane of the camera (clipping).
+        assert points.shape[0] == 3
+        point_count = points.shape[1]
+        for line1 in range(point_count):
+            line2 = (line1 + 1) % point_count
+            point1 = points[:, line1]
+            point2 = points[:, line2]
+            z1 = point1[2]
+            z2 = point2[2]
+
+            if z1 >= near_plane and z2 >= near_plane:
+                # Both points are in front.
+                # Add both points unless the first is already added.
+                if len(points_clipped) == 0 or all(points_clipped[-1] != point1):
+                    points_clipped.append(point1)
+                points_clipped.append(point2)
+            elif z1 < near_plane and z2 < near_plane:
+                # Both points are in behind.
+                # Don't add anything.
+                continue
+            else:
+                # One point is in front, one behind.
+                # By convention pointA is behind the camera and pointB in front.
+                if z1 <= z2:
+                    pointA = points[:, line1]
+                    pointB = points[:, line2]
+                else:
+                    pointA = points[:, line2]
+                    pointB = points[:, line1]
+                zA = pointA[2]
+                zB = pointB[2]
+
+                # Clip line along near plane.
+                pointdiff = pointB - pointA
+                alpha = (near_plane - zB) / (zA - zB)
+                clipped = pointA + (1 - alpha) * pointdiff
+                assert np.abs(clipped[2] - near_plane) < 1e-6
+
+                # Add the first point (if valid and not duplicate), the clipped point and the second point (if valid).
+                if z1 >= near_plane and (len(points_clipped) == 0 or all(points_clipped[-1] != point1)):
+                    points_clipped.append(point1)
+                points_clipped.append(clipped)
+                if z2 >= near_plane:
+                    points_clipped.append(point2)
+
+        points_clipped = np.array(points_clipped).transpose()
+        return points_clipped
 
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
