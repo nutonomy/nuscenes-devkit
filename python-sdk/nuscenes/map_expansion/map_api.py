@@ -651,12 +651,16 @@ class NuScenesMapExplorer:
         for layer_name in layer_names:
             self._render_layer(ax, layer_name, alpha)
 
-        ax.set_xlim(x_min - local_width / 3, x_max + local_width / 3)
-        ax.set_ylim(y_min - local_height / 3, y_max + local_height / 3)
+        x_margin = np.minimum(local_width / 4, 50)
+        y_margin = np.minimum(local_height / 4, 10)
+        ax.set_xlim(x_min - x_margin, x_max + x_margin)
+        ax.set_ylim(y_min - y_margin, y_max + y_margin)
         ax.add_patch(Rectangle((x_min, y_min), local_width, local_height, fill=False, linestyle='-.', color='red',
                                lw=2))
-        ax.text(x_min + local_width / 100, y_min + local_height / 2, "{} m".format(local_height), dict(fontsize=12))
-        ax.text(x_min + local_width / 2, y_min + local_height / 100, "{} m".format(local_width), dict(fontsize=12))
+        ax.text(x_min + local_width / 100, y_min + local_height / 2, "%g m" % local_height,
+                fontsize=14, weight='bold')
+        ax.text(x_min + local_width / 2, y_min + local_height / 100, "%g m" % local_width,
+                fontsize=14, weight='bold')
 
         ax.legend(frameon=True, loc='upper right')
 
@@ -825,6 +829,10 @@ class NuScenesMapExplorer:
         :param scene_tokens: Optional list of scene tokens.
         :param out_path: Optional path to save the rendered figure to disk.
         """
+        # Settings
+        patch_margin = 2
+        min_diff_patch = 30
+
         # Get logs by location
         log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
@@ -865,17 +873,14 @@ class NuScenesMapExplorer:
         map_poses = np.vstack(map_poses)[:, :2]
 
         # Render the map patch with the current ego poses.
-        # If the map is rendered with semi transparent layers, the ego poses are hard to see.
-        patch_margin = 5
-        min_patch_diff = 30
         min_patch = np.floor(map_poses.min(axis=0) - patch_margin)
         max_patch = np.ceil(map_poses.max(axis=0) + patch_margin)
         diff_patch = max_patch - min_patch
-        if any(diff_patch < min_patch_diff):
+        if any(diff_patch < min_diff_patch):
             center_patch = (min_patch + max_patch) / 2
-            diff_patch = np.maximum(diff_patch, min_patch_diff)
-            min_patch = center_patch - diff_patch
-            max_patch = center_patch + diff_patch
+            diff_patch = np.maximum(diff_patch, min_diff_patch)
+            min_patch = center_patch - diff_patch / 2
+            max_patch = center_patch + diff_patch / 2
         my_patch = (min_patch[0], min_patch[1], max_patch[0], max_patch[1])
         fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10))
 
