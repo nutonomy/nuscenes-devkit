@@ -31,7 +31,7 @@ plt.style.use('seaborn-whitegrid')
 
 class NuScenesMap:
     """
-    MapGraph database class for querying and retrieving information from the semantic maps.
+    NuScenesMap database class for querying and retrieving information from the semantic maps.
     Before using this class please use the provided tutorial in `map_demo.ipynb`.
 
     Below you can find the map origins (south eastern corner, in [lat, lon]) for each of the 4 maps in nuScenes:
@@ -194,7 +194,7 @@ class NuScenesMap:
                       figsize: Tuple[int, int] = (15, 15),
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
-         Render a single map graph record. By default will also render 3 layers which are `drivable_area`, `lane`,
+         Render a single map record. By default will also render 3 layers which are `drivable_area`, `lane`,
          and `walkway` unless specified by `other_layers`.
          :param layer_name: Name of the layer that we are interested in.
          :param token: Token of the record that you want to render.
@@ -246,6 +246,7 @@ class NuScenesMap:
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
+        Note that the projections are not always accurate as the localization is in 2d.
         :param nusc: The NuScenes instance to load the image from.
         :param sample_token: The image's corresponding sample_token.
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
@@ -380,7 +381,7 @@ class NuScenesMapExplorer:
                  representative_layers: Tuple[str] = ('drivable_area', 'lane', 'walkway'),
                  color_map: dict = None):
         """
-        :param map_api: MapGraph database class.
+        :param map_api: NuScenesMap database class.
         :param representative_layers: These are the layers that we feel are representative of the whole mapping data.
         :param color_map: Color map.
         """
@@ -510,7 +511,7 @@ class NuScenesMapExplorer:
                       figsize: Tuple[int, int] = (15, 15),
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
-        Render a single map graph record.
+        Render a single map record.
         By default will also render 3 layers which are `drivable_area`, `lane`, and `walkway` unless specified by
         `other_layers`.
         :param layer_name: Name of the layer that we are interested in.
@@ -657,6 +658,7 @@ class NuScenesMapExplorer:
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
+        Note that the projections are not always accurate as the localization is in 2d.
         :param nusc: The NuScenes instance to load the image from.
         :param sample_token: The image's corresponding sample_token.
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
@@ -670,6 +672,8 @@ class NuScenesMapExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         """
         near_plane = 1e-8
+
+        print('Warning: Note that the projections are not always accurate as the localization is in 2d.')
 
         # Default layers.
         if layer_names is None:
@@ -727,7 +731,7 @@ class NuScenesMapExplorer:
                 for polygon_token in polygon_tokens:
                     polygon = self.map_api.extract_polygon(polygon_token)
 
-                    # Prepare pointcloud and set height to camera height.
+                    # Convert polygon nodes to pointcloud with 0 height.
                     points = np.array(polygon.exterior.xy)
                     points = np.vstack((points, np.zeros((1, points.shape[1]))))
 
