@@ -1,6 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Sergi Adipraja Widjaja, 2019.
 # + Map mask by Kiwoo Shin, 2019.
+# + Methods operating on NuScenesMap and NuScenes by Holger Caesar, 2019.
 # Licensed under the Creative Commons [see license.txt]
 
 import os
@@ -10,7 +11,6 @@ from typing import Dict, List, Tuple, Optional
 
 import descartes
 from tqdm import tqdm
-import sklearn.metrics
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -267,10 +267,10 @@ class NuScenesMap:
                                           layer_names=layer_names, out_path=out_path)
 
     def render_egoposes_on_fancy_map(self,
-                               nusc: NuScenes,
-                               log_location: str,
-                               scene_tokens: List = None,
-                               out_path: str = None) -> None:
+                                     nusc: NuScenes,
+                                     log_location: str,
+                                     scene_tokens: List = None,
+                                     out_path: str = None) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -279,9 +279,10 @@ class NuScenesMap:
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
         :param out_path: Optional path to save the rendered figure to disk.
+        :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
-        self.explorer.render_egoposes_on_fancy_map(nusc, log_location=log_location, scene_tokens=scene_tokens,
-                                                   out_path=out_path)
+        return self.explorer.render_egoposes_on_fancy_map(nusc, log_location=log_location, scene_tokens=scene_tokens,
+                                                          out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -343,7 +344,7 @@ class NuScenesMap:
         :param token: The record token.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
         :param mode: "intersect" means it will return True if the geometric object intersects the patch, "within" will
-        return True if the geometric object is within the patch.
+                     return True if the geometric object is within the patch.
         :return: Boolean value on whether a particular record intersects or within a particular patch.
         """
         return self.explorer.is_record_in_patch(layer_name, token, box_coords, mode)
@@ -775,7 +776,7 @@ class NuScenesMapExplorer:
 
                     if render_behind_cam:
                         # Perform clipping on polygons that are partially behind the camera.
-                        points = self._clip_points_behind_camera(points, near_plane)
+                        points = NuScenesMapExplorer._clip_points_behind_camera(points, near_plane)
                     elif np.any(behind):
                         # Otherwise ignore any polygon that is partially behind the camera.
                         continue
@@ -828,7 +829,7 @@ class NuScenesMapExplorer:
                                      nusc: NuScenes,
                                      log_location: str,
                                      scene_tokens: List = None,
-                                     out_path: str = None) -> None:
+                                     out_path: str = None) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -837,6 +838,7 @@ class NuScenesMapExplorer:
                              "singapore-queenstown' and "boston-seaport".
         :param scene_tokens: Optional list of scene tokens.
         :param out_path: Optional path to save the rendered figure to disk.
+        :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         # Settings
         patch_margin = 2
@@ -901,7 +903,10 @@ class NuScenesMapExplorer:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
-    def _clip_points_behind_camera(self, points, near_plane: float):
+        return map_poses
+
+    @staticmethod
+    def _clip_points_behind_camera(points, near_plane: float):
         """
         Perform clipping on polygons that are partially behind the camera.
         This method is necessary as the projection does not work for points behind the camera.
