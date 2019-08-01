@@ -858,10 +858,9 @@ class NuScenesMapExplorer:
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
         # Filter scenes
-        if scene_tokens is None:
-            scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
-        else:
-            scene_tokens_location = scene_tokens
+        scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
+        if scene_tokens is not None:
+            scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
         assert len(scene_tokens_location) > 0, 'Error: Found 0 valid scenes for location %s!' % log_location
 
         map_poses = []
