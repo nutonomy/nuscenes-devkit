@@ -245,6 +245,7 @@ class NuScenesMap:
                             render_behind_cam: bool = True,
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
+                            verbose: bool = True,
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
@@ -259,32 +260,30 @@ class NuScenesMap:
         :param render_outside_im: Whether to render polygons where any point is outside the image.
         :param layer_names: The names of the layers to render, e.g. ['lane'].
             If set to None, the recommended setting will be used.
+        :param verbose: Whether to print to stdout.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
                                           patch_radius=patch_radius, min_polygon_area=min_polygon_area,
                                           render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
-                                          layer_names=layer_names, out_path=out_path)
+                                          layer_names=layer_names, verbose=verbose, out_path=out_path)
 
     def render_egoposes_on_fancy_map(self,
                                      nusc: NuScenes,
-                                     log_location: str,
                                      scene_tokens: List = None,
-                                     debug: bool = True,
+                                     verbose: bool = True,
                                      out_path: str = None) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
         :param nusc: The NuScenes instance to load the ego poses from.
-        :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
-                             "singapore-queenstown' and "boston-seaport".
-        :param scene_tokens: Optional list of scene tokens.
-        :param debug: Whether to show status messages and progress bar.
+        :param scene_tokens: Optional list of scene tokens corresponding to the current map location.
+        :param verbose: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
-        return self.explorer.render_egoposes_on_fancy_map(nusc, log_location=log_location, scene_tokens=scene_tokens,
-                                                          debug=debug, out_path=out_path)
+        return self.explorer.render_egoposes_on_fancy_map(nusc, scene_tokens=scene_tokens,
+                                                          verbose=verbose, out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -682,6 +681,7 @@ class NuScenesMapExplorer:
                             render_behind_cam: bool = True,
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
+                            verbose: bool = True,
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
@@ -696,11 +696,13 @@ class NuScenesMapExplorer:
         :param render_outside_im: Whether to render polygons where any point is outside the image.
         :param layer_names: The names of the layers to render, e.g. ['lane'].
             If set to None, the recommended setting will be used.
+        :param verbose: Whether to print to stdout.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         near_plane = 1e-8
 
-        print('Warning: Note that the projections are not always accurate as the localization is in 2d.')
+        if verbose:
+            print('Warning: Note that the projections are not always accurate as the localization is in 2d.')
 
         # Default layers.
         if layer_names is None:
@@ -829,9 +831,8 @@ class NuScenesMapExplorer:
 
     def render_egoposes_on_fancy_map(self,
                                      nusc: NuScenes,
-                                     log_location: str,
                                      scene_tokens: List = None,
-                                     debug: bool = True,
+                                     verbose: bool = True,
                                      out_path: str = None) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
@@ -839,10 +840,8 @@ class NuScenesMapExplorer:
         Note that the maps are constantly evolving, whereas we only released a single snapshot of the data.
         Therefore for some scenes there is a bad fit between ego poses and maps.
         :param nusc: The NuScenes instance to load the ego poses from.
-        :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
-                             "singapore-queenstown' and "boston-seaport".
-        :param scene_tokens: Optional list of scene tokens.
-        :param debug: Whether to show status messages and progress bar.
+        :param scene_tokens: Optional list of scene tokens corresponding to the current map location.
+        :param verbose: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
@@ -854,19 +853,21 @@ class NuScenesMapExplorer:
                            945, 947, 952, 955, 962, 963, 968]
 
         # Get logs by location
+        log_location = self.map_api.map_name
         log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
         # Filter scenes
-        scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
-        if scene_tokens is not None:
-            scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
+        if scene_tokens is None:
+            scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
+        else:
+            scene_tokens_location = scene_tokens
         assert len(scene_tokens_location) > 0, 'Error: Found 0 valid scenes for location %s!' % log_location
 
         map_poses = []
-        if debug:
+        if verbose:
             print('Adding ego poses to map...')
-        for scene_token in tqdm(scene_tokens_location, disable=not debug):
+        for scene_token in tqdm(scene_tokens_location, disable=not verbose):
             # Check that the scene is from the correct location.
             scene_record = nusc.get('scene', scene_token)
             scene_name = scene_record['name']
@@ -876,7 +877,7 @@ class NuScenesMapExplorer:
                 'Error: The provided scene_tokens do not correspond to the provided map location!'
 
             # Print a warning if the localization is known to be bad.
-            if debug and scene_id in scene_blacklist:
+            if verbose and scene_id in scene_blacklist:
                 print('Warning: %s is known to have a bad fit between ego pose and map.' % scene_name)
 
             # For each sample in the scene, store the ego pose.
@@ -895,7 +896,7 @@ class NuScenesMapExplorer:
         assert len(map_poses) > 0, 'Error: Found 0 ego poses. Please check the inputs.'
 
         # Compute number of close ego poses.
-        if debug:
+        if verbose:
             print('Creating plot...')
         map_poses = np.vstack(map_poses)[:, :2]
 
