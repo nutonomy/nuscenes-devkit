@@ -836,6 +836,8 @@ class NuScenesMapExplorer:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
+        Note that the maps are constantly evolving, whereas we only released a single snapshot of the data.
+        Therefore for some scenes there is a bad fit between ego poses and maps.
         :param nusc: The NuScenes instance to load the ego poses from.
         :param log_location: Name of the location, e.g. "singapore-onenorth", "singapore-hollandvillage",
                              "singapore-queenstown' and "boston-seaport".
@@ -847,6 +849,9 @@ class NuScenesMapExplorer:
         # Settings
         patch_margin = 2
         min_diff_patch = 30
+        scene_blacklist = [3, 12, 18, 19, 33, 35, 36, 41, 45, 50, 54, 55, 61, 120, 121, 123, 126, 132, 133, 134, 149,
+                           154, 159, 196, 268, 278, 351, 365, 367, 368, 369, 372, 376, 377, 382, 385, 499, 515, 517,
+                           945, 947, 952, 955, 962, 963, 968]
 
         # Get logs by location
         log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
@@ -864,9 +869,15 @@ class NuScenesMapExplorer:
         for scene_token in tqdm(scene_tokens_location, disable=not debug):
             # Check that the scene is from the correct location.
             scene_record = nusc.get('scene', scene_token)
+            scene_name = scene_record['name']
+            scene_id = int(scene_name.replace('scene-', ''))
             log_record = nusc.get('log', scene_record['log_token'])
             assert log_record['location'] == log_location, \
                 'Error: The provided scene_tokens do not correspond to the provided map location!'
+
+            # Print a warning if the localization is known to be bad.
+            if debug and scene_id in scene_blacklist:
+                print('Warning: %s is known to have a bad fit between ego pose and map.' % scene_name)
 
             # For each sample in the scene, store the ego pose.
             sample_tokens = nusc.field2token('sample', 'scene_token', scene_token)
