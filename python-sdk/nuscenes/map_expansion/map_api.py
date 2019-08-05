@@ -553,7 +553,7 @@ class NuScenesMapExplorer:
 
         local_width = x2 - x1
         local_height = y2 - y1
-        assert local_height > 0, 'Error: Map patch has 0 height!'
+        assert local_height > 0, 'Error: Map has 0 height!'
         local_aspect_ratio = local_width / local_height
 
         # We obtained the values 0.65 and 0.66 by trials.
@@ -848,16 +848,17 @@ class NuScenesMapExplorer:
         # Settings
         patch_margin = 2
         min_diff_patch = 30
+        # Ids of scenes with a bad match between localization and map.
         scene_blacklist = [3, 12, 18, 19, 33, 35, 36, 41, 45, 50, 54, 55, 61, 120, 121, 123, 126, 132, 133, 134, 149,
                            154, 159, 196, 268, 278, 351, 365, 367, 368, 369, 372, 376, 377, 382, 385, 499, 515, 517,
                            945, 947, 952, 955, 962, 963, 968]
 
-        # Get logs by location
+        # Get logs by location.
         log_location = self.map_api.map_name
         log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
-        # Filter scenes
+        # Filter scenes.
         scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
         if scene_tokens is not None:
             scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
@@ -888,7 +889,7 @@ class NuScenesMapExplorer:
                 sample_data_record = nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
                 pose_record = nusc.get('ego_pose', sample_data_record['ego_pose_token'])
 
-                # Calculate the pose on the map and append
+                # Calculate the pose on the map and append.
                 map_poses.append(pose_record['translation'])
 
         # Check that ego poses aren't empty.
@@ -940,47 +941,47 @@ class NuScenesMapExplorer:
         # it hits the near plane of the camera (clipping).
         assert points.shape[0] == 3
         point_count = points.shape[1]
-        for line1 in range(point_count):
-            line2 = (line1 + 1) % point_count
-            point1 = points[:, line1]
-            point2 = points[:, line2]
-            z1 = point1[2]
-            z2 = point2[2]
+        for line_1 in range(point_count):
+            line_2 = (line_1 + 1) % point_count
+            point_1 = points[:, line_1]
+            point_2 = points[:, line_2]
+            z_1 = point_1[2]
+            z_2 = point_2[2]
 
-            if z1 >= near_plane and z2 >= near_plane:
+            if z_1 >= near_plane and z_2 >= near_plane:
                 # Both points are in front.
                 # Add both points unless the first is already added.
-                if len(points_clipped) == 0 or all(points_clipped[-1] != point1):
-                    points_clipped.append(point1)
-                points_clipped.append(point2)
-            elif z1 < near_plane and z2 < near_plane:
+                if len(points_clipped) == 0 or all(points_clipped[-1] != point_1):
+                    points_clipped.append(point_1)
+                points_clipped.append(point_2)
+            elif z_1 < near_plane and z_2 < near_plane:
                 # Both points are in behind.
                 # Don't add anything.
                 continue
             else:
                 # One point is in front, one behind.
                 # By convention pointA is behind the camera and pointB in front.
-                if z1 <= z2:
-                    pointA = points[:, line1]
-                    pointB = points[:, line2]
+                if z_1 <= z_2:
+                    point_a = points[:, line_1]
+                    point_b = points[:, line_2]
                 else:
-                    pointA = points[:, line2]
-                    pointB = points[:, line1]
-                zA = pointA[2]
-                zB = pointB[2]
+                    point_a = points[:, line_2]
+                    point_b = points[:, line_1]
+                z_a = point_a[2]
+                z_b = point_b[2]
 
                 # Clip line along near plane.
-                pointdiff = pointB - pointA
-                alpha = (near_plane - zB) / (zA - zB)
-                clipped = pointA + (1 - alpha) * pointdiff
+                pointdiff = point_b - point_a
+                alpha = (near_plane - z_b) / (z_a - z_b)
+                clipped = point_a + (1 - alpha) * pointdiff
                 assert np.abs(clipped[2] - near_plane) < 1e-6
 
                 # Add the first point (if valid and not duplicate), the clipped point and the second point (if valid).
-                if z1 >= near_plane and (len(points_clipped) == 0 or all(points_clipped[-1] != point1)):
-                    points_clipped.append(point1)
+                if z_1 >= near_plane and (len(points_clipped) == 0 or all(points_clipped[-1] != point_1)):
+                    points_clipped.append(point_1)
                 points_clipped.append(clipped)
-                if z2 >= near_plane:
-                    points_clipped.append(point2)
+                if z_2 >= near_plane:
+                    points_clipped.append(point_2)
 
         points_clipped = np.array(points_clipped).transpose()
         return points_clipped
