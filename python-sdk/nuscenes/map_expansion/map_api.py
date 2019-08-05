@@ -1,6 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Sergi Adipraja Widjaja, 2019.
 # + Map mask by Kiwoo Shin, 2019.
+# + Methods operating on NuScenesMap and NuScenes by Holger Caesar, 2019.
 # Licensed under the Creative Commons [see license.txt]
 
 import os
@@ -9,6 +10,7 @@ import random
 from typing import Dict, List, Tuple, Optional
 
 import descartes
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -243,6 +245,7 @@ class NuScenesMap:
                             render_behind_cam: bool = True,
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
+                            verbose: bool = True,
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
@@ -257,12 +260,30 @@ class NuScenesMap:
         :param render_outside_im: Whether to render polygons where any point is outside the image.
         :param layer_names: The names of the layers to render, e.g. ['lane'].
             If set to None, the recommended setting will be used.
+        :param verbose: Whether to print to stdout.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
                                           patch_radius=patch_radius, min_polygon_area=min_polygon_area,
                                           render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
-                                          layer_names=layer_names, out_path=out_path)
+                                          layer_names=layer_names, verbose=verbose, out_path=out_path)
+
+    def render_egoposes_on_fancy_map(self,
+                                     nusc: NuScenes,
+                                     scene_tokens: List = None,
+                                     verbose: bool = True,
+                                     out_path: str = None) -> np.ndarray:
+        """
+        Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
+        This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
+        :param nusc: The NuScenes instance to load the ego poses from.
+        :param scene_tokens: Optional list of scene tokens corresponding to the current map location.
+        :param verbose: Whether to show status messages and progress bar.
+        :param out_path: Optional path to save the rendered figure to disk.
+        :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
+        """
+        return self.explorer.render_egoposes_on_fancy_map(nusc, scene_tokens=scene_tokens,
+                                                          verbose=verbose, out_path=out_path)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -324,7 +345,7 @@ class NuScenesMap:
         :param token: The record token.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
         :param mode: "intersect" means it will return True if the geometric object intersects the patch, "within" will
-        return True if the geometric object is within the patch.
+                     return True if the geometric object is within the patch.
         :return: Boolean value on whether a particular record intersects or within a particular patch.
         """
         return self.explorer.is_record_in_patch(layer_name, token, box_coords, mode)
@@ -532,6 +553,7 @@ class NuScenesMapExplorer:
 
         local_width = x2 - x1
         local_height = y2 - y1
+        assert local_height > 0, 'Error: Map has 0 height!'
         local_aspect_ratio = local_width / local_height
 
         # We obtained the values 0.65 and 0.66 by trials.
@@ -617,7 +639,6 @@ class NuScenesMapExplorer:
         :param figsize: Size of the whole figure.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-
         x_min, y_min, x_max, y_max = box_coords
 
         if layer_names is None:
@@ -627,6 +648,7 @@ class NuScenesMapExplorer:
 
         local_width = x_max - x_min
         local_height = y_max - y_min
+        assert local_height > 0, 'Error: Map patch has 0 height!'
         local_aspect_ratio = local_width / local_height
 
         ax = fig.add_axes([0, 0, 1, 1 / local_aspect_ratio])
@@ -634,14 +656,18 @@ class NuScenesMapExplorer:
         for layer_name in layer_names:
             self._render_layer(ax, layer_name, alpha)
 
-        ax.set_xlim(x_min - local_width / 3, x_max + local_width / 3)
-        ax.set_ylim(y_min - local_height / 3, y_max + local_height / 3)
+        x_margin = np.minimum(local_width / 4, 50)
+        y_margin = np.minimum(local_height / 4, 10)
+        ax.set_xlim(x_min - x_margin, x_max + x_margin)
+        ax.set_ylim(y_min - y_margin, y_max + y_margin)
         ax.add_patch(Rectangle((x_min, y_min), local_width, local_height, fill=False, linestyle='-.', color='red',
                                lw=2))
-        ax.text(x_min, y_min + local_height / 2, "{} m".format(local_height), dict(fontsize=12))
-        ax.text(x_min + local_width / 2, y_min, "{} m".format(local_width), dict(fontsize=12))
+        ax.text(x_min + local_width / 100, y_min + local_height / 2, "%g m" % local_height,
+                fontsize=14, weight='bold')
+        ax.text(x_min + local_width / 2, y_min + local_height / 100, "%g m" % local_width,
+                fontsize=14, weight='bold')
 
-        ax.legend()
+        ax.legend(frameon=True, loc='upper right')
 
         return fig, ax
 
@@ -655,6 +681,7 @@ class NuScenesMapExplorer:
                             render_behind_cam: bool = True,
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
+                            verbose: bool = True,
                             out_path: str = None) -> None:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
@@ -669,11 +696,13 @@ class NuScenesMapExplorer:
         :param render_outside_im: Whether to render polygons where any point is outside the image.
         :param layer_names: The names of the layers to render, e.g. ['lane'].
             If set to None, the recommended setting will be used.
+        :param verbose: Whether to print to stdout.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         near_plane = 1e-8
 
-        print('Warning: Note that the projections are not always accurate as the localization is in 2d.')
+        if verbose:
+            print('Warning: Note that the projections are not always accurate as the localization is in 2d.')
 
         # Default layers.
         if layer_names is None:
@@ -751,7 +780,7 @@ class NuScenesMapExplorer:
 
                     if render_behind_cam:
                         # Perform clipping on polygons that are partially behind the camera.
-                        points = self._clip_points_behind_camera(points, near_plane)
+                        points = NuScenesMapExplorer._clip_points_behind_camera(points, near_plane)
                     elif np.any(behind):
                         # Otherwise ignore any polygon that is partially behind the camera.
                         continue
@@ -800,7 +829,101 @@ class NuScenesMapExplorer:
             plt.tight_layout()
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
-    def _clip_points_behind_camera(self, points, near_plane: float):
+    def render_egoposes_on_fancy_map(self,
+                                     nusc: NuScenes,
+                                     scene_tokens: List = None,
+                                     verbose: bool = True,
+                                     out_path: str = None) -> np.ndarray:
+        """
+        Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
+        This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
+        Note that the maps are constantly evolving, whereas we only released a single snapshot of the data.
+        Therefore for some scenes there is a bad fit between ego poses and maps.
+        :param nusc: The NuScenes instance to load the ego poses from.
+        :param scene_tokens: Optional list of scene tokens corresponding to the current map location.
+        :param verbose: Whether to show status messages and progress bar.
+        :param out_path: Optional path to save the rendered figure to disk.
+        :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
+        """
+        # Settings
+        patch_margin = 2
+        min_diff_patch = 30
+        # Ids of scenes with a bad match between localization and map.
+        scene_blacklist = [3, 12, 18, 19, 33, 35, 36, 41, 45, 50, 54, 55, 61, 120, 121, 123, 126, 132, 133, 134, 149,
+                           154, 159, 196, 268, 278, 351, 365, 367, 368, 369, 372, 376, 377, 382, 385, 499, 515, 517,
+                           945, 947, 952, 955, 962, 963, 968]
+
+        # Get logs by location.
+        log_location = self.map_api.map_name
+        log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
+        assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
+
+        # Filter scenes.
+        scene_tokens_location = [e['token'] for e in nusc.scene if e['log_token'] in log_tokens]
+        if scene_tokens is not None:
+            scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
+        assert len(scene_tokens_location) > 0, 'Error: Found 0 valid scenes for location %s!' % log_location
+
+        map_poses = []
+        if verbose:
+            print('Adding ego poses to map...')
+        for scene_token in tqdm(scene_tokens_location, disable=not verbose):
+            # Check that the scene is from the correct location.
+            scene_record = nusc.get('scene', scene_token)
+            scene_name = scene_record['name']
+            scene_id = int(scene_name.replace('scene-', ''))
+            log_record = nusc.get('log', scene_record['log_token'])
+            assert log_record['location'] == log_location, \
+                'Error: The provided scene_tokens do not correspond to the provided map location!'
+
+            # Print a warning if the localization is known to be bad.
+            if verbose and scene_id in scene_blacklist:
+                print('Warning: %s is known to have a bad fit between ego pose and map.' % scene_name)
+
+            # For each sample in the scene, store the ego pose.
+            sample_tokens = nusc.field2token('sample', 'scene_token', scene_token)
+            for sample_token in sample_tokens:
+                sample_record = nusc.get('sample', sample_token)
+
+                # Poses are associated with the sample_data. Here we use the lidar sample_data.
+                sample_data_record = nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
+                pose_record = nusc.get('ego_pose', sample_data_record['ego_pose_token'])
+
+                # Calculate the pose on the map and append.
+                map_poses.append(pose_record['translation'])
+
+        # Check that ego poses aren't empty.
+        assert len(map_poses) > 0, 'Error: Found 0 ego poses. Please check the inputs.'
+
+        # Compute number of close ego poses.
+        if verbose:
+            print('Creating plot...')
+        map_poses = np.vstack(map_poses)[:, :2]
+
+        # Render the map patch with the current ego poses.
+        min_patch = np.floor(map_poses.min(axis=0) - patch_margin)
+        max_patch = np.ceil(map_poses.max(axis=0) + patch_margin)
+        diff_patch = max_patch - min_patch
+        if any(diff_patch < min_diff_patch):
+            center_patch = (min_patch + max_patch) / 2
+            diff_patch = np.maximum(diff_patch, min_diff_patch)
+            min_patch = center_patch - diff_patch / 2
+            max_patch = center_patch + diff_patch / 2
+        my_patch = (min_patch[0], min_patch[1], max_patch[0], max_patch[1])
+        fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10))
+
+        # Plot in the same axis as the map.
+        # Make sure these are plotted "on top".
+        ax.scatter(map_poses[:, 0], map_poses[:, 1], s=20, c='k', alpha=1.0, zorder=2)
+        plt.axis('off')
+
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
+
+        return map_poses
+
+    @staticmethod
+    def _clip_points_behind_camera(points, near_plane: float):
         """
         Perform clipping on polygons that are partially behind the camera.
         This method is necessary as the projection does not work for points behind the camera.
@@ -818,47 +941,47 @@ class NuScenesMapExplorer:
         # it hits the near plane of the camera (clipping).
         assert points.shape[0] == 3
         point_count = points.shape[1]
-        for line1 in range(point_count):
-            line2 = (line1 + 1) % point_count
-            point1 = points[:, line1]
-            point2 = points[:, line2]
-            z1 = point1[2]
-            z2 = point2[2]
+        for line_1 in range(point_count):
+            line_2 = (line_1 + 1) % point_count
+            point_1 = points[:, line_1]
+            point_2 = points[:, line_2]
+            z_1 = point_1[2]
+            z_2 = point_2[2]
 
-            if z1 >= near_plane and z2 >= near_plane:
+            if z_1 >= near_plane and z_2 >= near_plane:
                 # Both points are in front.
                 # Add both points unless the first is already added.
-                if len(points_clipped) == 0 or all(points_clipped[-1] != point1):
-                    points_clipped.append(point1)
-                points_clipped.append(point2)
-            elif z1 < near_plane and z2 < near_plane:
+                if len(points_clipped) == 0 or all(points_clipped[-1] != point_1):
+                    points_clipped.append(point_1)
+                points_clipped.append(point_2)
+            elif z_1 < near_plane and z_2 < near_plane:
                 # Both points are in behind.
                 # Don't add anything.
                 continue
             else:
                 # One point is in front, one behind.
                 # By convention pointA is behind the camera and pointB in front.
-                if z1 <= z2:
-                    pointA = points[:, line1]
-                    pointB = points[:, line2]
+                if z_1 <= z_2:
+                    point_a = points[:, line_1]
+                    point_b = points[:, line_2]
                 else:
-                    pointA = points[:, line2]
-                    pointB = points[:, line1]
-                zA = pointA[2]
-                zB = pointB[2]
+                    point_a = points[:, line_2]
+                    point_b = points[:, line_1]
+                z_a = point_a[2]
+                z_b = point_b[2]
 
                 # Clip line along near plane.
-                pointdiff = pointB - pointA
-                alpha = (near_plane - zB) / (zA - zB)
-                clipped = pointA + (1 - alpha) * pointdiff
+                pointdiff = point_b - point_a
+                alpha = (near_plane - z_b) / (z_a - z_b)
+                clipped = point_a + (1 - alpha) * pointdiff
                 assert np.abs(clipped[2] - near_plane) < 1e-6
 
                 # Add the first point (if valid and not duplicate), the clipped point and the second point (if valid).
-                if z1 >= near_plane and (len(points_clipped) == 0 or all(points_clipped[-1] != point1)):
-                    points_clipped.append(point1)
+                if z_1 >= near_plane and (len(points_clipped) == 0 or all(points_clipped[-1] != point_1)):
+                    points_clipped.append(point_1)
                 points_clipped.append(clipped)
-                if z2 >= near_plane:
-                    points_clipped.append(point2)
+                if z_2 >= near_plane:
+                    points_clipped.append(point_2)
 
         points_clipped = np.array(points_clipped).transpose()
         return points_clipped

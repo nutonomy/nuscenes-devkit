@@ -37,7 +37,7 @@ Please note that this workshop is not related to the similarly named [Workshop o
 * Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
 * The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
-* Users must to limit the number of submitted boxes per sample to 500.
+* Users must limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
 * Each user or team can have at most one one account on the evaluation server.
