@@ -401,8 +401,9 @@ class NuScenes:
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None) -> None:
         self.explorer.render_annotation(sample_annotation_token, margin, view, box_vis_level, out_path)
 
-    def render_instance(self, instance_token: str, out_path: str = None) -> None:
-        self.explorer.render_instance(instance_token, out_path=out_path)
+    def render_instance(self, instance_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
+                        box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None) -> None:
+        self.explorer.render_instance(instance_token, margin, view, box_vis_level, out_path)
 
     def render_scene(self, scene_token: str, freq: float = 10, imsize: Tuple[float, float] = (640, 360),
                      out_path: str = None) -> None:
@@ -865,10 +866,18 @@ class NuScenesExplorer:
         if out_path is not None:
             plt.savefig(out_path)
 
-    def render_instance(self, instance_token: str, out_path: str = None) -> None:
+    def render_instance(self,
+                        instance_token: str,
+                        margin: float = 10,
+                        view: np.ndarray = np.eye(4),
+                        box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                        out_path: str = None) -> None:
         """
         Finds the annotation of the given instance that is closest to the vehicle, and then renders it.
         :param instance_token: The instance token.
+        :param margin: How many meters in each direction to include in LIDAR view.
+        :param view: LIDAR view point.
+        :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         ann_tokens = self.nusc.field2token('sample_annotation', 'instance_token', instance_token)
@@ -882,7 +891,7 @@ class NuScenesExplorer:
             if dist < closest[0]:
                 closest[0] = dist
                 closest[1] = ann_token
-        self.render_annotation(closest[1], out_path=out_path)
+        self.render_annotation(closest[1], margin, view, box_vis_level, out_path)
 
     def render_scene(self,
                      scene_token: str,
