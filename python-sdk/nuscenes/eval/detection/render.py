@@ -186,7 +186,9 @@ def class_tp_curve(md_list: MetricDataList,
     md = md_list[(detection_name, dist_th_tp)]
     min_recall_ind = round(100 * min_recall)
     if min_recall_ind <= md.max_recall_ind:
-        ylimit = max([max(getattr(md, metric)[min_recall_ind:md.max_recall_ind + 1]) for metric in TP_METRICS]) * 1.1
+        # For traffic_cone and barrier only a subset of the metrics are plotted.
+        rel_metrics = [m for m in TP_METRICS if not np.isnan(metrics.get_label_tp(detection_name, m))]
+        ylimit = max([max(getattr(md, metric)[min_recall_ind:md.max_recall_ind + 1]) for metric in rel_metrics]) * 1.1
     else:
         ylimit = 1.0
 
