@@ -7,7 +7,7 @@
 import os
 import json
 import random
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 
 import descartes
 from tqdm import tqdm
@@ -319,6 +319,18 @@ class NuScenesMap:
         """
         return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
 
+    def get_map_geom(self,
+                     patch_box: Tuple[float, float, float, float],
+                     patch_angle: float,
+                     layer_names: List[str] = None) -> List[str, List[Union[Polygon, LineString]]]:
+        """
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_names: List of name of map layers to be extracted.
+        :return: List of layer name and its corresponding geoms
+        """
+        return self.explorer.get_map_geom(patch_box, patch_angle, layer_names)
+
     def get_records_in_patch(self,
                              box_coords: Tuple[float, float, float, float],
                              layer_names: List[str] = None,
@@ -473,6 +485,55 @@ class NuScenesMapExplorer:
             ax.grid(False)
 
         return fig, ax
+
+    def get_map_geom(self,
+                     patch_box: Tuple[float, float, float, float],
+                     patch_angle: float,
+                     layer_names: List[str]) -> List[Tuple[str, List[Union[Polygon, LineString]]]]:
+        """
+        Return list of polygon in a patch_box, unscaled, but aligned with angle
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+                            North-facing corresponds to 0.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
+        :return: List of layer name and list of polygon(: or LineString)
+        """
+
+        # If None, return all geometric layers.
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_layers
+
+        # Get each layer and store them with its layer name in a list.
+        map_geom = []
+        for layer_name in layer_names:
+            layer_geom = self._get_layer_geom(patch_box, patch_angle, layer_name)
+            if layer_geom is None:
+                continue
+            map_geom.append((layer_name, layer_geom))
+
+        return map_geom
+
+    def map_geom_to_mask(self,
+                         map_geom: List[Tuple[str, List[Union[Polygon, LineString]]]],
+                         patch_box: Tuple[float, float, float, float],
+                         canvas_size: Tuple[int, int]) -> np.ndarray:
+        """
+        Return list of map mask layers of the patch specified by patch_box and patch_angle.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+                          If None, this plots the entire map.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Stacked numpy array of size [c x h x w] with c channels and the same height/width as the canvas.
+        """
+
+        # Get each layer mask and stack them into a numpy tensor.
+        map_mask = []
+        for layer_name, layer_geom in map_geom:
+            layer_mask = self._get_geom_mask(layer_geom, patch_box, layer_name, canvas_size)
+            if layer_mask is not None:
+                map_mask.append(layer_mask)
+
+        return np.array(map_mask)
 
     def get_map_mask(self,
                      patch_box: Tuple[float, float, float, float],
@@ -1344,6 +1405,38 @@ class NuScenesMapExplorer:
             else:
                 ax.plot(xs, ys, color=self.color_map[layer_name], alpha=alpha, label=label)
 
+    def _get_layer_geom(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_name: str) -> List[Union[Polygon, LineString]]:
+        """
+        Wrapper method that gets geoms for each layer.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: Name of map layer to be converted to binary map mask patch.
+        :return: polygon for given layer.
+        """
+        if layer_name in self.map_api.non_geometric_polygon_layers:
+            return self._get_polygon_layer(patch_box, patch_angle, layer_name)
+        elif layer_name in self.map_api.non_geometric_line_layers:
+            return self._get_line_layer(patch_box, patch_angle, layer_name)
+        else:
+            raise ValueError("{} is not a valid layer".format(layer_name))
+
+    def _get_geom_mask(self,
+                       layer_geom: List[Union[Polygon, LineString]],
+                       patch_box: Tuple[float, float, float, float],
+                       layer_name: str,
+                       canvas_size: Tuple[int, int]) -> np.ndarray:
+
+        if layer_name in self.map_api.non_geometric_polygon_layers:
+            return self._get_polygon_mask(layer_geom, patch_box, layer_name, canvas_size)
+        elif layer_name in self.map_api.non_geometric_line_layers:
+            return self._get_line_mask(layer_geom, patch_box, layer_name, canvas_size)
+        else:
+            raise ValueError("{} is not a valid layer".format(layer_name))
+
+
     def _get_layer_mask(self,
                         patch_box: Tuple[float, float, float, float],
                         patch_angle: float,
@@ -1394,9 +1487,215 @@ class NuScenesMapExplorer:
         """
         coords = np.asarray(list(lines.coords), np.int32)
         coords = coords.reshape((-1, 2))
-        cv2.polylines(mask, [coords], False, 1, 1)
+        cv2.polylines(mask, [coords], False, 1, 2)
 
         return mask
+
+    def _get_polygon_mask(self,
+                          layer_geom: List[Polygon],
+                          patch_box: Tuple[float, float, float, float],
+                          layer_name: str,
+                          canvas_size: Tuple[int, int]) -> np.ndarray:
+        """
+        Convert polygon inside patch to binary mask and return the map patch.
+        :param layer_geom: list of polygons for each map layer
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Binary map mask patch with the size canvas_size.
+        """
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
+            raise ValueError('{} is not a polygonal layer'.format(layer_name))
+
+        patch_x, patch_y, patch_h, patch_w = patch_box
+
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
+
+        patch = box(x_min, y_min, x_max, y_max)
+
+        canvas_h = canvas_size[0]
+        canvas_w = canvas_size[1]
+
+        scale_height = canvas_h / patch_h
+        scale_width = canvas_w / patch_w
+
+        trans_x = -patch_x + patch_w / 2.0
+        trans_y = -patch_y + patch_h / 2.0
+
+        map_mask = np.zeros(canvas_size, np.uint8)
+
+        for polygon in layer_geom:
+            new_polygon = polygon.intersection(patch)
+            if new_polygon.is_empty is False:
+                new_polygon = affinity.affine_transform(new_polygon,
+                                                        [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                new_polygon = affinity.scale(new_polygon, xfact=scale_width, yfact=scale_height, origin=(0, 0))
+
+                if new_polygon.geom_type is 'Polygon':
+                    new_polygon = MultiPolygon([new_polygon])
+                map_mask = self.mask_for_polygons(new_polygon, map_mask)
+
+        return map_mask
+
+    def _get_line_mask(self,
+                       layer_geom: List[LineString],
+                       patch_box: Tuple[float, float, float, float],
+                       layer_name: str,
+                       canvas_size: Tuple[int, int]) -> Optional[np.ndarray]:
+        """
+        Convert line inside patch to binary mask and return the map patch.
+        :param layer_geom: list of LineStrings for each map layer
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :param canvas_size: Size of the output mask (h, w).
+        :return: Binary map mask patch in a canvas size.
+        """
+        if layer_name not in self.map_api.non_geometric_line_layers:
+            raise ValueError("{} is not a line layer".format(layer_name))
+
+        patch_x, patch_y, patch_h, patch_w = patch_box
+
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
+
+        patch = box(x_min, y_min, x_max, y_max)
+        canvas_h = canvas_size[0]
+        canvas_w = canvas_size[1]
+        scale_height = canvas_h/patch_h
+        scale_width = canvas_w/patch_w
+
+        trans_x = -patch_x + patch_w / 2.0
+        trans_y = -patch_y + patch_h / 2.0
+
+        map_mask = np.zeros(canvas_size, np.uint8)
+
+        if layer_name is 'traffic_light':
+            return None
+
+        for line in layer_geom:
+            new_line = line.intersection(patch)
+            if new_line.is_empty is False:
+                new_line = affinity.affine_transform(new_line,
+                                                     [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                new_line = affinity.scale(new_line, xfact=scale_width, yfact=scale_height, origin=(0, 0))
+
+                map_mask = self.mask_for_lines(new_line, map_mask)
+        return map_mask
+
+    def _get_polygon_layer(self,
+                           patch_box: Tuple[float, float, float, float],
+                           patch_angle: float,
+                           layer_name: str) -> List[Polygon]:
+        """
+         Convert polygon inside patch to binary mask and return the map patch.
+         :param patch_box: Patch box defined as [x_center, y_center, height, width].
+         :param patch_angle: Patch orientation in degrees.
+         :param layer_name: name of map layer to be extracted.
+         :return: List of Polygon in a patch box
+         """
+        if layer_name not in self.map_api.non_geometric_polygon_layers:
+            raise ValueError('{} is not a polygonal layer'.format(layer_name))
+
+        patch_x, patch_y, patch_h, patch_w = patch_box
+
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
+
+        patch = box(x_min, y_min, x_max, y_max)
+        patch = affinity.rotate(patch, patch_angle, origin=(patch_x, patch_y), use_radians=False)
+
+        records = getattr(self.map_api, layer_name)
+
+        trans_x = -patch_x
+        trans_y = -patch_y
+
+        polygon_list = []
+
+        if layer_name == 'drivable_area':
+            for record in records:
+                polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
+
+                for polygon in polygons:
+                    new_polygon = polygon.intersection(patch)
+                    if new_polygon.is_empty is False:
+                        new_polygon = affinity.rotate(new_polygon, -patch_angle,
+                                                      origin=(patch_x, patch_y), use_radians=False)
+                        new_polygon = affinity.affine_transform(new_polygon,
+                                                                [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                        if new_polygon.geom_type is 'Polygon':
+                            new_polygon = MultiPolygon([new_polygon])
+                        polygon_list.append(new_polygon)
+
+        else:
+            for record in records:
+                polygon = self.map_api.extract_polygon(record['polygon_token'])
+
+                if polygon.is_valid is True:
+                    new_polygon = polygon.intersection(patch)
+                    if new_polygon.is_empty is False:
+                        new_polygon = affinity.rotate(new_polygon, -patch_angle,
+                                                      origin=(patch_x, patch_y), use_radians=False)
+                        new_polygon = affinity.affine_transform(new_polygon,
+                                                                [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                        if new_polygon.geom_type is 'Polygon':
+                            new_polygon = MultiPolygon([new_polygon])
+                        polygon_list.append(new_polygon)
+
+        return polygon_list
+
+    def _get_line_layer(self,
+                        patch_box: Tuple[float, float, float, float],
+                        patch_angle: float,
+                        layer_name: str) -> Optional[List[LineString]]:
+        """
+        Convert line inside patch to binary mask and return the map patch.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param patch_angle: Patch orientation in degrees.
+        :param layer_name: name of map layer to be converted to binary map mask patch.
+        :return: List of LineSTring in a patch box
+        """
+        if layer_name not in self.map_api.non_geometric_line_layers:
+            raise ValueError("{} is not a line layer".format(layer_name))
+
+        patch_x, patch_y, patch_h, patch_w = patch_box
+
+        x_min = patch_x - patch_w / 2.0
+        y_min = patch_y - patch_h / 2.0
+        x_max = patch_x + patch_w / 2.0
+        y_max = patch_y + patch_h / 2.0
+
+        patch = box(x_min, y_min, x_max, y_max)
+        patch = affinity.rotate(patch, patch_angle, origin=(patch_x, patch_y), use_radians=False)
+
+        trans_x = -patch_x
+        trans_y = -patch_y
+
+        line_list = []
+
+        if layer_name is 'traffic_light':
+            return None
+
+        records = getattr(self.map_api, layer_name)
+        for record in records:
+            line = self.map_api.extract_line(record['line_token'])
+            if line.is_empty:  # Skip lines without nodes.
+                continue
+
+            new_line = line.intersection(patch)
+            if new_line.is_empty is False:
+                new_line = affinity.rotate(new_line, -patch_angle, origin=(patch_x, patch_y), use_radians=False)
+                new_line = affinity.affine_transform(new_line,
+                                                     [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
+                line_list.append(new_line)
+
+        return line_list
 
     def _get_polygon_layer_mask(self,
                                 patch_box: Tuple[float, float, float, float],
