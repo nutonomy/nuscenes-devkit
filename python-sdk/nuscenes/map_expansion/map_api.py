@@ -322,7 +322,7 @@ class NuScenesMap:
     def get_map_geom(self,
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
-                     layer_names: List[str] = None) -> List[str, List[Union[Polygon, LineString]]]:
+                     layer_names: List[str] = None) -> List[Tuple[str, List[Union[Polygon, LineString]]]]:
         """
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
