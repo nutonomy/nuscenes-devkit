@@ -45,7 +45,7 @@ To install this expansion, please follow these steps:
 
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7.
-To install Python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/installation.md#install-python).
+To install Python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md#install-python).
 
 Our devkit is available and can be installed via [pip](https://pip.pypa.io/en/stable/installing/) :
 ```
