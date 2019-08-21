@@ -30,6 +30,8 @@ from nuscenes.utils.geometry_utils import view_points
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
 
+# Define a map geometry type for polygons and lines.
+Geometry = Union[Polygon, LineString]
 
 class NuScenesMap:
     """
@@ -322,11 +324,14 @@ class NuScenesMap:
     def get_map_geom(self,
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
-                     layer_names: List[str] = None) -> List[Tuple[str, List[Union[Polygon, LineString]]]]:
+                     layer_names: List[str]) -> List[Tuple[str, List[Geometry]]]:
         """
+        Returns a list of geometries in the specified patch_box.
+        These are unscaled, but aligned with the patch angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
-        :param layer_names: List of name of map layers to be extracted.
+                            North-facing corresponds to 0.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
         :return: List of layer names and their corresponding geometries.
         """
         return self.explorer.get_map_geom(patch_box, patch_angle, layer_names)
@@ -489,7 +494,7 @@ class NuScenesMapExplorer:
     def get_map_geom(self,
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
-                     layer_names: List[str]) -> List[Tuple[str, List[Union[Polygon, LineString]]]]:
+                     layer_names: List[str]) -> List[Tuple[str, List[Geometry]]]:
         """
         Returns a list of geometries in the specified patch_box.
         These are unscaled, but aligned with the patch angle.
@@ -499,7 +504,6 @@ class NuScenesMapExplorer:
         :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
         :return: List of layer names and their corresponding geometries.
         """
-
         # If None, return all geometric layers.
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
@@ -515,11 +519,11 @@ class NuScenesMapExplorer:
         return map_geom
 
     def map_geom_to_mask(self,
-                         map_geom: List[Tuple[str, List[Union[Polygon, LineString]]]],
+                         map_geom: List[Tuple[str, List[Geometry]]],
                          patch_box: Tuple[float, float, float, float],
                          canvas_size: Tuple[int, int]) -> np.ndarray:
         """
-        Return list of map mask layers of the patch specified by patch_box and patch_angle.
+        Return list of map mask layers of the specified patch.
         :param map_geom: List of layer names and their corresponding geometries.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
                           If None, this plots the entire map.
@@ -541,7 +545,7 @@ class NuScenesMapExplorer:
                      layer_names: List[str],
                      canvas_size: Tuple[int, int]) -> np.ndarray:
         """
-        Return list of map mask layers of the patch specified by patch_box and patch_angle.
+        Return list of map mask layers of the specified patch.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
                           If None, this plots the entire map.
         :param patch_angle: Patch orientation in degrees.
@@ -550,7 +554,6 @@ class NuScenesMapExplorer:
         :param canvas_size: Size of the output mask (h, w).
         :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
         """
-
         # For some combination of parameters, we need to know the size of the current map.
         if self.map_api.map_name == 'singapore-onenorth':
             map_dims = [1585.6, 2025.0]
@@ -1408,13 +1411,13 @@ class NuScenesMapExplorer:
     def _get_layer_geom(self,
                         patch_box: Tuple[float, float, float, float],
                         patch_angle: float,
-                        layer_name: str) -> List[Union[Polygon, LineString]]:
+                        layer_name: str) -> List[Geometry]:
         """
         Wrapper method that gets the geometries for each layer.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_name: Name of map layer to be converted to binary map mask patch.
-        :return: List of Geometries for the given layer.
+        :return: List of geometries for the given layer.
         """
         if layer_name in self.map_api.non_geometric_polygon_layers:
             return self._get_polygon_layer(patch_box, patch_angle, layer_name)
@@ -1425,7 +1428,7 @@ class NuScenesMapExplorer:
 
     def _get_geom_mask(self,
                        layer_name: str,
-                       layer_geom: List[Union[Polygon, LineString]],
+                       layer_geom: List[Geometry],
                        patch_box: Tuple[float, float, float, float],
                        canvas_size: Tuple[int, int]) -> np.ndarray:
         """
