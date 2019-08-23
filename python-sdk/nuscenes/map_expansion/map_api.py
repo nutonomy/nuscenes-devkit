@@ -317,7 +317,7 @@ class NuScenesMap:
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: List of name of map layers to be extracted.
         :param canvas_size: Size of the output mask (h, w).
-        :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
+        :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
         return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
 
@@ -552,7 +552,7 @@ class NuScenesMapExplorer:
                             North-facing corresponds to 0.
         :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
         :param canvas_size: Size of the output mask (h, w).
-        :return: Stacked numpy array of size [c x w x h] with c channels and the same width/height as the canvas.
+        :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
         # For some combination of parameters, we need to know the size of the current map.
         if self.map_api.map_name == 'singapore-onenorth':
