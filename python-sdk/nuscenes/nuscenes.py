@@ -822,9 +822,8 @@ class NuScenesExplorer:
         :param view: LIDAR view point.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param out_path: Optional path to save the rendered figure to disk.
-        :param extra_info: whether or not to render extra information below CAMERA view
+        :param extra_info: Whether to render extra information below camera view.
         """
-
         ann_record = self.nusc.get('sample_annotation', anntoken)
         sample_record = self.nusc.get('sample', ann_record['sample_token'])
         assert 'LIDAR_TOP' in sample_record['data'].keys(), 'No LIDAR_TOP in data, cant render'
@@ -868,8 +867,8 @@ class NuScenesExplorer:
             c = np.array(self.get_color(box.name)) / 255.0
             box.render(axes[1], view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
+        # Print extra information about the annotation below the camera view.
         if extra_info:
-            # print extra information about the annotation below the CAMERA view
             rcParams['font.family'] = 'monospace'
 
             w, l, h = ann_record['size']
@@ -911,7 +910,7 @@ class NuScenesExplorer:
         :param view: LIDAR view point.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param out_path: Optional path to save the rendered figure to disk.
-        :param extra_info: whether or not to render extra information below CAMERA view
+        :param extra_info: Whether to render extra information below camera view.
         """
         ann_tokens = self.nusc.field2token('sample_annotation', 'instance_token', instance_token)
         closest = [np.inf, None]
