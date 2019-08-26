@@ -1473,9 +1473,15 @@ class NuScenesMapExplorer:
         :param mask: Canvas where mask will be generated.
         :return: Numpy ndarray line mask.
         """
-        coords = np.asarray(list(lines.coords), np.int32)
-        coords = coords.reshape((-1, 2))
-        cv2.polylines(mask, [coords], False, 1, 2)
+        if lines.geom_type == 'MultiLineString':
+            for line in lines:
+                coords = np.asarray(list(line.coords), np.int32)
+                coords = coords.reshape((-1, 2))
+                cv2.polylines(mask, [coords], False, 1, 2)
+        else:
+            coords = np.asarray(list(lines.coords), np.int32)
+            coords = coords.reshape((-1, 2))
+            cv2.polylines(mask, [coords], False, 1, 2)
 
         return mask
 
