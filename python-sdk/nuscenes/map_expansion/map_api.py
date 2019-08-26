@@ -584,6 +584,7 @@ class NuScenesMapExplorer:
         map_geom = self.get_map_geom(patch_box, patch_angle, layer_names)
 
         # Convert geometry of each layer into mask and stack them into a numpy tensor
+        patch_box = (0.0, 0.0, patch_box[2], patch_box[3])
         map_mask = self.map_geom_to_mask(map_geom, patch_box, canvas_size)
 
         return map_mask
