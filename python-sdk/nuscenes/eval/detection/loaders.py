@@ -56,9 +56,9 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
     # Only keep samples from this split.
     splits = create_splits_scenes()
 
-    # Check compatibility of split with nusc versions
+    # Check compatibility of split with nusc_version.
     version = nusc.version
-    if eval_split in {'train', 'val'}:
+    if eval_split in {'train', 'val', 'train_detect', 'train_track'}:
         assert version.endswith('trainval'), \
             'Error: Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
     elif eval_split in {'mini_train', 'mini_val'}:
@@ -72,7 +72,7 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
                          .format(eval_split))
 
     if eval_split == 'test':
-        # Check that you aren't trying to cheat :)
+        # Check that you aren't trying to cheat :).
         assert len(nusc.sample_annotation) > 0, \
             'Error: You are trying to evaluate on the test set but you do not have the annotations!'
 
