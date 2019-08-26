@@ -213,8 +213,8 @@ class NuScenes:
         :param sample_data_token: Sample_data token.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param selected_anntokens: If provided only return the selected annotation.
-        :param use_flat_vehicle_coordinates: Instead of current sensor's coordinate frame, use vehicle frame which is
-        aligned to z-plane in world
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+                                             aligned to z-plane in the world.
         :return: (data_path, boxes, camera_intrinsic <np.array: 3, 3>)
         """
 
@@ -243,18 +243,16 @@ class NuScenes:
         box_list = []
         for box in boxes:
             if use_flat_vehicle_coordinates:
-                # Move box to ego vehicle coord system parallel to world z plane
+                # Move box to ego vehicle coord system parallel to world z plane.
                 yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
-
                 box.translate(-np.array(pose_record['translation']))
                 box.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
-
             else:
-                # Move box to ego vehicle coord system
+                # Move box to ego vehicle coord system.
                 box.translate(-np.array(pose_record['translation']))
                 box.rotate(Quaternion(pose_record['rotation']).inverse)
 
-                #  Move box to sensor coord system
+                #  Move box to sensor coord system.
                 box.translate(-np.array(cs_record['translation']))
                 box.rotate(Quaternion(cs_record['rotation']).inverse)
 
@@ -417,12 +415,12 @@ class NuScenes:
                         extra_info: bool = False) -> None:
         self.explorer.render_instance(instance_token, margin, view, box_vis_level, out_path, extra_info)
 
-    def render_scene(self, scene_token: str, freq: float = 10, imsize: Tuple[float, float] = (640,360),
+    def render_scene(self, scene_token: str, freq: float = 10, imsize: Tuple[float, float] = (640, 360),
                      out_path: str = None) -> None:
         self.explorer.render_scene(scene_token, freq, imsize, out_path)
 
     def render_scene_channel(self, scene_token: str, channel: str = 'CAM_FRONT', freq: float = 10,
-                             imsize: Tuple[float, float] = (640,360), out_path: str = None) -> None:
+                             imsize: Tuple[float, float] = (640, 360), out_path: str = None) -> None:
         self.explorer.render_scene_channel(scene_token, channel=channel, freq=freq, imsize=imsize, out_path=out_path)
 
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
@@ -658,7 +656,7 @@ class NuScenesExplorer:
         fig, axes = plt.subplots(int(np.ceil(n/cols)), cols, figsize=(16, 24))
 
         if len(radar_data) > 0:
-            # Plot radar into a single subplot.
+            # Plot radars into a single subplot.
             ax = axes[0, 0]
             for i, (_, sd_token) in enumerate(radar_data.items()):
                 self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
