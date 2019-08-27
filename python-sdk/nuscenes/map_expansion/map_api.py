@@ -33,6 +33,7 @@ plt.style.use('seaborn-whitegrid')
 # Define a map geometry type for polygons and lines.
 Geometry = Union[Polygon, LineString]
 
+
 class NuScenesMap:
     """
     NuScenesMap database class for querying and retrieving information from the semantic maps.
@@ -54,7 +55,6 @@ class NuScenesMap:
 
     We use the same WGS 84 Web Mercator (EPSG:3857) projection as Google Maps/Earth.
     """
-
     def __init__(self,
                  dataroot: str = '/data/sets/nuscenes',
                  map_name: str = 'singapore-onenorth'):
@@ -520,20 +520,20 @@ class NuScenesMapExplorer:
 
     def map_geom_to_mask(self,
                          map_geom: List[Tuple[str, List[Geometry]]],
-                         patch_box: Tuple[float, float, float, float],
+                         local_box: Tuple[float, float, float, float],
                          canvas_size: Tuple[int, int]) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
         :param map_geom: List of layer names and their corresponding geometries.
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
-                          If None, this plots the entire map.
+        :param local_box: The local patch box defined as (x_center, y_center, height, width), where typically
+            x_center = y_center = 0.
         :param canvas_size: Size of the output mask (h, w).
         :return: Stacked numpy array of size [c x h x w] with c channels and the same height/width as the canvas.
         """
         # Get each layer mask and stack them into a numpy tensor.
         map_mask = []
         for layer_name, layer_geom in map_geom:
-            layer_mask = self._get_geom_mask(layer_name, layer_geom, patch_box, canvas_size)
+            layer_mask = self._layer_geom_to_mask(layer_name, layer_geom, local_box, canvas_size)
             if layer_mask is not None:
                 map_mask.append(layer_mask)
 
@@ -580,12 +580,13 @@ class NuScenesMapExplorer:
             canvas_size = np.array(map_dims[::-1]) * map_scale
             canvas_size = tuple(np.round(canvas_size).astype(np.int32))
 
-        # Get geometry of each layer
+        # Get geometry of each layer.
         map_geom = self.get_map_geom(patch_box, patch_angle, layer_names)
 
-        # Convert geometry of each layer into mask and stack them into a numpy tensor
-        patch_box = (0.0, 0.0, patch_box[2], patch_box[3])
-        map_mask = self.map_geom_to_mask(map_geom, patch_box, canvas_size)
+        # Convert geometry of each layer into mask and stack them into a numpy tensor.
+        # Convert the patch box from global coordinates to local coordinates by setting the center to (0, 0).
+        local_box = (0.0, 0.0, patch_box[2], patch_box[3])
+        map_mask = self.map_geom_to_mask(map_geom, local_box, canvas_size)
 
         return map_mask
 
@@ -1426,23 +1427,23 @@ class NuScenesMapExplorer:
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
 
-    def _get_geom_mask(self,
-                       layer_name: str,
-                       layer_geom: List[Geometry],
-                       patch_box: Tuple[float, float, float, float],
-                       canvas_size: Tuple[int, int]) -> np.ndarray:
+    def _layer_geom_to_mask(self,
+                            layer_name: str,
+                            layer_geom: List[Geometry],
+                            local_box: Tuple[float, float, float, float],
+                            canvas_size: Tuple[int, int]) -> np.ndarray:
         """
         Wrapper method that gets the mask for each layer's geometries.
         :param layer_name: The name of the layer for which we get the masks.
         :param layer_geom: List of the geometries of the layer specified in layer_name.
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
-                          If None, this plots the entire map.
+        :param local_box: The local patch box defined as (x_center, y_center, height, width), where typically
+            x_center = y_center = 0.
         :param canvas_size: Size of the output mask (h, w).
         """
         if layer_name in self.map_api.non_geometric_polygon_layers:
-            return self._get_polygon_mask(layer_geom, patch_box, layer_name, canvas_size)
+            return self._polygon_geom_to_mask(layer_geom, local_box, layer_name, canvas_size)
         elif layer_name in self.map_api.non_geometric_line_layers:
-            return self._get_line_mask(layer_geom, patch_box, layer_name, canvas_size)
+            return self._line_geom_to_mask(layer_geom, local_box, layer_name, canvas_size)
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
 
@@ -1486,15 +1487,16 @@ class NuScenesMapExplorer:
 
         return mask
 
-    def _get_polygon_mask(self,
-                          layer_geom: List[Polygon],
-                          patch_box: Tuple[float, float, float, float],
-                          layer_name: str,
-                          canvas_size: Tuple[int, int]) -> np.ndarray:
+    def _polygon_geom_to_mask(self,
+                              layer_geom: List[Polygon],
+                              local_box: Tuple[float, float, float, float],
+                              layer_name: str,
+                              canvas_size: Tuple[int, int]) -> np.ndarray:
         """
         Convert polygon inside patch to binary mask and return the map patch.
         :param layer_geom: list of polygons for each map layer
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param local_box: The local patch box defined as (x_center, y_center, height, width), where typically
+            x_center = y_center = 0.
         :param layer_name: name of map layer to be converted to binary map mask patch.
         :param canvas_size: Size of the output mask (h, w).
         :return: Binary map mask patch with the size canvas_size.
@@ -1502,9 +1504,9 @@ class NuScenesMapExplorer:
         if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
-        patch_x, patch_y, patch_h, patch_w = patch_box
+        patch_x, patch_y, patch_h, patch_w = local_box
 
-        patch = self.get_patch_coord(patch_box)
+        patch = self.get_patch_coord(local_box)
 
         canvas_h = canvas_size[0]
         canvas_w = canvas_size[1]
@@ -1519,7 +1521,7 @@ class NuScenesMapExplorer:
 
         for polygon in layer_geom:
             new_polygon = polygon.intersection(patch)
-            if new_polygon.is_empty is False:
+            if not new_polygon.is_empty:
                 new_polygon = affinity.affine_transform(new_polygon,
                                                         [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
                 new_polygon = affinity.scale(new_polygon, xfact=scale_width, yfact=scale_height, origin=(0, 0))
@@ -1530,15 +1532,16 @@ class NuScenesMapExplorer:
 
         return map_mask
 
-    def _get_line_mask(self,
-                       layer_geom: List[LineString],
-                       patch_box: Tuple[float, float, float, float],
-                       layer_name: str,
-                       canvas_size: Tuple[int, int]) -> Optional[np.ndarray]:
+    def _line_geom_to_mask(self,
+                           layer_geom: List[LineString],
+                           local_box: Tuple[float, float, float, float],
+                           layer_name: str,
+                           canvas_size: Tuple[int, int]) -> Optional[np.ndarray]:
         """
         Convert line inside patch to binary mask and return the map patch.
         :param layer_geom: list of LineStrings for each map layer
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
+        :param local_box: The local patch box defined as (x_center, y_center, height, width), where typically
+            x_center = y_center = 0.
         :param layer_name: name of map layer to be converted to binary map mask patch.
         :param canvas_size: Size of the output mask (h, w).
         :return: Binary map mask patch in a canvas size.
@@ -1546,9 +1549,9 @@ class NuScenesMapExplorer:
         if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
-        patch_x, patch_y, patch_h, patch_w = patch_box
+        patch_x, patch_y, patch_h, patch_w = local_box
 
-        patch = self.get_patch_coord(patch_box)
+        patch = self.get_patch_coord(local_box)
 
         canvas_h = canvas_size[0]
         canvas_w = canvas_size[1]
@@ -1565,7 +1568,7 @@ class NuScenesMapExplorer:
 
         for line in layer_geom:
             new_line = line.intersection(patch)
-            if new_line.is_empty is False:
+            if not new_line.is_empty:
                 new_line = affinity.affine_transform(new_line,
                                                      [1.0, 0.0, 0.0, 1.0, trans_x, trans_y])
                 new_line = affinity.scale(new_line, xfact=scale_width, yfact=scale_height, origin=(0, 0))
@@ -1578,7 +1581,7 @@ class NuScenesMapExplorer:
                            patch_angle: float,
                            layer_name: str) -> List[Polygon]:
         """
-         Convert polygon inside patch to binary mask and return the map patch.
+         Retrieve the polygons of a particular layer within the specified patch.
          :param patch_box: Patch box defined as [x_center, y_center, height, width].
          :param patch_angle: Patch orientation in degrees.
          :param layer_name: name of map layer to be extracted.
@@ -1595,14 +1598,13 @@ class NuScenesMapExplorer:
         records = getattr(self.map_api, layer_name)
 
         polygon_list = []
-
         if layer_name == 'drivable_area':
             for record in records:
                 polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
 
                 for polygon in polygons:
                     new_polygon = polygon.intersection(patch)
-                    if new_polygon.is_empty is False:
+                    if not new_polygon.is_empty:
                         new_polygon = affinity.rotate(new_polygon, -patch_angle,
                                                       origin=(patch_x, patch_y), use_radians=False)
                         new_polygon = affinity.affine_transform(new_polygon,
@@ -1615,9 +1617,9 @@ class NuScenesMapExplorer:
             for record in records:
                 polygon = self.map_api.extract_polygon(record['polygon_token'])
 
-                if polygon.is_valid is True:
+                if polygon.is_valid:
                     new_polygon = polygon.intersection(patch)
-                    if new_polygon.is_empty is False:
+                    if not new_polygon.is_empty:
                         new_polygon = affinity.rotate(new_polygon, -patch_angle,
                                                       origin=(patch_x, patch_y), use_radians=False)
                         new_polygon = affinity.affine_transform(new_polygon,
@@ -1633,7 +1635,7 @@ class NuScenesMapExplorer:
                         patch_angle: float,
                         layer_name: str) -> Optional[List[LineString]]:
         """
-        Convert line inside patch to binary mask and return the map patch.
+        Retrieve the lines of a particular layer within the specified patch.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_name: name of map layer to be converted to binary map mask patch.
@@ -1642,16 +1644,15 @@ class NuScenesMapExplorer:
         if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
+        if layer_name is 'traffic_light':
+            return None
+
         patch_x = patch_box[0]
         patch_y = patch_box[1]
 
         patch = self.get_patch_coord(patch_box, patch_angle)
 
         line_list = []
-
-        if layer_name is 'traffic_light':
-            return None
-
         records = getattr(self.map_api, layer_name)
         for record in records:
             line = self.map_api.extract_line(record['line_token'])
@@ -1659,7 +1660,7 @@ class NuScenesMapExplorer:
                 continue
 
             new_line = line.intersection(patch)
-            if new_line.is_empty is False:
+            if not new_line.is_empty:
                 new_line = affinity.rotate(new_line, -patch_angle, origin=(patch_x, patch_y), use_radians=False)
                 new_line = affinity.affine_transform(new_line,
                                                      [1.0, 0.0, 0.0, 1.0, -patch_x, -patch_y])
@@ -1671,10 +1672,10 @@ class NuScenesMapExplorer:
     def get_patch_coord(patch_box: Tuple[float, float, float, float],
                         patch_angle: float = 0.0) -> Polygon:
         """
-        Convert patch_box to shapely Polygon coordinates
+        Convert patch_box to shapely Polygon coordinates.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
-        :return: box Polygon for patch_box
+        :return: Box Polygon for patch_box.
         """
         patch_x, patch_y, patch_h, patch_w = patch_box
 
