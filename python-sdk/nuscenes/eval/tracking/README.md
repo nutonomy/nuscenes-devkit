@@ -73,6 +73,7 @@ submission {
         "use_radar":    <bool>  -- Whether this submission uses radar data as an input.
         "use_map":      <bool>  -- Whether this submission uses map data as an input.
         "use_external": <bool>  -- Whether this submission uses external data as an input.
+        "conf_thresh":  <floor> -- Confidence threshold which determines whether a track is positive or negative.
     },
     "results": {
         sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
@@ -92,7 +93,7 @@ sample_result {
     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
     “tracking_id”:    <int>         -- Unique object id that is used to identify an object track across samples.
     "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian. Note that the tracking_name cannot change throughout a track.
-    "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name. We average over frame level scores to compute the track level score. The score is relevant for AMOTA/AMOTP metrics that sweep over different recall thresholds.
+    "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name. We average over frame level scores to compute the track level score. The score is used to determine positive and negative tracks via thresholding.
 }
 ```
 Note that except for the `tracking_*` fields the result format is identical to the [detection challenge](https://www.nuscenes.org/object-detection).
@@ -165,10 +166,13 @@ For all metrics, we define a match by considering the 2D center distance on the 
 <!--- TODO: Compute each metric per class and average -->
 
 ### AMOTA and AMOTP metrics
-We use the Average Multiple Object Tracking Accuracy (AMOTA) and Average Multi Object Tracking Precision (AMOTP) metrics developed in [2].
-These are integrals over the MOTA/MOTP curves using n-point interpolation.
-Furthermore we drop the points with recall < 0.1.
-<!--- TODO: Figure out how many points we need to get stable results and fast evaluation. -->
+Our main metrics are the AMOTA and AMOTP metrics developed in [2].
+- **AMOTA** (average multi object tracking accuracy): Average over the MOTA metric defined below. 
+<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{80}&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;1&space;-&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1&space;-&space;r)&space;*&space;\mathit{TP}_r}{r&space;*&space;\mathit{TP}_r}" target="_blank"><img src="https://latex.codecogs.com/png.latex?\dpi{80}&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;1&space;-&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1&space;-&space;r)&space;*&space;\mathit{TP}_r}{r&space;*&space;\mathit{TP}_r}" title="\small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1}, .., 1\}} 1 - \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r - (1 - r) * \mathit{TP}_r}{r * \mathit{TP}_r}" /></a>
+- **AMOTP** (average multi object tracking precision): Average over the MOTP metric defined below.
+
+These are integrals over the MOTA/MOTP curves using n-point interpolation (`n` to be determined).
+We drop the points with `recall < 0.1`.
 
 ### Secondary metrics
 We use a number of standard MOT metrics as listed on [motchallenge.net](https://motchallenge.net).
