@@ -101,9 +101,8 @@ Note that except for the `tracking_*` fields the result format is identical to t
 The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
-This results in 10 classes for the *detection challenge*.
-We further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
-Below we show the table of tracking classes and their counterpart in the nuScenes dataset.
+From these *detection challenge classes* we further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
+Below we show the table of the 7 tracking classes and their counterparts in the nuScenes dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
 
 |   nuScenes detection class|   nuScenes general class                  |
@@ -136,15 +135,19 @@ For each nuScenes class, the number of annotations decreases with increasing rad
 but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
 detection radius, as shown below: 
 
-|   nuScenes tracking class     |   Tracking Range (meters) |
-|   ---                         |   ---                     |
-|   bicycle                     |   40                      |
-|   bus                         |   50                      |
-|   car                         |   50                      |
-|   motorcycle                  |   40                      |
-|   pedestrian                  |   40                      |
-|   trailer                     |   50                      |
-|   truck                       |   50                      |
+|   nuScenes tracking class     |   KITTI class |       Tracking Range (meters) |
+|   ---                         |   ---         |   ---                     |
+|   bicycle                     |   cyclist     |   40                      |
+|   motorcycle                  |   cyclist        |   40                      |
+|   pedestrian                  |   pedestrian / person (sitting) |   40                      |
+|   bus                         |   -           |   50                      |
+|   car                         |   car / van   |   50                      |
+|   trailer                     |   -           |   50                      |
+|   truck                       |   truck       |   50                      |
+
+In the above table we also provide the mapping from nuScenes tracking class to KITTI [4] class.
+While KITTI defines 8 classes in total, only `car` and `pedestrian` are used for the tracking benchmark, as the other classes do not have enough samples.
+Our goal is to perform tracking of all moving objects in a traffic scene.
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes tracking task.
@@ -163,10 +166,9 @@ For all metrics, we define a match by considering the 2D center distance on the 
 
 ### AMOTA and AMOTP metrics
 We use the Average Multiple Object Tracking Accuracy (AMOTA) and Average Multi Object Tracking Precision (AMOTP) metrics developed in [2].
-These are integrals over the MOTA/MOTP curves using 11-point interpolation
-<!--- TODO: Drop points < 0.1 recall and figure out how many points we need to get stable results and fast evaluation. -->
-Analog to the detection challenge it may be worth into using more interpolation points, if that doesn’t slow down the evaluation too much.
-<!--- TODO: Flexible recall threshold -->
+These are integrals over the MOTA/MOTP curves using n-point interpolation.
+Furthermore we drop the points with recall < 0.1.
+<!--- TODO: Figure out how many points we need to get stable results and fast evaluation. -->
 
 ### Secondary metrics
 We use a number of standard MOT metrics as listed on [motchallenge.net](https://motchallenge.net).
@@ -245,6 +247,7 @@ Users are required to report detailed information on their method regarding sens
 Users that fail to adequately report this information may be excluded from the challenge. 
 
 ## References
-- [1] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv preprint arXiv:1903.11027.
-- [2] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, arXiv 2019.
-- [3] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
+- [1] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv 2019.
+- [2] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, In arXiv 2019.
+- [3] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, In Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
+- [4] *"Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite"*, A. Geiger, P. Lenz, R. Urtasun, In CVPR 2012.
