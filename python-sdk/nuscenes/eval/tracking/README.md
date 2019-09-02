@@ -1,0 +1,250 @@
+# nuScenes tracking task
+In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes tracking task.
+<!--- TODO: add tracking visualization -->
+
+## Overview
+- [Introduction](#introduction)
+- [Authors](#authors)
+- [Challenges](#challenges)
+- [Submission rules](#submission-rules)
+- [Results format](#results-format)
+- [Classes](#classes)
+- [Evaluation metrics](#evaluation-metrics)
+- [Leaderboard](#leaderboard)
+
+## Introduction
+The [nuScenes dataset](http://www.nuScenes.org) [1] has achieved widespread acceptance in academia and industry as a standard dataset for AV perception problems.
+To advance the state-of-the-art on the problems of interest we propose benchmark challenges to measure the performance on our dataset.
+At CVPR 2019 we organized the [nuScenes detection challenge](https://www.nuscenes.org/object-detection).
+The nuScenes tracking challenge is a natural progression to the detection challenge, building on the best known detection algorithms and tracking these across time.
+Here we describe the challenge, the rules, the classes, evaluation metrics and general infrastructure.
+
+## Authors
+The tracking task and challenge are a joint work between **Aptiv** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
+They are based upon the [nuScenes dataset](http://www.nuScenes.org) [1] and the [3D MOT benchmark and baseline](https://github.com/xinshuoweng/AB3DMOT) defined in [2].
+
+## Challenges
+To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](#leaderboard) all-year round.
+Additionally we organize a number of challenges at leading Computer Vision conference workshops.
+Users that submit their results during the challenge period are eligible for awards.
+Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
+
+### AI Driving Olympics (AIDO), NIPS 2019
+The first nuScenes tracking challenge will be held at NIPS 2019.
+Submission will open October 1 and closes December 2.
+The leaderboard will remain private until the end of the challenge.
+Results and winners will be announced at the [AI Driving Olympics](https://www.duckietown.org/research/AI-Driving-Olympics) Workshop (AIDO) at NIPS 2019.
+
+## Submission rules
+### Tracking-specific rules
+* We perform 3D Multi Object Tracking (MOT) as in [2]. 
+* Possible input modalities are camera, lidar and radar.
+* We perform online tracking [2]. This means that the tracker may only use past and current, but not future sensor data.
+* Noisy object detections are provided below (including for the test split), but do not have to be used.
+* We split the existing training set in `train_detect` and `train_track`. This is to make sure that the detector and tracker are not trained on the same data, which may lead to problems as the detector may be overfitting to the training set. The use of these subsplits is entirely optional.
+* At inference time users may use all past sensor data and ego poses from the current scene, but not from a previous scene. At training time there are no restrictions.
+
+### General rules
+* We release annotations for the train and val set, but not for the test set.
+* We release sensor data for train, val and test set.
+* Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
+* We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
+* Users must limit the number of submitted boxes per sample to 500.
+* Every submission provides method information. We encourage publishing code, but do not make it a requirement.
+* Top leaderboard entries and their papers will be manually reviewed.
+* Each user or team can have at most one one account on the evaluation server.
+* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges.
+
+## Results format
+We define a standardized tracking result format that serves as an input to the evaluation code.
+Results are evaluated for each 2Hz keyframe, also known as `sample`.
+The tracking results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
+For the train and val sets the evaluation can be performed by the user on their local machine.
+For the test set the user needs to zip the single JSON result file and submit it to the official evaluation server.
+The JSON file includes meta data `meta` on the type of inputs used for this method.
+Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
+Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is tracked.
+```
+submission {
+    "meta": {
+        "use_camera":   <bool>  -- Whether this submission uses camera data as an input.
+        "use_lidar":    <bool>  -- Whether this submission uses lidar data as an input.
+        "use_radar":    <bool>  -- Whether this submission uses radar data as an input.
+        "use_map":      <bool>  -- Whether this submission uses map data as an input.
+        "use_external": <bool>  -- Whether this submission uses external data as an input.
+    },
+    "results": {
+        sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
+    }
+}
+```
+For the predictions we create a new database table called `sample_result`.
+The `sample_result` table is designed to mirror the `sample_annotation` table.
+This allows for processing of results and annotations using the same tools.
+A `sample_result` is a dictionary defined as follows:
+```
+sample_result {
+    "sample_token":   <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
+    "translation":    <float> [3]   -- Estimated bounding box location in meters in the global frame: center_x, center_y, center_z.
+    "size":           <float> [3]   -- Estimated bounding box size in meters: width, length, height.
+    "rotation":       <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
+    "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
+    “tracking_id”:    <int>         -- Unique object id that is used to identify an object track across samples.
+    "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian. Note that the tracking_name cannot change throughout a track.
+    "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name. We average over frame level scores to compute the track level score. The score is relevant for AMOTA/AMOTP metrics that sweep over different recall thresholds.
+}
+```
+Note that except for the `tracking_*` fields the result format is identical to the [detection challenge](https://www.nuscenes.org/object-detection).
+
+## Classes
+The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
+Some of these only have a handful of samples.
+Hence we merge similar classes and remove rare classes.
+This results in 10 classes for the *detection challenge*.
+We further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
+Below we show the table of tracking classes and their counterpart in the nuScenes dataset.
+For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
+
+|   nuScenes detection class|   nuScenes general class                  |
+|   ---                     |   ---                                     |
+|   void / ignore           |   animal                                  |
+|   void / ignore           |   human.pedestrian.personal_mobility      |
+|   void / ignore           |   human.pedestrian.stroller               |
+|   void / ignore           |   human.pedestrian.wheelchair             |
+|   void / ignore           |   movable_object.barrier                  |
+|   void / ignore           |   movable_object.debris                   |
+|   void / ignore           |   movable_object.pushable_pullable        |
+|   void / ignore           |   movable_object.trafficcone              |
+|   void / ignore           |   static_object.bicycle_rack              |
+|   void / ignore           |   vehicle.emergency.ambulance             |
+|   void / ignore           |   vehicle.emergency.police                |
+|   void / ignore           |   vehicle.construction                    |
+|   bicycle                 |   vehicle.bicycle                         |
+|   bus                     |   vehicle.bus.bendy                       |
+|   bus                     |   vehicle.bus.rigid                       |
+|   car                     |   vehicle.car                             |
+|   motorcycle              |   vehicle.motorcycle                      |
+|   pedestrian              |   human.pedestrian.adult                  |
+|   pedestrian              |   human.pedestrian.child                  |
+|   pedestrian              |   human.pedestrian.construction_worker    |
+|   pedestrian              |   human.pedestrian.police_officer         |
+|   trailer                 |   vehicle.trailer                         |
+|   truck                   |   vehicle.truck                           |
+
+For each nuScenes class, the number of annotations decreases with increasing radius from the ego vehicle, 
+but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
+detection radius, as shown below: 
+
+|   nuScenes tracking class     |   Tracking Range (meters) |
+|   ---                         |   ---                     |
+|   bicycle                     |   40                      |
+|   bus                         |   50                      |
+|   car                         |   50                      |
+|   motorcycle                  |   40                      |
+|   pedestrian                  |   40                      |
+|   trailer                     |   50                      |
+|   truck                       |   50                      |
+
+## Evaluation metrics
+Below we define the metrics for the nuScenes tracking task.
+Our final score is a weighted sum of AMOTA and AMOTP (see below).
+Additionally a number of secondary metrics are computed and shown on the leaderboard.
+
+### Preprocessing
+Before running the evaluation code the following pre-processing is done on the data
+* All boxes (GT and prediction) are removed if they exceed the class-specific detection range. 
+* All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
+* All boxes (GT) without lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes based on number of points.
+
+### Matching criterion
+For all metrics, we define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities.
+<!--- TODO: Compute each metric per class and average -->
+
+### AMOTA and AMOTP metrics
+We use the Average Multiple Object Tracking Accuracy (AMOTA) and Average Multi Object Tracking Precision (AMOTP) metrics developed in [2].
+These are integrals over the MOTA/MOTP curves using 11-point interpolation
+<!--- TODO: Drop points < 0.1 recall and figure out how many points we need to get stable results and fast evaluation. -->
+Analog to the detection challenge it may be worth into using more interpolation points, if that doesn’t slow down the evaluation too much.
+<!--- TODO: Flexible recall threshold -->
+
+### Secondary metrics
+We use a number of standard MOT metrics as listed on [motchallenge.net](https://motchallenge.net).
+Contrary to the above AMOTA and AMOTP metrics, these metrics use a provided confidence threshold to determine positives. 
+<!--- TODO: How is confidence threshold provided? -->
+* **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
+* **MOTP** (multi object tracking precision) [3]: The misalignment between the annotated and the predicted bounding boxes.
+* **IDF1** (ID F1 score): The ratio of correctly identified detections over the average number of ground-truth and computed detections.
+* **FAF**: The average number of false alarms per frame.
+* **MT** (ratio of mostly tracked trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at least 80% of their respective life span.
+* **ML** (ratio of mostly lost trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at most 20% of their respective life span.
+* **FP** (number of false positives): The total number of false positives.
+* **FN** (number of false negatives): The total number of false negatives (missed targets).
+* **IDS** (number of identity switches): The total number of identity switches.
+* **Frag** (number of track fragmentations): The total number of times a trajectory is fragmented (i.e. interrupted during tracking).
+
+Users are asked to provide the runtime of their method:
+* **FPS** (tracker speed in frames per second): Processing speed in frames per second excluding the detector on the benchmark. Users report both the detector and tracking FPS separately as well as cumulative. This metric is self-reported and therefore not directly comparable.
+
+Furthermore we propose a number of additional metrics:
+* **TID** (average track initialization duration in seconds): Some trackers require a fixed window of past sensor readings. Trackers may also perform poorly without a good initialization. The purpose of this metric is to measure for each track the initialization duration until the first object was successfully detected. If an object is not tracked, we assign the entire track duration as initialization duration. Then we compute the average over all tracks.     
+* **LGD** (average longest gap duration in seconds): *Frag* measures the number of fragmentations. For the application of Autonomous Driving it is crucial to know how long an object has been missed. We compute this duration for each track. If an object is not tracked, we assign the entire track duration as initialization duration.
+- **mAP / TP metrics**: Analog to the detection challenge, we compute the mean Average Precision (mAP) and True Positive (TP) metrics: scale, translation, orientation and velocity error, but not attributes. The purpose is to show the improvement that a tracker provides over the underlying object detection method (if any).
+
+### Configuration
+The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/nips_2019.json`. 
+
+## Leaderboard
+nuScenes will maintain a single leaderboard for the tracking task.
+For each submission the leaderboard will list method aspects and evaluation metrics.
+Method aspects include input modalities (lidar, radar, vision), use of map data and use of external data.
+To enable a fair comparison between methods, the user will be able to filter the methods by method aspects.
+ 
+We define three such filters here which correspond to the tracks in the nuScenes tracking challenge.
+Methods will be compared within these tracks and the winners will be decided for each track separately.
+Note that the tracks are identical to the [nuScenes detection challenge](https://www.nuscenes.org/object-detection) tracks.
+
+**Lidar detection track**: 
+* Only lidar input allowed.
+* External data or map data <u>not allowed</u>.
+* May use pre-training.
+  
+**Vision detection track**: 
+* Only camera input allowed.
+* External data or map data <u>not allowed</u>.
+* May use pre-training.
+ 
+**Open detection track**: 
+* Any sensor input allowed (radar, lidar, camera, ego pose).
+* External data and map data allowed.  
+* May use pre-training.
+
+**Details**:
+* *Sensor input:*
+For the lidar and vision detection tracks we restrict the type of sensor input that may be used.
+Note that this restriction applies only at test time.
+At training time any sensor input may be used.
+In particular this also means that at training time you are allowed to filter the GT boxes using `num_lidar_pts` and `num_radar_pts`, regardless of the track.
+However, during testing the predicted boxes may *not* be filtered based on input from other sensor modalities.
+
+* *Map data:*
+By `map data` we mean using the *semantic* map provided in nuScenes. 
+
+* *Meta data:*
+Other meta data included in the dataset may be used without restrictions.
+E.g. calibration parameters, ego poses, `location`, `timestamp`, `num_lidar_pts`, `num_radar_pts`, `translation`, `rotation` and `size`.
+Note that `instance`, `sample_annotation` and `scene` description are not provided for the test set.
+
+* *Pre-training:*
+By pre-training we mean training a network for the task of image classification using only image-level labels,
+as done in [[Krizhevsky NIPS 2012]](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networ).
+The pre-training may not involve bounding box, mask or other localized annotations.
+
+* *Reporting:* 
+Users are required to report detailed information on their method regarding sensor input, map data, meta data and pre-training.
+Users that fail to adequately report this information may be excluded from the challenge. 
+
+## References
+- [1] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv preprint arXiv:1903.11027.
+- [2] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, arXiv 2019.
+- [3] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
