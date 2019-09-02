@@ -181,8 +181,8 @@ class PointCloud(ABC):
     def render_height(self,
                       ax: Axes,
                       view: np.ndarray = np.eye(4),
-                      x_lim: Tuple = (-20, 20),
-                      y_lim: Tuple = (-20, 20),
+                      x_lim: Tuple[float, float] = (-20, 20),
+                      y_lim: Tuple[float, float] = (-20, 20),
                       marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by height (z-value).
