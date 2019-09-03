@@ -34,7 +34,7 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 The first nuScenes tracking challenge will be held at NIPS 2019.
 Submission will open October 1 and closes December 2.
 The leaderboard will remain private until the end of the challenge.
-Results and winners will be announced at the [AI Driving Olympics](https://www.duckietown.org/research/AI-Driving-Olympics) Workshop (AIDO) at NIPS 2019.
+Results and winners will be announced at the [AI Driving Olympics](http://www.driving-olympics.ai/) Workshop (AIDO) at NIPS 2019.
 
 ## Submission rules
 ### Tracking-specific rules
