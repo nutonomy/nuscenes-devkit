@@ -10,6 +10,7 @@ In this document we present the rules, result format, classes, evaluation metric
 - [Results format](#results-format)
 - [Classes](#classes)
 - [Evaluation metrics](#evaluation-metrics)
+- [Baselines](#baselines)
 - [Leaderboard](#leaderboard)
 
 ## Introduction
@@ -199,7 +200,33 @@ Furthermore we propose a number of additional metrics:
 - **mAP / TP metrics**: Analog to the detection challenge, we compute the mean Average Precision (mAP) and True Positive (TP) metrics: scale, translation, orientation and velocity error, but not attributes. The purpose is to show the improvement that a tracker provides over the underlying object detection method (if any).
 
 ### Configuration
-The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/nips_2019.json`. 
+The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/nips_2019.json`.
+
+### Baselines
+To allow the user focus on the tracking problem, we release object detections from state-of-the-art methods as listed on the [detection leaderboard](https://www.nuscenes.org/object-detection).
+We thank Alex Lang (Aptiv), Benjin Zhu (Megvii) and Andrea Simonelli (Mapillary) for providing these.
+The use of these detections is entirely optional.
+The detections on the train, val and test splits can be [downloaded from this link](https://drive.google.com/open?id=1BHG47d_KBVP9ht4iW57X3rvBvonIuCJm).
+Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* [2] and uses each of the provided detections.
+The results for object detection and tracking can be seen below.
+Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
+
+|   Method           | mAP  | NDS  | AMOTA | AMOTP | Tracking mAP |
+|   ---              | ---  | ---  | ---   | ---   | ---          |
+|   PointPillars [5] | 29.5 | 44.8 | TBD   | TBD   | TBD          |
+|   Megvii [6]       | 51.9 | 62.8 | TBD   | TBD   | TBD          |
+|   Mapillary [7]    | 29.8 | 36.9 | TBD   | TBD   | TBD          |
+|   PointRCNN [8]    | TBD  | TBD  | TBD   | TBD   | TBD          |
+
+#### Overfitting
+Some object detection methods overfit to the training data.
+E.g. for the PointPillars method we see a drop in mAP of 6% from train to val split (35.7% vs. 29.5%).
+This may affect (learning-based) tracking algorithms, when the training split has more accurate detections than the validation split.
+To remedy this problem we have split the existing `train` set into `train_detect` and `train_track` (350 scenes each).
+You can use these splits to train your own detection and tracking algorithms.
+Both splits have the same distribution of Singapore, Boston, night and rain data.
+The object detection baselines provided in the table above are trained on the *entire* train set, as our tracking baseline [2] is not learning-based.
+The use of these splits is entirely optional.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the tracking task.
@@ -256,3 +283,7 @@ Users that fail to adequately report this information may be excluded from the c
 - [2] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, In arXiv 2019.
 - [3] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, In Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
 - [4] *"Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite"*, A. Geiger, P. Lenz, R. Urtasun, In CVPR 2012.
+- [5] *"PointPillars: Fast Encoders for Object Detection from Point Clouds"*, A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang and O. Beijbom, In CVPR 2019.
+- [6] *"Class-balanced Grouping and Sampling for Point Cloud 3D Object Detection"*, B. Zhu, Z. Jiang, X. Zhou, Z. Li, G. Yu, In arXiv 2019.
+- [7] *"Disentangling Monocular 3D Object Detection"*, A. Simonelli, S. R. Bulo, L. Porzi, M. Lopez-Antequera, P. Kontschieder, In arXiv 2019.
+- [8] *"PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud"*, S. Shi, X. Wang, H. Li, In CVPR 2019.
