@@ -152,7 +152,7 @@ Our goal is to perform tracking of all moving objects in a traffic scene.
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes tracking task.
-Our final score is a weighted sum of AMOTA and AMOTP (see below).
+The challenge winner will be determined based on AMOTA.
 Additionally a number of secondary metrics are computed and shown on the leaderboard.
 
 ### Preprocessing
@@ -167,11 +167,14 @@ For all metrics, we define a match by considering the 2D center distance on the 
 
 ### AMOTA and AMOTP metrics
 Our main metrics are the AMOTA and AMOTP metrics developed in [2].
+These are integrals over the MOTA/MOTP curves using `n`-point interpolation (`n` to be determined).
+Similar to the detection challenge, we drop points with `recall < 0.1` (not shown in the equation), as these are typically noisy.
+
 - **AMOTA** (average multi object tracking accuracy):
 Average over the MOTA [3] metric (see below) at different recall thresholds.
 For the traditional MOTA formulation and a recall of 10% there are at least 90% false negatives, which may lead to negative MOTAs.
-Furthermore the contribution of identity switches and false positives becomes negligible at low recall values.
-We include the term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
+Therefore the contribution of identity switches and false positives becomes negligible at low recall values.
+In `MOTA'` we include the term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
 These guarantee that the values are in `[0, 1]` and brings the three error types into a similar value range.
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTA'}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTA'}" title="\dpi{400} \tiny \mathit{AMOTA} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1} \, ... \, \, 1\}} \mathit{MOTA'}" /></a>
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{MOTA'}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;&plus;&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\mathit{MOTA'}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;&plus;&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" title="\mathit{MOTA'} = \max (0,\; 1 \, - \, \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r + (1-r) * \mathit{P}}{r * \mathit{P}})" /></a>
@@ -181,11 +184,8 @@ Average over the MOTP metric defined below.
 Here `d_{i,t}` indicates the position error of track `i` at time `t` and `c_t` indicates the number of matches at time `t`. See [3]. 
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{400}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;c_t}" target="_blank"><img src="https://latex.codecogs.com/png.latex?\dpi{80}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;c_t}" title="\mathit{AMOTP} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1}, .., 1\}} \frac{\sum_{i,t} d_{i,t}}{\sum_t c_t}" /></a>
 
-These are integrals over the MOTA/MOTP curves using `n`-point interpolation (`n` to be determined).
-Similar to the detection challenge, we drop points with `recall < 0.1`, as these are typically noisy.
-
 ### Secondary metrics
-We use a number of standard MOT metrics as listed on [motchallenge.net](https://motchallenge.net).
+We use a number of standard MOT metrics including CLEAR MOT [3] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
 Contrary to the above AMOTA and AMOTP metrics, these metrics use a provided confidence threshold to determine positives. 
 <!--- TODO: How is confidence threshold provided? -->
 * **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
@@ -205,7 +205,7 @@ Users are asked to provide the runtime of their method:
 Furthermore we propose a number of additional metrics:
 * **TID** (average track initialization duration in seconds): Some trackers require a fixed window of past sensor readings. Trackers may also perform poorly without a good initialization. The purpose of this metric is to measure for each track the initialization duration until the first object was successfully detected. If an object is not tracked, we assign the entire track duration as initialization duration. Then we compute the average over all tracks.     
 * **LGD** (average longest gap duration in seconds): *Frag* measures the number of fragmentations. For the application of Autonomous Driving it is crucial to know how long an object has been missed. We compute this duration for each track. If an object is not tracked, we assign the entire track duration as initialization duration.
-- **mAP / TP metrics**: Analog to the detection challenge, we compute the mean Average Precision (mAP) and True Positive (TP) metrics: scale, translation, orientation and velocity error, but not attributes. The purpose is to show the improvement that a tracker provides over the underlying object detection method (if any).
+- **mAP / TP metrics**: Analog to the detection challenge, we compute the mean Average Precision (mAP) and True Positive (TP) metrics: scale, translation, orientation and velocity error, but not attributes. The purpose is to show the improvement that a tracker provides over the underlying object detection method (if any). Note that three static classes from the detection challenge were removed and therefore results are only comparable per class.
 
 ### Configuration
 The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/nips_2019.json`.
