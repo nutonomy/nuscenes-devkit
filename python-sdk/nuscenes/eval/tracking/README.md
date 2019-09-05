@@ -42,7 +42,6 @@ Results and winners will be announced at the [AI Driving Olympics](http://www.dr
 * Possible input modalities are camera, lidar and radar.
 * We perform online tracking [2]. This means that the tracker may only use past and current, but not future sensor data.
 * Noisy object detections are provided below (including for the test split), but do not have to be used.
-* We split the existing training set in `train_detect` and `train_track`. This is to make sure that the detector and tracker are not trained on the same data, which may lead to problems as the detector may be overfitting to the training set. The use of these subsplits is entirely optional.
 * At inference time users may use all past sensor data and ego poses from the current scene, but not from a previous scene. At training time there are no restrictions.
 
 ### General rules
@@ -211,22 +210,23 @@ Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* 
 The results for object detection and tracking can be seen below.
 Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
 
-|   Method           | mAP  | NDS  | AMOTA | AMOTP | Tracking mAP |
-|   ---              | ---  | ---  | ---   | ---   | ---          |
-|   PointPillars [5] | 29.5 | 44.8 | TBD   | TBD   | TBD          |
-|   Megvii [6]       | 51.9 | 62.8 | TBD   | TBD   | TBD          |
-|   Mapillary [7]    | 29.8 | 36.9 | TBD   | TBD   | TBD          |
-|   PointRCNN [8]    | TBD  | TBD  | TBD   | TBD   | TBD          |
+|   Method           | mAP  | NDS  | AMOTA | AMOTP | Tracking mAP | Download                                               |
+|   ---              | ---  | ---  | ---   | ---   | ---          | ---                                                    |
+|   PointPillars [5] | 29.5 | 44.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
+|   Megvii [6]       | 51.9 | 62.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
+|   Mapillary [7]    | 29.8 | 36.9 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
+
+<!-- |   PointRCNN [8]    | TBD  | TBD  | TBD   | TBD   | TBD          | -->
 
 #### Overfitting
 Some object detection methods overfit to the training data.
-E.g. for the PointPillars method we see a drop in mAP of 6% from train to val split (35.7% vs. 29.5%).
+E.g. for the PointPillars method we see a drop in mAP of 6.2% from train to val split (35.7% vs. 29.5%).
 This may affect (learning-based) tracking algorithms, when the training split has more accurate detections than the validation split.
 To remedy this problem we have split the existing `train` set into `train_detect` and `train_track` (350 scenes each).
-You can use these splits to train your own detection and tracking algorithms.
 Both splits have the same distribution of Singapore, Boston, night and rain data.
-The object detection baselines provided in the table above are trained on the *entire* train set, as our tracking baseline [2] is not learning-based.
+You can use these splits to train your own detection and tracking algorithms.
 The use of these splits is entirely optional.
+The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline [2] is not learning-based.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the tracking task.
