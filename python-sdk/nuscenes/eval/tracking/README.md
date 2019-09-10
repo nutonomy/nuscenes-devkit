@@ -52,7 +52,7 @@ Results and winners will be announced at the [AI Driving Olympics](http://www.dr
 * Users must limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
-* Each user or team can have at most one one account on the evaluation server.
+* Each user or team can have at most one account on the evaluation server.
 * Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges.
 
@@ -81,7 +81,7 @@ submission {
 }
 ```
 For the predictions we create a new database table called `sample_result`.
-The `sample_result` table is designed to mirror the `sample_annotation` table.
+The `sample_result` table is designed to mirror the [`sample_annotation`](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#sample_annotation) table.
 This allows for processing of results and annotations using the same tools.
 A `sample_result` is a dictionary defined as follows:
 ```
