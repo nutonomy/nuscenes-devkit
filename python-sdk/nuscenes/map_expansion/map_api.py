@@ -236,7 +236,7 @@ class NuScenesMap:
         :param alpha: The opacity of each layer.
         :param figsize: Size of the whole figure.
         :param render_legend: Whether to render road segment legend.
-        :param render_egoposes_range: Whether to render a rectangle around the ego vehicle.
+        :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :return: The matplotlib figure and axes of the rendered layers.
         """
         return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize,
@@ -292,7 +292,7 @@ class NuScenesMap:
         :param out_path: Optional path to save the rendered figure to disk.
         :param render_egoposes: Whether to render ego poses.
         :param render_legend: Whether to render road segment render_legend.
-        :param render_egoposes_range: Whether to render a rectangle around the ego vehicle.
+        :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         return self.explorer.render_egoposes_on_fancy_map(nusc, scene_tokens=scene_tokens,
@@ -718,7 +718,7 @@ class NuScenesMapExplorer:
         :param layer_names: All the non geometric layers that we want to render.
         :param alpha: The opacity of each layer.
         :param figsize: Size of the whole figure.
-        :param render_egoposes_range: Whether to render a rectangle around the ego vehicle.
+        :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :param render_legend: Whether to render road segment legend.
         :return: The matplotlib figure and axes of the rendered layers.
         """
@@ -933,7 +933,7 @@ class NuScenesMapExplorer:
         :param verbose: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
         :param render_egoposes: Whether to render ego poses.
-        :param render_egoposes_range: Whether to render a rectangle around the ego vehicle.
+        :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :param render_legend: Whether to render road segment legend.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
