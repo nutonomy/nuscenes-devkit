@@ -226,16 +226,21 @@ class NuScenesMap:
                          box_coords: Tuple[float, float, float, float],
                          layer_names: List[str] = None,
                          alpha: float = 0.5,
-                         figsize: Tuple[int, int] = (15, 15)) -> Tuple[Figure, Axes]:
+                         figsize: Tuple[int, int] = (15, 15),
+                         render_egoposes_range: bool = True,
+                         render_description: bool = True) -> Tuple[Figure, Axes]:
         """
         Renders a rectangular patch specified by `box_coords`. By default renders all layers.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
         :param layer_names: All the non geometric layers that we want to render.
         :param alpha: The opacity of each layer.
         :param figsize: Size of the whole figure.
+        :param render_description: Whether to render road segment description
+        :param render_egoposes_range: Whether to render ego pose range rectangle
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize)
+        return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize,
+                                              render_egoposes_range, render_description)
 
     def render_map_in_image(self,
                             nusc: NuScenes,
@@ -274,7 +279,10 @@ class NuScenesMap:
                                      nusc: NuScenes,
                                      scene_tokens: List = None,
                                      verbose: bool = True,
-                                     out_path: str = None) -> np.ndarray:
+                                     out_path: str = None,
+                                     render_egoposes: bool = True,
+                                     render_egoposes_range: bool = True,
+                                     render_description: bool = True) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -282,10 +290,16 @@ class NuScenesMap:
         :param scene_tokens: Optional list of scene tokens corresponding to the current map location.
         :param verbose: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param render_egoposes: Whether to render ego pose
+        :param render_description: Whether to render road segment description
+        :param render_egoposes_range: Whether to render ego pose range rectangle
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         return self.explorer.render_egoposes_on_fancy_map(nusc, scene_tokens=scene_tokens,
-                                                          verbose=verbose, out_path=out_path)
+                                                          verbose=verbose, out_path=out_path,
+                                                          render_egoposes=render_egoposes,
+                                                          render_egoposes_range=render_egoposes_range,
+                                                          render_description=render_description)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -695,13 +709,17 @@ class NuScenesMapExplorer:
                          box_coords: Tuple[float, float, float, float],
                          layer_names: List[str] = None,
                          alpha: float = 0.5,
-                         figsize: Tuple[int, int] = (15, 15)) -> Tuple[Figure, Axes]:
+                         figsize: Tuple[int, int] = (15, 15),
+                         render_egoposes_range: bool = True,
+                         render_description: bool = True) -> Tuple[Figure, Axes]:
         """
         Renders a rectangular patch specified by `box_coords`. By default renders all layers.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
         :param layer_names: All the non geometric layers that we want to render.
         :param alpha: The opacity of each layer.
         :param figsize: Size of the whole figure.
+        :param render_description: Whether to render road segment description
+        :param render_egoposes_range: Whether to render ego pose range rectangle
         :return: The matplotlib figure and axes of the rendered layers.
         """
         x_min, y_min, x_max, y_max = box_coords
@@ -725,14 +743,17 @@ class NuScenesMapExplorer:
         y_margin = np.minimum(local_height / 4, 10)
         ax.set_xlim(x_min - x_margin, x_max + x_margin)
         ax.set_ylim(y_min - y_margin, y_max + y_margin)
-        ax.add_patch(Rectangle((x_min, y_min), local_width, local_height, fill=False, linestyle='-.', color='red',
+
+        if render_egoposes_range:
+            ax.add_patch(Rectangle((x_min, y_min), local_width, local_height, fill=False, linestyle='-.', color='red',
                                lw=2))
-        ax.text(x_min + local_width / 100, y_min + local_height / 2, "%g m" % local_height,
+            ax.text(x_min + local_width / 100, y_min + local_height / 2, "%g m" % local_height,
                 fontsize=14, weight='bold')
-        ax.text(x_min + local_width / 2, y_min + local_height / 100, "%g m" % local_width,
+            ax.text(x_min + local_width / 2, y_min + local_height / 100, "%g m" % local_width,
                 fontsize=14, weight='bold')
 
-        ax.legend(frameon=True, loc='upper right')
+        if render_description:
+            ax.legend(frameon=True, loc='upper right')
 
         return fig, ax
 
@@ -898,7 +919,10 @@ class NuScenesMapExplorer:
                                      nusc: NuScenes,
                                      scene_tokens: List = None,
                                      verbose: bool = True,
-                                     out_path: str = None) -> np.ndarray:
+                                     out_path: str = None,
+                                     render_egoposes: bool = True,
+                                     render_egoposes_range: bool = True,
+                                     render_description: bool = True) -> np.ndarray:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -908,6 +932,9 @@ class NuScenesMapExplorer:
         :param scene_tokens: Optional list of scene tokens corresponding to the current map location.
         :param verbose: Whether to show status messages and progress bar.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param render_egoposes: Whether to render ego pose
+        :param render_description: Whether to render road segment description
+        :param render_egoposes_range: Whether to render ego pose range rectangle
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         # Settings
@@ -975,11 +1002,14 @@ class NuScenesMapExplorer:
             min_patch = center_patch - diff_patch / 2
             max_patch = center_patch + diff_patch / 2
         my_patch = (min_patch[0], min_patch[1], max_patch[0], max_patch[1])
-        fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10))
+        fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10),
+                                        render_egoposes_range=render_egoposes_range,
+                                        render_description=render_description)
 
         # Plot in the same axis as the map.
         # Make sure these are plotted "on top".
-        ax.scatter(map_poses[:, 0], map_poses[:, 1], s=20, c='k', alpha=1.0, zorder=2)
+        if render_egoposes:
+            ax.scatter(map_poses[:, 0], map_poses[:, 1], s=20, c='k', alpha=1.0, zorder=2)
         plt.axis('off')
 
         if out_path is not None:
