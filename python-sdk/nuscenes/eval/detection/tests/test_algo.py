@@ -2,8 +2,6 @@
 # Code written by Oscar Beijbom and Varun Bankiti, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import json
-import os
 import random
 import unittest
 from typing import Dict, List
@@ -13,18 +11,15 @@ from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox, MetricDataList, DetectionMetrics, MetricData
+from nuscenes.eval.common.data_classes import EvalBoxes, EvalBox, MetricDataList, MetricData
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
+from nuscenes.eval.common.config import config_factory
 
 
 class TestAlgo(unittest.TestCase):
 
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg_name = 'cvpr_2019.json'
-    cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
-    with open(cfg_path, 'r') as f:
-        cfg = DetectionConfig.deserialize(json.load(f))
+    cfg = config_factory('detection_cvpr_2019')
 
     @staticmethod
     def _mock_results(nsamples, ngt, npred, detection_name):
@@ -125,7 +120,7 @@ class TestAlgo(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
 
-        md = MetricData.random_md()
+        md = DetectionMetricData.random_md()
 
         # min_recall greater than 1.
         self.assertEqual(1.0, calc_tp(md, min_recall=1, metric_name='trans_err'))
@@ -136,7 +131,7 @@ class TestAlgo(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
 
-        md = MetricData.random_md()
+        md = DetectionMetricData.random_md()
 
         # Negative min_recall and min_precision
         self.assertRaises(AssertionError, calc_ap, md, -0.5, 0.4)
@@ -150,7 +145,7 @@ class TestAlgo(unittest.TestCase):
 def get_metric_data(gts: Dict[str, List[Dict]],
                     preds: Dict[str, List[Dict]],
                     detection_name: str,
-                    dist_th: float) -> MetricData:
+                    dist_th: float) -> DetectionMetricData:
         """
         Calculate and check the AP value.
         :param gts: Ground truth data.

@@ -8,8 +8,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from pyquaternion import Quaternion
 
-from nuscenes.eval.detection.data_classes import EvalBox
-from nuscenes.eval.detection.utils import attr_acc, scale_iou, yaw_diff, angle_diff, center_distance, velocity_l2, \
+from nuscenes.eval.common.data_classes import EvalBox
+from nuscenes.eval.common.utils import attr_acc, scale_iou, yaw_diff, angle_diff, center_distance, velocity_l2, \
     cummean
 
 

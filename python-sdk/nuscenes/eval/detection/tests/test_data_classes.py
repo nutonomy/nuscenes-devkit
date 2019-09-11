@@ -7,8 +7,8 @@ import os
 import unittest
 
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import MetricData, EvalBox, EvalBoxes, MetricDataList, DetectionConfig, \
-    DetectionMetrics
+from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics
+from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes, MetricDataList
 
 
 class TestDetectionConfig(unittest.TestCase):
@@ -17,8 +17,8 @@ class TestDetectionConfig(unittest.TestCase):
         """ test that instance serialization protocol works with json encoding """
 
         this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_name = 'cvpr_2019.json'
-        config_path = os.path.join(this_dir, '..', 'configs', cfg_name)
+        cfg_name = 'detection_cvpr_2019'
+        config_path = os.path.join(this_dir, '..', 'configs', cfg_name + '.json')
 
         with open(config_path) as f:
             cfg = json.load(f)
@@ -56,8 +56,8 @@ class TestMetricData(unittest.TestCase):
 
     def test_serialization(self):
         """ Test that instance serialization protocol works with json encoding. """
-        md = MetricData.random_md()
-        recovered = MetricData.deserialize(json.loads(json.dumps(md.serialize())))
+        md = DetectionMetricData.random_md()
+        recovered = DetectionMetricData.deserialize(json.loads(json.dumps(md.serialize())))
         self.assertEqual(md, recovered)
 
 
@@ -67,8 +67,8 @@ class TestMetricDataList(unittest.TestCase):
         """ Test that instance serialization protocol works with json encoding. """
         mdl = MetricDataList()
         for i in range(10):
-            mdl.set('name', 0.1, MetricData.random_md())
-        recovered = MetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())))
+            mdl.set('name', 0.1, DetectionMetricData.random_md())
+        recovered = MetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())), DetectionMetricData)
         self.assertEqual(mdl, recovered)
 
 

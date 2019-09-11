@@ -3,17 +3,18 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 import json
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 import numpy as np
-import tqdm
 from pyquaternion import Quaternion
+import tqdm
 
-from nuscenes import NuScenes
-from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox
+from nuscenes.eval.common.data_classes import EvalBox
 from nuscenes.eval.detection.utils import category_to_detection_name
+from nuscenes import NuScenes
 from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import points_in_box
+from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -131,7 +132,8 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
     return all_annotations
 
 
-def add_center_dist(nusc, eval_boxes: EvalBoxes):
+def add_center_dist(nusc: NuScenes,
+                    eval_boxes: EvalBoxes):
     """ Adds the cylindrical (xy) center distance from ego vehicle to each box. """
 
     for sample_token in eval_boxes.sample_tokens:
@@ -192,6 +194,7 @@ def filter_eval_boxes(nusc: NuScenes,
 
         eval_boxes.boxes[sample_token] = filtered_boxes
         bike_rack_filter += len(eval_boxes.boxes[sample_token])
+
     if verbose:
         print("=> Original number of boxes: %d" % total)
         print("=> After distance based filtering: %d" % dist_filter)

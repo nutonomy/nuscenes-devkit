@@ -7,9 +7,9 @@ import os
 import unittest
 
 from nuscenes import NuScenes
-from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.eval.detection.data_classes import EvalBox, EvalBoxes
-from nuscenes.eval.detection.loaders import filter_eval_boxes
+from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes
+from nuscenes.eval.common.loaders import filter_eval_boxes
 
 
 class TestLoader(unittest.TestCase):
@@ -19,13 +19,8 @@ class TestLoader(unittest.TestCase):
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         """
-
         # Get the maximum distance from the config
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_name = 'cvpr_2019.json'
-        cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
-        with open(cfg_path, 'r') as f:
-            cfg = DetectionConfig.deserialize(json.load(f))
+        cfg = config_factory('detection_cvpr_2019')
         max_dist = cfg.class_range
 
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'

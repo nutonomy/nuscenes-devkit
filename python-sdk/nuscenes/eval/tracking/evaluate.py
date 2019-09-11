@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar & Oscar Beijbom, 2018.
+# Code written by Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
 import argparse
@@ -9,28 +9,25 @@ import random
 import time
 from typing import Tuple, Dict, Any
 
-import numpy as np
-
 from nuscenes import NuScenes
-from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
-from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics
-from nuscenes.eval.common.data_classes import MetricDataList, EvalBoxes
+from nuscenes.eval.tracking.algo import accumulate
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.common.data_classes import MetricDataList
+from nuscenes.eval.tracking.data_classes import TrackingMetrics
 from nuscenes.eval.common.loaders import load_prediction, load_gt
 from nuscenes.eval.common.loaders import add_center_dist, filter_eval_boxes
-from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
-from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.detection.render import visualize_sample
+from nuscenes.eval.tracking.data_classes import TrackingConfig
 
 
-class DetectionEval:
+class TrackingEval:
     """
-    This is the official nuScenes detection evaluation code.
+    This is the official nuScenes tracking evaluation code.
     Results are written to the provided output_dir.
 
-    nuScenes uses the following detection metrics:
-    - Mean Average Precision (mAP): Uses center-distance as matching criterion; averaged over distance thresholds.
-    - True Positive (TP) metrics: Average of translation, velocity, scale, orientation and attribute errors.
-    - nuScenes Detection Score (NDS): The weighted sum of the above.
+    nuScenes uses the following tracking metrics:
+    TODO
 
     Here is an overview of the functions in this method:
     - init: Loads GT annotations and predictions stored in JSON format and filters the boxes.
@@ -40,19 +37,19 @@ class DetectionEval:
     We assume that:
     - Every sample_token is given in the results, although there may be not predictions for that sample.
 
-    Please see https://www.nuscenes.org/object-detection for more details.
+    Please see https://www.nuscenes.org/tracking for more details.
     """
     def __init__(self,
                  nusc: NuScenes,
-                 config: DetectionConfig,
+                 config: TrackingConfig,
                  result_path: str,
                  eval_set: str,
                  output_dir: str = None,
                  verbose: bool = True):
         """
-        Initialize a DetectionEval object.
+        Initialize a TrackingEval object.
         :param nusc: A NuScenes object.
-        :param config: A DetectionConfig object.
+        :param config: A TrackingConfig object.
         :param result_path: Path of the nuScenes JSON result file.
         :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
         :param output_dir: Folder to save plots and results to.
@@ -77,12 +74,12 @@ class DetectionEval:
 
         # Load data.
         if verbose:
-            print('Initializing nuScenes detection evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
+            print('Initializing nuScenes tracking evaluation')
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)  # TODO: Modify for tracking
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)  # TODO: Modify for tracking
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
-            "Samples in split doesn't match samples in predictions."
+            "Samples in split doesn't match samples in predicted tracks."
 
         # Add center distances.
         self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
@@ -90,15 +87,15 @@ class DetectionEval:
 
         # Filter boxes (distance, points per box, etc.).
         if verbose:
-            print('Filtering predictions')
+            print('Filtering tracks')
         self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range, verbose=verbose)
         if verbose:
-            print('Filtering ground truth annotations')
+            print('Filtering ground truth tracks')
         self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range, verbose=verbose)
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
-    def evaluate(self) -> Tuple[DetectionMetrics, MetricDataList]:
+    def evaluate(self) -> Tuple[TrackingMetrics, MetricDataList]:
         """
         Performs the actual evaluation.
         :return: A tuple of high-level and the raw metric data.
@@ -121,52 +118,28 @@ class DetectionEval:
         # -----------------------------------
         if self.verbose:
             print('Calculating metrics')
-        metrics = DetectionMetrics(self.cfg)
+        metrics = TrackingMetrics(self.cfg)
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
-                metric_data = metric_data_list[(class_name, dist_th)]
-                ap = calc_ap(metric_data, self.cfg.min_recall, self.cfg.min_precision)
-                metrics.add_label_ap(class_name, dist_th, ap)
-
-            for metric_name in TP_METRICS:
-                metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
-                if class_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
-                    tp = np.nan
-                elif class_name in ['barrier'] and metric_name in ['attr_err', 'vel_err']:
-                    tp = np.nan
-                else:
-                    tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
-                metrics.add_label_tp(class_name, metric_name, tp)
+                pass # TODO
 
         metrics.add_runtime(time.time() - start_time)
 
         return metrics, metric_data_list
 
-    def render(self, metrics: DetectionMetrics, md_list: MetricDataList) -> None:
+    def render(self, metrics: TrackingMetrics, md_list: MetricDataList) -> None:
         """
         Renders various PR and TP curves.
-        :param metrics: DetectionMetrics instance.
+        :param metrics: TrackingMetrics instance.
         :param md_list: MetricDataList instance.
         """
         if self.verbose:
-            print('Rendering PR and TP curves')
+            print('Rendering curves')
 
         def savepath(name):
             return os.path.join(self.plot_dir, name + '.pdf')
 
-        summary_plot(md_list, metrics, min_precision=self.cfg.min_precision, min_recall=self.cfg.min_recall,
-                     dist_th_tp=self.cfg.dist_th_tp, savepath=savepath('summary'))
-
-        for detection_name in self.cfg.class_names:
-            class_pr_curve(md_list, metrics, detection_name, self.cfg.min_precision, self.cfg.min_recall,
-                           savepath=savepath(detection_name + '_pr'))
-
-            class_tp_curve(md_list, metrics, detection_name, self.cfg.min_recall, self.cfg.dist_th_tp,
-                           savepath=savepath(detection_name + '_tp'))
-
-        for dist_th in self.cfg.dist_ths:
-            dist_pr_curve(md_list, metrics, dist_th, self.cfg.min_precision, self.cfg.min_recall,
-                          savepath=savepath('dist_pr_' + str(dist_th)))
+        # TODO
 
     def main(self,
              plot_examples: int = 0,
@@ -215,47 +188,19 @@ class DetectionEval:
             json.dump(metric_data_list.serialize(), f, indent=2)
 
         # Print high-level metrics.
-        print('mAP: %.4f' % (metrics_summary['mean_ap']))
-        err_name_mapping = {
-            'trans_err': 'mATE',
-            'scale_err': 'mASE',
-            'orient_err': 'mAOE',
-            'vel_err': 'mAVE',
-            'attr_err': 'mAAE'
-        }
-        for tp_name, tp_val in metrics_summary['tp_errors'].items():
-            print('%s: %.4f' % (err_name_mapping[tp_name], tp_val))
-        print('NDS: %.4f' % (metrics_summary['nd_score']))
+        # TODO
         print('Eval time: %.1fs' % metrics_summary['eval_time'])
 
         # Print per-class metrics.
-        print()
-        print('Per-class results:')
-        print('Object Class\tAP\tATE\tASE\tAOE\tAVE\tAAE')
-        class_aps = metrics_summary['mean_dist_aps']
-        class_tps = metrics_summary['label_tp_errors']
-        for class_name in class_aps.keys():
-            print('%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f'
-                  % (class_name, class_aps[class_name],
-                     class_tps[class_name]['trans_err'],
-                     class_tps[class_name]['scale_err'],
-                     class_tps[class_name]['orient_err'],
-                     class_tps[class_name]['vel_err'],
-                     class_tps[class_name]['attr_err']))
+        # TODO
 
         return metrics_summary
-
-
-class NuScenesEval(DetectionEval):
-    """
-    Dummy class for backward-compatibility. Same as DetectionEval.
-    """
 
 
 if __name__ == "__main__":
 
     # Settings.
-    parser = argparse.ArgumentParser(description='Evaluate nuScenes detection results.',
+    parser = argparse.ArgumentParser(description='Evaluate nuScenes tracking results.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('result_path', type=str, help='The submission as a JSON file.')
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
@@ -288,12 +233,12 @@ if __name__ == "__main__":
     verbose_ = bool(args.verbose)
 
     if config_path == '':
-        cfg_ = config_factory('detection_cvpr_2019')
+        cfg_ = config_factory('nips_tracking_2019')
     else:
-        with open(config_path, 'r') as _f:
-            cfg_ = DetectionConfig.deserialize(json.load(_f))
+        with open(config_path, 'r') as f:
+            cfg_ = TrackingConfig.deserialize(json.load(f))
 
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
-    nusc_eval = DetectionEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
-                              output_dir=output_dir_, verbose=verbose_)
+    nusc_eval = TrackingEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
+                             output_dir=output_dir_, verbose=verbose_)
     nusc_eval.main(plot_examples=plot_examples_, render_curves=render_curves_)

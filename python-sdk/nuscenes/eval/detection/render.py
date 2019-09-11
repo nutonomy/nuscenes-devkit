@@ -10,9 +10,10 @@ from matplotlib import pyplot as plt
 from nuscenes import NuScenes
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
     PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
-from nuscenes.eval.detection.data_classes import EvalBoxes
-from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
-from nuscenes.eval.detection.utils import boxes_to_sensor
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.common.data_classes import MetricDataList
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData
+from nuscenes.eval.common.utils import boxes_to_sensor
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
 
@@ -107,7 +108,7 @@ def setup_axis(xlabel: str = None,
                title: str = None,
                min_precision: float = None,
                min_recall: float = None,
-               ax = None):
+               ax=None):
     """
     Helper method that sets up the axis for a plot.
     :param xlabel: x label text.
@@ -166,6 +167,7 @@ def class_pr_curve(md_list: MetricDataList,
 
     # Plot the recall vs. precision curve for each distance threshold.
     for md, dist_th in data:
+        md: DetectionMetricData
         ap = metrics.get_label_ap(detection_name, dist_th)
         ax.plot(md.recall, md.precision, label='Dist. : {}, AP: {:.1f}'.format(dist_th, ap * 100))
 

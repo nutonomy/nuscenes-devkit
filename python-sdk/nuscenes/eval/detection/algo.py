@@ -4,8 +4,9 @@
 
 import numpy as np
 
-from nuscenes.eval.detection.data_classes import EvalBoxes, MetricData
-from nuscenes.eval.detection.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc, cummean
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.detection.data_classes import DetectionMetricData
+from nuscenes.eval.common.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc, cummean
 
 
 def accumulate(gt_boxes: EvalBoxes,
@@ -43,7 +44,7 @@ def accumulate(gt_boxes: EvalBoxes,
 
     # For missing classes in the GT, return a data structure corresponding to no predictions.
     if npos == 0:
-        return MetricData.no_predictions()
+        return DetectionMetricData.no_predictions()
 
     # Organize the predictions in a single list.
     pred_boxes_list = [box for box in pred_boxes.all if box.detection_name == class_name]
@@ -127,7 +128,7 @@ def accumulate(gt_boxes: EvalBoxes,
 
     # Check if we have any matches. If not, just return a "no predictions" array.
     if len(match_data['trans_err']) == 0:
-        return MetricData.no_predictions()
+        return DetectionMetricData.no_predictions()
 
     # ---------------------------------------------
     # Calculate and interpolate precision and recall
@@ -142,7 +143,7 @@ def accumulate(gt_boxes: EvalBoxes,
     prec = tp / (fp + tp)
     rec = tp / float(npos)
 
-    rec_interp = np.linspace(0, 1, MetricData.nelem)  # 101 steps, from 0% to 100% recall.
+    rec_interp = np.linspace(0, 1, DetectionMetricData.nelem)  # 101 steps, from 0% to 100% recall.
     prec = np.interp(rec_interp, rec, prec, right=0)
     conf = np.interp(rec_interp, rec, conf, right=0)
     rec = rec_interp
@@ -165,17 +166,17 @@ def accumulate(gt_boxes: EvalBoxes,
     # ---------------------------------------------
     # Done. Instantiate MetricData and return
     # ---------------------------------------------
-    return MetricData(recall=rec,
-                      precision=prec,
-                      confidence=conf,
-                      trans_err=match_data['trans_err'],
-                      vel_err=match_data['vel_err'],
-                      scale_err=match_data['scale_err'],
-                      orient_err=match_data['orient_err'],
-                      attr_err=match_data['attr_err'])
+    return DetectionMetricData(recall=rec,
+                               precision=prec,
+                               confidence=conf,
+                               trans_err=match_data['trans_err'],
+                               vel_err=match_data['vel_err'],
+                               scale_err=match_data['scale_err'],
+                               orient_err=match_data['orient_err'],
+                               attr_err=match_data['attr_err'])
 
 
-def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
+def calc_ap(md: DetectionMetricData, min_recall: float, min_precision: float) -> float:
     """ Calculated average precision. """
 
     assert 0 <= min_precision < 1
@@ -188,7 +189,7 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     return float(np.mean(prec)) / (1.0 - min_precision)
 
 
-def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
+def calc_tp(md: DetectionMetricData, min_recall: float, metric_name: str) -> float:
     """ Calculates true positive errors. """
 
     first_ind = round(100 * min_recall) + 1  # +1 to exclude the error at min recall.
