@@ -73,7 +73,6 @@ submission {
         "use_radar":    <bool>  -- Whether this submission uses radar data as an input.
         "use_map":      <bool>  -- Whether this submission uses map data as an input.
         "use_external": <bool>  -- Whether this submission uses external data as an input.
-        "conf_thresh":  <floor> -- Confidence threshold which determines whether a track is positive or negative.
     },
     "results": {
         sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
@@ -154,6 +153,7 @@ Our goal is to perform tracking of all moving objects in a traffic scene.
 Below we define the metrics for the nuScenes tracking task.
 The challenge winner will be determined based on AMOTA.
 Additionally a number of secondary metrics are computed and shown on the leaderboard.
+Note that all metrics below (except FPS) are computed per class and then averaged over all classes. 
 
 ### Preprocessing
 Before running the evaluation code the following pre-processing is done on the data
@@ -162,8 +162,8 @@ Before running the evaluation code the following pre-processing is done on the d
 * All boxes (GT) without lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes based on number of points.
 
 ### Matching criterion
-For all metrics, we define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities.
-<!--- TODO: Compute each metric per class and average -->
+For all metrics, we define a match by thresholding the 2D center distance on the ground plane rather than Intersection Over Union (IOU) based affinities.
+We find that this measure is more forgiving for far-away objects than IOU which is often 0, particularly for monocular image-based approaches.
 
 ### AMOTA and AMOTP metrics
 Our main metrics are the AMOTA and AMOTP metrics developed in [2].
@@ -186,9 +186,10 @@ Here `d_{i,t}` indicates the position error of track `i` at time `t` and `c_t` i
 
 ### Secondary metrics
 We use a number of standard MOT metrics including CLEAR MOT [3] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
-Contrary to the above AMOTA and AMOTP metrics, these metrics use a confidence threshold to determine positive and negative tracks of the respective class.
-The confidence threshold is provided by the user in `submission['meta']['conf_thresh']`.
+Contrary to the above AMOTA and AMOTP metrics, these metrics use a confidence threshold to determine positive and negative tracks.
+The confidence threshold is selected for every class independently by picking the threshold that achieves the highest MOTA.
 The track level scores is determined by averaging the frame level scores.
+Tracks with a score below the confidence threshold are discarded.
 * **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
 * **MOTP** (multi object tracking precision) [3]: The misalignment between the annotated and the predicted bounding boxes.
 * **IDF1** (ID F1 score): The ratio of correctly identified detections over the average number of ground-truth and computed detections.
