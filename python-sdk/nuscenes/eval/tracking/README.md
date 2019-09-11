@@ -186,8 +186,9 @@ Here `d_{i,t}` indicates the position error of track `i` at time `t` and `c_t` i
 
 ### Secondary metrics
 We use a number of standard MOT metrics including CLEAR MOT [3] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
-Contrary to the above AMOTA and AMOTP metrics, these metrics use a provided confidence threshold to determine positives. 
-<!--- TODO: How is confidence threshold provided? -->
+Contrary to the above AMOTA and AMOTP metrics, these metrics use a confidence threshold to determine positive and negative tracks of the respective class.
+The confidence threshold is provided by the user in `submission['meta']['conf_thresh']`.
+The track level scores is determined by averaging the frame level scores.
 * **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
 * **MOTP** (multi object tracking precision) [3]: The misalignment between the annotated and the predicted bounding boxes.
 * **IDF1** (ID F1 score): The ratio of correctly identified detections over the average number of ground-truth and computed detections.
