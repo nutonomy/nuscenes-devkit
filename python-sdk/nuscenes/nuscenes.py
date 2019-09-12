@@ -4,7 +4,6 @@
 
 import json
 import math
-import os
 import os.path as osp
 import sys
 import time
@@ -401,9 +400,11 @@ class NuScenes:
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
-                           nsweeps: int = 1, out_path: str = None, underlay_map: bool = False) -> None:
+                           nsweeps: int = 1, out_path: str = None, underlay_map: bool = False,
+                           use_flat_vehicle_coordinates: bool = False) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
-                                         out_path=out_path, underlay_map=underlay_map)
+                                         out_path=out_path, underlay_map=underlay_map,
+                                         use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -676,11 +677,13 @@ class NuScenesExplorer:
     def render_ego_centric_map(self,
                                sample_data_token: str,
                                axes_limit: float = 40,
+                               rotate_lidar: bool = False,
                                ax: Axes = None) -> None:
         """
         Render map centered around the associated ego pose.
         :param sample_data_token: Sample_data token.
         :param axes_limit: Axes limit measured in meters.
+        :param rotate_lidar: Whether to approximately rotate the map from ego to the lidar frame (0 ~ up).
         :param ax: Axes onto which to render.
         """
 
@@ -697,34 +700,40 @@ class NuScenesExplorer:
 
             return cropped_image
 
+        # Get data.
         sd_record = self.nusc.get('sample_data', sample_data_token)
-
-        # Init axes.
-        if ax is None:
-            _, ax = plt.subplots(1, 1, figsize=(9, 9))
-
         sample = self.nusc.get('sample', sd_record['sample_token'])
         scene = self.nusc.get('scene', sample['scene_token'])
         log = self.nusc.get('log', scene['log_token'])
         map = self.nusc.get('map', log['map_token'])
         map_mask = map['mask']
-
         pose = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
-        pixel_coords = map_mask.to_pixel_coords(pose['translation'][0], pose['translation'][1])
 
+        # Retrieve and crop mask.
+        pixel_coords = map_mask.to_pixel_coords(pose['translation'][0], pose['translation'][1])
         scaled_limit_px = int(axes_limit * (1.0 / map_mask.resolution))
         mask_raster = map_mask.mask()
-
         cropped = crop_image(mask_raster, pixel_coords[0], pixel_coords[1], int(scaled_limit_px * math.sqrt(2)))
 
+        # Rotate image.
         ypr_rad = Quaternion(pose['rotation']).yaw_pitch_roll
         yaw_deg = -math.degrees(ypr_rad[0])
-
+        if rotate_lidar:
+            # Note that this is an approximation. The rotation between ego and lidar frame is not exactly 90 degrees.
+            yaw_deg += 90
         rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
-        ego_centric_map = crop_image(rotated_cropped, rotated_cropped.shape[1] / 2, rotated_cropped.shape[0] / 2,
+
+        # Cop image.
+        ego_centric_map = crop_image(rotated_cropped, rotated_cropped.shape[1] / 2,
+                                     rotated_cropped.shape[0] / 2,
                                      scaled_limit_px)
-        ax.imshow(ego_centric_map, extent=[-axes_limit, axes_limit, -axes_limit, axes_limit], cmap='gray', vmin=0,
-                  vmax=150)
+
+        # Init axes and show image.
+        # Flip background and foreground colors and change from black to gray color tone.
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=(9, 9))
+        ax.imshow((255 - ego_centric_map) / 2, extent=[-axes_limit, axes_limit, -axes_limit, axes_limit],
+                  cmap='gray', vmin=0, vmax=255)
 
     def render_sample_data(self,
                            sample_data_token: str,
@@ -734,7 +743,8 @@ class NuScenesExplorer:
                            ax: Axes = None,
                            nsweeps: int = 1,
                            out_path: str = None,
-                           underlay_map: bool = False) -> None:
+                           underlay_map: bool = False,
+                           use_flat_vehicle_coordinates: bool = False) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -745,111 +755,94 @@ class NuScenesExplorer:
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
         :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+                                             aligned to z-plane in the world.
+                                             Warning: Enabling this will rotate the plot by 90 degrees.
         """
 
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
 
-        if sensor_modality == 'lidar':
-            # The lidar plot is centered around the ego vehicle in a top-down view.
-
-            # Get annotations in an ego vehicle centered frame.
-            _, boxes, _ = self.nusc.get_sample_data(sample_data_token, box_vis_level=box_vis_level,
-                                                    use_flat_vehicle_coordinates=True)
-
-            # Get aggregated point cloud in lidar frame.
-            sample_rec = self.nusc.get('sample', sd_record['sample_token'])
-            chan = sd_record['channel']
-            ref_chan = sd_record['channel']
-            pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
-
-            # Compute transformation matrices for lidar point cloud.
-            cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
-            pose_record = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
-            vehicle_from_sensor = transform_matrix(translation=cs_record['translation'],
-                                                   rotation=Quaternion(cs_record["rotation"]))
-
-            # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
-            ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
-            rotation_vehicle_flat_from_vehicle = np.dot(
-                Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
-                Quaternion(pose_record['rotation']).inverse.rotation_matrix)
-            vehicle_flat_from_vehicle = np.eye(4)
-            vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
-
-            # Init axes.
-            if ax is None:
-                _, ax = plt.subplots(1, 1, figsize=(9, 9))
-
-            if underlay_map:
-                self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit, ax=ax)
-            
-            # Show point cloud.
-            points = view_points(pc.points[:3, :], np.dot(vehicle_flat_from_vehicle, vehicle_from_sensor),
-                                 normalize=False)
-            dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
-            ax.scatter(points[0, :], points[1, :], c=colors, s=0.2)
-
-            # Show ego vehicle.
-            ax.plot(0, 0, 'x', color='red')
-
-            # Show boxes.
-            if with_anns:
-                for box in boxes:
-                    c = np.array(self.get_color(box.name)) / 255.0
-                    box.render(ax, view=np.eye(4), colors=(c, c, c))
-
-            # Limit visible range.
-            ax.set_xlim(-axes_limit, axes_limit)
-            ax.set_ylim(-axes_limit, axes_limit)
-
-        elif sensor_modality == 'radar':
-            # Get boxes in lidar frame.
+        if sensor_modality in ['lidar', 'radar']:
             sample_rec = self.nusc.get('sample', sd_record['sample_token'])
             lidar_token = sample_rec['data']['LIDAR_TOP']
-            _, boxes, _ = self.nusc.get_sample_data(lidar_token, box_vis_level=box_vis_level)
-
-            # Get aggregated point cloud in lidar frame.
-            # The point cloud is transformed to the lidar frame for visualization purposes.
             chan = sd_record['channel']
             ref_chan = 'LIDAR_TOP'
-            pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
 
-            # Transform radar velocities (x is front, y is left), as these are not transformed when loading the point
-            # cloud.
-            radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
-            lidar_sd_record = self.nusc.get('sample_data', lidar_token)
-            lidar_cs_record = self.nusc.get('calibrated_sensor', lidar_sd_record['calibrated_sensor_token'])
-            velocities = pc.points[8:10, :]  # Compensated velocity
-            velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
-            velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
-            velocities = np.dot(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T, velocities)
-            velocities[2, :] = np.zeros(pc.points.shape[1])
+            if sensor_modality == 'lidar':
+                # Get aggregated point cloud in lidar frame.
+                pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+            else:
+                # Get aggregated point cloud in lidar frame.
+                # The point cloud is transformed to the lidar frame for visualization purposes.
+                pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+
+                # Transform radar velocities (x is front, y is left), as these are not transformed when loading the
+                # point cloud.
+                radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
+                lidar_sd_record = self.nusc.get('sample_data', lidar_token)
+                lidar_cs_record = self.nusc.get('calibrated_sensor', lidar_sd_record['calibrated_sensor_token'])
+                velocities = pc.points[8:10, :]  # Compensated velocity
+                velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
+                velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
+                velocities = np.dot(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T, velocities)
+                velocities[2, :] = np.zeros(pc.points.shape[1])
+
+            # By default we render the sample_data top down in the lidar frame.
+            # This is slightly inaccurate when rendering the map as the lidar frame may not be perfectly upright.
+            # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
+            if use_flat_vehicle_coordinates:
+                # Compute transformation matrices for lidar point cloud.
+                cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
+                pose_record = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
+                lid_to_ego = transform_matrix(translation=cs_record['translation'],
+                                              rotation=Quaternion(cs_record["rotation"]))
+
+                # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
+                ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+                rotation_vehicle_flat_from_vehicle = np.dot(
+                    Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
+                    Quaternion(pose_record['rotation']).inverse.rotation_matrix)
+                vehicle_flat_from_vehicle = np.eye(4)
+                vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
+                viewpoint = np.dot(vehicle_flat_from_vehicle, lid_to_ego)
+            else:
+                viewpoint = np.eye(4)
 
             # Init axes.
             if ax is None:
                 _, ax = plt.subplots(1, 1, figsize=(9, 9))
 
+            # Render map if requested.
+            if underlay_map:
+                self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit,
+                                            rotate_lidar=not use_flat_vehicle_coordinates, ax=ax)
+
             # Show point cloud.
-            points = view_points(pc.points[:3, :], np.eye(4), normalize=False)
+            points = view_points(pc.points[:3, :], viewpoint, normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
             colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
-            sc = ax.scatter(points[0, :], points[1, :], c=colors, s=3)
+            point_scale = 0.2 if sensor_modality == 'lidar' else 3.0
+            scatter = ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
 
             # Show velocities.
-            points_vel = view_points(pc.points[:3, :] + velocities, np.eye(4), normalize=False)
-            max_delta = 10
-            deltas_vel = points_vel - points
-            deltas_vel = 3 * deltas_vel  # Arbitrary scaling
-            deltas_vel = np.clip(deltas_vel, -max_delta, max_delta)  # Arbitrary clipping
-            colors_rgba = sc.to_rgba(colors)
-            for i in range(points.shape[1]):
-                ax.arrow(points[0, i], points[1, i], deltas_vel[0, i], deltas_vel[1, i], color=colors_rgba[i])
+            if sensor_modality == 'radar':
+                points_vel = view_points(pc.points[:3, :] + velocities, viewpoint, normalize=False)
+                deltas_vel = points_vel - points
+                deltas_vel = 6 * deltas_vel  # Arbitrary scaling
+                max_delta = 20
+                deltas_vel = np.clip(deltas_vel, -max_delta, max_delta)  # Arbitrary clipping
+                colors_rgba = scatter.to_rgba(colors)
+                for i in range(points.shape[1]):
+                    ax.arrow(points[0, i], points[1, i], deltas_vel[0, i], deltas_vel[1, i], color=colors_rgba[i])
 
             # Show ego vehicle.
             ax.plot(0, 0, 'x', color='red')
+
+            # Get boxes in lidar frame.
+            _, boxes, _ = self.nusc.get_sample_data(lidar_token, box_vis_level=box_vis_level,
+                                                    use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
 
             # Show boxes.
             if with_anns:
