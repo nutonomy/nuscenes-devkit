@@ -705,8 +705,8 @@ class NuScenesExplorer:
         sample = self.nusc.get('sample', sd_record['sample_token'])
         scene = self.nusc.get('scene', sample['scene_token'])
         log = self.nusc.get('log', scene['log_token'])
-        map = self.nusc.get('map', log['map_token'])
-        map_mask = map['mask']
+        map_ = self.nusc.get('map', log['map_token'])
+        map_mask = map_['mask']
         pose = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
 
         # Retrieve and crop mask.
@@ -729,10 +729,12 @@ class NuScenesExplorer:
                                      scaled_limit_px)
 
         # Init axes and show image.
-        # Flip background and foreground colors and change from black to gray color tone.
+        # Set background to white and foreground (semantic prior) to gray.
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(9, 9))
-        ax.imshow((255 - ego_centric_map) / 2, extent=[-axes_limit, axes_limit, -axes_limit, axes_limit],
+        ego_centric_map[ego_centric_map == map_mask.foreground] = 125
+        ego_centric_map[ego_centric_map == map_mask.background] = 255
+        ax.imshow(ego_centric_map, extent=[-axes_limit, axes_limit, -axes_limit, axes_limit],
                   cmap='gray', vmin=0, vmax=255)
 
     def render_sample_data(self,
@@ -759,7 +761,6 @@ class NuScenesExplorer:
                                              aligned to z-plane in the world.
                                              Warning: Enabling this will rotate the plot by 90 degrees.
         """
-
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
@@ -1255,10 +1256,10 @@ class NuScenesExplorer:
         close_poses = np.sum(dists < close_dist, axis=0)
 
         if len(np.array(map_mask.mask()).shape) == 3 and np.array(map_mask.mask()).shape[2] == 3:
-            # RGB Colour maps
+            # RGB Colour maps.
             mask = map_mask.mask()
         else:
-            # Monochrome maps
+            # Monochrome maps.
             # Set the colors for the mask.
             mask = Image.fromarray(map_mask.mask())
             mask = np.array(mask)
@@ -1283,7 +1284,7 @@ class NuScenesExplorer:
         plt.rcParams['figure.facecolor'] = 'black'
         color_bar_ticklabels = plt.getp(color_bar.ax.axes, 'yticklabels')
         plt.setp(color_bar_ticklabels, color='k')
-        plt.rcParams['figure.facecolor'] = 'white'  # Reset for future plots
+        plt.rcParams['figure.facecolor'] = 'white'  # Reset for future plots.
 
         if out_path is not None:
             plt.savefig(out_path)
