@@ -649,15 +649,14 @@ class NuScenesExplorer:
             else:
                 radar_data[channel] = token
 
-        num_radar_plots = 1 if len(radar_data) > 0 else 0
-
         # Create plots.
+        num_radar_plots = 1 if len(radar_data) > 0 else 0
         n = num_radar_plots + len(nonradar_data)
         cols = 2
         fig, axes = plt.subplots(int(np.ceil(n/cols)), cols, figsize=(16, 24))
 
+        # Plot radars into a single subplot.
         if len(radar_data) > 0:
-            # Plot radars into a single subplot.
             ax = axes[0, 0]
             for i, (_, sd_token) in enumerate(radar_data.items()):
                 self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
@@ -667,10 +666,10 @@ class NuScenesExplorer:
         for (_, sd_token), ax in zip(nonradar_data.items(), axes.flatten()[num_radar_plots:]):
             self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
 
+        # Change plot settings and write to disk.
         axes.flatten()[-1].axis('off')
         plt.tight_layout()
         fig.subplots_adjust(wspace=0, hspace=0)
-
         if out_path is not None:
             plt.savefig(out_path)
 
@@ -759,7 +758,7 @@ class NuScenesExplorer:
         :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
                                              aligned to z-plane in the world.
-                                             Warning: Enabling this will rotate the plot by 90 degrees.
+                                             Warning: Enabling this will rotate the plot by ~90 degrees.
         """
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
@@ -772,10 +771,10 @@ class NuScenesExplorer:
             ref_chan = 'LIDAR_TOP'
 
             if sensor_modality == 'lidar':
-                # Get aggregated point cloud in lidar frame.
+                # Get aggregated lidar point cloud in lidar frame.
                 pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
             else:
-                # Get aggregated point cloud in lidar frame.
+                # Get aggregated radar point cloud in lidar frame.
                 # The point cloud is transformed to the lidar frame for visualization purposes.
                 pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
 
