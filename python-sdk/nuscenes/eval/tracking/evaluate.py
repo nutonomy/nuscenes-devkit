@@ -10,14 +10,14 @@ import time
 from typing import Tuple, Dict, Any
 
 from nuscenes import NuScenes
-from nuscenes.eval.tracking.algo import accumulate
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import MetricDataList
-from nuscenes.eval.tracking.data_classes import TrackingMetrics
 from nuscenes.eval.common.loaders import load_prediction, load_gt
 from nuscenes.eval.common.loaders import add_center_dist, filter_eval_boxes
-from nuscenes.eval.detection.render import visualize_sample
+from nuscenes.eval.tracking.algo import accumulate
+from nuscenes.eval.tracking.data_classes import TrackingMetrics
+from nuscenes.eval.tracking.render import visualize_sample
 from nuscenes.eval.tracking.data_classes import TrackingConfig
 
 

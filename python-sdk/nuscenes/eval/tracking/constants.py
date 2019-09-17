@@ -4,6 +4,8 @@
 
 TRACKING_NAMES = ['car', 'truck', 'bus', 'trailer', 'pedestrian', 'motorcycle', 'bicycle']
 
+TRACKING_METRICS = ['AMOTA', 'AMOTP', 'MOTA', 'MOTP', 'mAP']  # TODO: extend
+
 PRETTY_TRACKING_NAMES = {'car': 'Car',
                          'truck': 'Truck',
                          'bus': 'Bus',

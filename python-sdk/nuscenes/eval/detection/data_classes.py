@@ -7,8 +7,8 @@ from typing import List, Dict
 
 import numpy as np
 
-from nuscenes.eval.detection.constants import DETECTION_NAMES, TP_METRICS
 from nuscenes.eval.common.data_classes import MetricData
+from nuscenes.eval.detection.constants import DETECTION_NAMES, TP_METRICS
 
 
 class DetectionConfig:
@@ -85,7 +85,7 @@ class DetectionMetricData(MetricData):
                  orient_err: np.array,
                  attr_err: np.array):
 
-        # Assert lengths
+        # Assert lengths.
         assert len(recall) == self.nelem
         assert len(precision) == self.nelem
         assert len(confidence) == self.nelem
@@ -95,7 +95,7 @@ class DetectionMetricData(MetricData):
         assert len(orient_err) == self.nelem
         assert len(attr_err) == self.nelem
 
-        # Assert ordering
+        # Assert ordering.
         assert all(confidence == sorted(confidence, reverse=True))  # Confidences should be descending.
         assert all(recall == sorted(recall))  # Recalls should be ascending.
 
@@ -184,7 +184,7 @@ class DetectionMetricData(MetricData):
 
 
 class DetectionMetrics:
-    """ Stores average precision and true positive metrics. Provides properties to summarize. """
+    """ Stores average precision and true positive metric results. Provides properties to summarize. """
 
     def __init__(self, cfg: DetectionConfig):
 
@@ -225,7 +225,6 @@ class DetectionMetrics:
         for metric_name in TP_METRICS:
             class_errors = []
             for detection_name in self.cfg.class_names:
-
                 class_errors.append(self.get_label_tp(detection_name, metric_name))
 
             errors[metric_name] = float(np.nanmean(class_errors))
@@ -251,10 +250,9 @@ class DetectionMetrics:
     @property
     def nd_score(self) -> float:
         """
-        Compute the nuTonomy detection score (NDS, weighted sum of the individual scores).
+        Compute the nuScenes detection score (NDS, weighted sum of the individual scores).
         :return: The NDS.
         """
-
         # Summarize.
         total = float(self.cfg.mean_ap_weight * self.mean_ap + np.sum(list(self.tp_scores.values())))
 
@@ -264,15 +262,17 @@ class DetectionMetrics:
         return total
 
     def serialize(self):
-        return {'label_aps': self._label_aps,
-                'mean_dist_aps': self.mean_dist_aps,
-                'mean_ap': self.mean_ap,
-                'label_tp_errors': self._label_tp_errors,
-                'tp_errors': self.tp_errors,
-                'tp_scores': self.tp_scores,
-                'nd_score': self.nd_score,
-                'eval_time': self.eval_time,
-                'cfg': self.cfg.serialize()}
+        return {
+            'label_aps': self._label_aps,
+            'mean_dist_aps': self.mean_dist_aps,
+            'mean_ap': self.mean_ap,
+            'label_tp_errors': self._label_tp_errors,
+            'tp_errors': self.tp_errors,
+            'tp_scores': self.tp_scores,
+            'nd_score': self.nd_score,
+            'eval_time': self.eval_time,
+            'cfg': self.cfg.serialize()
+        }
 
     @classmethod
     def deserialize(cls, content):
