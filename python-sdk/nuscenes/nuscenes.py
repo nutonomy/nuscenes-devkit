@@ -760,7 +760,7 @@ class NuScenesExplorer:
         :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
             aligned to z-plane in the world.
-            Note: Previously this method did not use flat vehicle coordinates which can lead to small errors when the
+            Note: Previously this method did not use flat vehicle coordinates, which can lead to small errors when the
                   vertical axis of the global frame and lidar are not aligned. The new setting is more correct and
                   rotates the plot by ~90 degrees.
         """
