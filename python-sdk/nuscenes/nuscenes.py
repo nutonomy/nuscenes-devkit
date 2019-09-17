@@ -759,8 +759,10 @@ class NuScenesExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
-                                             aligned to z-plane in the world.
-                                             Warning: Enabling this will rotate the plot by ~90 degrees.
+            aligned to z-plane in the world.
+            Note: Previously this method did not use flat vehicle coordinates which can lead to small errors when the
+                  vertical axis of the global frame and lidar are not aligned. The new setting is more correct and
+                  rotates the plot by ~90 degrees.
         """
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
@@ -819,7 +821,7 @@ class NuScenesExplorer:
             # Render map if requested.
             if underlay_map:
                 self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit,
-                                            rotate_lidar=not use_flat_vehicle_coordinates, ax=ax)
+                                            ego_to_lidar=not use_flat_vehicle_coordinates, ax=ax)
 
             # Show point cloud.
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
