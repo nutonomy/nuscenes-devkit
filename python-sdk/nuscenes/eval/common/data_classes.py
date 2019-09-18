@@ -205,7 +205,7 @@ class MetricDataList:
         """ Get all the MetricData entries for a certain match_distance. """
         return [(md, detection_name) for (detection_name, dist), md in self.md.items() if dist == dist_th]
 
-    def set(self, detection_name: str, match_distance: float, data: MetricData):
+    def set(self, detection_name: str, match_distance: float, data: MetricData): #TODO: not match_distance for tracking
         """ Sets the MetricData entry for a certain detection_name and match_distance. """
         self.md[(detection_name, match_distance)] = data
 

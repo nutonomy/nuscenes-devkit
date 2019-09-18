@@ -294,7 +294,6 @@ class DetectionMetrics:
         return metrics
 
     def __eq__(self, other):
-
         eq = True
         eq = eq and self._label_aps == other._label_aps
         eq = eq and self._label_tp_errors == other._label_tp_errors

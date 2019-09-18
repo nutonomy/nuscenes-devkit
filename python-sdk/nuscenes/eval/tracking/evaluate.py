@@ -13,12 +13,10 @@ from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import MetricDataList
-from nuscenes.eval.common.loaders import load_prediction, load_gt
-from nuscenes.eval.common.loaders import add_center_dist, filter_eval_boxes
-from nuscenes.eval.tracking.algo import accumulate
-from nuscenes.eval.tracking.data_classes import TrackingMetrics
+from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.tracking.algo import accumulate, get_score_ths
+from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig
 from nuscenes.eval.tracking.render import visualize_sample
-from nuscenes.eval.tracking.data_classes import TrackingConfig
 
 
 class TrackingEval:
@@ -75,8 +73,8 @@ class TrackingEval:
         # Load data.
         if verbose:
             print('Initializing nuScenes tracking evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)  # TODO: Modify for tracking
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)  # TODO: Modify for tracking
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predicted tracks."
@@ -108,10 +106,11 @@ class TrackingEval:
         if self.verbose:
             print('Accumulating metric data')
         metric_data_list = MetricDataList()
+        score_ths = get_score_ths()
         for class_name in self.cfg.class_names:
-            for dist_th in self.cfg.dist_ths:
-                md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, dist_th)
-                metric_data_list.set(class_name, dist_th, md)
+            for score_th in score_ths:
+                md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, self.cfg.dist_th_tp)
+                metric_data_list.set(class_name, score_th, md)
 
         # -----------------------------------
         # Step 2: Calculate metrics from the data.
@@ -119,10 +118,21 @@ class TrackingEval:
         if self.verbose:
             print('Calculating metrics')
         metrics = TrackingMetrics(self.cfg)
-        for class_name in self.cfg.class_names:
-            for dist_th in self.cfg.dist_ths:
-                pass # TODO
 
+        # Sweep over all thresholds to find best threshold and compute AMOT* metrics.
+        for class_name in self.cfg.class_names:
+            for score_th in score_ths:
+                pass  # TODO
+
+        # Find best threshold
+        pass  # TOOD
+
+        # Compute legacy metrics using best threshold.
+        pass  # TOOD
+
+        # Compute detection metrics.
+
+        # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
 
         return metrics, metric_data_list

@@ -14,7 +14,7 @@ def accumulate(gt_boxes: EvalBoxes,
                class_name: str,
                dist_fcn_name: str,
                dist_th: float,
-               verbose: bool = False):
+               verbose: bool = False) -> DetectionMetricData:
     """
     Average Precision over predefined different recall thresholds for a single distance threshold.
     The recall/conf thresholds and other raw metrics will be used in secondary metrics.

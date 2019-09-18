@@ -123,11 +123,13 @@ class DetectionEval:
             print('Calculating metrics')
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
+            # Compute APs.
             for dist_th in self.cfg.dist_ths:
                 metric_data = metric_data_list[(class_name, dist_th)]
                 ap = calc_ap(metric_data, self.cfg.min_recall, self.cfg.min_precision)
                 metrics.add_label_ap(class_name, dist_th, ap)
 
+            # Compute TP metrics.
             for metric_name in TP_METRICS:
                 metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
                 if class_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
@@ -138,6 +140,7 @@ class DetectionEval:
                     tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
+        # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
 
         return metrics, metric_data_list
