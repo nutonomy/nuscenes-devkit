@@ -1,6 +1,5 @@
 # nuScenes tracking task
 In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes tracking task.
-<!--- TODO: add tracking visualization -->
 
 ## Overview
 - [Introduction](#introduction)
@@ -90,7 +89,7 @@ sample_result {
     "size":           <float> [3]   -- Estimated bounding box size in meters: width, length, height.
     "rotation":       <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
-    “tracking_id”:    <int>         -- Unique object id that is used to identify an object track across samples.
+    "tracking_id":    <int>         -- Unique object id that is used to identify an object track across samples.
     "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian. Note that the tracking_name cannot change throughout a track.
     "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name. We average over frame level scores to compute the track level score. The score is used to determine positive and negative tracks via thresholding.
 }
@@ -175,7 +174,7 @@ Average over the MOTA [3] metric (see below) at different recall thresholds.
 For the traditional MOTA formulation and a recall of 10% there are at least 90% false negatives, which may lead to negative MOTAs.
 Therefore the contribution of identity switches and false positives becomes negligible at low recall values.
 In `MOTA'` we include the term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
-These guarantee that the values are in `[0, 1]` and brings the three error types into a similar value range.
+These guarantee that the values span the entire `[0, 1]` range and brings the three error types into a similar value range.
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTA'}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTA'}" title="\dpi{400} \tiny \mathit{AMOTA} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1} \, ... \, \, 1\}} \mathit{MOTA'}" /></a>
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{MOTA'}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;&plus;&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\mathit{MOTA'}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;&plus;&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" title="\mathit{MOTA'} = \max (0,\; 1 \, - \, \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r + (1-r) * \mathit{P}}{r * \mathit{P}})" /></a>
 
@@ -226,8 +225,6 @@ Note that these numbers are measured on the val split and therefore not identica
 |   PointPillars [5] | 29.5 | 44.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
 |   Megvii [6]       | 51.9 | 62.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
 |   Mapillary [7]    | 29.8 | 36.9 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
-
-<!-- |   PointRCNN [8]    | TBD  | TBD  | TBD   | TBD   | TBD          | -->
 
 #### Overfitting
 Some object detection methods overfit to the training data.
