@@ -21,7 +21,7 @@ Here we describe the challenge, the rules, the classes, evaluation metrics and g
 
 ## Authors
 The tracking task and challenge are a joint work between **Aptiv** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
-They are based upon the [nuScenes dataset](http://www.nuScenes.org) [1] and the [3D MOT benchmark and baseline](https://github.com/xinshuoweng/AB3DMOT) defined in [2].
+They are based upon the [nuScenes dataset](http://www.nuScenes.org) [1] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in [2].
 
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](#leaderboard) all-year round.
@@ -31,13 +31,13 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
-Submission will open October 1 and closes December 2.
+Submission will open October 1 and close December 2.
 The leaderboard will remain private until the end of the challenge.
 Results and winners will be announced at the [AI Driving Olympics](http://www.driving-olympics.ai/) Workshop (AIDO) at NIPS 2019.
 
 ## Submission rules
 ### Tracking-specific rules
-* We perform 3D Multi Object Tracking (MOT) as in [2]. 
+* We perform 3D Multi Object Tracking (MOT) as in [2], rather than 2D MOT as in KITTI [4]. 
 * Possible input modalities are camera, lidar and radar.
 * We perform online tracking [2]. This means that the tracker may only use past and current, but not future sensor data.
 * Noisy object detections are provided below (including for the test split), but do not have to be used.
@@ -60,7 +60,7 @@ We define a standardized tracking result format that serves as an input to the e
 Results are evaluated for each 2Hz keyframe, also known as `sample`.
 The tracking results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
 For the train and val sets the evaluation can be performed by the user on their local machine.
-For the test set the user needs to zip the single JSON result file and submit it to the official evaluation server.
+For the test set the user needs to zip the single JSON result file and submit it to the official evaluation server (see above).
 The JSON file includes meta data `meta` on the type of inputs used for this method.
 Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
 Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is tracked.
@@ -91,7 +91,9 @@ sample_result {
     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
     "tracking_id":    <int>         -- Unique object id that is used to identify an object track across samples.
     "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian. Note that the tracking_name cannot change throughout a track.
-    "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name. We average over frame level scores to compute the track level score. The score is used to determine positive and negative tracks via thresholding.
+    "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name.
+                                       We average over frame level scores to compute the track level score.
+                                       The score is used to determine positive and negative tracks via thresholding.
 }
 ```
 Note that except for the `tracking_*` fields the result format is identical to the [detection challenge](https://www.nuscenes.org/object-detection).
@@ -100,7 +102,7 @@ Note that except for the `tracking_*` fields the result format is identical to t
 The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
-From these *detection challenge classes* we further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
+From these [detection challenge](https://www.nuscenes.org/object-detection) classes we further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
 Below we show the table of the 7 tracking classes and their counterparts in the nuScenes dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
 
@@ -209,13 +211,13 @@ Furthermore we propose a number of additional metrics:
 - **mAP / TP metrics**: Analog to the detection challenge, we compute the mean Average Precision (mAP) and True Positive (TP) metrics: scale, translation, orientation and velocity error, but not attributes. The purpose is to show the improvement that a tracker provides over the underlying object detection method (if any). Note that three static classes from the detection challenge were removed and therefore results are only comparable per class.
 
 ### Configuration
-The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/nips_2019.json`.
+The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/tracking_nips_2019.json`.
 
 ### Baselines
 To allow the user focus on the tracking problem, we release object detections from state-of-the-art methods as listed on the [detection leaderboard](https://www.nuscenes.org/object-detection).
 We thank Alex Lang (Aptiv), Benjin Zhu (Megvii) and Andrea Simonelli (Mapillary) for providing these.
 The use of these detections is entirely optional.
-The detections on the train, val and test splits can be [downloaded from this link](https://drive.google.com/open?id=1BHG47d_KBVP9ht4iW57X3rvBvonIuCJm).
+The detections on the train, val and test splits can be downloaded from the table below.
 Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* [2] and uses each of the provided detections.
 The results for object detection and tracking can be seen below.
 Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
@@ -234,7 +236,7 @@ To remedy this problem we have split the existing `train` set into `train_detect
 Both splits have the same distribution of Singapore, Boston, night and rain data.
 You can use these splits to train your own detection and tracking algorithms.
 The use of these splits is entirely optional.
-The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline [2] is not learning-based.
+The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline [2] is not learning-based and therefore not prone to overfitting.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the tracking task.
