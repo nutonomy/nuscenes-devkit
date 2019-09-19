@@ -676,15 +676,11 @@ class NuScenesExplorer:
     def render_ego_centric_map(self,
                                sample_data_token: str,
                                axes_limit: float = 40,
-                               ego_to_lidar: bool = False,
                                ax: Axes = None) -> None:
         """
         Render map centered around the associated ego pose.
-        Warning: This method is not exact when using `ego_to_lidar`, as the lidar coordinate frame is not perfectly
-                 aligned with the vertical axis when going up a slope.
         :param sample_data_token: Sample_data token.
         :param axes_limit: Axes limit measured in meters.
-        :param ego_to_lidar: Whether to approximately rotate the map from ego to the lidar frame (0 ~ up).
         :param ax: Axes onto which to render.
         """
 
@@ -719,9 +715,6 @@ class NuScenesExplorer:
         # Rotate image.
         ypr_rad = Quaternion(pose['rotation']).yaw_pitch_roll
         yaw_deg = -math.degrees(ypr_rad[0])
-        if ego_to_lidar:
-            # Note that this is an approximation. The rotation between ego and lidar frame is not exactly 90 degrees.
-            yaw_deg += 90
         rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
 
         # Cop image.
@@ -759,10 +752,9 @@ class NuScenesExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
-            aligned to z-plane in the world.
-            Note: Previously this method did not use flat vehicle coordinates, which can lead to small errors when the
-                  vertical axis of the global frame and lidar are not aligned. The new setting is more correct and
-                  rotates the plot by ~90 degrees.
+            aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
+            can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
+            setting is more correct and rotates the plot by ~90 degrees.
         """
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
@@ -820,8 +812,9 @@ class NuScenesExplorer:
 
             # Render map if requested.
             if underlay_map:
-                self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit,
-                                            ego_to_lidar=not use_flat_vehicle_coordinates, ax=ax)
+                assert use_flat_vehicle_coordinates, 'Error: underlay_map requires use_flat_vehicle_coordinates, as ' \
+                                                     'otherwise the location does not correspond to the map!'
+                self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit, ax=ax)
 
             # Show point cloud.
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
