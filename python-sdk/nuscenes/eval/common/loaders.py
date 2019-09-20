@@ -10,14 +10,16 @@ from pyquaternion import Quaternion
 import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.common.data_classes import DetectionBox, EvalBoxes
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.detection.data_classes import DetectionBox
 from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.splits import create_splits_scenes
 
 
-def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool = False) -> Tuple[EvalBoxes, Dict]:
+def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbose: bool = False) \
+        -> Tuple[EvalBoxes, Dict]:
     """ Loads object predictions from file. """
 
     # Load from file and check that the format is correct.
@@ -27,7 +29,7 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool =
                               'See https://www.nuscenes.org/object-detection for more information.'
 
     # Deserialize results and get meta data.
-    all_results = EvalBoxes.deserialize(data['results'], DetectionBox)  # TODO: adapt for tracking
+    all_results = EvalBoxes.deserialize(data['results'], box_cls)
     meta = data['meta']
     if verbose:
         print("Loaded results from {}. Found detections for {} samples."
@@ -41,7 +43,7 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool =
     return all_results, meta
 
 
-def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
+def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
     """ Loads ground truth boxes from DB. """
 
     # Init.
@@ -111,7 +113,7 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
                 raise Exception('Error: GT annotations must not have more than one attribute!')
 
             sample_boxes.append(
-                DetectionBox(  # TODO: Adapt for tracking.
+                box_cls(  # TODO: Adapt for tracking.
                     sample_token=sample_token,
                     translation=sample_annotation['translation'],
                     size=sample_annotation['size'],

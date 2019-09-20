@@ -8,8 +8,6 @@ import abc
 
 import numpy as np
 
-from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES
-
 
 class EvalBox(abc.ABC):
     """ Abstract base class for data classes used during detection evaluation. Can be a prediction or ground truth."""
@@ -64,79 +62,6 @@ class EvalBox(abc.ABC):
     @abc.abstractmethod
     def deserialize(cls, content: dict):
         pass
-
-
-class DetectionBox(EvalBox):
-    """ Data class used during detection evaluation. Can be a prediction or ground truth."""
-
-    def __init__(self,
-                 sample_token: str = "",
-                 translation: Tuple[float, float, float] = (0, 0, 0),
-                 size: Tuple[float, float, float] = (0, 0, 0),
-                 rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
-                 velocity: Tuple[float, float] = (0, 0),
-                 detection_name: str = "car",
-                 attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
-                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
-                 detection_score: float = -1.0,  # Only applies to predictions.
-                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
-
-        super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
-
-        assert detection_name is not None, 'Error: detection_name cannot be empty!'
-        assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
-
-        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == '', \
-            'Error: Unknown attribute_name %s' % attribute_name
-
-        assert type(detection_score) == float, 'Error: detection_score must be a float!'
-        assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
-
-        # Assign.
-        self.detection_name = detection_name
-        self.attribute_name = attribute_name
-        self.detection_score = detection_score
-
-    def __eq__(self, other):
-        return (self.sample_token == other.sample_token and
-                self.translation == other.translation and
-                self.size == other.size and
-                self.rotation == other.rotation and
-                self.velocity == other.velocity and
-                self.detection_name == other.detection_name and
-                self.attribute_name == other.attribute_name and
-                self.ego_dist == other.ego_dist and
-                self.detection_score == other.detection_score and
-                self.num_pts == other.num_pts)
-
-    def serialize(self) -> dict:
-        """ Serialize instance into json-friendly format. """
-        return {
-            'sample_token': self.sample_token,
-            'translation': self.translation,
-            'size': self.size,
-            'rotation': self.rotation,
-            'velocity': self.velocity,
-            'detection_name': self.detection_name,
-            'attribute_name': self.attribute_name,
-            'ego_dist': self.ego_dist,
-            'detection_score': self.detection_score,
-            'num_pts': self.num_pts
-        }
-
-    @classmethod
-    def deserialize(cls, content: dict):
-        """ Initialize from serialized content. """
-        return cls(sample_token=content['sample_token'],
-                   translation=tuple(content['translation']),
-                   size=tuple(content['size']),
-                   rotation=tuple(content['rotation']),
-                   velocity=tuple(content['velocity']),
-                   detection_name=content['detection_name'],
-                   attribute_name=content['attribute_name'],
-                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
-                   detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),
-                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
 
 
 class EvalBoxes:

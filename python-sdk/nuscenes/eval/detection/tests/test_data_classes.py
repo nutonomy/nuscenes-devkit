@@ -6,10 +6,9 @@ import json
 import os
 import unittest
 
+from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics
-from nuscenes.eval.common.data_classes import DetectionBox, EvalBoxes, MetricDataList
-
+from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics, DetectionBox
 
 class TestDetectionConfig(unittest.TestCase):
 

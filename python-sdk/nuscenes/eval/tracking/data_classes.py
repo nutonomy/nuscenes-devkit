@@ -2,12 +2,13 @@
 # Code written by Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-from typing import List, Dict
+from collections import defaultdict
+from typing import List, Dict, Tuple
 
 import numpy as np
 
-from nuscenes.eval.common.data_classes import MetricData
-from nuscenes.eval.tracking.constants import TRACKING_NAMES, TRACKING_METRICS
+from nuscenes.eval.common.data_classes import MetricData, EvalBox
+from nuscenes.eval.tracking.constants import TRACKING_NAMES
 
 
 class TrackingConfig:
@@ -180,3 +181,73 @@ class TrackingMetrics:
         eq = eq and self.cfg == other.cfg
 
         return eq
+
+
+class TrackingBox(EvalBox):
+    """ Data class used during tracking evaluation. Can be a prediction or ground truth."""
+
+    def __init__(self,
+                 sample_token: str = "",
+                 translation: Tuple[float, float, float] = (0, 0, 0),
+                 size: Tuple[float, float, float] = (0, 0, 0),
+                 rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
+                 velocity: Tuple[float, float] = (0, 0),
+                 tracking_id: int = -1,
+                 tracking_name: str = "car",  # TODO: set to ''
+                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
+                 tracking_score: float = -1.0,  # Only applies to predictions.
+                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+
+        super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
+
+        assert tracking_name is not None, 'Error: tracking_name cannot be empty!'
+        assert tracking_name in TRACKING_NAMES, 'Error: Unknown tracking_name %s' % tracking_name
+
+        assert type(tracking_score) == float, 'Error: tracking_score must be a float!'
+        assert not np.any(np.isnan(tracking_score)), 'Error: tracking_score may not be NaN!'
+
+        # Assign.
+        self.tracking_id = tracking_id
+        self.tracking_name = tracking_name
+        self.tracking_score = tracking_score
+
+    def __eq__(self, other):
+        return (self.sample_token == other.sample_token and
+                self.translation == other.translation and
+                self.size == other.size and
+                self.rotation == other.rotation and
+                self.velocity == other.velocity and
+                self.ego_dist == other.ego_dist and
+                self.num_pts == other.num_pts and
+                self.tracking_id == other.tracking_id and
+                self.tracking_name == other.tracking_name and
+                self.tracking_score == other.tracking_score)
+
+    def serialize(self) -> dict:
+        """ Serialize instance into json-friendly format. """
+        return {
+            'sample_token': self.sample_token,
+            'translation': self.translation,
+            'size': self.size,
+            'rotation': self.rotation,
+            'velocity': self.velocity,
+            'tracking_id': self.tracking_id,
+            'tracking_name': self.tracking_name,
+            'ego_dist': self.ego_dist,
+            'tracking_score': self.tracking_score,
+            'num_pts': self.num_pts
+        }
+
+    @classmethod
+    def deserialize(cls, content: dict):
+        """ Initialize from serialized content. """
+        return cls(sample_token=content['sample_token'],
+                   translation=tuple(content['translation']),
+                   size=tuple(content['size']),
+                   rotation=tuple(content['rotation']),
+                   velocity=tuple(content['velocity']),
+                   tracking_id=content['tracking_id'],
+                   tracking_name=content['tracking_name'],
+                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   tracking_score=-1.0 if 'tracking_score' not in content else float(content['tracking_score']),
+                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))

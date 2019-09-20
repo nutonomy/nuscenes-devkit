@@ -2,14 +2,14 @@
 # Code written by Sourabh Vora, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-import json
 import os
 import unittest
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.common.data_classes import DetectionBox, EvalBoxes
+from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.loaders import filter_eval_boxes
+from nuscenes.eval.detection.data_classes import DetectionBox
 
 
 class TestLoader(unittest.TestCase):

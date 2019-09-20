@@ -14,7 +14,7 @@ import numpy as np
 from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics
+from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics, DetectionBox
 from nuscenes.eval.common.data_classes import MetricDataList, EvalBoxes
 from nuscenes.eval.common.loaders import load_prediction, load_gt
 from nuscenes.eval.common.loaders import add_center_dist, filter_eval_boxes
@@ -78,8 +78,9 @@ class DetectionEval:
         # Load data.
         if verbose:
             print('Initializing nuScenes detection evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, DetectionBox,
+                                                     verbose=verbose)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, DetectionBox, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."

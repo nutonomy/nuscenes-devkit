@@ -15,7 +15,7 @@ from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import MetricDataList
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.tracking.algo import accumulate, get_score_ths
-from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig
+from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig, TrackingBox
 from nuscenes.eval.tracking.render import visualize_sample
 
 
@@ -73,8 +73,9 @@ class TrackingEval:
         # Load data.
         if verbose:
             print('Initializing nuScenes tracking evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, TrackingBox,
+                                                     verbose=verbose)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, TrackingBox, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predicted tracks."
