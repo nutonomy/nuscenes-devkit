@@ -44,7 +44,7 @@ class TestMain(unittest.TestCase):
             if tmp is not None and np.random.rand() < .9:
                 return tmp
             else:
-                return class_names[np.random.randint(0, len(class_names))]
+                return class_names[np.random.randint(0, len(class_names) - 1)]
 
         def random_attr(name: str) -> str:
             """

@@ -45,7 +45,7 @@ class TestMain(unittest.TestCase):
             if tmp is not None and np.random.rand() < .9:
                 return tmp
             else:
-                return class_names[np.random.randint(0, len(class_names))]
+                return class_names[np.random.randint(0, len(class_names) - 1)]
 
         def random_id(instance_token: str) -> int:
             # Alter 10% of the valid ids to be a random int, which likely corresponds to a new track.
