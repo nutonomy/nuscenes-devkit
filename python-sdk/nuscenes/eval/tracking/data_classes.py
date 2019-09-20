@@ -54,7 +54,7 @@ class TrackingConfig:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
         return cls(content['class_range'],
                    content['dist_fcn'],
@@ -123,7 +123,7 @@ class TrackingMetricData(MetricData):
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
         return cls(recall=np.array(content['recall']),
                    precision=np.array(content['precision']),
@@ -161,7 +161,7 @@ class TrackingMetrics:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
 
         cfg = TrackingConfig.deserialize(content['cfg'])

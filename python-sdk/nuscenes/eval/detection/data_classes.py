@@ -58,7 +58,7 @@ class DetectionConfig:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
         return cls(content['class_range'],
                    content['dist_fcn'],
@@ -148,7 +148,7 @@ class DetectionMetricData(MetricData):
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
         return cls(recall=np.array(content['recall']),
                    precision=np.array(content['precision']),
@@ -275,7 +275,7 @@ class DetectionMetrics:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
 
         cfg = DetectionConfig.deserialize(content['cfg'])

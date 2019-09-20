@@ -8,7 +8,7 @@ import unittest
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes
+from nuscenes.eval.common.data_classes import DetectionBox, EvalBoxes
 from nuscenes.eval.common.loaders import filter_eval_boxes
 
 
@@ -34,7 +34,7 @@ class TestLoader(unittest.TestCase):
         # 'rotation': [0.3473693995546558, 0.0, 0.0, 0.9377283723195315]
 
         # Test bicycle filtering by creating a box at the same position as the bike rack.
-        box1 = EvalBox(sample_token=sample_token,
+        box1 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle')
@@ -47,7 +47,7 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(len(filtered_boxes.boxes[sample_token]), 0)    # box1 should be filtered.
 
         # Test motorcycle filtering by creating a box at the same position as the bike rack.
-        box2 = EvalBox(sample_token=sample_token,
+        box2 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='motorcycle')
@@ -60,7 +60,7 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(len(filtered_boxes.boxes[sample_token]), 0)    # both box1 and box2 should be filtered.
 
         # Now create a car at the same position as the bike rack.
-        box3 = EvalBox(sample_token=sample_token,
+        box3 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='car')
@@ -74,7 +74,7 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(filtered_boxes.boxes[sample_token][0].detection_name, 'car')
 
         # Now add a bike outside the bike rack.
-        box4 = EvalBox(sample_token=sample_token,
+        box4 = DetectionBox(sample_token=sample_token,
                        translation=(68.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle')
@@ -90,7 +90,7 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
 
         # Add another bike on the bike rack center but set the ego_dist higher than what's defined in max_dist
-        box5 = EvalBox(sample_token=sample_token,
+        box5 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle',
@@ -106,7 +106,7 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
 
         # Add another bike on the bike rack center but set the num_pts to be zero so that it gets filtered.
-        box6 = EvalBox(sample_token=sample_token,
+        box6 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle',
@@ -124,37 +124,37 @@ class TestLoader(unittest.TestCase):
         # Check for a sample where there are no bike racks. Everything should be filtered correctly.
         sample_token = 'ca9a282c9e77460f8360f564131a8af5'   # This sample has no bike-racks.
 
-        box1 = EvalBox(sample_token=sample_token,
+        box1 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle',
                        ego_dist=25.0)
 
-        box2 = EvalBox(sample_token=sample_token,
+        box2 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='motorcycle',
                        ego_dist=45.0)
 
-        box3 = EvalBox(sample_token=sample_token,
+        box3 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='car',
                        ego_dist=45.0)
 
-        box4 = EvalBox(sample_token=sample_token,
+        box4 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='car',
                        ego_dist=55.0)
 
-        box5 = EvalBox(sample_token=sample_token,
+        box5 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle',
                        num_pts=1)
 
-        box6 = EvalBox(sample_token=sample_token,
+        box6 = DetectionBox(sample_token=sample_token,
                        translation=(683.681, 1592.002, 0.809),
                        size=(1, 1, 1),
                        detection_name='bicycle',

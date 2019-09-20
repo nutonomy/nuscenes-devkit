@@ -11,7 +11,7 @@ from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.common.data_classes import EvalBoxes, EvalBox, MetricDataList, MetricData
+from nuscenes.eval.common.data_classes import EvalBoxes, DetectionBox, MetricDataList, MetricData
 from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 from nuscenes.eval.common.config import config_factory
@@ -48,7 +48,7 @@ class TestAlgo(unittest.TestCase):
 
             for box_itt in range(ngt):
 
-                this_gt.append(EvalBox(
+                this_gt.append(DetectionBox(
                     sample_token=str(sample_itt),
                     translation=tuple(list(np.random.rand(2)*15) + [0.0]),
                     size=tuple(np.random.rand(3)*4),
@@ -66,7 +66,7 @@ class TestAlgo(unittest.TestCase):
 
             for box_itt in range(npred):
 
-                this_pred.append(EvalBox(
+                this_pred.append(DetectionBox(
                     sample_token=str(sample_itt),
                     translation=tuple(list(np.random.rand(2) * 10) + [0.0]),
                     size=tuple(np.random.rand(3) * 4),
@@ -163,7 +163,7 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             gt_boxes = []
             for gt in data:
                 gt = {**defaults, **gt}  # The defaults will be replaced by gt if given.
-                eb = EvalBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'], rotation=gt['rot'],
+                eb = DetectionBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'], rotation=gt['rot'],
                              detection_name=gt['name'], attribute_name=gt['attr'], velocity=gt['vel'])
                 gt_boxes.append(eb)
 
@@ -175,7 +175,7 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             pred_boxes = []
             for pred in data:
                 pred = {**defaults, **pred}
-                eb = EvalBox(sample_token=sample_token, translation=pred['trans'], size=pred['size'],
+                eb = DetectionBox(sample_token=sample_token, translation=pred['trans'], size=pred['size'],
                              rotation=pred['rot'], detection_name=pred['name'], detection_score=pred['score'],
                              velocity=pred['vel'], attribute_name=pred['attr'])
                 pred_boxes.append(eb)

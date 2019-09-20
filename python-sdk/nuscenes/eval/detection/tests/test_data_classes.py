@@ -8,7 +8,7 @@ import unittest
 
 from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics
-from nuscenes.eval.common.data_classes import EvalBox, EvalBoxes, MetricDataList
+from nuscenes.eval.common.data_classes import DetectionBox, EvalBoxes, MetricDataList
 
 
 class TestDetectionConfig(unittest.TestCase):
@@ -31,12 +31,12 @@ class TestDetectionConfig(unittest.TestCase):
         self.assertEqual(detect_cfg, recovered)
 
 
-class TestEvalBox(unittest.TestCase):
+class TestDetectionBox(unittest.TestCase):
 
     def test_serialization(self):
         """ Test that instance serialization protocol works with json encoding. """
-        box = EvalBox()
-        recovered = EvalBox.deserialize(json.loads(json.dumps(box.serialize())))
+        box = DetectionBox()
+        recovered = DetectionBox.deserialize(json.loads(json.dumps(box.serialize())))
         self.assertEqual(box, recovered)
 
 
@@ -46,9 +46,9 @@ class TestEvalBoxes(unittest.TestCase):
         """ Test that instance serialization protocol works with json encoding. """
         boxes = EvalBoxes()
         for i in range(10):
-            boxes.add_boxes(str(i), [EvalBox(), EvalBox(), EvalBox()])
+            boxes.add_boxes(str(i), [DetectionBox(), DetectionBox(), DetectionBox()])
 
-        recovered = EvalBoxes.deserialize(json.loads(json.dumps(boxes.serialize())))
+        recovered = EvalBoxes.deserialize(json.loads(json.dumps(boxes.serialize())), DetectionBox)
         self.assertEqual(boxes, recovered)
 
 

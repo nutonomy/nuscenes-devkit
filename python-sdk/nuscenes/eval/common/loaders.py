@@ -9,12 +9,11 @@ import numpy as np
 from pyquaternion import Quaternion
 import tqdm
 
-from nuscenes.eval.common.data_classes import EvalBox
-from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes import NuScenes
+from nuscenes.eval.common.data_classes import DetectionBox, EvalBoxes
+from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import points_in_box
-from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -28,7 +27,7 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, verbose: bool =
                               'See https://www.nuscenes.org/object-detection for more information.'
 
     # Deserialize results and get meta data.
-    all_results = EvalBoxes.deserialize(data['results'])
+    all_results = EvalBoxes.deserialize(data['results'], DetectionBox)  # TODO: adapt for tracking
     meta = data['meta']
     if verbose:
         print("Loaded results from {}. Found detections for {} samples."
@@ -112,7 +111,7 @@ def load_gt(nusc, eval_split: str, verbose: bool = False) -> EvalBoxes:
                 raise Exception('Error: GT annotations must not have more than one attribute!')
 
             sample_boxes.append(
-                EvalBox(
+                DetectionBox(  # TODO: Adapt for tracking.
                     sample_token=sample_token,
                     translation=sample_annotation['translation'],
                     size=sample_annotation['size'],
@@ -167,7 +166,7 @@ def filter_eval_boxes(nusc: NuScenes,
         # Filter on distance first
         total += len(eval_boxes[sample_token])
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
-                                          box.ego_dist < max_dist[box.detection_name]]
+                                          box.ego_dist < max_dist[box.detection_name]]  # TODO: Make flexible for tracking
         dist_filter += len(eval_boxes[sample_token])
 
         # Then remove boxes with zero points in them. Eval boxes have -1 points by default.

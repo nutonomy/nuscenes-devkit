@@ -11,9 +11,8 @@ import numpy as np
 from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES
 
 
-class EvalBox:
-    """ Data class used during detection evaluation. Can be a prediction or ground truth."""
-    # TODO: Add tracking specific fields
+class EvalBox(abc.ABC):
+    """ Abstract base class for data classes used during detection evaluation. Can be a prediction or ground truth."""
 
     def __init__(self,
                  sample_token: str = "",
@@ -21,10 +20,7 @@ class EvalBox:
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
                  velocity: Tuple[float, float] = (0, 0),
-                 detection_name: str = "car",
-                 attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
                  ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
-                 detection_score: float = -1.0,  # Only applies to predictions.
                  num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
 
         # Assert data for shape and NaNs.
@@ -42,17 +38,8 @@ class EvalBox:
         # Velocity can be NaN from our database for certain annotations.
         assert len(velocity) == 2, 'Error: Velocity must have 2 elements!'
 
-        assert detection_name is not None, 'Error: detection_name cannot be empty!'
-        assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
-
-        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == '', \
-            'Error: Unknown attribute_name %s' % attribute_name
-
         assert type(ego_dist) == float, 'Error: ego_dist must be a float!'
         assert not np.any(np.isnan(ego_dist)), 'Error: ego_dist may not be NaN!'
-
-        assert type(detection_score) == float, 'Error: detection_score must be a float!'
-        assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
 
         assert type(num_pts) == int, 'Error: num_pts must be int!'
         assert not np.any(np.isnan(num_pts)), 'Error: num_pts may not be NaN!'
@@ -63,14 +50,52 @@ class EvalBox:
         self.size = size
         self.rotation = rotation
         self.velocity = velocity
-        self.detection_name = detection_name
-        self.attribute_name = attribute_name
         self.ego_dist = ego_dist
-        self.detection_score = detection_score
         self.num_pts = num_pts
 
     def __repr__(self):
         return str(self.serialize())
+
+    @abc.abstractmethod
+    def serialize(self) -> dict:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def deserialize(cls, content: dict):
+        pass
+
+
+class DetectionBox(EvalBox):
+    """ Data class used during detection evaluation. Can be a prediction or ground truth."""
+
+    def __init__(self,
+                 sample_token: str = "",
+                 translation: Tuple[float, float, float] = (0, 0, 0),
+                 size: Tuple[float, float, float] = (0, 0, 0),
+                 rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
+                 velocity: Tuple[float, float] = (0, 0),
+                 detection_name: str = "car",
+                 attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
+                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
+                 detection_score: float = -1.0,  # Only applies to predictions.
+                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+
+        super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
+
+        assert detection_name is not None, 'Error: detection_name cannot be empty!'
+        assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
+
+        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == '', \
+            'Error: Unknown attribute_name %s' % attribute_name
+
+        assert type(detection_score) == float, 'Error: detection_score must be a float!'
+        assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
+
+        # Assign.
+        self.detection_name = detection_name
+        self.attribute_name = attribute_name
+        self.detection_score = detection_score
 
     def __eq__(self, other):
         return (self.sample_token == other.sample_token and
@@ -100,7 +125,7 @@ class EvalBox:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
         return cls(sample_token=content['sample_token'],
                    translation=tuple(content['translation']),
@@ -159,11 +184,15 @@ class EvalBoxes:
         return {key: [box.serialize() for box in boxes] for key, boxes in self.boxes.items()}
 
     @classmethod
-    def deserialize(cls, content):
-        """ Initialize from serialized content. """
+    def deserialize(cls, content: dict, box_cls):
+        """
+        Initialize from serialized content.
+        :param content: A dictionary with the serialized content of the box.
+        :param box_cls: The class of the boxes, DetectionBox or TrackingBox.
+        """
         eb = cls()
         for sample_token, boxes in content.items():
-            eb.add_boxes(sample_token, [EvalBox.deserialize(box) for box in boxes])
+            eb.add_boxes(sample_token, [box_cls.deserialize(box) for box in boxes])
         return eb
 
 
@@ -177,7 +206,7 @@ class MetricData(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
         pass
 
@@ -213,7 +242,7 @@ class MetricDataList:
         return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
 
     @classmethod
-    def deserialize(cls, content, metric_data_cls):
+    def deserialize(cls, content: dict, metric_data_cls):
         mdl = cls()
         for key, md in content.items():
             name, distance = key.split(':')

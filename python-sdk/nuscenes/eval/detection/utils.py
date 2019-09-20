@@ -10,7 +10,7 @@ def category_to_detection_name(category_name: str) -> Optional[str]:
     Default label mapping from nuScenes to nuScenes detection classes.
     Note that pedestrian does not include personal_mobility, stroller and wheelchair.
     :param category_name: Generic nuScenes class.
-    :return: nuScenes detection classes.
+    :return: nuScenes detection class.
     """
     detection_mapping = {
         'movable_object.barrier': 'barrier',
