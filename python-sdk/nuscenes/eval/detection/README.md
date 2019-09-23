@@ -32,11 +32,14 @@ Results and winners will be announced at the Workshop on Autonomous Driving ([WA
 Please note that this workshop is not related to the similarly named [Workshop on Autonomous Driving Beyond Single-Frame Perception](http://www.wad.ai).
 
 ## Submission rules
+### Detection-specific rules
+* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
+
+### General rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
 * Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
-* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
 * Users must limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
@@ -56,11 +59,11 @@ Each `sample_token` from the current evaluation set must be included in `results
 ```
 submission {
     "meta": {
-        "use_camera":   <bool>                  -- Whether this submission uses camera data as an input.
-        "use_lidar":    <bool>                  -- Whether this submission uses lidar data as an input.
-        "use_radar":    <bool>                  -- Whether this submission uses radar data as an input.
-        "use_map":      <bool>                  -- Whether this submission uses map data as an input.
-        "use_external": <bool>                  -- Whether this submission uses external data as an input.
+        "use_camera":   <bool>          -- Whether this submission uses camera data as an input.
+        "use_lidar":    <bool>          -- Whether this submission uses lidar data as an input.
+        "use_radar":    <bool>          -- Whether this submission uses radar data as an input.
+        "use_map":      <bool>          -- Whether this submission uses map data as an input.
+        "use_external": <bool>          -- Whether this submission uses external data as an input.
     },
     "results": {
         sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
@@ -94,7 +97,7 @@ The nuScenes dataset comes with annotations for 23 classes ([details](https://ww
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
 This results in 10 classes for the detection challenge.
-Below we show the table of detection classes and their counterpart in the nuScenes dataset.
+Below we show the table of detection classes and their counterparts in the nuScenes dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
 
 |   nuScenes detection class|   nuScenes general class                  |
@@ -128,8 +131,7 @@ Note that some annotations are missing attributes (0.4% of all sample_annotation
 
 For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle, 
 but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
-detection radius.
-Below we list nuScene class specific rules for annotation and detection ranges. 
+detection radius, as shown below:
 
 |   nuScenes detection class    |   Attributes                                          | Detection Range (meters)  |
 |   ---                         |   ---                                                 |   ---                     |
@@ -200,12 +202,12 @@ Furthermore, there will also be an award for novel ideas, as well as the best st
 
 **Lidar detection track**: 
 * Only lidar input allowed.
-* No external data or map data allowed.
+* External data or map data <u>not allowed</u>.
 * May use pre-training.
   
 **Vision detection track**: 
 * Only camera input allowed.
-* No external data or map data is allowed.
+* External data or map data <u>not allowed</u>.
 * May use pre-training.
  
 **Open detection track**: 
