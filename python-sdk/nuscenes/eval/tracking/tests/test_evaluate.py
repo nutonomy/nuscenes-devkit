@@ -115,7 +115,7 @@ class TestMain(unittest.TestCase):
         metrics, md_list = nusc_eval.evaluate()
 
         # 1. Score = TODO.
-        self.assertAlmostEqual(metrics.mota_score, -1)  # TODO: set score
+        self.assertAlmostEqual(metrics.mota, -1)  # TODO: set score
 
 
 if __name__ == '__main__':

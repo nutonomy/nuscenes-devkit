@@ -11,8 +11,10 @@ import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.eval.detection.data_classes import DetectionBox
 from nuscenes.eval.detection.utils import category_to_detection_name
+from nuscenes.eval.detection.data_classes import DetectionBox
+from nuscenes.eval.tracking.utils import category_to_tracking_name
+from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.splits import create_splits_scenes
@@ -88,6 +90,7 @@ def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
     all_annotations = EvalBoxes()
 
     # Load annotations and filter predictions and annotations.
+    tracking_id_set = set()
     for sample_token in tqdm.tqdm(sample_tokens):
 
         sample = nusc.get('sample', sample_token)
@@ -96,35 +99,63 @@ def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
         sample_boxes = []
         for sample_annotation_token in sample_annotation_tokens:
 
-            # Get label name in detection task and filter unused labels.
             sample_annotation = nusc.get('sample_annotation', sample_annotation_token)
-            detection_name = category_to_detection_name(sample_annotation['category_name'])
-            if detection_name is None:
-                continue
+            if box_cls == DetectionBox:
+                # Get label name in detection task and filter unused labels.
+                detection_name = category_to_detection_name(sample_annotation['category_name'])
+                if detection_name is None:
+                    continue
 
-            # Get attribute_name.
-            attr_tokens = sample_annotation['attribute_tokens']
-            attr_count = len(attr_tokens)
-            if attr_count == 0:
-                attribute_name = ''
-            elif attr_count == 1:
-                attribute_name = attribute_map[attr_tokens[0]]
-            else:
-                raise Exception('Error: GT annotations must not have more than one attribute!')
+                # Get attribute_name.
+                attr_tokens = sample_annotation['attribute_tokens']
+                attr_count = len(attr_tokens)
+                if attr_count == 0:
+                    attribute_name = ''
+                elif attr_count == 1:
+                    attribute_name = attribute_map[attr_tokens[0]]
+                else:
+                    raise Exception('Error: GT annotations must not have more than one attribute!')
 
-            sample_boxes.append(
-                box_cls(  # TODO: Adapt for tracking.
-                    sample_token=sample_token,
-                    translation=sample_annotation['translation'],
-                    size=sample_annotation['size'],
-                    rotation=sample_annotation['rotation'],
-                    velocity=nusc.box_velocity(sample_annotation['token'])[:2],
-                    detection_name=detection_name,
-                    detection_score=-1.0,  # GT samples do not have a score.
-                    attribute_name=attribute_name,
-                    num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_radar_pts']
+                sample_boxes.append(
+                    box_cls(
+                        sample_token=sample_token,
+                        translation=sample_annotation['translation'],
+                        size=sample_annotation['size'],
+                        rotation=sample_annotation['rotation'],
+                        velocity=nusc.box_velocity(sample_annotation['token'])[:2],
+                        num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_radar_pts'],
+                        detection_name=detection_name,
+                        detection_score=-1.0,  # GT samples do not have a score.
+                        attribute_name=attribute_name
+                    )
                 )
-            )
+            elif box_cls == TrackingBox:
+                # Hash nuScenes token string to get a (hopefully) unique tracking id.
+                instance_token = sample_annotation['instance_token']
+                tracking_id = hash(instance_token)
+                tracking_id_set.add(tracking_id)
+
+                # Get label name in detection task and filter unused labels.
+                tracking_name = category_to_tracking_name(sample_annotation['category_name'])
+                if tracking_name is None:
+                    continue
+
+                sample_boxes.append(
+                    box_cls(
+                        sample_token=sample_token,
+                        translation=sample_annotation['translation'],
+                        size=sample_annotation['size'],
+                        rotation=sample_annotation['rotation'],
+                        velocity=nusc.box_velocity(sample_annotation['token'])[:2],
+                        num_pts=sample_annotation['num_lidar_pts'] + sample_annotation['num_radar_pts'],
+                        tracking_id=tracking_id,
+                        tracking_name=tracking_name,
+                        tracking_score=-1.0  # GT samples do not have a score.
+                    )
+                )
+            else:
+                raise NotImplementedError('Error: Invalid !')
+
         all_annotations.add_boxes(sample_token, sample_boxes)
 
     if verbose:
@@ -161,6 +192,15 @@ def filter_eval_boxes(nusc: NuScenes,
     :param max_dist: Maps the detection name to the eval distance threshold for that class.
     :param verbose: Whether to print to stdout.
     """
+    # Retrieve box type.
+    assert len(eval_boxes.boxes) > 0
+    first_key = list(eval_boxes.boxes.keys())[0]
+    box = eval_boxes.boxes[first_key]
+    if isinstance(box, DetectionBox):
+        class_field = 'detection_name'
+    else:
+        class_field = 'tracking_name'
+
     # Accumulators for number of filtered boxes.
     total, dist_filter, point_filter, bike_rack_filter = 0, 0, 0, 0
     for ind, sample_token in enumerate(eval_boxes.sample_tokens):
@@ -168,7 +208,7 @@ def filter_eval_boxes(nusc: NuScenes,
         # Filter on distance first
         total += len(eval_boxes[sample_token])
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
-                                          box.ego_dist < max_dist[box.detection_name]]  # TODO: Make flexible for tracking
+                                          box.ego_dist < max_dist[box.__getattribute__(class_field)]]
         dist_filter += len(eval_boxes[sample_token])
 
         # Then remove boxes with zero points in them. Eval boxes have -1 points by default.
@@ -183,7 +223,7 @@ def filter_eval_boxes(nusc: NuScenes,
 
         filtered_boxes = []
         for box in eval_boxes[sample_token]:
-            if box.detection_name in ['bicycle', 'motorcycle']:
+            if box.__getattribute__(class_field) in ['bicycle', 'motorcycle']:
                 in_a_bikerack = False
                 for bikerack_box in bikerack_boxes:
                     if np.sum(points_in_box(bikerack_box, np.expand_dims(np.array(box.translation), axis=1))) > 0:

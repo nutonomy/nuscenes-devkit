@@ -152,11 +152,91 @@ class TrackingMetrics:
         self.cfg = cfg
         self.eval_time = None
 
+    @property
+    def amota(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def amotp(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def mota(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def motp(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def idf1(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def faf(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def mt(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def ml(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def fp(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def fn(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def ids(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def frag(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def trans_err(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def scale_err(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def orient_err(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def vel_err(self) -> float:
+        raise NotImplementedError
+
     def add_runtime(self, eval_time: float):
         self.eval_time = eval_time
 
     def serialize(self):
         return {
+            'amota': self.amota,
+            'amotp': self.amotp,
+            'mota': self.mota,
+            'motp': self.motp,
+            'idf1': self.idf1,
+            'faf': self.faf,
+            'mt': self.mt,
+            'ml': self.ml,
+            'fp': self.fp,
+            'fn': self.fn,
+            'ids': self.ids,
+            'frag': self.frag,
+            'trans_err': self.trans_err,
+            'scale_err': self.scale_err,
+            'orient_err': self.orient_err,
+            'vel_err': self.vel_err,
             'eval_time': self.eval_time,
             'cfg': self.cfg.serialize()
         }
