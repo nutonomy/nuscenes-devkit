@@ -14,8 +14,8 @@ from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import MetricDataList
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.eval.tracking.algo import accumulate, get_score_ths
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig, TrackingBox
+from nuscenes.eval.tracking.external import TrackingEvaluation, Stat, Mail
 from nuscenes.eval.tracking.render import visualize_sample
 
 
@@ -97,41 +97,51 @@ class TrackingEval:
     def evaluate(self) -> Tuple[TrackingMetrics, MetricDataList]:
         """
         Performs the actual evaluation.
+        This code is based on Xinshuo Weng's AB3DMOT code at:
+        https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmot.py
         :return: A tuple of high-level and the raw metric data.
         """
         start_time = time.time()
-
-        # -----------------------------------
-        # Step 1: Accumulate metric data for all classes and distance thresholds.
-        # -----------------------------------
-        if self.verbose:
-            print('Accumulating metric data')
-        metric_data_list = MetricDataList()
-        score_ths = get_score_ths()
-        for class_name in self.cfg.class_names:
-            for score_th in score_ths:
-                md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, self.cfg.dist_th_tp)
-                metric_data_list.set(class_name, score_th, md)
-
-        # -----------------------------------
-        # Step 2: Calculate metrics from the data.
-        # -----------------------------------
-        if self.verbose:
-            print('Calculating metrics')
         metrics = TrackingMetrics(self.cfg)
+        metric_data_list = MetricDataList() # TODO: Do we still need this?
 
-        # Sweep over all thresholds to find best threshold and compute AMOT* metrics.
+        suffix = self.cfg.dist_fcn.title()
+        mail = Mail("")
+        num_sample_pts = self.cfg.num_sample_pts
         for class_name in self.cfg.class_names:
-            for score_th in score_ths:
-                pass  # TODO
+            ev = TrackingEvaluation(self.gt_boxes, self.pred_boxes, class_name, mail=mail, num_sample_pts=num_sample_pts)
+            filename = os.path.join("summary_%s_average_%s.txt" % (class_name, suffix))
+            dump = open(filename, "w+")
+            stat_meter = Stat(cls=class_name, suffix=suffix, dump=dump, num_sample_pts=num_sample_pts)
+            ev.compute_third_party_metrics()
 
-        # Find best threshold
-        pass  # TOOD
+            # evaluate the mean average metrics
+            best_mota, best_threshold = 0, -10000
+            threshold_list = ev.get_thresholds(ev.scores, ev.num_gt)
+            for threshold_tmp in threshold_list:
+                data_tmp = dict()
+                ev.reset()
+                ev.compute_third_party_metrics(threshold_tmp)
+                data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], \
+                data_tmp['F1'], data_tmp['fp'], data_tmp['fn'], data_tmp['recall'] = \
+                    ev.MOTA, ev.MOTP, ev.precision, ev.F1, ev.fp, ev.fn, ev.recall
+                stat_meter.update(data_tmp)
+                mota_tmp = ev.MOTA
+                if mota_tmp > best_mota:
+                    best_threshold = threshold_tmp
+                    best_mota = mota_tmp
+                ev.save_to_stats(dump, threshold_tmp)
 
-        # Pick legacy metrics using best threshold.
-        pass  # TOOD
+            ev.reset()
+            ev.compute_third_party_metrics(best_threshold)
+            ev.save_to_stats(dump)
 
-        # Compute detection metrics.
+            stat_meter.output()
+            summary = stat_meter.print_summary()
+            print(summary)
+
+            stat_meter.plot()
+            dump.close()
 
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)

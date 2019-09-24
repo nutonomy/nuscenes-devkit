@@ -3,7 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from collections import defaultdict
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Union
 import abc
 
 import numpy as np
@@ -64,7 +64,7 @@ class EvalBox(abc.ABC):
         pass
 
 
-EvalBoxType = Optional['DetectionBox', 'TrackingBox']
+EvalBoxType = Union['DetectionBox', 'TrackingBox']
 
 
 class EvalBoxes:
@@ -92,6 +92,9 @@ class EvalBoxes:
                 if box1 != box2:
                     return False
         return True
+
+    def __len__(self):
+        return len(self.boxes)
 
     @property
     def all(self) -> List[EvalBoxType]:

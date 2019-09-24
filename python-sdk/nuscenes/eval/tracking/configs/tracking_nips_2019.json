@@ -13,5 +13,6 @@
   "dist_th_tp": 2.0,
   "min_recall": 0.1,
   "min_precision": 0.1,
-  "max_boxes_per_sample": 500
+  "max_boxes_per_sample": 500,
+  "num_sample_pts": 11
 }
