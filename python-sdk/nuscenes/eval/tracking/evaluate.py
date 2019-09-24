@@ -105,7 +105,7 @@ class TrackingEval:
         metrics = TrackingMetrics(self.cfg)
         metric_data_list = MetricDataList() # TODO: Do we still need this?
 
-        suffix = self.cfg.dist_fcn.title()
+        suffix = self.cfg.dist_fcn.title().lower()
         mail = Mail("")
         num_sample_pts = self.cfg.num_sample_pts
         for class_name in self.cfg.class_names:
