@@ -10,6 +10,7 @@ from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
 from nuscenes.eval.detection.constants import TP_METRICS
 from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics, DetectionBox
 
+
 class TestDetectionConfig(unittest.TestCase):
 
     def test_serialization(self):

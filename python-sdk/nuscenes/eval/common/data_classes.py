@@ -3,7 +3,7 @@
 # Licensed under the Creative Commons [see licence.txt]
 
 from collections import defaultdict
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import abc
 
 import numpy as np
@@ -64,16 +64,22 @@ class EvalBox(abc.ABC):
         pass
 
 
+EvalBoxType = Optional['DetectionBox', 'TrackingBox']
+
+
 class EvalBoxes:
     """ Data class that groups EvalBox instances by sample. """
 
     def __init__(self):
+        """
+        Initializes the EvalBoxes for GT or predictions.
+        """
         self.boxes = defaultdict(list)
 
     def __repr__(self):
         return "EvalBoxes with {} boxes across {} samples".format(len(self.all), len(self.sample_tokens))
 
-    def __getitem__(self, item) -> List[EvalBox]:
+    def __getitem__(self, item) -> List[EvalBoxType]:
         return self.boxes[item]
 
     def __eq__(self, other):
@@ -88,7 +94,7 @@ class EvalBoxes:
         return True
 
     @property
-    def all(self) -> List[EvalBox]:
+    def all(self) -> List[EvalBoxType]:
         """ Returns all EvalBoxes in a list. """
         ab = []
         for sample_token in self.sample_tokens:
@@ -100,7 +106,7 @@ class EvalBoxes:
         """ Returns a list of all keys. """
         return list(self.boxes.keys())
 
-    def add_boxes(self, sample_token: str, boxes: List[EvalBox]) -> None:
+    def add_boxes(self, sample_token: str, boxes: List[EvalBoxType]) -> None:
         """ Adds a list of boxes. """
         self.boxes[sample_token].extend(boxes)
 

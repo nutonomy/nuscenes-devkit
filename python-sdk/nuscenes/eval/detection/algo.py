@@ -26,7 +26,6 @@ def accumulate(gt_boxes: EvalBoxes,
     :param verbose: If true, print debug messages.
     :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
     """
-
     dist_fcn_map = {
         'center_distance': center_distance
     }

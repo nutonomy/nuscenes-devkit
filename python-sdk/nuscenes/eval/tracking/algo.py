@@ -1,3 +1,8 @@
+"""
+This code is based on Xinshuo Weng's AB3DMOT code at:
+https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmot.py
+"""
+
 import numpy as np
 
 from nuscenes.eval.common.data_classes import EvalBoxes
@@ -18,5 +23,10 @@ def calc_all_metrics():
 
 
 def get_score_ths(n: int = 11) -> np.array:
+    """
+    Returns the recall thresholds.
+    :param n:
+    :return:
+    """
     score_ths = np.linspace(0, 1, n)[1:]  # TODO
     return score_ths

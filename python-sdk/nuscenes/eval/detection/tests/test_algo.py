@@ -11,8 +11,8 @@ from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.common.data_classes import EvalBoxes, DetectionBox, MetricDataList, MetricData
-from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData
+from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionBox
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 from nuscenes.eval.common.config import config_factory
 
@@ -163,8 +163,9 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             gt_boxes = []
             for gt in data:
                 gt = {**defaults, **gt}  # The defaults will be replaced by gt if given.
-                eb = DetectionBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'], rotation=gt['rot'],
-                             detection_name=gt['name'], attribute_name=gt['attr'], velocity=gt['vel'])
+                eb = DetectionBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'],
+                                  rotation=gt['rot'], detection_name=gt['name'], attribute_name=gt['attr'],
+                                  velocity=gt['vel'])
                 gt_boxes.append(eb)
 
             gt_eval_boxes.add_boxes(sample_token, gt_boxes)
@@ -176,8 +177,8 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             for pred in data:
                 pred = {**defaults, **pred}
                 eb = DetectionBox(sample_token=sample_token, translation=pred['trans'], size=pred['size'],
-                             rotation=pred['rot'], detection_name=pred['name'], detection_score=pred['score'],
-                             velocity=pred['vel'], attribute_name=pred['attr'])
+                                  rotation=pred['rot'], detection_name=pred['name'], detection_score=pred['score'],
+                                  velocity=pred['vel'], attribute_name=pred['attr'])
                 pred_boxes.append(eb)
             pred_eval_boxes.add_boxes(sample_token, pred_boxes)
 

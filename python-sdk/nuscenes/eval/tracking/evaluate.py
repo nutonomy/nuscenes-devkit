@@ -128,7 +128,7 @@ class TrackingEval:
         # Find best threshold
         pass  # TOOD
 
-        # Compute legacy metrics using best threshold.
+        # Pick legacy metrics using best threshold.
         pass  # TOOD
 
         # Compute detection metrics.

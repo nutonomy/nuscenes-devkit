@@ -35,9 +35,9 @@ class TestLoader(unittest.TestCase):
 
         # Test bicycle filtering by creating a box at the same position as the bike rack.
         box1 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle')
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle')
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1])
@@ -48,9 +48,9 @@ class TestLoader(unittest.TestCase):
 
         # Test motorcycle filtering by creating a box at the same position as the bike rack.
         box2 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='motorcycle')
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='motorcycle')
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2])
@@ -61,9 +61,9 @@ class TestLoader(unittest.TestCase):
 
         # Now create a car at the same position as the bike rack.
         box3 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='car')
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='car')
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2, box3])
@@ -75,9 +75,9 @@ class TestLoader(unittest.TestCase):
 
         # Now add a bike outside the bike rack.
         box4 = DetectionBox(sample_token=sample_token,
-                       translation=(68.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle')
+                            translation=(68.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle')
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2, box3, box4])
@@ -91,10 +91,10 @@ class TestLoader(unittest.TestCase):
 
         # Add another bike on the bike rack center but set the ego_dist higher than what's defined in max_dist
         box5 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle',
-                       ego_dist=100.0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle',
+                            ego_dist=100.0)
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2, box3, box4, box5])
@@ -107,10 +107,10 @@ class TestLoader(unittest.TestCase):
 
         # Add another bike on the bike rack center but set the num_pts to be zero so that it gets filtered.
         box6 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle',
-                       num_pts=0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle',
+                            num_pts=0)
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2, box3, box4, box5, box6])
@@ -125,40 +125,40 @@ class TestLoader(unittest.TestCase):
         sample_token = 'ca9a282c9e77460f8360f564131a8af5'   # This sample has no bike-racks.
 
         box1 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle',
-                       ego_dist=25.0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle',
+                            ego_dist=25.0)
 
         box2 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='motorcycle',
-                       ego_dist=45.0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='motorcycle',
+                            ego_dist=45.0)
 
         box3 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='car',
-                       ego_dist=45.0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='car',
+                            ego_dist=45.0)
 
         box4 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='car',
-                       ego_dist=55.0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='car',
+                            ego_dist=55.0)
 
         box5 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle',
-                       num_pts=1)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle',
+                            num_pts=1)
 
         box6 = DetectionBox(sample_token=sample_token,
-                       translation=(683.681, 1592.002, 0.809),
-                       size=(1, 1, 1),
-                       detection_name='bicycle',
-                       num_pts=0)
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle',
+                            num_pts=0)
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2, box3, box4, box5, box6])
