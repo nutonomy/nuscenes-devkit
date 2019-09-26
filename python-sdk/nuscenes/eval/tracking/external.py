@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.utils import center_distance
+from nuscenes.nuscenes import NuScenes
 
 
 class tData:
@@ -72,12 +73,14 @@ class TrackingEvaluation(object):
     """
 
     def __init__(self,
+                 nusc: NuScenes,
                  gt_boxes: EvalBoxes,
                  pred_boxes: EvalBoxes,
                  class_name: str,
                  mail,
                  num_sample_pts: int = 11):
 
+        self.nusc = nusc
         self.gt_boxes = gt_boxes
         self.pred_boxes = pred_boxes
         self.cls = class_name
@@ -141,9 +144,26 @@ class TrackingEvaluation(object):
         Returns all tracks for all scenes.
         :return: The tracks.
         """
-        raise NotImplementedError('TODO: Create tracks!')  # TODO
 
-        tracks = []
+        # Group annotations wrt scene and track_id
+        # TODO: Replace the grouping below with pandas
+        tracks = {}
+        for box in self.gt_boxes.all:
+            sample_record = self.nusc.get('sample', box.sample_token)
+            # Augment the boxes with timestamp. we will use timestamps to sort boxes in time later
+            box.timestamp = sample_record['timestamp']
+            if sample_record['scene_token'] not in tracks.keys():
+                tracks[sample_record['scene_token']] = {}
+            if box.tracking_id not in tracks[sample_record['scene_token']].keys():
+                tracks[sample_record['scene_token']][box.tracking_id] = []
+            tracks[sample_record['scene_token']][box.tracking_id].append(box)
+
+        # Make sure the tracks are sorted in time
+        for scene_token, scene in tracks.items():
+            for tracking_id, track in scene.items():
+                scene[tracking_id] = sorted(track, key=lambda box: box.timestamp)
+            tracks[scene_token] = scene
+
         return tracks
 
     def get_thresholds(self, scores, num_gt):
