@@ -32,7 +32,7 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge as held at CVPR 2019.
 Submission opened May 6 and closed June 12.
-Results and winners were be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
+Results and winners were announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 For more information see the [leaderboard](https://www.nuscenes.org/object-detection).
 Note that the detection server can still be used to benchmark your results.
 
