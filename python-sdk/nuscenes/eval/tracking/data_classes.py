@@ -7,6 +7,7 @@ from typing import List, Dict, Tuple
 import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
+from nuscenes.eval.common.utils import center_distance
 from nuscenes.eval.tracking.constants import TRACKING_NAMES
 
 
@@ -67,6 +68,14 @@ class TrackingConfig:
                    content['min_precision'],
                    content['max_boxes_per_sample'],
                    content['num_sample_pts'])
+
+    @property
+    def dist_fcn_callable(self):
+        """ Return the distance function corresponding to the dist_fcn string. """
+        if self.dist_fcn == 'center_distance':
+            return center_distance
+        else:
+            raise Exception('Error: Unknown distance function %s!' % self.dist_fcn)
 
 
 class TrackingMetricData(MetricData):

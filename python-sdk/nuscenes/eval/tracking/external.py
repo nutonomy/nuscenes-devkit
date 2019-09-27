@@ -4,14 +4,13 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 """
 import os
 from collections import defaultdict
-from typing import List, Dict
+from typing import List, Dict, Callable
 
 import numpy as np
 from munkres import Munkres
 import matplotlib.pyplot as plt
 
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.eval.common.utils import center_distance
 from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.nuscenes import NuScenes
 
@@ -77,7 +76,20 @@ class TrackingEvaluation(object):
                  pred_boxes: EvalBoxes,
                  class_name: str,
                  mail,
+                 dist_fcn: Callable,
+                 dist_th_tp: float,
                  num_sample_pts: int = 11):
+        """
+        TODO
+        :param nusc:
+        :param gt_boxes:
+        :param pred_boxes:
+        :param class_name:
+        :param mail:
+        :param dist_fcn:
+        :param dist_th_tp:
+        :param num_sample_pts:
+        """
 
         self.nusc = nusc
         self.gt_boxes = gt_boxes
@@ -85,10 +97,12 @@ class TrackingEvaluation(object):
         self.cls = class_name
         self.mail = mail
         self.num_sample_pts = num_sample_pts
+        self.dist_fcn = dist_fcn
+        self.dist_th_tp = dist_th_tp
 
         self.n_sequences = len(self.gt_boxes)
 
-        # statistics and numbers for evaluation
+        # Statistics and numbers for evaluation.
         self.n_gt = 0  # number of ground truth detections minus ignored false negatives and true positives
         self.n_igt = 0  # number of ignored ground truth detections
         self.n_gts = []  # number of ground truth detections minus ignored false negatives and true positives PER SEQUENCE
@@ -117,9 +131,6 @@ class TrackingEvaluation(object):
         self.ifn = 0  # number of ignored false negatives
         self.ifns = []  # number of ignored false negatives PER SEQUENCE
         self.fp = 0  # number of false positives
-        # a bit tricky, the number of ignored false negatives and ignored true positives
-        # is subtracted, but if both tracker detection and ground truth detection
-        # are ignored this number is added again to avoid double counting
         self.fps = []  # above PER SEQUENCE
         self.mme = 0
         self.fragments = 0
@@ -443,13 +454,14 @@ class TrackingEvaluation(object):
         return scene_tracks_pred
 
     @staticmethod
-    def hungarian_method(g, t, min_overlap: float, max_cost: float = 0.9):
+    def hungarian_method(g, t, dist_fcn: Callable, dist_th_tp: float, max_cost: float = 0.9):
         """
         Use Hungarian method to associate, using center distance 0..1 as cost build cost matrix.
         Row are gt, columns are predictions.
         :param g:
         :param t:
-        :param min_overlap:
+        :param dist_fcn:
+        :param dist_th_tp:
         :param max_cost:
         :return:
         """
@@ -464,10 +476,10 @@ class TrackingEvaluation(object):
             cost_row = []
             for tt in t:
                 # overlap == 1 is cost ==0
-                c = 1 - center_distance(gg, tt)
+                c = 1 - dist_fcn(gg, tt)
 
                 # gating for center_distance
-                if c <= 1 - min_overlap:
+                if c <= 1 - dist_th_tp:
                     cost_row.append(c)
                 else:
                     cost_row.append(max_cost)  # = 1e9

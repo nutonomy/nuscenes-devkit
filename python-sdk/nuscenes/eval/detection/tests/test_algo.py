@@ -11,10 +11,11 @@ from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
 from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionBox
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.common.utils import center_distance
+from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
 
 
 class TestAlgo(unittest.TestCase):
@@ -94,7 +95,7 @@ class TestAlgo(unittest.TestCase):
         for class_name in self.cfg.class_names:
             gt, pred = self._mock_results(30, 3, 25, class_name)
             for dist_th in self.cfg.dist_ths:
-                mdl.set(class_name, dist_th, accumulate(gt, pred, class_name, 'center_distance', 2))
+                mdl.set(class_name, dist_th, accumulate(gt, pred, class_name, center_distance, 2))
 
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
@@ -183,7 +184,7 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             pred_eval_boxes.add_boxes(sample_token, pred_boxes)
 
         metric_data = accumulate(gt_eval_boxes, pred_eval_boxes, class_name=detection_name,
-                                 dist_fcn_name='center_distance', dist_th=dist_th)
+                                 dist_fcn_name=center_distance, dist_th=dist_th)
 
         return metric_data
 

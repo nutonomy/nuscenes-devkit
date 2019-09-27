@@ -109,7 +109,8 @@ class TrackingEval:
         mail = Mail("")
         num_sample_pts = self.cfg.num_sample_pts
         for class_name in self.cfg.class_names:
-            ev = TrackingEvaluation(self.nusc, self.gt_boxes, self.pred_boxes, class_name, mail=mail, num_sample_pts=num_sample_pts)
+            ev = TrackingEvaluation(self.nusc, self.gt_boxes, self.pred_boxes, class_name, mail,
+                                    self.cfg.dist_fcn_callable, self.cfg.dist_th_tp, num_sample_pts=num_sample_pts)
             filename = os.path.join("summary_%s_average_%s.txt" % (class_name, suffix))
             dump = open(filename, "w+")
             stat_meter = Stat(cls=class_name, suffix=suffix, dump=dump, num_sample_pts=num_sample_pts)

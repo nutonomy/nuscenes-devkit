@@ -1,6 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom, 2019.
 # Licensed under the Creative Commons [see licence.txt]
+from typing import Callable
 
 import numpy as np
 
@@ -12,7 +13,7 @@ from nuscenes.eval.common.utils import center_distance, scale_iou, yaw_diff, vel
 def accumulate(gt_boxes: EvalBoxes,
                pred_boxes: EvalBoxes,
                class_name: str,
-               dist_fcn_name: str,
+               dist_fcn: Callable,
                dist_th: float,
                verbose: bool = False) -> DetectionMetricData:
     """
@@ -21,16 +22,11 @@ def accumulate(gt_boxes: EvalBoxes,
     :param gt_boxes: Maps every sample_token to a list of its sample_annotations.
     :param pred_boxes: Maps every sample_token to a list of its sample_results.
     :param class_name: Class to compute AP on.
-    :param dist_fcn_name: Name of distance function used to match detections and ground truths.
+    :param dist_fcn: Distance function used to match detections and ground truths.
     :param dist_th: Distance threshold for a match.
     :param verbose: If true, print debug messages.
     :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
     """
-    dist_fcn_map = {
-        'center_distance': center_distance
-    }
-    dist_fcn = dist_fcn_map[dist_fcn_name]
-
     # ---------------------------------------------
     # Organize input and initialize accumulators
     # ---------------------------------------------
