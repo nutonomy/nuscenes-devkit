@@ -312,11 +312,12 @@ class DetectionBox(EvalBox):
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
                  velocity: Tuple[float, float] = (0, 0),
-                 detection_name: str = "car",
-                 attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
                  ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
-                 detection_score: float = -1.0,  # Only applies to predictions.
-                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+                 num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+                 detection_name: str = '',  # The class name used in the detection challenge.
+                 detection_score: float = -1.0,  # GT samples do not have a score.
+                 attribute_name: str = '',  # Box attribute. Each box can have at most 1 attribute.
+                 ):
 
         super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
 

@@ -47,12 +47,12 @@ class TestMain(unittest.TestCase):
             else:
                 return class_names[np.random.randint(0, len(class_names) - 1)]
 
-        def random_id(instance_token: str) -> int:
-            # Alter 10% of the valid ids to be a random int, which likely corresponds to a new track.
+        def random_id(instance_token: str) -> str:
+            # Alter 10% of the valid ids to be a random string, which hopefully corresponds to a new track.
             if np.random.rand() < .9:
-                _tracking_id = hash(instance_token)
+                _tracking_id = instance_token
             else:
-                _tracking_id = np.random.randint(0, sys.maxsize)
+                _tracking_id = str(np.random.randint(0, sys.maxsize))
 
             return _tracking_id
 

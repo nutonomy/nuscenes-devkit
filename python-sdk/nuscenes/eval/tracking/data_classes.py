@@ -275,11 +275,12 @@ class TrackingBox(EvalBox):
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
                  velocity: Tuple[float, float] = (0, 0),
-                 tracking_id: int = -1,
-                 tracking_name: str = "car",  # TODO: set to ''
                  ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
-                 tracking_score: float = -1.0,  # Only applies to predictions.
-                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+                 num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+                 tracking_id: str = '',  # Instance id of this object.
+                 tracking_name: str = '',  # The class name used in the tracking challenge.
+                 tracking_score: float = -1.0  # Does not apply to GT.
+                 ):
 
         super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
 
@@ -314,11 +315,11 @@ class TrackingBox(EvalBox):
             'size': self.size,
             'rotation': self.rotation,
             'velocity': self.velocity,
+            'ego_dist': self.ego_dist,
+            'num_pts': self.num_pts,
             'tracking_id': self.tracking_id,
             'tracking_name': self.tracking_name,
-            'ego_dist': self.ego_dist,
             'tracking_score': self.tracking_score,
-            'num_pts': self.num_pts
         }
 
     @classmethod
@@ -329,8 +330,8 @@ class TrackingBox(EvalBox):
                    size=tuple(content['size']),
                    rotation=tuple(content['rotation']),
                    velocity=tuple(content['velocity']),
+                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']),
                    tracking_id=content['tracking_id'],
                    tracking_name=content['tracking_name'],
-                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
-                   tracking_score=-1.0 if 'tracking_score' not in content else float(content['tracking_score']),
-                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
+                   tracking_score=-1.0 if 'tracking_score' not in content else float(content['tracking_score']))

@@ -91,7 +91,7 @@ sample_result {
     "size":           <float> [3]   -- Estimated bounding box size in meters: width, length, height.
     "rotation":       <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
-    “tracking_id”:    <int>         -- Unique object id that is used to identify an object track across samples.
+    “tracking_id”:    <str>         -- Unique object id that is used to identify an object track across samples.
     "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian. Note that the tracking_name cannot change throughout a track.
     "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name. We average over frame level scores to compute the track level score. The score is used to determine positive and negative tracks via thresholding.
 }

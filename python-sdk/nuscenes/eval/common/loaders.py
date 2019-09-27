@@ -130,9 +130,8 @@ def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
                     )
                 )
             elif box_cls == TrackingBox:
-                # Hash nuScenes token string to get a (hopefully) unique tracking id.
-                instance_token = sample_annotation['instance_token']
-                tracking_id = hash(instance_token)
+                # Use nuScenes token as tracking id.
+                tracking_id = sample_annotation['instance_token']
                 tracking_id_set.add(tracking_id)
 
                 # Get label name in detection task and filter unused labels.
@@ -195,11 +194,13 @@ def filter_eval_boxes(nusc: NuScenes,
     # Retrieve box type.
     assert len(eval_boxes.boxes) > 0
     first_key = list(eval_boxes.boxes.keys())[0]
-    box = eval_boxes.boxes[first_key]
+    box = eval_boxes.boxes[first_key][0]
     if isinstance(box, DetectionBox):
         class_field = 'detection_name'
-    else:
+    elif isinstance(box, TrackingBox):
         class_field = 'tracking_name'
+    else:
+        raise Exception('Error: Invalid box type: %s' % box)
 
     # Accumulators for number of filtered boxes.
     total, dist_filter, point_filter, bike_rack_filter = 0, 0, 0, 0
