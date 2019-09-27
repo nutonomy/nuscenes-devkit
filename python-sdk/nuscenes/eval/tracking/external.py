@@ -22,21 +22,16 @@ class tData:
     """
 
     def __init__(self, frame=-1, obj_type="unset", truncation=-1, occlusion=-1,
-                 obs_angle=-10, x1=-1, y1=-1, x2=-1, y2=-1, w=-1, h=-1, l=-1,
+                 w=-1, h=-1, l=-1,
                  X=-1000, Y=-1000, Z=-1000, yaw=-10, score=-1000, track_id=-1):
         """
             Constructor, initializes the object given the parameters.
         """
+
+        # Redundant
         self.frame = frame
         self.track_id = track_id
         self.obj_type = obj_type
-        self.truncation = truncation
-        self.occlusion = occlusion
-        self.obs_angle = obs_angle
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
         self.w = w
         self.h = h
         self.l = l
@@ -45,8 +40,12 @@ class tData:
         self.Z = Z
         self.yaw = yaw
         self.score = score
+
+        # Delete
         self.ignored = False
         self.valid = False
+        self.truncation = truncation
+        self.occlusion = occlusion
 
     def __str__(self):
         """
@@ -59,12 +58,12 @@ class tData:
 
 class TrackingEvaluation(object):
     """ tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
-             MOTA	- Multi-object tracking accuracy in [0,100]
-             MOTP	- Multi-object tracking precision in [0,100] (3D) / [td,100] (2D)
-             MOTAL	- Multi-object tracking accuracy in [0,100] with log10(id-switches)
-             id-switches - number of id switches
-             fragments   - number of fragmentations
-             MT, PT, ML	- number of mostly tracked, partially tracked and mostly lost trajectories
+             MOTA	        - Multi-object tracking accuracy in [0,100]
+             MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D)
+             MOTAL	        - Multi-object tracking accuracy in [0,100] with log10(id-switches)
+             id-switches    - number of id switches
+             fragments      - number of fragmentations
+             MT, PT, ML	    - number of mostly tracked, partially tracked and mostly lost trajectories
              recall	        - recall = percentage of detected targets
              precision	    - precision = percentage of correctly detected targets
              FAR		    - number of false alarms per frame
@@ -137,24 +136,25 @@ class TrackingEvaluation(object):
         self.gt_trajectories = [[] for x in range(self.n_sequences)]
         self.ign_trajectories = [[] for x in range(self.n_sequences)]
 
-        self.tracks = self.create_tracks()
+        self.tracks_gt = self.create_tracks(self.gt_boxes)
+        self.tracks_pred = self.create_tracks(self.pred_boxes)
 
-    def create_tracks(self) -> Dict[str, Dict[str, TrackingBox]]:
+    def create_tracks(self, all_boxes) -> Dict[str, Dict[str, TrackingBox]]:
         """
-        Returns all tracks for all scenes.
+        Returns all tracks for all scenes. This can be applied either to GT or predictions.
         :return: The tracks.
         """
 
         # Group annotations wrt scene and track_id.
         tracks = {}
-        for sample_token in self.gt_boxes.sample_tokens:
+        for sample_token in all_boxes.sample_tokens:
 
             # Init scene.
             sample_record = self.nusc.get('sample', sample_token)
             scene_token = sample_record['scene_token']
             tracks[scene_token] = {}
 
-            boxes: List[TrackingBox] = self.gt_boxes[sample_token]
+            boxes: List[TrackingBox] = all_boxes.boxes[sample_token]
             for box in boxes:
                 # Augment the boxes with timestamp. We will use timestamps to sort boxes in time later.
                 box.timestamp = sample_record['timestamp']
@@ -255,7 +255,7 @@ class TrackingEvaluation(object):
         fr, ids = 0, 0
         for seq_idx in range(len(self.gt_boxes)):
             seq_gt = self.gt_boxes[seq_idx]
-            seq_tracker_before = self.tracks[seq_idx]
+            seq_tracker_before: Dict[str, TrackingBox] = self.tracks[seq_idx]
 
             # remove the tracks with low confidence for each frame
             tracker_id_score = dict()
@@ -377,7 +377,6 @@ class TrackingEvaluation(object):
                         self.tp += 1
                         tmptp += 1
 
-                        # print(t[col].score)
                         self.scores.append(t[col].score)
 
                     else:
@@ -399,13 +398,12 @@ class TrackingEvaluation(object):
                     # ignore detection if it belongs to a neighboring class or is
                     # smaller or equal to the minimum height
 
-                    tt_height = abs(tt.y1 - tt.y2)
-                    if ((self.cls == "car" and tt.obj_type == "van") or (
-                            self.cls == "pedestrian" and tt.obj_type == "person_sitting") or tt_height <= self.min_height) and not tt.valid:
-                        nignoredtracker += 1
-                        tt.ignored = True
-                        ignoredtrackers[tt.track_id] = 1
-                        continue
+                    # if ((self.cls == "car" and tt.obj_type == "van") or (
+                    #         self.cls == "pedestrian" and tt.obj_type == "person_sitting")) and not tt.valid:
+                    #     nignoredtracker += 1
+                    #     tt.ignored = True
+                    #     ignoredtrackers[tt.track_id] = 1
+                    #     continue
                     # for d in dc:
                     #     # overlap = boxoverlap(tt,d,"a")
                     #     overlap = center_distance(tt, d)  # TODO: special considerations for dont care
