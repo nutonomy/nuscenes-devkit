@@ -139,7 +139,7 @@ class TrackingEvaluation(object):
 
         self.tracks = self.create_tracks()
 
-    def create_tracks(self) -> Dict[str, Dict[int, TrackingBox]]:
+    def create_tracks(self) -> Dict[str, Dict[str, TrackingBox]]:
         """
         Returns all tracks for all scenes.
         :return: The tracks.

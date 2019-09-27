@@ -277,9 +277,10 @@ class TrackingBox(EvalBox):
                  velocity: Tuple[float, float] = (0, 0),
                  ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
                  num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
-                 tracking_id: int = -1,  # Instance id of this object.
-                 tracking_name: str = "car",  # TODO: set to ''
-                 tracking_score: float = -1.0):
+                 tracking_id: str = '',  # Instance id of this object.
+                 tracking_name: str = '',  # The class name used in the tracking challenge.
+                 tracking_score: float = -1.0  # Does not apply to GT.
+                 ):
 
         super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
 
