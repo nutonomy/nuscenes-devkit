@@ -3,9 +3,8 @@ This code is based on Xinshuo Weng's AB3DMOT code at:
 https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmot.py
 """
 import os
-import math
 from collections import defaultdict
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 from munkres import Munkres
@@ -13,6 +12,7 @@ import matplotlib.pyplot as plt
 
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.utils import center_distance
+from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.nuscenes import NuScenes
 
 
@@ -139,29 +139,35 @@ class TrackingEvaluation(object):
 
         self.tracks = self.create_tracks()
 
-    def create_tracks(self) -> List[List[List[tData]]]:
+    def create_tracks(self) -> Dict[str, Dict[int, TrackingBox]]:
         """
         Returns all tracks for all scenes.
         :return: The tracks.
         """
 
-        # Group annotations wrt scene and track_id
-        # TODO: Replace the grouping below with pandas
+        # Group annotations wrt scene and track_id.
         tracks = {}
-        for box in self.gt_boxes.all:
-            sample_record = self.nusc.get('sample', box.sample_token)
-            # Augment the boxes with timestamp. we will use timestamps to sort boxes in time later
-            box.timestamp = sample_record['timestamp']
-            if sample_record['scene_token'] not in tracks.keys():
-                tracks[sample_record['scene_token']] = {}
-            if box.tracking_id not in tracks[sample_record['scene_token']].keys():
-                tracks[sample_record['scene_token']][box.tracking_id] = []
-            tracks[sample_record['scene_token']][box.tracking_id].append(box)
+        for sample_token in self.gt_boxes.sample_tokens:
 
-        # Make sure the tracks are sorted in time
+            # Init scene.
+            sample_record = self.nusc.get('sample', sample_token)
+            scene_token = sample_record['scene_token']
+            tracks[scene_token] = {}
+
+            boxes: List[TrackingBox] = self.gt_boxes[sample_token]
+            for box in boxes:
+                # Augment the boxes with timestamp. We will use timestamps to sort boxes in time later.
+                box.timestamp = sample_record['timestamp']
+
+                # Add box to tracks.
+                if box.tracking_id not in tracks[scene_token].keys():
+                    tracks[scene_token][box.tracking_id] = []
+                tracks[scene_token][box.tracking_id].append(box)
+
+        # Make sure the tracks are sorted in time.
         for scene_token, scene in tracks.items():
             for tracking_id, track in scene.items():
-                scene[tracking_id] = sorted(track, key=lambda box: box.timestamp)
+                scene[tracking_id] = sorted(track, key=lambda _box: _box.timestamp)
             tracks[scene_token] = scene
 
         return tracks
