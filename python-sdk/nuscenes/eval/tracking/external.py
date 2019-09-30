@@ -71,8 +71,8 @@ class TrackingEvaluation(object):
     """
 
     def __init__(self,
-                 tracks_gt: Dict[str, Dict[str, List[TrackingBox]]],
-                 tracks_pred: Dict[str, Dict[str, List[TrackingBox]]],
+                 tracks_gt: Dict[str, Dict[int, List[TrackingBox]]],
+                 tracks_pred: Dict[str, Dict[int, List[TrackingBox]]],
                  class_name: str,
                  mail,
                  dist_fcn: Callable,
@@ -247,44 +247,41 @@ class TrackingEvaluation(object):
             n_gts = 0
             n_trs = 0
 
-            for frame_idx in range(len(scene_tracks_gt)):
-                # TODO: reshape tracks.
-                assert len(scene_tracks_gt) == len(scene_tracks_pred), \
-                    'Error: GT and pred tracks have different duration!'
-                g = scene_tracks_gt[frame_idx]
-                t = scene_tracks_pred[frame_idx]
+            for timestamp in scene_tracks_gt.keys():
+                frame_gt = scene_tracks_gt[timestamp]
+                frame_pred = scene_tracks_pred[timestamp]
 
                 # Counting total number of ground truth and predicted objects.
-                self.n_gt += len(g)
-                self.n_tr += len(t)
-                n_gts += len(g)
-                n_trs += len(t)
+                self.n_gt += len(frame_gt)
+                self.n_tr += len(frame_pred)
+                n_gts += len(frame_gt)
+                n_trs += len(frame_pred)
 
                 # Use Hungarian method to compute association betwene predicted and GT tracks.
                 association_matrix, cost_matrix = TrackingEvaluation._hungarian_method(
-                    g, t, self.dist_fcn, self.dist_th_tp, max_cost=max_cost)
+                    frame_gt, frame_pred, self.dist_fcn, self.dist_th_tp
+                )
 
                 # Update tp/fn stats.
                 for row, col in association_matrix:
                     # Apply gating on boxoverlap # TODO: remove?
                     c = cost_matrix[row][col]
-                    if c < max_cost:
-                        g[row].tracker = t[col].track_id
-                        t[col].valid = True
-                        g[row].distance = c
+                    if c < self.dist_th_tp:
+                        frame_gt[row].tracker = frame_pred[col].track_id
+                        frame_pred[col].valid = True
                         self.total_cost += 1 - c
-                        scene_trajectories[g[row].track_id][-1] = t[col].track_id
+                        scene_trajectories[frame_gt[row].track_id][-1] = frame_pred[col].track_id
 
                         # True positives are only valid associations
                         self.tp += 1
 
-                        self.scores.append(t[col].score)
+                        self.scores.append(frame_pred[col].score)
 
                     else:
-                        g[row].tracker = -1
+                        frame_gt[row].tracker = -1
                         self.fn += 1
 
-            # Remove empty lists for current gt trajectories
+            # Remove empty lists for current gt trajectories.
             self.gt_trajectories[scene_id] = scene_trajectories
             self.ign_trajectories[scene_id] = scene_ignored
 
@@ -388,9 +385,9 @@ class TrackingEvaluation(object):
         print(summary, file=dump)
 
     @staticmethod
-    def _threshold_tracks(scene_tracks_pred_unfiltered: Dict[str, List[TrackingBox]],
-                         threshold: float) \
-            -> Dict[str, List[TrackingBox]]:
+    def _threshold_tracks(scene_tracks_pred_unfiltered: Dict[int, List[TrackingBox]],
+                          threshold: float) \
+            -> Dict[int, List[TrackingBox]]:
         """
         For the current threshold, remove the tracks with low confidence for each frame.
         Note that the average of ther per-frame scores forms the track-level score.
@@ -414,39 +411,28 @@ class TrackingEvaluation(object):
         return scene_tracks_pred
 
     @staticmethod
-    def _hungarian_method(g, t, dist_fcn: Callable, dist_th_tp: float, max_cost: float = 0.9):
+    def _hungarian_method(frame_gt, frame_pred, dist_fcn: Callable, dist_th_tp: float):
         """
         Use Hungarian method to associate, using center distance 0..1 as cost build cost matrix.
         Row are gt, columns are predictions.
-        :param g:
-        :param t:
+        :param frame_gt:
+        :param frame_pred:
         :param dist_fcn:
         :param dist_th_tp:
-        :param max_cost:
         :return:
         """
-        raise NotImplementedError
-
-        cost_matrix = []
-        for gg in g:
-            # Save current ids
+        cost_matrix: np.ndarray = dist_th_tp * np.ones((len(frame_gt), len(frame_pred)))
+        for y, gg in enumerate(frame_gt):
+            # Save current ids.
             gg.tracker = -1
             gg.id_switch = 0
             gg.fragmentation = 0
-            cost_row = []
-            for tt in t:
-                # overlap == 1 is cost ==0
-                c = 1 - dist_fcn(gg, tt)
 
-                # gating for center_distance
-                if c <= 1 - dist_th_tp:
-                    cost_row.append(c)
-                else:
-                    cost_row.append(max_cost)  # = 1e9
-            cost_matrix.append(cost_row)
+            for x, tt in enumerate(frame_pred):
+                cost_matrix[y, x] = float(np.minimum(dist_fcn(gg, tt), dist_th_tp))
 
-        if len(g) == 0:
-            cost_matrix = [[]]
+        # Convert to list.
+        cost_matrix: List[List[float]] = cost_matrix.tolist()
 
         # Associate using Hungarian aka. Munkres algorithm.
         hm = Munkres()
