@@ -17,6 +17,7 @@ from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_di
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig, TrackingBox
 from nuscenes.eval.tracking.external import TrackingEvaluation, Stat, Mail
 from nuscenes.eval.tracking.render import visualize_sample
+from nuscenes.eval.tracking.loaders import create_tracks
 
 
 class TrackingEval:
@@ -94,6 +95,10 @@ class TrackingEval:
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
+        # Convert boxes to tracks format.
+        self.tracks_gt = create_tracks(self.gt_boxes, self.nusc)
+        self.tracks_pred = create_tracks(self.pred_boxes, self.nusc)
+
     def evaluate(self) -> Tuple[TrackingMetrics, MetricDataList]:
         """
         Performs the actual evaluation.
@@ -109,7 +114,7 @@ class TrackingEval:
         mail = Mail("")
         num_sample_pts = self.cfg.num_sample_pts
         for class_name in self.cfg.class_names:
-            ev = TrackingEvaluation(self.nusc, self.gt_boxes, self.pred_boxes, class_name, mail,
+            ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, mail,
                                     self.cfg.dist_fcn_callable, self.cfg.dist_th_tp, num_sample_pts=num_sample_pts)
             filename = os.path.join("summary_%s_average_%s.txt" % (class_name, suffix))
             dump = open(filename, "w+")

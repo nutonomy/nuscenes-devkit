@@ -71,9 +71,8 @@ class TrackingEvaluation(object):
     """
 
     def __init__(self,
-                 nusc: NuScenes,
-                 gt_boxes: EvalBoxes,
-                 pred_boxes: EvalBoxes,
+                 tracks_gt: Dict[str, Dict[str, List[TrackingBox]]],
+                 tracks_pred: Dict[str, Dict[str, List[TrackingBox]]],
                  class_name: str,
                  mail,
                  dist_fcn: Callable,
@@ -90,17 +89,15 @@ class TrackingEvaluation(object):
         :param dist_th_tp:
         :param num_sample_pts:
         """
-
-        self.nusc = nusc
-        self.gt_boxes = gt_boxes
-        self.pred_boxes = pred_boxes
+        self.tracks_gt = tracks_gt
+        self.tracks_pred = tracks_pred
         self.cls = class_name
         self.mail = mail
         self.num_sample_pts = num_sample_pts
         self.dist_fcn = dist_fcn
         self.dist_th_tp = dist_th_tp
 
-        self.n_sequences = len(self.gt_boxes)
+        self.n_scenes = len(self.tracks_gt)
 
         # Statistics and numbers for evaluation.
         self.n_gt = 0  # number of ground truth detections minus ignored false negatives and true positives
@@ -143,45 +140,8 @@ class TrackingEvaluation(object):
 
         # this should be enough to hold all groundtruth trajectories
         # is expanded if necessary and reduced in any case
-        self.gt_trajectories = [[] for x in range(self.n_sequences)]
-        self.ign_trajectories = [[] for x in range(self.n_sequences)]
-
-        self.tracks_gt = self.create_tracks(self.gt_boxes)
-        self.tracks_pred = self.create_tracks(self.pred_boxes)
-
-    def create_tracks(self, all_boxes: EvalBoxes) -> Dict[str, Dict[str, List[TrackingBox]]]:
-        """
-        Returns all tracks for all scenes. This can be applied either to GT or predictions.
-        # TODO: Move into TrackingEval.__init__().
-        :return: The tracks.
-        """
-
-        # Group annotations wrt scene and track_id.
-        tracks = {}
-        for sample_token in all_boxes.sample_tokens:
-
-            # Init scene.
-            sample_record = self.nusc.get('sample', sample_token)
-            scene_token = sample_record['scene_token']
-            tracks[scene_token] = {}
-
-            boxes: List[TrackingBox] = all_boxes.boxes[sample_token]
-            for box in boxes:
-                # Augment the boxes with timestamp. We will use timestamps to sort boxes in time later.
-                box.timestamp = sample_record['timestamp']
-
-                # Add box to tracks.
-                if box.tracking_id not in tracks[scene_token].keys():
-                    tracks[scene_token][box.tracking_id] = []
-                tracks[scene_token][box.tracking_id].append(box)
-
-        # Make sure the tracks are sorted in time.
-        for scene_token, scene in tracks.items():
-            for tracking_id, track in scene.items():
-                scene[tracking_id] = sorted(track, key=lambda _box: _box.timestamp)
-            tracks[scene_token] = scene
-
-        return tracks
+        self.gt_trajectories = [[] for x in range(self.n_scenes)]
+        self.ign_trajectories = [[] for x in range(self.n_scenes)]
 
     def get_thresholds(self, scores, num_gt):
         # based on score of true positive to discretize the recall
@@ -243,16 +203,16 @@ class TrackingEvaluation(object):
         self.PT = 0
         self.ML = 0
 
-        self.gt_trajectories = [[] for x in range(self.n_sequences)]
-        self.ign_trajectories = [[] for x in range(self.n_sequences)]
+        self.gt_trajectories = [[] for x in range(self.n_scenes)]
+        self.ign_trajectories = [[] for x in range(self.n_scenes)]
 
     def compute_third_party_metrics(self, threshold: float = None):
         """
             Computes the metrics defined in:
-                - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
-                  MOTA, MOTAL, MOTP
-                - Nevatia 2008: Global Data Association for Multi-Object Tracking Using Network Flows.
-                  MT/PT/ML
+            - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
+              MOTA, MOTP
+            - Nevatia 2008: Global Data Association for Multi-Object Tracking Using Network Flows.
+              MT/PT/ML
         """
         # Init.
         max_cost = 1e9
@@ -269,7 +229,7 @@ class TrackingEvaluation(object):
             if threshold is None:
                 scene_tracks_pred = scene_tracks_pred_unfiltered
             else:
-                scene_tracks_pred = TrackingEvaluation.threshold_tracks(scene_tracks_pred_unfiltered, threshold)
+                scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
                 print('Tracks before filtering: %d, after filtering: %d' %
                       (len(scene_tracks_pred_unfiltered), len(scene_tracks_pred)))
 
@@ -301,8 +261,8 @@ class TrackingEvaluation(object):
                 n_trs += len(t)
 
                 # Use Hungarian method to compute association betwene predicted and GT tracks.
-                association_matrix, cost_matrix = TrackingEvaluation.hungarian_method(
-                    g, t, min_overlap=self.min_overlap, max_cost=max_cost)
+                association_matrix, cost_matrix = TrackingEvaluation._hungarian_method(
+                    g, t, self.dist_fcn, self.dist_th_tp, max_cost=max_cost)
 
                 # Update tp/fn stats.
                 for row, col in association_matrix:
@@ -339,7 +299,7 @@ class TrackingEvaluation(object):
             self.n_igts.append(seqigt)
             self.n_itrs.append(seqitr)
 
-        # TODO:
+        # Compute the relevant metrics.
         self._compute_metrics()
 
     def create_summary_details(self):
@@ -428,7 +388,7 @@ class TrackingEvaluation(object):
         print(summary, file=dump)
 
     @staticmethod
-    def threshold_tracks(scene_tracks_pred_unfiltered: Dict[str, List[TrackingBox]],
+    def _threshold_tracks(scene_tracks_pred_unfiltered: Dict[str, List[TrackingBox]],
                          threshold: float) \
             -> Dict[str, List[TrackingBox]]:
         """
@@ -454,7 +414,7 @@ class TrackingEvaluation(object):
         return scene_tracks_pred
 
     @staticmethod
-    def hungarian_method(g, t, dist_fcn: Callable, dist_th_tp: float, max_cost: float = 0.9):
+    def _hungarian_method(g, t, dist_fcn: Callable, dist_th_tp: float, max_cost: float = 0.9):
         """
         Use Hungarian method to associate, using center distance 0..1 as cost build cost matrix.
         Row are gt, columns are predictions.
