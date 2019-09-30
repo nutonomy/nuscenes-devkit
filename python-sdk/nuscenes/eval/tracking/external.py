@@ -3,54 +3,14 @@ This code is based on Xinshuo Weng's AB3DMOT code at:
 https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmot.py
 """
 import os
-from collections import defaultdict
 from typing import List, Dict, Callable, Tuple
+from collections import defaultdict
 
 import numpy as np
 from munkres import Munkres
 import matplotlib.pyplot as plt
 
 from nuscenes.eval.tracking.data_classes import TrackingBox
-
-
-class tData:
-    """
-        Utility class to load data.
-    """
-
-    def __init__(self, frame=-1, obj_type="unset", truncation=-1, occlusion=-1,
-                 w=-1, h=-1, l=-1,
-                 X=-1000, Y=-1000, Z=-1000, yaw=-10, score=-1000, track_id=-1):
-        """
-            Constructor, initializes the object given the parameters.
-        """
-
-        # Redundant
-        self.frame = frame
-        self.track_id = track_id
-        self.obj_type = obj_type
-        self.w = w
-        self.h = h
-        self.l = l
-        self.X = X
-        self.Y = Y
-        self.Z = Z
-        self.yaw = yaw
-        self.score = score
-
-        # Delete
-        self.ignored = False
-        self.valid = False
-        self.truncation = truncation
-        self.occlusion = occlusion
-
-    def __str__(self):
-        """
-            Print read data.
-        """
-
-        attrs = vars(self)
-        return '\n'.join("%s: %s" % item for item in attrs.items())
 
 
 class TrackingEvaluation(object):
@@ -78,9 +38,8 @@ class TrackingEvaluation(object):
                  num_sample_pts: int = 11):
         """
         TODO
-        :param nusc:
-        :param gt_boxes:
-        :param pred_boxes:
+        :param tracks_gt:
+        :param tracks_pred:
         :param class_name:
         :param mail:
         :param dist_fcn:
@@ -96,6 +55,9 @@ class TrackingEvaluation(object):
         self.dist_th_tp = dist_th_tp
 
         self.n_scenes = len(self.tracks_gt)
+        self.gt_trajectories = dict()
+        self.ign_trajectories = dict()
+        self.scores = list()  # True positive scores are used to compute the 11 recall thresholds.
 
         # Statistics and numbers for evaluation.
         self.n_gt = 0  # number of ground truth detections minus ignored false negatives and true positives
@@ -136,11 +98,40 @@ class TrackingEvaluation(object):
 
         self.n_sample_points = 500
 
-        # this should be enough to hold all groundtruth trajectories
-        # is expanded if necessary and reduced in any case
-        self.gt_trajectories = [[] for x in range(self.n_scenes)]
-        self.ign_trajectories = [[] for x in range(self.n_scenes)]
-        self.scores = list()
+    def compute_all_metrics(self, class_name: str, suffix: str):
+
+        filename = os.path.join("summary_%s_average_%s.txt" % (class_name, suffix))
+        dump = open(filename, "w+")
+        stat_meter = Stat(cls=class_name, suffix=suffix, dump=dump, num_sample_pts=self.n_sample_points)
+        self.compute_third_party_metrics()
+
+        # Evaluate the mean average metrics.
+        best_mota, best_threshold = 0, -10000
+        threshold_list = self.get_thresholds(self.scores, self.num_gt)
+        for threshold_tmp in threshold_list:
+            data_tmp = dict()
+            self.reset()
+            self.compute_third_party_metrics(threshold_tmp)
+            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['F1'], data_tmp['fp'], data_tmp['fn'],\
+                data_tmp['recall'] = \
+                self.MOTA, self.MOTP, self.precision, self.F1, self.fp, self.fn, self.recall
+            stat_meter.update(data_tmp)
+            mota_tmp = self.MOTA
+            if mota_tmp > best_mota:
+                best_threshold = threshold_tmp
+                best_mota = mota_tmp
+                self.save_to_stats(dump, threshold_tmp)
+
+                self.reset()
+                self.compute_third_party_metrics(best_threshold)
+                self.save_to_stats(dump)
+
+        stat_meter.output()
+        summary = stat_meter.print_summary()
+        print(summary)
+
+        stat_meter.plot()
+        dump.close()
 
     def get_thresholds(self, scores, num_gt):
         # based on score of true positive to discretize the recall
@@ -202,8 +193,9 @@ class TrackingEvaluation(object):
         self.PT = 0
         self.ML = 0
 
-        self.gt_trajectories = [[] for x in range(self.n_scenes)]
-        self.ign_trajectories = [[] for x in range(self.n_scenes)]
+        self.gt_trajectories = dict()
+        self.ign_trajectories = dict()
+        self.scores = list()
 
     def compute_third_party_metrics(self, threshold: float = None):
         """
@@ -214,6 +206,8 @@ class TrackingEvaluation(object):
               MT/PT/ML
         """
         # Init.
+        self.gt_trajectories = dict()
+        self.ign_trajectories = dict()
         self.scores = list()
 
         # Go through all frames and associate ground truth and tracker results.
@@ -233,8 +227,9 @@ class TrackingEvaluation(object):
 
             # Statistics over the current sequence.
             # Check the corresponding variable comments in __init__ to get their meaning.
-            scene_gt_trajectories = {}
-            scene_ign_trajectories = {}
+            # The *_trajectories fields both map from GT track_id and timestamp to pred track_id.
+            scene_gt_trajectories: Dict[str, Dict[str, Dict[int, str]]] = dict()
+            scene_ign_trajectories: Dict[str, Dict[str, Dict[int, str]]] = dict()
             seqtp = 0
             seqitp = 0
             seqfn = 0
@@ -255,26 +250,31 @@ class TrackingEvaluation(object):
                 n_gts += len(frame_gt)
                 n_trs += len(frame_pred)
 
-                # Use Hungarian method to compute association betwene predicted and GT tracks.
+                # Use Hungarian method to compute association between predicted and GT tracks.
                 association_matrix, cost_matrix = TrackingEvaluation._hungarian_method(
                     frame_gt, frame_pred, self.dist_fcn, self.dist_th_tp
                 )
+
+                # Initially set all GT trajectories as not associated.
+                for gg in frame_gt:
+                    scene_gt_trajectories[gg.tracking_id] = dict()
+                    scene_gt_trajectories[gg.tracking_id][gg.timestamp] = ''
+                    scene_ign_trajectories[gg.tracking_id] = dict()
+                    scene_ign_trajectories[gg.tracking_id][gg.timestamp] = False
 
                 # Update tp/fn stats.
                 for row, col in association_matrix:
                     c = cost_matrix[row][col]
                     if c < self.dist_th_tp:
-                        frame_gt[row].tracker = frame_pred[col].track_id
+                        # Update stats
                         self.total_cost += 1 - c
-                        scene_gt_trajectories[frame_gt[row].track_id][-1] = frame_pred[col].track_id
-
-                        # True positives are only valid associations.
                         self.tp += 1
 
-                        self.scores.append(frame_pred[col].score)
-
+                        gg = frame_gt[row]
+                        tt = frame_pred[col]
+                        scene_gt_trajectories[gg.tracking_id][gg.timestamp] = tt.tracking_id
+                        self.scores.append(tt.tracking_score)
                     else:
-                        frame_gt[row].tracker = -1
                         self.fn += 1
 
             # Remove empty lists for current gt trajectories.
@@ -398,6 +398,8 @@ class TrackingEvaluation(object):
             # Decide whether to keep track by tresholding.
             if avg_score >= threshold:
                 scene_tracks_pred[track_id] = track
+            else:
+                scene_tracks_pred[track_id] = []
 
         return scene_tracks_pred
 
@@ -435,19 +437,19 @@ class TrackingEvaluation(object):
     def _compute_metrics(self):
         """
         TODO
-        :return:
         """
 
         # Compute MT/PT/ML, fragments and idswitches for all GT trajectories.
         n_ignored_tr_total = 0
-        for scene_id, (scene_trajectories, scene_ignored) \
-                in enumerate(zip(self.gt_trajectories, self.ign_trajectories)):
+        for scene_trajectories, scene_ignored in zip(self.gt_trajectories.values(), self.ign_trajectories.values()):
 
             if len(scene_trajectories) == 0:
                 continue
 
             n_ignored_tr = 0
             for g, ign_g in zip(scene_trajectories.values(), scene_ignored.values()):
+                assert len(g) == len(ign_g)
+
                 # All frames of this GT trajectory are ignored.
                 if all(ign_g):
                     n_ignored_tr += 1

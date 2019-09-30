@@ -116,38 +116,7 @@ class TrackingEval:
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, mail,
                                     self.cfg.dist_fcn_callable, self.cfg.dist_th_tp, num_sample_pts=num_sample_pts)
-            filename = os.path.join("summary_%s_average_%s.txt" % (class_name, suffix))
-            dump = open(filename, "w+")
-            stat_meter = Stat(cls=class_name, suffix=suffix, dump=dump, num_sample_pts=num_sample_pts)
-            ev.compute_third_party_metrics()
-
-            # evaluate the mean average metrics
-            best_mota, best_threshold = 0, -10000
-            threshold_list = ev.get_thresholds(ev.scores, ev.num_gt)
-            for threshold_tmp in threshold_list:
-                data_tmp = dict()
-                ev.reset()
-                ev.compute_third_party_metrics(threshold_tmp)
-                data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], \
-                data_tmp['F1'], data_tmp['fp'], data_tmp['fn'], data_tmp['recall'] = \
-                    ev.MOTA, ev.MOTP, ev.precision, ev.F1, ev.fp, ev.fn, ev.recall
-                stat_meter.update(data_tmp)
-                mota_tmp = ev.MOTA
-                if mota_tmp > best_mota:
-                    best_threshold = threshold_tmp
-                    best_mota = mota_tmp
-                ev.save_to_stats(dump, threshold_tmp)
-
-            ev.reset()
-            ev.compute_third_party_metrics(best_threshold)
-            ev.save_to_stats(dump)
-
-            stat_meter.output()
-            summary = stat_meter.print_summary()
-            print(summary)
-
-            stat_meter.plot()
-            dump.close()
+            ev.compute_all_metrics(class_name, suffix)
 
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)

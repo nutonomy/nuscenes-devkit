@@ -8,6 +8,8 @@ from nuscenes.nuscenes import NuScenes
 def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes) -> Dict[str, Dict[int, List[TrackingBox]]]:
     """
     Returns all tracks for all scenes. This can be applied either to GT or predictions.
+    :param all_boxes:
+    :param nusc: The NuScenes instance to load the sample information from.
     :return: The tracks.
     """
     # Group annotations wrt scene and track_id.
