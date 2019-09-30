@@ -22,7 +22,14 @@ from nuscenes.utils.splits import create_splits_scenes
 
 def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbose: bool = False) \
         -> Tuple[EvalBoxes, Dict]:
-    """ Loads object predictions from file. """
+    """
+    Loads object predictions from file.
+    :param result_path: Path to the .json result file provided by the user.
+    :param max_boxes_per_sample: Maximim number of boxes allowed per sample.
+    :param box_cls: Type of box to load, e.g. DetectionBox or TrackingBox.
+    :param verbose: Whether to print messages to stdout.
+    :return: The deserialized results and meta data.
+    """
 
     # Load from file and check that the format is correct.
     with open(result_path) as f:
@@ -45,11 +52,18 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbos
     return all_results, meta
 
 
-def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
-    """ Loads ground truth boxes from DB. """
-
+def load_gt(nusc: NuScenes, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
+    """
+    Loads ground truth boxes from DB.
+    :param nusc: A NuScenes instance.
+    :param eval_split: The evaluation split for which we load GT boxes.
+    :param box_cls: Type of box to load, e.g. DetectionBox or TrackingBox.
+    :param verbose: Whether to print messages to stdout.
+    :return: The GT boxes.
+    """
     # Init.
-    attribute_map = {a['token']: a['name'] for a in nusc.attribute}
+    if box_cls == DetectionBox:
+        attribute_map = {a['token']: a['name'] for a in nusc.attribute}
 
     if verbose:
         print('Loading annotations for {} split from nuScenes version: {}'.format(eval_split, nusc.version))
@@ -165,8 +179,12 @@ def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
 
 def add_center_dist(nusc: NuScenes,
                     eval_boxes: EvalBoxes):
-    """ Adds the cylindrical (xy) center distance from ego vehicle to each box. """
-
+    """
+    Adds the cylindrical (xy) center distance from ego vehicle to each box.
+    :param nusc: The NuScenes instance.
+    :param eval_boxes: A set of boxes, either GT or predictions.
+    :return: eval_boxes augmented with center distances.
+    """
     for sample_token in eval_boxes.sample_tokens:
         sample_rec = nusc.get('sample', sample_token)
         sd_record = nusc.get('sample_data', sample_rec['data']['LIDAR_TOP'])

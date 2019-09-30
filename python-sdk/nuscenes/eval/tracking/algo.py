@@ -14,20 +14,6 @@ from nuscenes.eval.tracking.data_classes import TrackingBox
 
 
 class TrackingEvaluation(object):
-    """ tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
-             MOTA	        - Multi-object tracking accuracy in [0,100]
-             MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D)
-             MOTAL	        - Multi-object tracking accuracy in [0,100] with log10(id-switches)
-             id-switches    - number of id switches
-             fragments      - number of fragmentations
-             MT, PT, ML	    - number of mostly tracked, partially tracked and mostly lost trajectories
-             recall	        - recall = percentage of detected targets
-             precision	    - precision = percentage of correctly detected targets
-             FAR		    - number of false alarms per frame
-             falsepositives - number of false positives (FP)
-             missed         - number of missed targets (FN)
-    """
-
     def __init__(self,
                  tracks_gt: Dict[str, Dict[int, List[TrackingBox]]],
                  tracks_pred: Dict[str, Dict[int, List[TrackingBox]]],
@@ -41,15 +27,27 @@ class TrackingEvaluation(object):
         :param tracks_gt:
         :param tracks_pred:
         :param class_name:
-        :param mail:
         :param dist_fcn:
         :param dist_th_tp:
         :param num_sample_pts:
         :param output_dir:
+
+        Tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
+             MOTA	        - Multi-object tracking accuracy in [0,100].
+             MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D).
+             MOTAL	        - Multi-object tracking accuracy in [0,100] with log10(id-switches).
+             id-switches    - number of id switches.
+             fragments      - number of fragmentations.
+             MT, PT, ML	    - number of mostly tracked, partially tracked and mostly lost trajectories.
+             recall	        - recall = percentage of detected targets.
+             precision	    - precision = percentage of correctly detected targets.
+             FAR		    - number of false alarms per frame.
+             falsepositives - number of false positives (FP).
+             missed         - number of missed targets (FN).
         """
         self.tracks_gt = tracks_gt
         self.tracks_pred = tracks_pred
-        self.cls = class_name
+        self.class_name = class_name
         self.dist_fcn = dist_fcn
         self.dist_th_tp = dist_th_tp
         self.num_sample_pts = num_sample_pts
@@ -99,34 +97,47 @@ class TrackingEvaluation(object):
 
         self.n_sample_points = 500
 
-    def compute_all_metrics(self, class_name: str, suffix: str):
-
+    def compute_all_metrics(self, class_name: str, suffix: str) -> None:
+        """
+        Compute all relevant metrics for the current class.
+        :param class_name:
+        :param suffix:
+        """
+        # Initialize stats logger.
         filename = os.path.join(self.output_dir, 'summary_%s_average_%s.txt' % (class_name, suffix))
         dump = open(filename, "w+")
-        stat_meter = Stat(cls=class_name, suffix=suffix, dump=dump, num_sample_pts=self.n_sample_points)
+        stat_meter = Stat(class_name=class_name, suffix=suffix, dump=dump, num_sample_pts=self.n_sample_points)
+
+        # Run evaluation, retrieve TP scores and compute thresholds.
         self.compute_third_party_metrics()
+        thresholds = self.get_thresholds(self.scores, self.num_gt)
 
         # Evaluate the mean average metrics.
-        best_mota, best_threshold = 0, -10000
-        threshold_list = self.get_thresholds(self.scores, self.num_gt)
-        for threshold_tmp in threshold_list:
-            data_tmp = dict()
+        best_mota, best_threshold = -1, -1
+        for threshold in thresholds:
+            # Compute metrics for current threshold.
             self.reset()
-            self.compute_third_party_metrics(threshold_tmp)
+            self.compute_third_party_metrics(threshold)
+            self.save_to_stats(dump, threshold)
+
+            # Update counters for average metrics.
+            data_tmp = dict()
             data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['F1'], data_tmp['fp'], data_tmp['fn'], \
                 data_tmp['recall'] = \
                 self.MOTA, self.MOTP, self.precision, self.F1, self.fp, self.fn, self.recall
             stat_meter.update(data_tmp)
-            mota_tmp = self.MOTA
-            if mota_tmp > best_mota:
-                best_threshold = threshold_tmp
-                best_mota = mota_tmp
-                self.save_to_stats(dump, threshold_tmp)
 
-                self.reset()
-                self.compute_third_party_metrics(best_threshold)
-                self.save_to_stats(dump)
+            # Store best MOTA threshold used for CLEARMOT metrics.
+            if self.MOTA > best_mota:
+                best_mota = self.MOTA
+                best_threshold = threshold
 
+        # Use best threshold for CLEARMOT metrics.
+        self.reset()
+        self.compute_third_party_metrics(best_threshold)
+        self.save_to_stats(dump, best_threshold)
+
+        # Compute average metrics and print summary.
         stat_meter.output()
         summary = stat_meter.print_summary()
         print(summary)
@@ -134,7 +145,7 @@ class TrackingEvaluation(object):
         stat_meter.plot(save_dir=self.output_dir)
         dump.close()
 
-    def get_thresholds(self, scores, num_gt):
+    def get_thresholds(self, scores, num_gt) -> List[float]:
         # based on score of true positive to discretize the recall
         # may not be 11 due to not fully recall the results, all the results point has zero precision
         scores = np.array(scores)
@@ -156,7 +167,7 @@ class TrackingEvaluation(object):
 
         return thresholds
 
-    def reset(self):
+    def reset(self) -> None:
         self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
         self.n_igt = 0  # Number of ignored ground truth detections
         self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
@@ -198,7 +209,7 @@ class TrackingEvaluation(object):
         self.ign_trajectories = dict()
         self.scores = list()
 
-    def compute_third_party_metrics(self, threshold: float = None):
+    def compute_third_party_metrics(self, threshold: float = None) -> None:
         """
             Computes the metrics defined in:
             - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
@@ -223,21 +234,11 @@ class TrackingEvaluation(object):
                 scene_tracks_pred = scene_tracks_pred_unfiltered
             else:
                 scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
-                print('Tracks before filtering: %d, after filtering: %d' %
-                      (len(scene_tracks_pred_unfiltered), len(scene_tracks_pred)))
 
             # Statistics over the current sequence.
-            # Check the corresponding variable comments in __init__ to get their meaning.
             # The *_trajectories fields both map from GT track_id and timestamp to pred track_id.
-            scene_gt_trajectories: Dict[str, Dict[str, Dict[int, str]]] = dict()
-            scene_ign_trajectories: Dict[str, Dict[str, Dict[int, str]]] = dict()
-            seqtp = 0
-            seqitp = 0
-            seqfn = 0
-            seqifn = 0
-            seqfp = 0
-            seqigt = 0
-            seqitr = 0
+            scene_gt_trajectories: Dict[str, Dict[int, str]] = dict()
+            scene_ign_trajectories: Dict[str, Dict[int, bool]] = dict()
             n_gts = 0
             n_trs = 0
 
@@ -258,17 +259,18 @@ class TrackingEvaluation(object):
 
                 # Initially set all GT trajectories as not associated.
                 for gg in frame_gt:
-                    scene_gt_trajectories[gg.tracking_id] = dict()
+                    if gg.tracking_id not in scene_gt_trajectories:
+                        scene_gt_trajectories[gg.tracking_id] = dict()
+                        scene_ign_trajectories[gg.tracking_id] = dict()
                     scene_gt_trajectories[gg.tracking_id][gg.timestamp] = ''
-                    scene_ign_trajectories[gg.tracking_id] = dict()
                     scene_ign_trajectories[gg.tracking_id][gg.timestamp] = False
 
                 # Update tp/fn stats.
                 for row, col in association_matrix:
                     c = cost_matrix[row][col]
                     if c < self.dist_th_tp:
-                        # Update stats
-                        self.total_cost += 1 - c
+                        # Update stats.
+                        self.total_cost += c
                         self.tp += 1
 
                         gg = frame_gt[row]
@@ -280,30 +282,22 @@ class TrackingEvaluation(object):
 
             # Remove empty lists for current gt trajectories.
             self.gt_trajectories[scene_id] = scene_gt_trajectories
-            self.ign_trajectories[scene_id] = scene_ign_trajectories
+            self.ign_trajectories[scene_id] = scene_ign_trajectories  # TODO: Fill this data structure.
 
             # Gather statistics for "per sequence" statistics.
             self.n_gts.append(n_gts)
             self.n_trs.append(n_trs)
-            self.tps.append(seqtp)
-            self.itps.append(seqitp)
-            self.fps.append(seqfp)
-            self.fns.append(seqfn)
-            self.ifns.append(seqifn)
-            self.n_igts.append(seqigt)
-            self.n_itrs.append(seqitr)
 
         # Compute the relevant metrics.
         self._compute_metrics()
 
-    def create_summary_details(self):
+    def create_summary_details(self) -> str:
         """
             Generate and log a summary of the results.
         """
-
         summary = ""
 
-        summary += "evaluation: best results with single threshold".center(80, "=") + "\n"
+        summary += "Evaluation: Best results with single threshold".center(80, "=") + "\n"
         summary += self.print_entry("Multiple Object Tracking Accuracy (MOTA)", self.MOTA) + "\n"
         summary += self.print_entry("Multiple Object Tracking Precision (MOTP)", float(self.MOTP)) + "\n"
         summary += "\n"
@@ -330,15 +324,13 @@ class TrackingEvaluation(object):
 
         return summary
 
-    def create_summary_simple(self, threshold):
+    def create_summary_simple(self, threshold: float) -> str:
         """
-            Generate and mail a summary of the results.
-            If mailpy.py is present, the summary is instead printed.
+        Generate and mail a summary of the results.
         """
-
         summary = ""
 
-        summary += ("evaluation with confidence threshold %f" % threshold).center(80, "=") + "\n"
+        summary += ("Evaluation with confidence threshold %f" % threshold).center(80, "=") + "\n"
         summary += ' MOTA   MOTP   MT     ML     IDS  FRAG    F1   Prec  Recall      TP    FP    FN\n'
 
         summary += '{:.4f} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:5d}\n'.format(
@@ -348,7 +340,7 @@ class TrackingEvaluation(object):
 
         return summary
 
-    def print_entry(self, key, val, width=(70, 10)):
+    def print_entry(self, key, val, width=(70, 10)) -> None:
         """
             Pretty print an entry in a table fashion.
         """
@@ -363,17 +355,16 @@ class TrackingEvaluation(object):
             s_out += ("%s" % val).rjust(width[1])
         return s_out
 
-    def save_to_stats(self, dump, threshold=None):
+    def save_to_stats(self, dump, threshold=None) -> None:
         """
-            Save the statistics in a whitespace separate file.
+        Save the statistics in a whitespace separate file.
         """
-        # write summary to file summary_cls.txt
         if threshold is None:
             summary = self.create_summary_details()
         else:
             summary = self.create_summary_simple(threshold)
 
-        print(summary)  # mail or print the summary.
+        print(summary)
         print(summary, file=dump)
 
     @staticmethod
@@ -382,10 +373,10 @@ class TrackingEvaluation(object):
             -> Dict[int, List[TrackingBox]]:
         """
         For the current threshold, remove the tracks with low confidence for each frame.
-        Note that the average of ther per-frame scores forms the track-level score.
+        Note that the average of the per-frame scores forms the track-level score.
         :param scene_tracks_pred_unfiltered: The predicted tracks for this scene.
         :param threshold: The score threshold.
-        :return: A subset of the predicted tracks with scores above the thresold.
+        :return: A subset of the predicted tracks with scores above the threshold.
         """
         assert threshold is not None, 'Error: threshold must be specified!'
         scene_tracks_pred = {}
@@ -396,7 +387,7 @@ class TrackingEvaluation(object):
                 track_scores.append(box.tracking_score)
             avg_score = np.mean(track_scores)
 
-            # Decide whether to keep track by tresholding.
+            # Decide whether to keep track by thresholding.
             if avg_score >= threshold:
                 scene_tracks_pred[track_id] = track
             else:
@@ -435,12 +426,12 @@ class TrackingEvaluation(object):
 
         return association_matrix, cost_matrix
 
-    def _compute_metrics(self):
+    def _compute_metrics(self) -> None:
         """
-        TODO
+        Compute MT/PT/ML, fragments and idswitches for all GT trajectories.
         """
+        assert self.total_cost >= 0
 
-        # Compute MT/PT/ML, fragments and idswitches for all GT trajectories.
         n_ignored_tr_total = 0
         for scene_trajectories, scene_ignored in zip(self.gt_trajectories.values(), self.ign_trajectories.values()):
 
@@ -458,7 +449,7 @@ class TrackingEvaluation(object):
                     continue
 
                 # All frames of this GT trajectory are not assigned to any detections.
-                if all([this == -1 for this in g]):
+                if all([gg == '' for gg in g]):
                     self.ML += 1
                     continue
 
@@ -534,14 +525,13 @@ class Stat:
     """
 
     def __init__(self,
-                 cls,
-                 suffix,
+                 class_name: str,
+                 suffix: str,
                  dump,
                  num_sample_pts: int = 11):
         """
             Constructor, initializes the object given the parameters.
         """
-
         # init object data
         self.mota = 0
         self.motp = 0
@@ -558,12 +548,12 @@ class Stat:
         self.fn_list = list()
         self.recall_list = list()
 
-        self.cls = cls
+        self.class_name = class_name
         self.suffix = suffix
         self.dump = dump
         self.num_sample_pts = num_sample_pts
 
-    def update(self, data):
+    def update(self, data: Dict) -> None:
         self.mota += data['mota']
         self.motp += data['motp']
         self.F1 += data['F1']
@@ -579,16 +569,16 @@ class Stat:
         self.fn_list.append(data['fn'])
         self.recall_list.append(data['recall'])
 
-    def output(self):
+    def output(self) -> None:
         self.ave_mota = self.mota / self.num_sample_pts
         self.ave_motp = self.motp / self.num_sample_pts
         self.ave_f1 = self.F1 / self.num_sample_pts
         self.ave_precision = self.precision / self.num_sample_pts
 
-    def print_summary(self):
+    def print_summary(self) -> str:
         summary = ""
 
-        summary += "evaluation: average at all thresholds".center(80, "=") + "\n"
+        summary += "Evaluation: Average at all thresholds".center(80, "=") + "\n"
         summary += ' AMOTA  AMOTP  APrec\n'
 
         summary += '{:.4f} {:.4f} {:.4f}\n'.format(
@@ -598,7 +588,18 @@ class Stat:
 
         return summary
 
-    def plot_over_recall(self, data_list, title, y_name, save_path):
+    def plot_over_recall(self, data_list, title, y_name, save_path) -> None:
+        """
+
+        :param data_list:
+        :param title:
+        :param y_name:
+        :param save_path:
+        """
+        # Abort if there is no data to plot.
+        if len(data_list) == 0:
+            return
+
         # add extra zero at the end
         largest_recall = self.recall_list[-1]
         extra_zero = np.arange(largest_recall, 1, 0.01).tolist()
@@ -606,7 +607,9 @@ class Stat:
         y_zero = [0] * len_extra
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        plt.clf()
+        plt.title(title)
+        ax = fig.add_subplot()
         ax.plot(np.array(self.recall_list + extra_zero), np.array(data_list + y_zero))
         ax.set_ylabel(y_name, fontsize=20)
         ax.set_xlabel('Recall', fontsize=20)
@@ -626,17 +629,18 @@ class Stat:
             plt.text(self.recall_list[max_ind] - 0.05, data_list[max_ind] + 0.03, '%.2f' % (data_list[max_ind]),
                      fontsize=20)
         fig.savefig(save_path)
+        plt.close(fig)
 
-    def plot(self, save_dir: str):
+    def plot(self, save_dir: str) -> None:
         self.plot_over_recall(self.mota_list, 'MOTA - Recall Curve', 'MOTA',
-                              os.path.join(save_dir, 'MOTA_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
+                              os.path.join(save_dir, 'MOTA_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.motp_list, 'MOTP - Recall Curve', 'MOTP',
-                              os.path.join(save_dir, 'MOTP_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
+                              os.path.join(save_dir, 'MOTP_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.f1_list, 'F1 - Recall Curve', 'F1',
-                              os.path.join(save_dir, 'F1_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
+                              os.path.join(save_dir, 'F1_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.fp_list, 'False Positive - Recall Curve', 'False Positive',
-                              os.path.join(save_dir, 'FP_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
+                              os.path.join(save_dir, 'FP_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.fn_list, 'False Negative - Recall Curve', 'False Negative',
-                              os.path.join(save_dir, 'FN_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
+                              os.path.join(save_dir, 'FN_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.precision_list, 'Precision - Recall Curve', 'Precision',
-                              os.path.join(save_dir, 'precision_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
+                              os.path.join(save_dir, 'precision_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
