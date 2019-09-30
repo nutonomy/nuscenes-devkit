@@ -4,15 +4,13 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 """
 import os
 from collections import defaultdict
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Tuple
 
 import numpy as np
 from munkres import Munkres
 import matplotlib.pyplot as plt
 
-from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.tracking.data_classes import TrackingBox
-from nuscenes.nuscenes import NuScenes
 
 
 class tData:
@@ -142,6 +140,7 @@ class TrackingEvaluation(object):
         # is expanded if necessary and reduced in any case
         self.gt_trajectories = [[] for x in range(self.n_scenes)]
         self.ign_trajectories = [[] for x in range(self.n_scenes)]
+        self.scores = list()
 
     def get_thresholds(self, scores, num_gt):
         # based on score of true positive to discretize the recall
@@ -215,7 +214,6 @@ class TrackingEvaluation(object):
               MT/PT/ML
         """
         # Init.
-        max_cost = 1e9
         self.scores = list()
 
         # Go through all frames and associate ground truth and tracker results.
@@ -235,8 +233,8 @@ class TrackingEvaluation(object):
 
             # Statistics over the current sequence.
             # Check the corresponding variable comments in __init__ to get their meaning.
-            scene_trajectories = defaultdict(list)
-            scene_ignored = defaultdict(list)
+            scene_gt_trajectories = {}
+            scene_ign_trajectories = {}
             seqtp = 0
             seqitp = 0
             seqfn = 0
@@ -264,15 +262,13 @@ class TrackingEvaluation(object):
 
                 # Update tp/fn stats.
                 for row, col in association_matrix:
-                    # Apply gating on boxoverlap # TODO: remove?
                     c = cost_matrix[row][col]
                     if c < self.dist_th_tp:
                         frame_gt[row].tracker = frame_pred[col].track_id
-                        frame_pred[col].valid = True
                         self.total_cost += 1 - c
-                        scene_trajectories[frame_gt[row].track_id][-1] = frame_pred[col].track_id
+                        scene_gt_trajectories[frame_gt[row].track_id][-1] = frame_pred[col].track_id
 
-                        # True positives are only valid associations
+                        # True positives are only valid associations.
                         self.tp += 1
 
                         self.scores.append(frame_pred[col].score)
@@ -282,8 +278,8 @@ class TrackingEvaluation(object):
                         self.fn += 1
 
             # Remove empty lists for current gt trajectories.
-            self.gt_trajectories[scene_id] = scene_trajectories
-            self.ign_trajectories[scene_id] = scene_ignored
+            self.gt_trajectories[scene_id] = scene_gt_trajectories
+            self.ign_trajectories[scene_id] = scene_ign_trajectories
 
             # Gather statistics for "per sequence" statistics.
             self.n_gts.append(n_gts)
@@ -320,17 +316,12 @@ class TrackingEvaluation(object):
         summary += self.print_entry("Mostly Lost", self.ML) + "\n"
         summary += "\n"
         summary += self.print_entry("True Positives", self.tp) + "\n"
-        # summary += self.print_entry("True Positives per Sequence", self.tps) + "\n"
         summary += self.print_entry("False Positives", self.fp) + "\n"
-        # summary += self.print_entry("False Positives per Sequence", self.fps) + "\n"
         summary += self.print_entry("False Negatives", self.fn) + "\n"
-        # summary += self.print_entry("False Negatives per Sequence", self.fns) + "\n"
-        # summary += self.print_entry("Missed Targets", self.fn) + "\n"
         summary += self.print_entry("ID-switches", self.id_switches) + "\n"
         summary += self.print_entry("Fragmentations", self.fragments) + "\n"
         summary += "\n"
         summary += self.print_entry("Ground Truth Objects (Total)", self.n_gt + self.n_igt) + "\n"
-        # summary += self.print_entry("Ground Truth Objects (Total) per Sequence", self.n_gts) + "\n"
         summary += self.print_entry("Ground Truth Trajectories", self.n_gt_trajectories) + "\n"
         summary += "\n"
         summary += self.print_entry("Tracker Objects (Total)", self.n_tr) + "\n"
@@ -411,15 +402,16 @@ class TrackingEvaluation(object):
         return scene_tracks_pred
 
     @staticmethod
-    def _hungarian_method(frame_gt, frame_pred, dist_fcn: Callable, dist_th_tp: float):
+    def _hungarian_method(frame_gt, frame_pred, dist_fcn: Callable, dist_th_tp: float) \
+            -> Tuple[List[Tuple[int, int]], List[List[float]]]:
         """
         Use Hungarian method to associate, using center distance 0..1 as cost build cost matrix.
         Row are gt, columns are predictions.
-        :param frame_gt:
-        :param frame_pred:
-        :param dist_fcn:
-        :param dist_th_tp:
-        :return:
+        :param frame_gt: The GT boxes of the current frame.
+        :param frame_pred: The predicted boxes of the current frame.
+        :param dist_fcn: Distance function used for matching.
+        :param dist_th_tp: Distance function threshold.
+        :return: Association matrix and cost matrix.
         """
         cost_matrix: np.ndarray = dist_th_tp * np.ones((len(frame_gt), len(frame_pred)))
         for y, gg in enumerate(frame_gt):
@@ -436,7 +428,7 @@ class TrackingEvaluation(object):
 
         # Associate using Hungarian aka. Munkres algorithm.
         hm = Munkres()
-        association_matrix = hm.compute(cost_matrix)
+        association_matrix: List[Tuple[int, int]] = hm.compute(cost_matrix)
 
         return association_matrix, cost_matrix
 
@@ -445,27 +437,32 @@ class TrackingEvaluation(object):
         TODO
         :return:
         """
-        raise NotImplementedError
 
-        # Compute MT/PT/ML, fragments, idswitches for all groundtruth trajectories
+        # Compute MT/PT/ML, fragments and idswitches for all GT trajectories.
         n_ignored_tr_total = 0
-        for scene_id, (scene_trajectories, scene_ignored) in enumerate(zip(self.gt_trajectories, self.ign_trajectories)):
+        for scene_id, (scene_trajectories, scene_ignored) \
+                in enumerate(zip(self.gt_trajectories, self.ign_trajectories)):
+
             if len(scene_trajectories) == 0:
                 continue
+
             n_ignored_tr = 0
             for g, ign_g in zip(scene_trajectories.values(), scene_ignored.values()):
-                # all frames of this gt trajectory are ignored
+                # All frames of this GT trajectory are ignored.
                 if all(ign_g):
                     n_ignored_tr += 1
                     n_ignored_tr_total += 1
                     continue
-                # all frames of this gt trajectory are not assigned to any detections
+
+                # All frames of this GT trajectory are not assigned to any detections.
                 if all([this == -1 for this in g]):
                     self.ML += 1
                     continue
-                # compute tracked frames in trajectory
+
+                # Compute tracked frames in trajectory.
                 last_id = g[0]
-                # first detection (necessary to be in gt_trajectories) is always tracked
+
+                # First detection (necessary to be in gt_trajectories) is always tracked.
                 tracked = 1 if g[0] >= 0 else 0
                 lgt = 0 if ign_g[0] else 1
                 for f in range(1, len(g)):
@@ -480,11 +477,12 @@ class TrackingEvaluation(object):
                     if g[f] != -1:
                         tracked += 1
                         last_id = g[f]
-                # handle last frame; tracked state is handled in for loop (g[f]!=-1)
+
+                # Handle last frame; tracked state is handled in for loop (g[f]!=-1).
                 if len(g) > 1 and g[f - 1] != g[f] and last_id != -1 and g[f] != -1 and not ign_g[f]:
                     self.fragments += 1
 
-                # compute MT/PT/ML
+                # Compute MT/PT/ML.
                 tracking_ratio = tracked / float(len(g) - sum(ign_g))
                 if tracking_ratio > 0.8:
                     self.MT += 1
@@ -502,7 +500,7 @@ class TrackingEvaluation(object):
             self.PT /= float(self.n_gt_trajectories - n_ignored_tr_total)
             self.ML /= float(self.n_gt_trajectories - n_ignored_tr_total)
 
-        # precision/recall etc.
+        # Precision, recall and F1 metrics.
         if (self.fp + self.tp) == 0 or (self.tp + self.fn) == 0:
             self.recall = 0.
             self.precision = 0.
@@ -514,7 +512,7 @@ class TrackingEvaluation(object):
         else:
             self.F1 = 2. * (self.precision * self.recall) / (self.precision + self.recall)
 
-        # compute CLEARMOT
+        # Compute CLEARMOT metrics.
         if self.n_gt == 0:
             self.MOTA = -float("inf")
         else:
