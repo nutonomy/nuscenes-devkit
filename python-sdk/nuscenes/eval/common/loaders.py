@@ -153,7 +153,7 @@ def load_gt(nusc, eval_split: str, box_cls, verbose: bool = False) -> EvalBoxes:
                     )
                 )
             else:
-                raise NotImplementedError('Error: Invalid !')
+                raise NotImplementedError('Error: Invalid box_cls %s!' % box_cls)
 
         all_annotations.add_boxes(sample_token, sample_boxes)
 

@@ -34,9 +34,10 @@ class TrackingEvaluation(object):
                  class_name: str,
                  dist_fcn: Callable,
                  dist_th_tp: float,
-                 num_sample_pts: int = 11):
+                 num_sample_pts: int = 11,
+                 output_dir: str = '.'):
         """
-        TODO
+        Create a TrackingEvaluation object which computes all metrics for a given class.
         :param tracks_gt:
         :param tracks_pred:
         :param class_name:
@@ -44,16 +45,17 @@ class TrackingEvaluation(object):
         :param dist_fcn:
         :param dist_th_tp:
         :param num_sample_pts:
+        :param output_dir:
         """
         self.tracks_gt = tracks_gt
         self.tracks_pred = tracks_pred
         self.cls = class_name
-        self.num_sample_pts = num_sample_pts
         self.dist_fcn = dist_fcn
         self.dist_th_tp = dist_th_tp
+        self.num_sample_pts = num_sample_pts
+        self.output_dir = output_dir
 
         self.n_scenes = len(self.tracks_gt)
-        self.mail = Mail("")
         self.gt_trajectories = dict()
         self.ign_trajectories = dict()
         self.scores = list()  # True positive scores are used to compute the 11 recall thresholds.
@@ -99,7 +101,7 @@ class TrackingEvaluation(object):
 
     def compute_all_metrics(self, class_name: str, suffix: str):
 
-        filename = os.path.join("summary_%s_average_%s.txt" % (class_name, suffix))
+        filename = os.path.join(self.output_dir, 'summary_%s_average_%s.txt' % (class_name, suffix))
         dump = open(filename, "w+")
         stat_meter = Stat(cls=class_name, suffix=suffix, dump=dump, num_sample_pts=self.n_sample_points)
         self.compute_third_party_metrics()
@@ -111,7 +113,7 @@ class TrackingEvaluation(object):
             data_tmp = dict()
             self.reset()
             self.compute_third_party_metrics(threshold_tmp)
-            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['F1'], data_tmp['fp'], data_tmp['fn'],\
+            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['F1'], data_tmp['fp'], data_tmp['fn'], \
                 data_tmp['recall'] = \
                 self.MOTA, self.MOTP, self.precision, self.F1, self.fp, self.fn, self.recall
             stat_meter.update(data_tmp)
@@ -129,7 +131,7 @@ class TrackingEvaluation(object):
         summary = stat_meter.print_summary()
         print(summary)
 
-        stat_meter.plot()
+        stat_meter.plot(save_dir=self.output_dir)
         dump.close()
 
     def get_thresholds(self, scores, num_gt):
@@ -296,8 +298,7 @@ class TrackingEvaluation(object):
 
     def create_summary_details(self):
         """
-            Generate and mail a summary of the results.
-            If mailpy.py is present, the summary is instead printed.
+            Generate and log a summary of the results.
         """
 
         summary = ""
@@ -338,7 +339,7 @@ class TrackingEvaluation(object):
         summary = ""
 
         summary += ("evaluation with confidence threshold %f" % threshold).center(80, "=") + "\n"
-        summary += ' MOTA   MOTP   MODA   MODP    MT     ML     IDS  FRAG    F1   Prec  Recall      TP    FP    FN\n'
+        summary += ' MOTA   MOTP   MT     ML     IDS  FRAG    F1   Prec  Recall      TP    FP    FN\n'
 
         summary += '{:.4f} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:5d}\n'.format(
             self.MOTA, self.MOTP, self.MT, self.ML, self.id_switches, self.fragments,
@@ -371,7 +372,8 @@ class TrackingEvaluation(object):
             summary = self.create_summary_details()
         else:
             summary = self.create_summary_simple(threshold)
-        self.mail.msg(summary)  # mail or print the summary.
+
+        print(summary)  # mail or print the summary.
         print(summary, file=dump)
 
     @staticmethod
@@ -492,7 +494,7 @@ class TrackingEvaluation(object):
                 else:  # 0.2 <= tracking_ratio <= 0.8
                     self.PT += 1
 
-        if (self.n_gt_trajectories - n_ignored_tr_total) == 0:
+        if self.n_gt_trajectories - n_ignored_tr_total == 0:
             self.MT = 0.
             self.PT = 0.
             self.ML = 0.
@@ -502,13 +504,13 @@ class TrackingEvaluation(object):
             self.ML /= float(self.n_gt_trajectories - n_ignored_tr_total)
 
         # Precision, recall and F1 metrics.
-        if (self.fp + self.tp) == 0 or (self.tp + self.fn) == 0:
+        if self.fp + self.tp == 0 or self.tp + self.fn == 0:
             self.recall = 0.
             self.precision = 0.
         else:
             self.recall = self.tp / float(self.tp + self.fn)
             self.precision = self.tp / float(self.fp + self.tp)
-        if (self.recall + self.precision) == 0:
+        if self.recall + self.precision == 0:
             self.F1 = 0.
         else:
             self.F1 = 2. * (self.precision * self.recall) / (self.precision + self.recall)
@@ -606,7 +608,6 @@ class Stat:
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.plot(np.array(self.recall_list + extra_zero), np.array(data_list + y_zero))
-        # ax.set_title(title, fontsize=20)
         ax.set_ylabel(y_name, fontsize=20)
         ax.set_xlabel('Recall', fontsize=20)
         ax.set_xlim(0.0, 1.0)
@@ -620,17 +621,13 @@ class Stat:
 
         if y_name in ['MOTA', 'F1']:
             max_ind = np.argmax(np.array(data_list))
-            # print(max_ind)
             plt.axvline(self.recall_list[max_ind], ymax=data_list[max_ind], color='r')
             plt.plot(self.recall_list[max_ind], data_list[max_ind], 'or', markersize=12)
             plt.text(self.recall_list[max_ind] - 0.05, data_list[max_ind] + 0.03, '%.2f' % (data_list[max_ind]),
                      fontsize=20)
         fig.savefig(save_path)
-        # zxc
 
-    def plot(self):
-        save_dir = os.path.join("./results", 'plot')
-
+    def plot(self, save_dir: str):
         self.plot_over_recall(self.mota_list, 'MOTA - Recall Curve', 'MOTA',
                               os.path.join(save_dir, 'MOTA_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
         self.plot_over_recall(self.motp_list, 'MOTP - Recall Curve', 'MOTP',
@@ -643,16 +640,3 @@ class Stat:
                               os.path.join(save_dir, 'FN_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
         self.plot_over_recall(self.precision_list, 'Precision - Recall Curve', 'Precision',
                               os.path.join(save_dir, 'precision_recall_curve_%s_%s.pdf' % (self.cls, self.suffix)))
-
-class Mail:
-    """ Dummy class to print messages without sending e-mails"""
-    def __init__(self,mailaddress):
-        pass
-    def msg(self,msg):
-        print(msg)
-    def finalize(self,success,benchmark,sha_key,mailaddress=None):
-        if success:
-            print("Results for %s (benchmark: %s) sucessfully created" % (benchmark,sha_key))
-        else:
-            print("Creating results for %s (benchmark: %s) failed" % (benchmark,sha_key))
-

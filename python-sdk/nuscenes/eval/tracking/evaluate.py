@@ -15,7 +15,7 @@ from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import MetricDataList
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig, TrackingBox
-from nuscenes.eval.tracking.algo import TrackingEvaluation, Mail
+from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.render import visualize_sample
 from nuscenes.eval.tracking.loaders import create_tracks
 
@@ -114,7 +114,7 @@ class TrackingEval:
         num_sample_pts = self.cfg.num_sample_pts
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
-                                    self.cfg.dist_th_tp, num_sample_pts=num_sample_pts)
+                                    self.cfg.dist_th_tp, num_sample_pts=num_sample_pts, output_dir=self.output_dir)
             ev.compute_all_metrics(class_name, suffix)
 
         # Compute evaluation time.
