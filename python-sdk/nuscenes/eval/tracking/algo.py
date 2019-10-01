@@ -105,10 +105,14 @@ class TrackingEvaluation(object):
 
         # Evaluate the mean average metrics.
         best_mota, best_threshold = -1, -1
-        accumulators = {}
+        accumulators = []
+        names = []
         mh = mm.metrics.create()
         for threshold in thresholds:
-            accumulators[threshold] = self.compute_third_party_metrics()
+            print('threshold {0:f}'.format(threshold))
+
+            accumulators.append(self.compute_third_party_metrics(threshold))
+            names.append('threshold {0:f}'.format(threshold))
 
             # # Compute metrics for current threshold.
             # self.reset()
@@ -127,9 +131,15 @@ class TrackingEvaluation(object):
             #     best_mota = self.MOTA
             #     best_threshold = threshold
 
-            summary = mh.compute(accumulators[threshold], metrics=['num_frames', 'mota', 'motp'],
-                                 name='threshold {0:f}'.format(threshold))
-            print(summary)
+            # summary = mh.compute(accumulators[threshold], metrics=['num_frames', 'mota', 'motp'],
+            #                      name='threshold {0:f}'.format(threshold))
+            # print(summary)
+        summary = mh.compute_many(
+            accumulators,
+            metrics=['num_frames', 'mota', 'motp'],
+            names=names,
+            generate_overall=True)
+        print(summary)
 
         # # Use best threshold for CLEARMOT metrics.
         # self.reset()
