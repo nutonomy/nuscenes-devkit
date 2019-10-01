@@ -64,6 +64,8 @@ class TrackingEvaluation(object):
         self.n_gts = []  # number of ground truth detections minus ignored false negatives and true positives PER SEQUENCE
         self.n_igts = []  # number of ground ignored truth detections PER SEQUENCE
         self.n_gt_trajectories = 0
+        self.n_gt_trajectories = 0
+
         self.n_gt_seq = []
         self.n_tr = 0  # number of tracker detections minus ignored tracker detections
         self.n_trs = []  # number of tracker detections minus ignored tracker detections PER SEQUENCE
@@ -211,11 +213,11 @@ class TrackingEvaluation(object):
 
     def compute_third_party_metrics(self, threshold: float = None) -> None:
         """
-            Computes the metrics defined in:
-            - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
-              MOTA, MOTP
-            - Nevatia 2008: Global Data Association for Multi-Object Tracking Using Network Flows.
-              MT/PT/ML
+        Computes the metrics defined in:
+        - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
+          MOTA, MOTP
+        - Nevatia 2008: Global Data Association for Multi-Object Tracking Using Network Flows.
+          MT/PT/ML
         """
         # Init.
         self.gt_trajectories = dict()
@@ -288,12 +290,15 @@ class TrackingEvaluation(object):
             self.n_gts.append(n_gts)
             self.n_trs.append(n_trs)
 
+        # Count number of tracks.
+        self.n_gt_trajectories = sum([len(t) for t in self.gt_trajectories.values()])
+
         # Compute the relevant metrics.
         self._compute_metrics()
 
     def create_summary_details(self) -> str:
         """
-            Generate and log a summary of the results.
+        Generate and log a summary of the results.
         """
         summary = ""
 
@@ -435,45 +440,63 @@ class TrackingEvaluation(object):
         n_ignored_tr_total = 0
         for scene_trajectories, scene_ignored in zip(self.gt_trajectories.values(), self.ign_trajectories.values()):
 
-            if len(scene_trajectories) == 0:
-                continue
+            assert len(scene_trajectories) != 0
 
             n_ignored_tr = 0
             for g, ign_g in zip(scene_trajectories.values(), scene_ignored.values()):
                 assert len(g) == len(ign_g)
 
                 # All frames of this GT trajectory are ignored.
-                if all(ign_g):
+                if all(ign_g.values()):
                     n_ignored_tr += 1
                     n_ignored_tr_total += 1
                     continue
 
                 # All frames of this GT trajectory are not assigned to any detections.
-                if all([gg == '' for gg in g]):
+                if all([gg == '' for gg in g.values()]):
                     self.ML += 1
                     continue
 
                 # Compute tracked frames in trajectory.
-                last_id = g[0]
-
                 # First detection (necessary to be in gt_trajectories) is always tracked.
-                tracked = 1 if g[0] >= 0 else 0
-                lgt = 0 if ign_g[0] else 1
-                for f in range(1, len(g)):
-                    if ign_g[f]:
-                        last_id = -1
-                        continue
-                    lgt += 1
-                    if last_id != g[f] and last_id != -1 and g[f] != -1 and g[f - 1] != -1:
-                        self.id_switches += 1
-                    if f < len(g) - 1 and g[f - 1] != g[f] and last_id != -1 and g[f] != -1 and g[f + 1] != -1:
-                        self.fragments += 1
-                    if g[f] != -1:
-                        tracked += 1
-                        last_id = g[f]
+                first_timestamp = list(g.keys())[0]
+                last_id = g[first_timestamp]
+                tracked = 1 if g[first_timestamp] != '' else 0
+                lgt = 0 if ign_g[first_timestamp] else 1
+                for i in range(1, len(g)):  # Skip first timestamp.
+                    prev_timestamp = list(g.keys())[i - 1]
+                    timestamp = list(g.keys())[i]
+                    if i < len(g) - 1:
+                        next_timestamp = list(g.keys())[i + 1]
 
-                # Handle last frame; tracked state is handled in for loop (g[f]!=-1).
-                if len(g) > 1 and g[f - 1] != g[f] and last_id != -1 and g[f] != -1 and not ign_g[f]:
+                    if ign_g[timestamp]:
+                        last_id = ''
+                        continue
+
+                    lgt += 1
+                    if last_id != g[timestamp] \
+                            and last_id != '' \
+                            and g[timestamp] != '' \
+                            and g[prev_timestamp] != '':
+                        self.id_switches += 1
+
+                    if timestamp < len(g) - 1 \
+                            and g[prev_timestamp] != g[timestamp] \
+                            and last_id != '' \
+                            and g[timestamp] != '' \
+                            and g[next_timestamp] != '':
+                        self.fragments += 1
+
+                    if g[timestamp] != '':
+                        tracked += 1
+                        last_id = g[timestamp]
+
+                # Handle last frame; tracked state is handled in for loop (g[f] != -1).
+                if len(g) > 1 \
+                        and g[prev_timestamp] != g[timestamp] \
+                        and last_id != '' \
+                        and g[timestamp] != '' \
+                        and not ign_g[timestamp]:
                     self.fragments += 1
 
                 # Compute MT/PT/ML.
@@ -482,13 +505,13 @@ class TrackingEvaluation(object):
                     self.MT += 1
                 elif tracking_ratio < 0.2:
                     self.ML += 1
-                else:  # 0.2 <= tracking_ratio <= 0.8
+                else:  # 0.2 <= tracking_ratio <= 0.8.
                     self.PT += 1
 
         if self.n_gt_trajectories - n_ignored_tr_total == 0:
-            self.MT = 0.
-            self.PT = 0.
-            self.ML = 0.
+            self.MT = 0
+            self.PT = 0
+            self.ML = 0
         else:
             self.MT /= float(self.n_gt_trajectories - n_ignored_tr_total)
             self.PT /= float(self.n_gt_trajectories - n_ignored_tr_total)
@@ -590,7 +613,7 @@ class Stat:
 
     def plot_over_recall(self, data_list, title, y_name, save_path) -> None:
         """
-
+        TODO
         :param data_list:
         :param title:
         :param y_name:
