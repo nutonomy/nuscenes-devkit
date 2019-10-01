@@ -4,7 +4,6 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 """
 import os
 from typing import List, Dict, Callable, Tuple
-from collections import defaultdict
 
 import numpy as np
 from munkres import Munkres
@@ -20,7 +19,7 @@ class TrackingEvaluation(object):
                  class_name: str,
                  dist_fcn: Callable,
                  dist_th_tp: float,
-                 num_sample_pts: int = 11,
+                 num_thresholds: int = 11,
                  output_dir: str = '.'):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
@@ -29,75 +28,63 @@ class TrackingEvaluation(object):
         :param class_name:
         :param dist_fcn:
         :param dist_th_tp:
-        :param num_sample_pts:
+        :param num_thresholds:
         :param output_dir:
 
         Tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
              MOTA	        - Multi-object tracking accuracy in [0,100].
              MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D).
-             MOTAL	        - Multi-object tracking accuracy in [0,100] with log10(id-switches).
              id-switches    - number of id switches.
              fragments      - number of fragmentations.
-             MT, PT, ML	    - number of mostly tracked, partially tracked and mostly lost trajectories.
+             MT, ML	        - number of mostly tracked and mostly lost trajectories.
              recall	        - recall = percentage of detected targets.
              precision	    - precision = percentage of correctly detected targets.
              FAR		    - number of false alarms per frame.
              falsepositives - number of false positives (FP).
              missed         - number of missed targets (FN).
+
+        Computes the metrics defined in:
+        - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
+          MOTA, MOTP
+        - Nevatia 2008: Global Data Association for Multi-Object Tracking Using Network Flows.
+          MT/PT/ML
+        - Weng 2019: "A Baseline for 3D Multi-Object Tracking".
+          AMOTA/AMOTP
         """
         self.tracks_gt = tracks_gt
         self.tracks_pred = tracks_pred
         self.class_name = class_name
         self.dist_fcn = dist_fcn
         self.dist_th_tp = dist_th_tp
-        self.num_sample_pts = num_sample_pts
+        self.num_thresholds = num_thresholds
         self.output_dir = output_dir
 
         self.n_scenes = len(self.tracks_gt)
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
-        self.scores = list()  # True positive scores are used to compute the 11 recall thresholds.
 
-        # Statistics and numbers for evaluation.
-        self.n_gt = 0  # number of ground truth detections minus ignored false negatives and true positives
-        self.n_igt = 0  # number of ignored ground truth detections
-        self.n_gts = []  # number of ground truth detections minus ignored false negatives and true positives PER SEQUENCE
-        self.n_igts = []  # number of ground ignored truth detections PER SEQUENCE
-        self.n_gt_trajectories = 0
-        self.n_gt_trajectories = 0
-
-        self.n_gt_seq = []
-        self.n_tr = 0  # number of tracker detections minus ignored tracker detections
-        self.n_trs = []  # number of tracker detections minus ignored tracker detections PER SEQUENCE
-        self.n_itr = 0  # number of ignored tracker detections
-        self.n_itrs = []  # number of ignored tracker detections PER SEQUENCE
-        self.n_tr_trajectories = 0
-        self.n_tr_seq = []
-        self.MOTA = 0
-        self.MOTP = 0
+        # Internal statistics.
         self.recall = 0
         self.precision = 0
-        self.F1 = 0
-        self.FAR = 0
         self.total_cost = 0
-        self.itp = 0  # number of ignored true positives
-        self.itps = []  # number of ignored true positives PER SEQUENCE
-        self.tp = 0  # number of true positives including ignored true positives!
-        self.tps = []  # number of true positives including ignored true positives PER SEQUENCE
-        self.fn = 0  # number of false negatives WITHOUT ignored false negatives
-        self.fns = []  # number of false negatives WITHOUT ignored false negatives PER SEQUENCE
-        self.ifn = 0  # number of ignored false negatives
-        self.ifns = []  # number of ignored false negatives PER SEQUENCE
-        self.fp = 0  # number of false positives
-        self.fps = []  # above PER SEQUENCE
-        self.mme = 0
+        self.tp = 0  # Number of true positives including ignored true positives!
+        self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
+        self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE
+        self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
+        self.n_igt = 0  # Number of ignored ground truth detections
+        self.n_gts = []  # Number of ground truth detections minus ignored FNs and TPs PER SEQUENCE
+        self.n_gt_trajectories = 0
+        self.n_gt_trajectories = 0
+        self.gt_trajectories = dict()
+        self.ign_trajectories = dict()
+
+        # Challenge metrics.
+        self.MOTA = 0
+        self.MOTP = 0
+        self.fp = 0  # Number of false positives
+        self.fn = 0  # Number of false negatives WITHOUT ignored false negatives
         self.fragments = 0
         self.id_switches = 0
         self.MT = 0
-        self.PT = 0
         self.ML = 0
-
-        self.n_sample_points = 500
 
     def compute_all_metrics(self, class_name: str, suffix: str) -> None:
         """
@@ -108,11 +95,10 @@ class TrackingEvaluation(object):
         # Initialize stats logger.
         filename = os.path.join(self.output_dir, 'summary_%s_average_%s.txt' % (class_name, suffix))
         dump = open(filename, "w+")
-        stat_meter = Stat(class_name=class_name, suffix=suffix, dump=dump, num_sample_pts=self.n_sample_points)
+        stat_meter = Stat(class_name=class_name, suffix=suffix, dump=dump, num_thresholds=self.num_thresholds)
 
-        # Run evaluation, retrieve TP scores and compute thresholds.
-        self.compute_third_party_metrics()
-        thresholds = self.get_thresholds(self.scores, self.num_gt)
+        # Get thresholds.
+        thresholds = self.get_thresholds()
 
         # Evaluate the mean average metrics.
         best_mota, best_threshold = -1, -1
@@ -124,9 +110,9 @@ class TrackingEvaluation(object):
 
             # Update counters for average metrics.
             data_tmp = dict()
-            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['F1'], data_tmp['fp'], data_tmp['fn'], \
+            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['fp'], data_tmp['fn'], \
                 data_tmp['recall'] = \
-                self.MOTA, self.MOTP, self.precision, self.F1, self.fp, self.fn, self.recall
+                self.MOTA, self.MOTP, self.precision, self.fp, self.fn, self.recall
             stat_meter.update(data_tmp)
 
             # Store best MOTA threshold used for CLEARMOT metrics.
@@ -147,25 +133,13 @@ class TrackingEvaluation(object):
         stat_meter.plot(save_dir=self.output_dir)
         dump.close()
 
-    def get_thresholds(self, scores, num_gt) -> List[float]:
-        # based on score of true positive to discretize the recall
-        # may not be 11 due to not fully recall the results, all the results point has zero precision
-        scores = np.array(scores)
-        scores.sort()
-        scores = scores[::-1]
-        current_recall = 0
-        thresholds = []
-        for i, score in enumerate(scores):
-            l_recall = (i + 1) / float(num_gt)
-            if i < (len(scores) - 1):
-                r_recall = (i + 2) / float(num_gt)
-            else:
-                r_recall = l_recall
-            if (r_recall - current_recall) < (current_recall - l_recall) and i < (len(scores) - 1):
-                continue
-
-            thresholds.append(score)
-            current_recall += 1 / (self.num_sample_pts - 1.0)
+    def get_thresholds(self) -> List[float]:
+        """
+        Specify recall thresholds.
+        AMOTA/AMOTP average over all thresholds, whereas MOTA/MOTP/.. pick the threshold with the highest MOTA.
+        :return: The list of thresholds.
+        """
+        thresholds = list(np.linspace(0, 1, self.num_thresholds))
 
         return thresholds
 
@@ -173,56 +147,36 @@ class TrackingEvaluation(object):
         self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
         self.n_igt = 0  # Number of ignored ground truth detections
         self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
-        self.n_itr = 0  # Number of ignored tracker detections
 
         self.MOTA = 0
         self.MOTP = 0
 
         self.recall = 0
         self.precision = 0
-        self.F1 = 0
-        self.FAR = 0
 
         self.total_cost = 0
-        self.itp = 0
         self.tp = 0
         self.fn = 0
-        self.ifn = 0
         self.fp = 0
 
         self.n_gts = []  # Number of ground truth detections minus ignored false negatives and true positives PER SEQUENCE
-        self.n_igts = []  # Number of ground ignored truth detections PER SEQUENCE
         self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE
-        self.n_itrs = []  # Number of ignored tracker detections PER SEQUENCE
-
-        self.itps = []  # Number of ignored true positives PER SEQUENCE
-        self.tps = []  # Number of true positives including ignored true positives PER SEQUENCE
-        self.fns = []  # Number of false negatives WITHOUT ignored false negatives PER SEQUENCE
-        self.ifns = []  # Number of ignored false negatives PER SEQUENCE
-        self.fps = []  # Above PER SEQUENCE
 
         self.fragments = 0
         self.id_switches = 0
         self.MT = 0
-        self.PT = 0
         self.ML = 0
 
         self.gt_trajectories = dict()
         self.ign_trajectories = dict()
-        self.scores = list()
 
     def compute_third_party_metrics(self, threshold: float = None) -> None:
         """
-        Computes the metrics defined in:
-        - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
-          MOTA, MOTP
-        - Nevatia 2008: Global Data Association for Multi-Object Tracking Using Network Flows.
-          MT/PT/ML
+        Computes the traditional CLEARMOT/MT/ML metrics.
         """
         # Init.
         self.gt_trajectories = dict()
         self.ign_trajectories = dict()
-        self.scores = list()
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
@@ -278,7 +232,6 @@ class TrackingEvaluation(object):
                         gg = frame_gt[row]
                         tt = frame_pred[col]
                         scene_gt_trajectories[gg.tracking_id][gg.timestamp] = tt.tracking_id
-                        self.scores.append(tt.tracking_score)
                     else:
                         self.fn += 1
 
@@ -300,48 +253,49 @@ class TrackingEvaluation(object):
         """
         Generate and log a summary of the results.
         """
-        summary = ""
-
-        summary += "Evaluation: Best results with single threshold".center(80, "=") + "\n"
-        summary += self.print_entry("Multiple Object Tracking Accuracy (MOTA)", self.MOTA) + "\n"
-        summary += self.print_entry("Multiple Object Tracking Precision (MOTP)", float(self.MOTP)) + "\n"
-        summary += "\n"
-        summary += self.print_entry("Recall", self.recall) + "\n"
-        summary += self.print_entry("Precision", self.precision) + "\n"
-        summary += self.print_entry("F1", self.F1) + "\n"
-        summary += "\n"
-        summary += self.print_entry("Mostly Tracked", self.MT) + "\n"
-        summary += self.print_entry("Partly Tracked", self.PT) + "\n"
-        summary += self.print_entry("Mostly Lost", self.ML) + "\n"
-        summary += "\n"
-        summary += self.print_entry("True Positives", self.tp) + "\n"
-        summary += self.print_entry("False Positives", self.fp) + "\n"
-        summary += self.print_entry("False Negatives", self.fn) + "\n"
-        summary += self.print_entry("ID-switches", self.id_switches) + "\n"
-        summary += self.print_entry("Fragmentations", self.fragments) + "\n"
-        summary += "\n"
-        summary += self.print_entry("Ground Truth Objects (Total)", self.n_gt + self.n_igt) + "\n"
-        summary += self.print_entry("Ground Truth Trajectories", self.n_gt_trajectories) + "\n"
-        summary += "\n"
-        summary += self.print_entry("Tracker Objects (Total)", self.n_tr) + "\n"
-        summary += self.print_entry("Tracker Trajectories", self.n_tr_trajectories) + "\n"
-        summary += "=" * 80
+        summary = ''
+        summary += 'Evaluation: Best results with single threshold'.center(80, '=') + '\n'
+        summary += self.print_entry('Multiple Object Tracking Accuracy (MOTA)', self.MOTA) + '\n'
+        summary += self.print_entry('Multiple Object Tracking Precision (MOTP)', float(self.MOTP)) + '\n'
+        summary += '\n'
+        summary += self.print_entry('Recall', self.recall) + '\n'
+        summary += self.print_entry('Precision', self.precision) + '\n'
+        summary += '\n'
+        summary += self.print_entry('Mostly Tracked', self.MT) + '\n'
+        summary += self.print_entry('Mostly Lost', self.ML) + '\n'
+        summary += '\n'
+        summary += self.print_entry('True Positives', self.tp) + '\n'
+        summary += self.print_entry('False Positives', self.fp) + '\n'
+        summary += self.print_entry('False Negatives', self.fn) + '\n'
+        summary += self.print_entry('ID-switches', self.id_switches) + '\n'
+        summary += self.print_entry('Fragmentations', self.fragments) + '\n'
+        summary += '\n'
+        summary += self.print_entry('Ground Truth Objects (Total)', self.n_gt + self.n_igt) + '\n'
+        summary += self.print_entry('Ground Truth Trajectories', self.n_gt_trajectories) + '\n'
+        summary += '\n'
+        summary += self.print_entry('Tracker Objects (Total)', self.n_tr) + '\n'
+        summary += '=' * 80
 
         return summary
 
-    def create_summary_simple(self, threshold: float) -> str:
+    def create_summary_simple(self, threshold: float, is_best: bool) -> str:
         """
         Generate and mail a summary of the results.
+        :param threshold: Recall threshold used for evaluation.
+        :param is_best: Whether this is the best confidence threshold for this class.
         """
-        summary = ""
+        summary = ''
 
-        summary += ("Evaluation with confidence threshold %f" % threshold).center(80, "=") + "\n"
+        if is_best:
+            summary += ('Evaluation with best confidence threshold %f' % threshold).center(80, '=') + '\n'
+        else:
+            summary += ('Evaluation with confidence threshold %f' % threshold).center(79, '=') + '\n'
+
         summary += ' MOTA   MOTP   MT     ML     IDS  FRAG    F1   Prec  Recall      TP    FP    FN\n'
-
-        summary += '{:.4f} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:5d}\n'.format(
+        summary += '{:.4f} {:.4f} {:.4f} {:.4f} {:5d} {:5d} {:.4f} {:.4f} {:5d} {:5d} {:5d}\n'.format(
             self.MOTA, self.MOTP, self.MT, self.ML, self.id_switches, self.fragments,
-            self.F1, self.precision, self.recall, self.tp, self.fp, self.fn)
-        summary += "=" * 80
+            self.precision, self.recall, self.tp, self.fp, self.fn)
+        summary += '=' * 80
 
         return summary
 
@@ -351,23 +305,23 @@ class TrackingEvaluation(object):
         """
         s_out = key.ljust(width[0])
         if type(val) == int:
-            s = "%%%dd" % width[1]
+            s = '%%%dd' % width[1]
             s_out += s % val
         elif type(val) == float:
-            s = "%%%d.4f" % (width[1])
+            s = '%%%d.4f' % (width[1])
             s_out += s % val
         else:
-            s_out += ("%s" % val).rjust(width[1])
+            s_out += ('%s' % val).rjust(width[1])
         return s_out
 
-    def save_to_stats(self, dump, threshold=None) -> None:
+    def save_to_stats(self, dump, threshold: float = None, is_best: bool = False) -> None:
         """
         Save the statistics in a whitespace separate file.
         """
         if threshold is None:
             summary = self.create_summary_details()
         else:
-            summary = self.create_summary_simple(threshold)
+            summary = self.create_summary_simple(threshold, is_best)
 
         print(summary)
         print(summary, file=dump)
@@ -462,7 +416,6 @@ class TrackingEvaluation(object):
                 first_timestamp = list(g.keys())[0]
                 last_id = g[first_timestamp]
                 tracked = 1 if g[first_timestamp] != '' else 0
-                lgt = 0 if ign_g[first_timestamp] else 1
                 for i in range(1, len(g)):  # Skip first timestamp.
                     prev_timestamp = list(g.keys())[i - 1]
                     timestamp = list(g.keys())[i]
@@ -473,13 +426,14 @@ class TrackingEvaluation(object):
                         last_id = ''
                         continue
 
-                    lgt += 1
+                    # Count number of identity switches.
                     if last_id != g[timestamp] \
                             and last_id != '' \
                             and g[timestamp] != '' \
                             and g[prev_timestamp] != '':
                         self.id_switches += 1
 
+                    # Count number of fragmentations.
                     if timestamp < len(g) - 1 \
                             and g[prev_timestamp] != g[timestamp] \
                             and last_id != '' \
@@ -487,11 +441,13 @@ class TrackingEvaluation(object):
                             and g[next_timestamp] != '':
                         self.fragments += 1
 
+                    # Updated tracked counter.
                     if g[timestamp] != '':
                         tracked += 1
                         last_id = g[timestamp]
 
                 # Handle last frame; tracked state is handled in for loop (g[f] != -1).
+                # Count number of fragmentations.
                 if len(g) > 1 \
                         and g[prev_timestamp] != g[timestamp] \
                         and last_id != '' \
@@ -500,21 +456,17 @@ class TrackingEvaluation(object):
                     self.fragments += 1
 
                 # Compute MT/PT/ML.
-                tracking_ratio = tracked / float(len(g) - sum(ign_g))
+                tracking_ratio = tracked / float(len(g) - sum(ign_g.values()))
                 if tracking_ratio > 0.8:
                     self.MT += 1
                 elif tracking_ratio < 0.2:
                     self.ML += 1
-                else:  # 0.2 <= tracking_ratio <= 0.8.
-                    self.PT += 1
 
         if self.n_gt_trajectories - n_ignored_tr_total == 0:
             self.MT = 0
-            self.PT = 0
             self.ML = 0
         else:
             self.MT /= float(self.n_gt_trajectories - n_ignored_tr_total)
-            self.PT /= float(self.n_gt_trajectories - n_ignored_tr_total)
             self.ML /= float(self.n_gt_trajectories - n_ignored_tr_total)
 
         # Precision, recall and F1 metrics.
@@ -524,14 +476,10 @@ class TrackingEvaluation(object):
         else:
             self.recall = self.tp / float(self.tp + self.fn)
             self.precision = self.tp / float(self.fp + self.tp)
-        if self.recall + self.precision == 0:
-            self.F1 = 0.
-        else:
-            self.F1 = 2. * (self.precision * self.recall) / (self.precision + self.recall)
 
         # Compute CLEARMOT metrics.
         if self.n_gt == 0:
-            self.MOTA = -float("inf")
+            self.MOTA = -float('inf')
         else:
             self.MOTA = 1 - (self.fn + self.fp + self.id_switches) / float(self.n_gt)
         if self.tp == 0:
@@ -544,28 +492,26 @@ class TrackingEvaluation(object):
 
 class Stat:
     """
-        Utility class to load data.
+    Utility class to load data.
     """
 
     def __init__(self,
                  class_name: str,
                  suffix: str,
                  dump,
-                 num_sample_pts: int = 11):
+                 num_thresholds):
         """
-            Constructor, initializes the object given the parameters.
+        Constructor, initializes the object given the parameters.
         """
         # init object data
         self.mota = 0
         self.motp = 0
-        self.F1 = 0
         self.precision = 0
         self.fp = 0
         self.fn = 0
 
         self.mota_list = list()
         self.motp_list = list()
-        self.f1_list = list()
         self.precision_list = list()
         self.fp_list = list()
         self.fn_list = list()
@@ -574,39 +520,37 @@ class Stat:
         self.class_name = class_name
         self.suffix = suffix
         self.dump = dump
-        self.num_sample_pts = num_sample_pts
+        self.num_thresholds = num_thresholds
 
     def update(self, data: Dict) -> None:
         self.mota += data['mota']
         self.motp += data['motp']
-        self.F1 += data['F1']
         self.precision += data['precision']
         self.fp += data['fp']
         self.fn += data['fn']
 
         self.mota_list.append(data['mota'])
         self.motp_list.append(data['motp'])
-        self.f1_list.append(data['F1'])
         self.precision_list.append(data['precision'])
         self.fp_list.append(data['fp'])
         self.fn_list.append(data['fn'])
         self.recall_list.append(data['recall'])
 
     def output(self) -> None:
-        self.ave_mota = self.mota / self.num_sample_pts
-        self.ave_motp = self.motp / self.num_sample_pts
-        self.ave_f1 = self.F1 / self.num_sample_pts
-        self.ave_precision = self.precision / self.num_sample_pts
+        self.ave_mota = self.mota / self.num_thresholds
+        self.ave_motp = self.motp / self.num_thresholds
+        self.ave_precision = self.precision / self.num_thresholds
 
     def print_summary(self) -> str:
-        summary = ""
+        summary = ''
 
-        summary += "Evaluation: Average at all thresholds".center(80, "=") + "\n"
+        summary += 'Evaluation: Average at all thresholds'.center(80, '=') + '\n'
         summary += ' AMOTA  AMOTP  APrec\n'
 
         summary += '{:.4f} {:.4f} {:.4f}\n'.format(
             self.ave_mota, self.ave_motp, self.ave_precision)
-        summary += "=" * 80
+        summary += '=' * 80
+        summary += '\n'
         print(summary, file=self.dump)
 
         return summary
@@ -629,10 +573,9 @@ class Stat:
         len_extra = len(extra_zero)
         y_zero = [0] * len_extra
 
-        fig = plt.figure()
         plt.clf()
+        fig, (ax) = plt.subplots(1, 1)
         plt.title(title)
-        ax = fig.add_subplot()
         ax.plot(np.array(self.recall_list + extra_zero), np.array(data_list + y_zero))
         ax.set_ylabel(y_name, fontsize=20)
         ax.set_xlabel('Recall', fontsize=20)
@@ -640,7 +583,7 @@ class Stat:
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.tight_layout()
-        if y_name in ['MOTA', 'MOTP', 'F1', 'Precision']:
+        if y_name in ['MOTA', 'MOTP', 'F1', 'Precision'] or max(data_list) == 0:
             ax.set_ylim(0.0, 1.0)
         else:
             ax.set_ylim(0.0, max(data_list))
@@ -659,8 +602,6 @@ class Stat:
                               os.path.join(save_dir, 'MOTA_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.motp_list, 'MOTP - Recall Curve', 'MOTP',
                               os.path.join(save_dir, 'MOTP_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
-        self.plot_over_recall(self.f1_list, 'F1 - Recall Curve', 'F1',
-                              os.path.join(save_dir, 'F1_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.fp_list, 'False Positive - Recall Curve', 'False Positive',
                               os.path.join(save_dir, 'FP_recall_curve_%s_%s.pdf' % (self.class_name, self.suffix)))
         self.plot_over_recall(self.fn_list, 'False Negative - Recall Curve', 'False Negative',

@@ -21,8 +21,7 @@ class TrackingConfig:
                  dist_th_tp: float,
                  min_recall: float,
                  min_precision: float,
-                 max_boxes_per_sample: float,
-                 num_sample_pts: int):
+                 max_boxes_per_sample: float):
 
         assert set(class_range.keys()) == set(TRACKING_NAMES), "Class count mismatch."
         assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
@@ -34,7 +33,6 @@ class TrackingConfig:
         self.min_recall = min_recall
         self.min_precision = min_precision
         self.max_boxes_per_sample = max_boxes_per_sample
-        self.num_sample_pts = num_sample_pts
 
         self.class_names = self.class_range.keys()
 
@@ -53,8 +51,7 @@ class TrackingConfig:
             'dist_th_tp': self.dist_th_tp,
             'min_recall': self.min_recall,
             'min_precision': self.min_precision,
-            'max_boxes_per_sample': self.max_boxes_per_sample,
-            'num_sample_pts': self.num_sample_pts
+            'max_boxes_per_sample': self.max_boxes_per_sample
         }
 
     @classmethod
@@ -66,8 +63,7 @@ class TrackingConfig:
                    content['dist_th_tp'],
                    content['min_recall'],
                    content['min_precision'],
-                   content['max_boxes_per_sample'],
-                   content['num_sample_pts'])
+                   content['max_boxes_per_sample'])
 
     @property
     def dist_fcn_callable(self):
@@ -81,7 +77,7 @@ class TrackingConfig:
 class TrackingMetricData(MetricData):
     """ This class holds accumulated and interpolated data required to calculate the tracking metrics. """
 
-    nelem = 101
+    nelem = 11
 
     def __init__(self,
                  recall: np.array,
