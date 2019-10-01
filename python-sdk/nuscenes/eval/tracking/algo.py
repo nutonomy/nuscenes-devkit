@@ -12,6 +12,23 @@ import matplotlib.pyplot as plt
 from nuscenes.eval.tracking.data_classes import TrackingBox
 
 
+# Custom metrics
+def track_initialization_duration(df, obj_frequencies):
+    tid = 0
+    for o in obj_frequencies.index:
+        # Find the first time object was detected and compute the difference to first time
+        # object entered the scene. For non detected objects that is the length of the track
+        dfo = df.noraw[df.noraw.OId == o]
+        match = dfo[dfo.Type == 'MATCH']
+        if len(match) == 0:
+            diff = dfo.index[-1][0] - dfo.index[0][0]
+        else:
+            diff = match.index[0][0] - dfo.index[0][0]
+        assert diff >= 0, 'Time difference should be larger than or equal to zero'
+        tid += float(diff)/1e+6
+    return tid
+
+
 class TrackingEvaluation(object):
     def __init__(self,
                  tracks_gt: Dict[str, Dict[int, List[TrackingBox]]],
@@ -108,10 +125,13 @@ class TrackingEvaluation(object):
         accumulators = []
         names = []
         mh = mm.metrics.create()
+        # Register custom metric
+        mh.register(track_initialization_duration, ['obj_frequencies',], formatter='{:.2%}'.format,
+                    name='tid')
         for threshold in thresholds:
             print('threshold {0:f}'.format(threshold))
-
-            accumulators.append(self.compute_third_party_metrics(threshold))
+            acc = self.compute_third_party_metrics(threshold)
+            accumulators.append(acc)
             names.append('threshold {0:f}'.format(threshold))
 
             # # Compute metrics for current threshold.
@@ -131,12 +151,14 @@ class TrackingEvaluation(object):
             #     best_mota = self.MOTA
             #     best_threshold = threshold
 
-            # summary = mh.compute(accumulators[threshold], metrics=['num_frames', 'mota', 'motp'],
-            #                      name='threshold {0:f}'.format(threshold))
-            # print(summary)
+            summary = mh.compute(acc,
+                                 metrics=['num_frames', 'mota', 'motp', 'tid'],
+                                 name='threshold {0:f}'.format(threshold))
+            print(summary)
+
         summary = mh.compute_many(
             accumulators,
-            metrics=['num_frames', 'mota', 'motp'],
+            metrics=['num_frames', 'mota', 'motp', 'tid'],
             names=names,
             generate_overall=True)
         print(summary)
