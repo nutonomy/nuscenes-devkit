@@ -19,7 +19,7 @@ as well as estimating a set of attributes and the current velocity vector.
 ## Participation
 The nuScenes detection [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) is open all year round for submission.
 To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356).
-Then upload your zipped result file and provide all of the required [meta data](#results-format).
+Then upload your zipped result file including all of the required [meta data](#results-format).
 The results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/object-detection) shown above.
 This is the only way to benchmark your method against the test dataset. 
 
@@ -134,11 +134,11 @@ For more information on the classes and their frequencies, see [this page](https
 Below we list which nuScenes classes can have which attributes.
 Note that some annotations are missing attributes (0.4% of all sample_annotations).
 
-For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle, 
-but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
-detection radius, as shown below:
+For each nuScenes detection class, the number of annotations decreases with increasing range from the ego vehicle, 
+but the number of annotations per range varies by class. Therefore, each class has its own upper bound on evaluated
+detection range, as shown below:
 
-|   nuScenes detection class    |   Attributes                                          | Detection Range (meters)  |
+|   nuScenes detection class    |   Attributes                                          | Detection range (meters)  |
 |   ---                         |   ---                                                 |   ---                     |
 |   barrier                     |   void                                                |   30                      |
 |   traffic_cone                |   void                                                |   30                      |
@@ -205,24 +205,24 @@ We define three such filters here which correspond to the tracks in the nuScenes
 Methods will be compared within these tracks and the winners will be decided for each track separately.
 Furthermore, there will also be an award for novel ideas, as well as the best student submission.
 
-**Lidar detection track**: 
+**Lidar track**: 
 * Only lidar input allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
   
-**Vision detection track**: 
+**Vision track**: 
 * Only camera input allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
  
-**Open detection track**: 
+**Open track**: 
 * Any sensor input allowed.
 * External data and map data allowed.  
 * May use pre-training.
 
 **Details**:
 * *Sensor input:*
-For the lidar and vision detection tracks we restrict the type of sensor input that may be used.
+For the lidar and vision tracks we restrict the type of sensor input that may be used.
 Note that this restriction applies only at test time.
 At training time any sensor input may be used.
 In particular this also means that at training time you are allowed to filter the GT boxes using `num_lidar_pts` and `num_radar_pts`, regardless of the track.
