@@ -4,7 +4,7 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 """
 import os
 from typing import List, Dict, Callable, Tuple
-
+import motmetrics as mm
 import numpy as np
 from munkres import Munkres
 import matplotlib.pyplot as plt
@@ -61,6 +61,9 @@ class TrackingEvaluation(object):
 
         self.n_scenes = len(self.tracks_gt)
 
+        # Mot metrics stuff
+        self.acc = mm.MOTAccumulator()
+
         # Internal statistics.
         self.recall = 0
         self.precision = 0
@@ -102,36 +105,44 @@ class TrackingEvaluation(object):
 
         # Evaluate the mean average metrics.
         best_mota, best_threshold = -1, -1
+        accumulators = {}
+        mh = mm.metrics.create()
         for threshold in thresholds:
-            # Compute metrics for current threshold.
-            self.reset()
-            self.compute_third_party_metrics(threshold)
-            self.save_to_stats(dump, threshold)
+            accumulators[threshold] = self.compute_third_party_metrics()
 
-            # Update counters for average metrics.
-            data_tmp = dict()
-            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['fp'], data_tmp['fn'], \
-                data_tmp['recall'] = \
-                self.MOTA, self.MOTP, self.precision, self.fp, self.fn, self.recall
-            stat_meter.update(data_tmp)
+            # # Compute metrics for current threshold.
+            # self.reset()
+            # self.compute_third_party_metrics(threshold)
+            # self.save_to_stats(dump, threshold)
+            #
+            # # Update counters for average metrics.
+            # data_tmp = dict()
+            # data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['fp'], data_tmp['fn'], \
+            #     data_tmp['recall'] = \
+            #     self.MOTA, self.MOTP, self.precision, self.fp, self.fn, self.recall
+            # stat_meter.update(data_tmp)
+            #
+            # # Store best MOTA threshold used for CLEARMOT metrics.
+            # if self.MOTA > best_mota:
+            #     best_mota = self.MOTA
+            #     best_threshold = threshold
 
-            # Store best MOTA threshold used for CLEARMOT metrics.
-            if self.MOTA > best_mota:
-                best_mota = self.MOTA
-                best_threshold = threshold
+            summary = mh.compute(accumulators[threshold], metrics=['num_frames', 'mota', 'motp'],
+                                 name='threshold {0:f}'.format(threshold))
+            print(summary)
 
-        # Use best threshold for CLEARMOT metrics.
-        self.reset()
-        self.compute_third_party_metrics(best_threshold)
-        self.save_to_stats(dump, best_threshold)
-
-        # Compute average metrics and print summary.
-        stat_meter.output()
-        summary = stat_meter.print_summary()
-        print(summary)
-
-        stat_meter.plot(save_dir=self.output_dir)
-        dump.close()
+        # # Use best threshold for CLEARMOT metrics.
+        # self.reset()
+        # self.compute_third_party_metrics(best_threshold)
+        # self.save_to_stats(dump, best_threshold)
+        #
+        # # Compute average metrics and print summary.
+        # stat_meter.output()
+        # summary = stat_meter.print_summary()
+        # print(summary)
+        #
+        # stat_meter.plot(save_dir=self.output_dir)
+        # dump.close()
 
     def get_thresholds(self) -> List[float]:
         """
@@ -181,6 +192,7 @@ class TrackingEvaluation(object):
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in self.tracks_gt.keys():
+            acc = mm.MOTAccumulator()
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred_unfiltered = self.tracks_pred[scene_id]
@@ -202,52 +214,19 @@ class TrackingEvaluation(object):
                 frame_gt = scene_tracks_gt[timestamp]
                 frame_pred = scene_tracks_pred[timestamp]
 
-                # Counting total number of ground truth and predicted objects.
-                self.n_gt += len(frame_gt)
-                self.n_tr += len(frame_pred)
-                n_gts += len(frame_gt)
-                n_trs += len(frame_pred)
+                # Calculate distances
+                gt_ids = [gg.tracking_id for gg in frame_gt]
+                pred_ids = [tt.tracking_id for tt in frame_pred]
+                distances: np.ndarray = np.ones((len(frame_gt), len(frame_pred)))
+                for y, gg in enumerate(frame_gt):
+                    for x, tt in enumerate(frame_pred):
+                        distances[y, x] = float(self.dist_fcn(gg, tt))
 
-                # Use Hungarian method to compute association between predicted and GT tracks.
-                association_matrix, cost_matrix = TrackingEvaluation._hungarian_method(
-                    frame_gt, frame_pred, self.dist_fcn, self.dist_th_tp
-                )
+                # Accumulate results
+                frameid = acc.update(gt_ids, pred_ids, distances, frameid=timestamp)
 
-                # Initially set all GT trajectories as not associated.
-                for gg in frame_gt:
-                    if gg.tracking_id not in scene_gt_trajectories:
-                        scene_gt_trajectories[gg.tracking_id] = dict()
-                        scene_ign_trajectories[gg.tracking_id] = dict()
-                    scene_gt_trajectories[gg.tracking_id][gg.timestamp] = ''
-                    scene_ign_trajectories[gg.tracking_id][gg.timestamp] = False
+        return acc
 
-                # Update tp/fn stats.
-                for row, col in association_matrix:
-                    c = cost_matrix[row][col]
-                    if c < self.dist_th_tp:
-                        # Update stats.
-                        self.total_cost += c
-                        self.tp += 1
-
-                        gg = frame_gt[row]
-                        tt = frame_pred[col]
-                        scene_gt_trajectories[gg.tracking_id][gg.timestamp] = tt.tracking_id
-                    else:
-                        self.fn += 1
-
-            # Remove empty lists for current gt trajectories.
-            self.gt_trajectories[scene_id] = scene_gt_trajectories
-            self.ign_trajectories[scene_id] = scene_ign_trajectories  # TODO: Fill this data structure.
-
-            # Gather statistics for "per sequence" statistics.
-            self.n_gts.append(n_gts)
-            self.n_trs.append(n_trs)
-
-        # Count number of tracks.
-        self.n_gt_trajectories = sum([len(t) for t in self.gt_trajectories.values()])
-
-        # Compute the relevant metrics.
-        self._compute_metrics()
 
     def create_summary_details(self) -> str:
         """
