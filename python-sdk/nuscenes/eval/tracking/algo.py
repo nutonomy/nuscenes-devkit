@@ -254,6 +254,9 @@ class TrackingEvaluation(object):
                     for x, tt in enumerate(frame_pred):
                         distances[y, x] = float(self.dist_fcn(gg, tt))
 
+                # Distances that are larger than the threshold won't be associated
+                distances[distances >= self.dist_th_tp] = np.nan
+
                 # Accumulate results
                 frameid = acc.update(gt_ids, pred_ids, distances, frameid=timestamp)
 
