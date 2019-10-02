@@ -1,32 +1,19 @@
 """
-This code is based on Xinshuo Weng's AB3DMOT code at:
+This code is based on two repositories:
+
+Xinshuo Weng's AB3DMOT code at:
 https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmot.py
+
+py-motmetrics at:
+https://github.com/cheind/py-motmetrics
 """
 import os
-from typing import List, Dict, Callable, Tuple
+from typing import List, Dict, Callable
 import motmetrics as mm
 import numpy as np
-from munkres import Munkres
 import matplotlib.pyplot as plt
 
 from nuscenes.eval.tracking.data_classes import TrackingBox
-
-
-# Custom metrics
-def track_initialization_duration(df, obj_frequencies):
-    tid = 0
-    for o in obj_frequencies.index:
-        # Find the first time object was detected and compute the difference to first time
-        # object entered the scene. For non detected objects that is the length of the track
-        dfo = df.noraw[df.noraw.OId == o]
-        match = dfo[dfo.Type == 'MATCH']
-        if len(match) == 0:
-            diff = dfo.index[-1][0] - dfo.index[0][0]
-        else:
-            diff = match.index[0][0] - dfo.index[0][0]
-        assert diff >= 0, 'Time difference should be larger than or equal to zero'
-        tid += float(diff)/1e+6
-    return tid
 
 
 class TrackingEvaluation(object):
@@ -49,16 +36,16 @@ class TrackingEvaluation(object):
         :param output_dir:
 
         Tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
-             MOTA	        - Multi-object tracking accuracy in [0,100].
-             MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D).
-             id-switches    - number of id switches.
-             fragments      - number of fragmentations.
-             MT, ML	        - number of mostly tracked and mostly lost trajectories.
-             recall	        - recall = percentage of detected targets.
-             precision	    - precision = percentage of correctly detected targets.
-             FAR		    - number of false alarms per frame.
-             falsepositives - number of false positives (FP).
-             missed         - number of missed targets (FN).
+         MOTA	        - Multi-object tracking accuracy in [0,100].
+         MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D).
+         id-switches    - number of id switches.
+         fragments      - number of fragmentations.
+         MT, ML	        - number of mostly tracked and mostly lost trajectories.
+         recall	        - recall = percentage of detected targets.
+         precision	    - precision = percentage of correctly detected targets.
+         FAR		    - number of false alarms per frame.
+         falsepositives - number of false positives (FP).
+         missed         - number of missed targets (FN).
 
         Computes the metrics defined in:
         - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
@@ -78,75 +65,39 @@ class TrackingEvaluation(object):
 
         self.n_scenes = len(self.tracks_gt)
 
-        # Mot metrics stuff
-        self.acc = mm.MOTAccumulator()
-
-        # Internal statistics.
-        self.recall = 0
-        self.precision = 0
-        self.total_cost = 0
-        self.tp = 0  # Number of true positives including ignored true positives!
-        self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
-        self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE
-        self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
-        self.n_igt = 0  # Number of ignored ground truth detections
-        self.n_gts = []  # Number of ground truth detections minus ignored FNs and TPs PER SEQUENCE
-        self.n_gt_trajectories = 0
-        self.n_gt_trajectories = 0
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
-
-        # Challenge metrics.
-        self.MOTA = 0
-        self.MOTP = 0
-        self.fp = 0  # Number of false positives
-        self.fn = 0  # Number of false negatives WITHOUT ignored false negatives
-        self.fragments = 0
-        self.id_switches = 0
-        self.MT = 0
-        self.ML = 0
-
     def compute_all_metrics(self, class_name: str, suffix: str) -> None:
         """
         Compute all relevant metrics for the current class.
         :param class_name:
         :param suffix:
         """
-        # Initialize stats logger.
-        filename = os.path.join(self.output_dir, 'summary_%s_average_%s.txt' % (class_name, suffix))
-        dump = open(filename, "w+")
-        stat_meter = Stat(class_name=class_name, suffix=suffix, dump=dump, num_thresholds=self.num_thresholds)
+        # Init.
+        # filename = os.path.join(self.output_dir, 'summary_%s_average_%s.txt' % (class_name, suffix))
+        # dump = open(filename, "w+")
+        accumulators = []
+        names = []
+        mh = mm.metrics.create()
 
         # Get thresholds.
         thresholds = self.get_thresholds()
 
         # Evaluate the mean average metrics.
-        best_mota, best_threshold = -1, -1
-        accumulators = []
-        names = []
-        mh = mm.metrics.create()
-        # Register custom metric
-        mh.register(track_initialization_duration, ['obj_frequencies',], formatter='{:.2%}'.format,
-                    name='tid')
+
+        # Register custom metrics.
+        mh.register(TrackingEvaluation.track_initialization_duration,
+                    ['obj_frequencies',], formatter='{:.2%}'.format, name='tid')
+
         for threshold in thresholds:
-            print('threshold {0:f}'.format(threshold))
-            acc = self.compute_third_party_metrics(threshold)
+            # Compute metrics for current threshold.
+            acc = self.accumulate(threshold)
             accumulators.append(acc)
             names.append('threshold {0:f}'.format(threshold))
-
-            # # Compute metrics for current threshold.
-            # self.reset()
-            # self.compute_third_party_metrics(threshold)
             # self.save_to_stats(dump, threshold)
-            #
-            # # Update counters for average metrics.
-            # data_tmp = dict()
-            # data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['fp'], data_tmp['fn'], \
-            #     data_tmp['recall'] = \
-            #     self.MOTA, self.MOTP, self.precision, self.fp, self.fn, self.recall
+
+            # Update counters for average metrics.
             # stat_meter.update(data_tmp)
-            #
-            # # Store best MOTA threshold used for CLEARMOT metrics.
+
+            # Store best MOTA threshold used for CLEARMOT metrics.
             # if self.MOTA > best_mota:
             #     best_mota = self.MOTA
             #     best_threshold = threshold
@@ -156,25 +107,18 @@ class TrackingEvaluation(object):
                                  name='threshold {0:f}'.format(threshold))
             print(summary)
 
+        # Compute overall metrics: AMOTA, AMOTP, mAP.
         summary = mh.compute_many(
             accumulators,
-            metrics=['num_frames', 'mota', 'motp', 'tid'],
+            metrics=['num_frames', 'mota', 'motp', 'tid'],  # TODO: implement AMOTA
             names=names,
             generate_overall=True)
         print(summary)
 
-        # # Use best threshold for CLEARMOT metrics.
-        # self.reset()
-        # self.compute_third_party_metrics(best_threshold)
-        # self.save_to_stats(dump, best_threshold)
-        #
         # # Compute average metrics and print summary.
         # stat_meter.output()
         # summary = stat_meter.print_summary()
         # print(summary)
-        #
-        # stat_meter.plot(save_dir=self.output_dir)
-        # dump.close()
 
     def get_thresholds(self) -> List[float]:
         """
@@ -186,45 +130,16 @@ class TrackingEvaluation(object):
 
         return thresholds
 
-    def reset(self) -> None:
-        self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
-        self.n_igt = 0  # Number of ignored ground truth detections
-        self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
-
-        self.MOTA = 0
-        self.MOTP = 0
-
-        self.recall = 0
-        self.precision = 0
-
-        self.total_cost = 0
-        self.tp = 0
-        self.fn = 0
-        self.fp = 0
-
-        self.n_gts = []  # Number of ground truth detections minus ignored false negatives and true positives PER SEQUENCE
-        self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE
-
-        self.fragments = 0
-        self.id_switches = 0
-        self.MT = 0
-        self.ML = 0
-
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
-
-    def compute_third_party_metrics(self, threshold: float = None) -> None:
+    def accumulate(self, threshold: float = None) -> mm.MOTAccumulator:
         """
-        Computes the traditional CLEARMOT/MT/ML metrics.
+        Aggregate the raw data for the traditional CLEARMOT/MT/ML metrics.
         """
         # Init.
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
+        acc = mm.MOTAccumulator(auto_id=True)
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in self.tracks_gt.keys():
-            acc = mm.MOTAccumulator()
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred_unfiltered = self.tracks_pred[scene_id]
@@ -234,13 +149,6 @@ class TrackingEvaluation(object):
                 scene_tracks_pred = scene_tracks_pred_unfiltered
             else:
                 scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
-
-            # Statistics over the current sequence.
-            # The *_trajectories fields both map from GT track_id and timestamp to pred track_id.
-            scene_gt_trajectories: Dict[str, Dict[int, str]] = dict()
-            scene_ign_trajectories: Dict[str, Dict[int, bool]] = dict()
-            n_gts = 0
-            n_trs = 0
 
             for timestamp in scene_tracks_gt.keys():
                 frame_gt = scene_tracks_gt[timestamp]
@@ -257,11 +165,11 @@ class TrackingEvaluation(object):
                 # Distances that are larger than the threshold won't be associated
                 distances[distances >= self.dist_th_tp] = np.nan
 
-                # Accumulate results
-                frameid = acc.update(gt_ids, pred_ids, distances, frameid=timestamp)
+                # Accumulate results.
+                # TODO: Cannot use timestamp as frameid as motmetrics assumes it's an integer.
+                acc.update(gt_ids, pred_ids, distances)
 
         return acc
-
 
     def create_summary_details(self) -> str:
         """
@@ -368,140 +276,22 @@ class TrackingEvaluation(object):
 
         return scene_tracks_pred
 
+    # Custom metrics
     @staticmethod
-    def _hungarian_method(frame_gt, frame_pred, dist_fcn: Callable, dist_th_tp: float) \
-            -> Tuple[List[Tuple[int, int]], List[List[float]]]:
-        """
-        Use Hungarian method to associate, using center distance 0..1 as cost build cost matrix.
-        Row are gt, columns are predictions.
-        :param frame_gt: The GT boxes of the current frame.
-        :param frame_pred: The predicted boxes of the current frame.
-        :param dist_fcn: Distance function used for matching.
-        :param dist_th_tp: Distance function threshold.
-        :return: Association matrix and cost matrix.
-        """
-        cost_matrix: np.ndarray = dist_th_tp * np.ones((len(frame_gt), len(frame_pred)))
-        for y, gg in enumerate(frame_gt):
-            # Save current ids.
-            gg.tracker = -1
-            gg.id_switch = 0
-            gg.fragmentation = 0
-
-            for x, tt in enumerate(frame_pred):
-                cost_matrix[y, x] = float(np.minimum(dist_fcn(gg, tt), dist_th_tp))
-
-        # Convert to list.
-        cost_matrix: List[List[float]] = cost_matrix.tolist()
-
-        # Associate using Hungarian aka. Munkres algorithm.
-        hm = Munkres()
-        association_matrix: List[Tuple[int, int]] = hm.compute(cost_matrix)
-
-        return association_matrix, cost_matrix
-
-    def _compute_metrics(self) -> None:
-        """
-        Compute MT/PT/ML, fragments and idswitches for all GT trajectories.
-        """
-        assert self.total_cost >= 0
-
-        n_ignored_tr_total = 0
-        for scene_trajectories, scene_ignored in zip(self.gt_trajectories.values(), self.ign_trajectories.values()):
-
-            assert len(scene_trajectories) != 0
-
-            n_ignored_tr = 0
-            for g, ign_g in zip(scene_trajectories.values(), scene_ignored.values()):
-                assert len(g) == len(ign_g)
-
-                # All frames of this GT trajectory are ignored.
-                if all(ign_g.values()):
-                    n_ignored_tr += 1
-                    n_ignored_tr_total += 1
-                    continue
-
-                # All frames of this GT trajectory are not assigned to any detections.
-                if all([gg == '' for gg in g.values()]):
-                    self.ML += 1
-                    continue
-
-                # Compute tracked frames in trajectory.
-                # First detection (necessary to be in gt_trajectories) is always tracked.
-                first_timestamp = list(g.keys())[0]
-                last_id = g[first_timestamp]
-                tracked = 1 if g[first_timestamp] != '' else 0
-                for i in range(1, len(g)):  # Skip first timestamp.
-                    prev_timestamp = list(g.keys())[i - 1]
-                    timestamp = list(g.keys())[i]
-                    if i < len(g) - 1:
-                        next_timestamp = list(g.keys())[i + 1]
-
-                    if ign_g[timestamp]:
-                        last_id = ''
-                        continue
-
-                    # Count number of identity switches.
-                    if last_id != g[timestamp] \
-                            and last_id != '' \
-                            and g[timestamp] != '' \
-                            and g[prev_timestamp] != '':
-                        self.id_switches += 1
-
-                    # Count number of fragmentations.
-                    if timestamp < len(g) - 1 \
-                            and g[prev_timestamp] != g[timestamp] \
-                            and last_id != '' \
-                            and g[timestamp] != '' \
-                            and g[next_timestamp] != '':
-                        self.fragments += 1
-
-                    # Updated tracked counter.
-                    if g[timestamp] != '':
-                        tracked += 1
-                        last_id = g[timestamp]
-
-                # Handle last frame; tracked state is handled in for loop (g[f] != -1).
-                # Count number of fragmentations.
-                if len(g) > 1 \
-                        and g[prev_timestamp] != g[timestamp] \
-                        and last_id != '' \
-                        and g[timestamp] != '' \
-                        and not ign_g[timestamp]:
-                    self.fragments += 1
-
-                # Compute MT/PT/ML.
-                tracking_ratio = tracked / float(len(g) - sum(ign_g.values()))
-                if tracking_ratio > 0.8:
-                    self.MT += 1
-                elif tracking_ratio < 0.2:
-                    self.ML += 1
-
-        if self.n_gt_trajectories - n_ignored_tr_total == 0:
-            self.MT = 0
-            self.ML = 0
-        else:
-            self.MT /= float(self.n_gt_trajectories - n_ignored_tr_total)
-            self.ML /= float(self.n_gt_trajectories - n_ignored_tr_total)
-
-        # Precision, recall and F1 metrics.
-        if self.fp + self.tp == 0 or self.tp + self.fn == 0:
-            self.recall = 0.
-            self.precision = 0.
-        else:
-            self.recall = self.tp / float(self.tp + self.fn)
-            self.precision = self.tp / float(self.fp + self.tp)
-
-        # Compute CLEARMOT metrics.
-        if self.n_gt == 0:
-            self.MOTA = -float('inf')
-        else:
-            self.MOTA = 1 - (self.fn + self.fp + self.id_switches) / float(self.n_gt)
-        if self.tp == 0:
-            self.MOTP = 0
-        else:
-            self.MOTP = self.total_cost / float(self.tp)
-
-        self.num_gt = self.tp + self.fn
+    def track_initialization_duration(df, obj_frequencies):
+        tid = 0
+        for o in obj_frequencies.index:
+            # Find the first time object was detected and compute the difference to first time
+            # object entered the scene. For non detected objects that is the length of the track
+            dfo = df.noraw[df.noraw.OId == o]
+            match = dfo[dfo.Type == 'MATCH']
+            if len(match) == 0:
+                diff = dfo.index[-1][0] - dfo.index[0][0]
+            else:
+                diff = match.index[0][0] - dfo.index[0][0]
+            assert diff >= 0, 'Time difference should be larger than or equal to zero'
+            tid += float(diff) / 1e+6
+        return tid
 
 
 class Stat:
