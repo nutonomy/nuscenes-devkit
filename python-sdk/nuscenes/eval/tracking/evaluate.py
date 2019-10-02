@@ -108,12 +108,11 @@ class TrackingEval:
         metrics = TrackingMetrics(self.cfg)
         metric_data_list = MetricDataList() # TODO: Do we still need this?
 
-        suffix = self.cfg.dist_fcn.title().lower()
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
                                     self.cfg.dist_th_tp, num_thresholds=TrackingMetricData.nelem,
                                     output_dir=self.output_dir)
-            ev.compute_all_metrics(class_name, suffix)
+            ev.compute_all_metrics()
 
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
