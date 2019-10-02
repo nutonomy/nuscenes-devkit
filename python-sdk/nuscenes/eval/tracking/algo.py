@@ -207,6 +207,6 @@ class TrackingEvaluation(object):
                 # entered the scene.
                 diff = match.index[0][0] - dfo.index[0][0]
             assert diff >= 0, 'Time difference should be larger than or equal to zero'
-            # TODO: The diff is not a timestamp anymore.
-            tid += float(diff) / 1e+6
+            # Multiply number of sample differences with sample period (0.5 sec)
+            tid += float(diff) * 0.5
         return tid
