@@ -50,7 +50,7 @@ class TestMain(unittest.TestCase):
         def random_id(instance_token: str) -> str:
             # Alter 10% of the valid ids to be a random string, which hopefully corresponds to a new track.
             if np.random.rand() < .9:
-                _tracking_id = instance_token
+                _tracking_id = instance_token + '_pred'
             else:
                 _tracking_id = str(np.random.randint(0, sys.maxsize))
 

@@ -1,7 +1,5 @@
 from typing import List, Dict
 
-import numpy as np
-
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.nuscenes import NuScenes
@@ -11,7 +9,7 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes) -> Dict[str, Dict[int, L
     """
     Returns all tracks for all scenes. Samples within a track are sorted in chronological order.
     This can be applied either to GT or predictions.
-    :param all_boxes:
+    :param all_boxes: Holds all GT or predicted boxes.
     :param nusc: The NuScenes instance to load the sample information from.
     :return: The tracks.
     """
@@ -35,7 +33,7 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes) -> Dict[str, Dict[int, L
             if cur_sample_token == scene['last_sample_token']:
                 break
 
-            # Move to next.
+            # Move to next sample.
             cur_sample_token = cur_sample['next']
 
     # Group annotations wrt scene and timestamp.

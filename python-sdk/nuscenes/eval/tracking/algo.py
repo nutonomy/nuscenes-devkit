@@ -74,8 +74,8 @@ class TrackingEvaluation(object):
         mh = motmetrics.metrics.create()
 
         # Register custom metrics.
-        mh.register(TrackingEvaluation.track_initialization_duration,
-                    ['obj_frequencies',], formatter='{:.2%}'.format, name='tid')
+        mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],
+                    formatter='{:.2%}'.format, name='tid')
 
         # Get thresholds.
         thresholds = self.get_thresholds()
@@ -105,7 +105,7 @@ class TrackingEvaluation(object):
         :param threshold: score threshold used to determine positives and negatives.
         """
         # Init.
-        acc = motmetrics.MOTAccumulator(auto_id=True)
+        acc = motmetrics.MOTAccumulator()
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
@@ -113,6 +113,9 @@ class TrackingEvaluation(object):
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred_unfiltered = self.tracks_pred[scene_id]
+
+            # Create map from timestamp to frame_id.
+            timestamp_map = {t: i for i, t in enumerate(scene_tracks_gt.keys())}
 
             # Threshold predicted tracks using the specified threshold.
             if threshold is None:
@@ -134,10 +137,10 @@ class TrackingEvaluation(object):
                 distances[distances >= self.dist_th_tp] = np.nan
 
                 # Accumulate results.
-                # TODO: Cannot use timestamp as frameid as motmetrics assumes it's an integer.
+                # Note that we cannot use timestamp as frameid as motmetrics assumes it's an integer.
                 gt_ids = [gg.tracking_id for gg in frame_gt]
                 pred_ids = [tt.tracking_id for tt in frame_pred]
-                acc.update(gt_ids, pred_ids, distances)
+                acc.update(gt_ids, pred_ids, distances, frameid=timestamp_map[timestamp])
 
         return acc
 
@@ -184,21 +187,26 @@ class TrackingEvaluation(object):
     @staticmethod
     def track_initialization_duration(df: Any, obj_frequencies: Any) -> float:
         """
-        TODO
+        Computes the track initialization duration, which is the duration from the first occurrance of an object to
+        it's first correct detection (TP).
         :param df:
-        :param obj_frequencies:
-        :return:
+        :param obj_frequencies: Stores the GT tracking_ids and their frequencies.
+        :return: The track initialization time.
         """
         tid = 0
-        for o in obj_frequencies.index:
-            # Find the first time the object was detected and compute the difference to first time the object entered
-            # the scene. For non detected objects that is the length of the track.
-            dfo = df.noraw[df.noraw.OId == o]
+        for gt_tracking_id in obj_frequencies.index:
+            # Get matches.
+            dfo = df.noraw[df.noraw.OId == gt_tracking_id]
             match = dfo[dfo.Type == 'MATCH']
+
             if len(match) == 0:
+                # For missed objects return the length of the track.
                 diff = dfo.index[-1][0] - dfo.index[0][0]
             else:
+                # Find the first time the object was detected and compute the difference to first time the object
+                # entered the scene.
                 diff = match.index[0][0] - dfo.index[0][0]
             assert diff >= 0, 'Time difference should be larger than or equal to zero'
+            # TODO: The diff is not a timestamp anymore.
             tid += float(diff) / 1e+6
         return tid
