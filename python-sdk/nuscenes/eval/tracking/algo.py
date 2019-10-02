@@ -76,6 +76,8 @@ class TrackingEvaluation(object):
         # Register custom metrics.
         mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],
                     formatter='{:.2%}'.format, name='tid')
+        mh.register(TrackingEvaluation.longest_gap_duration, ['obj_frequencies'],
+                    formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
         thresholds = self.get_thresholds()
@@ -87,14 +89,14 @@ class TrackingEvaluation(object):
             names.append('threshold {0:f}'.format(threshold))
 
             summary = mh.compute(acc,
-                                 metrics=['num_frames', 'mota', 'motp', 'tid'],
+                                 metrics=['num_frames', 'mota', 'motp', 'tid', 'lgd'],
                                  name='threshold {0:f}'.format(threshold))
             print(summary)
 
         # Compute overall metrics: AMOTA, AMOTP, mAP.
         summary = mh.compute_many(
             accumulators,
-            metrics=['num_frames', 'mota', 'motp', 'tid'],  # TODO: implement AMOTA
+            metrics=['num_frames', 'mota', 'motp', 'tid', 'lgd'],  # TODO: implement AMOTA
             names=names,
             generate_overall=True)
         print(summary)
@@ -197,16 +199,36 @@ class TrackingEvaluation(object):
         for gt_tracking_id in obj_frequencies.index:
             # Get matches.
             dfo = df.noraw[df.noraw.OId == gt_tracking_id]
-            match = dfo[dfo.Type == 'MATCH']
+            notmiss = dfo[dfo.Type != 'MISS']
 
-            if len(match) == 0:
+            if len(notmiss) == 0:
                 # For missed objects return the length of the track.
                 diff = dfo.index[-1][0] - dfo.index[0][0]
             else:
                 # Find the first time the object was detected and compute the difference to first time the object
                 # entered the scene.
-                diff = match.index[0][0] - dfo.index[0][0]
+                diff = notmiss.index[0][0] - dfo.index[0][0]
             assert diff >= 0, 'Time difference should be larger than or equal to zero'
             # Multiply number of sample differences with sample period (0.5 sec)
             tid += float(diff) * 0.5
-        return tid
+        return tid / len(obj_frequencies)
+
+    @staticmethod
+    def longest_gap_duration(df, obj_frequencies):
+        gap = 0
+        for gt_tracking_id in obj_frequencies.index:
+            # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest
+            # gap.
+            dfo = df.noraw[df.noraw.OId == gt_tracking_id]
+            notmiss = dfo[dfo.Type != 'MISS']
+            if len(notmiss) == 0:
+                # For missed objects return the length of the track.
+                diff = dfo.index[-1][0] - dfo.index[0][0]
+            else:
+                diff = notmiss.index.get_level_values(0).to_series().diff().max() - 1
+            if np.isnan(diff):
+                diff = 0
+            assert diff >= 0, 'Time difference should be larger than or equal to zero {0:f}'.format(diff)
+            gap += diff * 0.5
+        return gap / len(obj_frequencies)
+
