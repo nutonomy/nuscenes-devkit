@@ -8,7 +8,7 @@ import sys
 import random
 import shutil
 import unittest
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 from tqdm import tqdm
@@ -32,24 +32,28 @@ class TestMain(unittest.TestCase):
             shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
-    def _mock_submission(nusc: NuScenes, split: str) -> Dict[str, dict]:
+    def _mock_submission(nusc: NuScenes, split: str, add_errors: bool = False) -> Dict[str, dict]:
         """
         Creates "reasonable" submission (results and metadata) by looping through the mini-val set, adding 1 GT
         prediction per sample. Predictions will be permuted randomly along all axes.
         """
 
-        def random_class(category_name: str) -> str:
+        def random_class(category_name: str, add_errors: bool = False) -> Optional[str]:
             # Alter 10% of the valid labels.
             class_names = sorted(TRACKING_NAMES)
             tmp = category_to_tracking_name(category_name)
-            if tmp is not None and np.random.rand() < .9:
-                return tmp
-            else:
-                return class_names[np.random.randint(0, len(class_names) - 1)]
 
-        def random_id(instance_token: str) -> str:
+            if tmp is None:
+                return None
+            else:
+                if not add_errors or np.random.rand() < .9:
+                    return tmp
+                else:
+                    return class_names[np.random.randint(0, len(class_names) - 1)]
+
+        def random_id(instance_token: str, add_errors: bool = False) -> str:
             # Alter 10% of the valid ids to be a random string, which hopefully corresponds to a new track.
-            if np.random.rand() < .9:
+            if not add_errors or np.random.rand() < .9:
                 _tracking_id = instance_token + '_pred'
             else:
                 _tracking_id = str(np.random.randint(0, sys.maxsize))
@@ -74,18 +78,33 @@ class TestMain(unittest.TestCase):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)
-                tracking_id = random_id(ann['instance_token'])
-                tracking_name = random_class(ann['category_name'])
+                translation = list(np.array(ann['translation']))
+                size = list(np.array(ann['size']))
+                rotation = list(np.array(ann['rotation']))
+                velocity = nusc.box_velocity(ann_token)[:2]
+                tracking_id = random_id(ann['instance_token'], add_errors=add_errors)
+                tracking_name = random_class(ann['category_name'], add_errors=add_errors)
+                if tracking_name is None:
+                    continue
+                tracking_score = 1.0
+
+                if add_errors:
+                    translation += 5 * (np.random.rand(3) - 0.5)
+                    size *= 2 * (np.random.rand(3) + 0.5)
+                    rotation += (np.random.rand(4) - 0.5) * .1
+                    velocity *= np.random.rand(3)[:2] + 0.5
+                    tracking_score = random.random()
+
                 sample_res.append(
                     {
                         'sample_token': sample['token'],
-                        'translation': list(np.array(ann['translation']) + 5 * (np.random.rand(3) - 0.5)),
-                        'size': list(np.array(ann['size']) * 2 * (np.random.rand(3) + 0.5)),
-                        'rotation': list(np.array(ann['rotation']) + ((np.random.rand(4) - 0.5) * .1)),
-                        'velocity': list(nusc.box_velocity(ann_token)[:2] * (np.random.rand(3)[:2] + 0.5)),
+                        'translation': translation,
+                        'size': size,
+                        'rotation': rotation,
+                        'velocity': list(velocity),
                         'tracking_id': tracking_id,
                         'tracking_name': tracking_name,
-                        'tracking_score': random.random()
+                        'tracking_score': tracking_score
                     })
             mock_results[sample['token']] = sample_res
         mock_submission = {
@@ -94,7 +113,7 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
-    def test_delta(self):
+    def test_delta_mock(self):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
         This score is then captured in this very test such that if we change the eval code,
@@ -107,7 +126,7 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_submission(nusc, 'mini_val'), f, indent=2)
+            json.dump(self._mock_submission(nusc, 'mini_val', add_errors=True), f, indent=2)
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
@@ -117,6 +136,30 @@ class TestMain(unittest.TestCase):
         # 1. Score = TODO.
         self.assertAlmostEqual(metrics.mota, -1)  # TODO: set score
 
+    def test_delta_gt(self):
+        """
+        This tests runs the evaluation with the ground truth used as predictions.
+        This should result in a perfect score for every metric.
+        This score is then captured in this very test such that if we change the eval code,
+        this test will trigger if the results changed.
+        """
+        random.seed(42)
+        np.random.seed(42)
+        assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
+
+        nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
+
+        with open(self.res_mockup, 'w') as f:
+            json.dump(self._mock_submission(nusc, 'mini_val', add_errors=False), f, indent=2)
+
+        cfg = config_factory('tracking_nips_2019')
+        nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
+                                 verbose=False)
+        metrics, md_list = nusc_eval.evaluate()
+
+        # TODO: check more metrics
+        self.assertAlmostEqual(metrics.mota, 1)
+
 
 if __name__ == '__main__':
-    TestMain().test_delta()
+    TestMain().test_delta_gt()

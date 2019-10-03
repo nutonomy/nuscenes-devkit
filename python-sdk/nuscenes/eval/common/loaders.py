@@ -224,7 +224,7 @@ def filter_eval_boxes(nusc: NuScenes,
     total, dist_filter, point_filter, bike_rack_filter = 0, 0, 0, 0
     for ind, sample_token in enumerate(eval_boxes.sample_tokens):
 
-        # Filter on distance first
+        # Filter on distance first.
         total += len(eval_boxes[sample_token])
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if
                                           box.ego_dist < max_dist[box.__getattribute__(class_field)]]
@@ -234,7 +234,7 @@ def filter_eval_boxes(nusc: NuScenes,
         eval_boxes.boxes[sample_token] = [box for box in eval_boxes[sample_token] if not box.num_pts == 0]
         point_filter += len(eval_boxes[sample_token])
 
-        # Perform bike-rack filtering
+        # Perform bike-rack filtering.
         sample_anns = nusc.get('sample', sample_token)['anns']
         bikerack_recs = [nusc.get('sample_annotation', ann) for ann in sample_anns if
                          nusc.get('sample_annotation', ann)['category_name'] == 'static_object.bicycle_rack']
