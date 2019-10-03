@@ -390,9 +390,11 @@ class NuScenes:
         self.explorer.list_sample(sample_token)
 
     def render_pointcloud_in_image(self, sample_token: str, dot_size: int = 5, pointsensor_channel: str = 'LIDAR_TOP',
-                                   camera_channel: str = 'CAM_FRONT', out_path: str = None) -> None:
+                                   camera_channel: str = 'CAM_FRONT', out_path: str = None,
+                                   render_intensity: bool = False) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
-                                                 camera_channel=camera_channel, out_path=out_path)
+                                                 camera_channel=camera_channel, out_path=out_path,
+                                                 render_intensity=render_intensity)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
                       out_path: str = None) -> None:
@@ -531,16 +533,17 @@ class NuScenesExplorer:
     def map_pointcloud_to_image(self,
                                 pointsensor_token: str,
                                 camera_token: str,
-                                min_dist: float = 1.0) -> Tuple:
+                                min_dist: float = 1.0,
+                                render_intensity: bool = False) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
         :param pointsensor_token: Lidar/radar sample_data token.
         :param camera_token: Camera sample_data token.
         :param min_dist: Distance from the camera below which points are discarded.
+        :param render_intensity: Whether to render lidar intensity instead of point depth.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
-
         cam = self.nusc.get('sample_data', camera_token)
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
         pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
@@ -575,8 +578,17 @@ class NuScenesExplorer:
         # Grab the depths (camera frame z axis points away from the camera).
         depths = pc.points[2, :]
 
-        # Retrieve the color from the depth.
-        coloring = depths
+        if render_intensity:
+            # Retrieve the color from the intensities.
+            # Performs arbitary scaling to achieve more visually pleasing results.
+            intensities = pc.points[3, :]
+            intensities = (intensities - np.min(intensities)) / (np.max(intensities) - np.min(intensities))
+            intensities = intensities ** 0.1
+            intensities = np.maximum(0, intensities - 0.5)
+            coloring = intensities
+        else:
+            # Retrieve the color from the depth.
+            coloring = depths
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
         points = view_points(pc.points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
@@ -600,7 +612,8 @@ class NuScenesExplorer:
                                    dot_size: int = 5,
                                    pointsensor_channel: str = 'LIDAR_TOP',
                                    camera_channel: str = 'CAM_FRONT',
-                                   out_path: str = None) -> None:
+                                   out_path: str = None,
+                                   render_intensity: bool = False) -> None:
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -608,6 +621,7 @@ class NuScenesExplorer:
         :param pointsensor_channel: RADAR or LIDAR channel name, e.g. 'LIDAR_TOP'.
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param render_intensity: Whether to render lidar intensity instead of point depth.
         """
         sample_record = self.nusc.get('sample', sample_token)
 
@@ -615,7 +629,8 @@ class NuScenesExplorer:
         pointsensor_token = sample_record['data'][pointsensor_channel]
         camera_token = sample_record['data'][camera_channel]
 
-        points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token)
+        points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
+                                                            render_intensity=render_intensity)
         plt.figure(figsize=(9, 16))
         plt.imshow(im)
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
