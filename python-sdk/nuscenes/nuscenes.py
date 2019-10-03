@@ -579,6 +579,7 @@ class NuScenesExplorer:
         depths = pc.points[2, :]
 
         if render_intensity:
+            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render intensity for lidar!'
             # Retrieve the color from the intensities.
             # Performs arbitary scaling to achieve more visually pleasing results.
             intensities = pc.points[3, :]
