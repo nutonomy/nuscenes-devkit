@@ -1,21 +1,31 @@
 from typing import List, Dict
 
 from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.utils.splits import create_splits_scenes
 from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.nuscenes import NuScenes
 
 
-def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes) -> Dict[str, Dict[int, List[TrackingBox]]]:
+def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str) -> Dict[str, Dict[int, List[TrackingBox]]]:
     """
     Returns all tracks for all scenes. Samples within a track are sorted in chronological order.
     This can be applied either to GT or predictions.
     :param all_boxes: Holds all GT or predicted boxes.
     :param nusc: The NuScenes instance to load the sample information from.
+    :param eval_split: The evaluation split for which we create tracks.
     :return: The tracks.
     """
+    # Only keep samples from this split.
+    splits = create_splits_scenes()
+    scene_tokens = set()
+    for sample_token in all_boxes.sample_tokens:
+        scene_token = nusc.get('sample', sample_token)['scene_token']
+        scene = nusc.get('scene', scene_token)
+        if scene['name'] in splits[eval_split]:
+            scene_tokens.add(scene_token)
+
     # Init all scenes and timestamps to guarantee completeness.
     tracks = {}
-    scene_tokens = [nusc.get('sample', st)['scene_token'] for st in all_boxes.sample_tokens]
     for scene_token in scene_tokens:
         # Init scene.
         if scene_token not in tracks:
@@ -42,10 +52,12 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes) -> Dict[str, Dict[int, L
         scene_token = sample_record['scene_token']
         boxes: List[TrackingBox] = all_boxes.boxes[sample_token]
         for box in boxes:
-            # Augment the boxes with timestamp. We will use timestamps to sort boxes in time later.
-            box.timestamp = sample_record['timestamp']
+            # Add box to tracks.
+            tracks[scene_token][sample_record['timestamp']].append(box)
 
-            # Add box to tracks. The timestamps have been initialized above.
-            tracks[scene_token][box.timestamp].append(box)
+    # Make sure the tracks are sorted in time.
+    # This is always the case for GT, but may not be the case for predictions.
+    for scene_token in tracks.keys():
+        tracks[scene_token] = dict(sorted(tracks[scene_token].items(), key=lambda kv: kv[0]))
 
     return tracks

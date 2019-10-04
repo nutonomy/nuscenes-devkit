@@ -36,6 +36,9 @@ class TestMain(unittest.TestCase):
         """
         Creates "reasonable" submission (results and metadata) by looping through the mini-val set, adding 1 GT
         prediction per sample. Predictions will be permuted randomly along all axes.
+        :param nusc: NuScenes instance.
+        :param split: Dataset split to use.
+        :param add_errors: Whether to use GT or add errors to it.
         """
 
         def random_class(category_name: str, add_errors: bool = False) -> Optional[str]:
@@ -68,12 +71,15 @@ class TestMain(unittest.TestCase):
             'use_external': False,
         }
         mock_results = {}
+
+        # Get all samples in the current evaluation split.
         splits = create_splits_scenes()
         val_samples = []
         for sample in nusc.sample:
             if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
                 val_samples.append(sample)
 
+        # Prepare results.
         for sample in tqdm(val_samples):
             sample_res = []
             for ann_token in sample['anns']:

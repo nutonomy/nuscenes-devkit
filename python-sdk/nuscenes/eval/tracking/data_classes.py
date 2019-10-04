@@ -285,7 +285,6 @@ class TrackingBox(EvalBox):
                  tracking_id: str = '',  # Instance id of this object.
                  tracking_name: str = '',  # The class name used in the tracking challenge.
                  tracking_score: float = -1.0,  # Does not apply to GT.
-                 timestamp: int = -1  # Required to create tracks. Augmented during eval.
                  ):
 
         super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
@@ -300,7 +299,6 @@ class TrackingBox(EvalBox):
         self.tracking_id = tracking_id
         self.tracking_name = tracking_name
         self.tracking_score = tracking_score
-        self.timestamp = timestamp
 
     def __eq__(self, other):
         return (self.sample_token == other.sample_token and
