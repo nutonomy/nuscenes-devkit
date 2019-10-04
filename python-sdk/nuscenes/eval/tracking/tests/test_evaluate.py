@@ -84,9 +84,9 @@ class TestMain(unittest.TestCase):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)
-                translation = list(np.array(ann['translation']))
-                size = list(np.array(ann['size']))
-                rotation = list(np.array(ann['rotation']))
+                translation = np.array(ann['translation'])
+                size = np.array(ann['size'])
+                rotation = np.array(ann['rotation'])
                 velocity = nusc.box_velocity(ann_token)[:2]
                 tracking_id = random_id(ann['instance_token'], add_errors=add_errors)
                 tracking_name = random_class(ann['category_name'], add_errors=add_errors)
@@ -103,9 +103,9 @@ class TestMain(unittest.TestCase):
 
                 sample_res.append({
                         'sample_token': sample['token'],
-                        'translation': translation,
-                        'size': size,
-                        'rotation': rotation,
+                        'translation': list(translation),
+                        'size': list(size),
+                        'rotation': list(rotation),
                         'velocity': list(velocity),
                         'tracking_id': tracking_id,
                         'tracking_name': tracking_name,
@@ -131,7 +131,8 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_submission(nusc, 'mini_val', add_errors=True), f, indent=2)
+            mock = self._mock_submission(nusc, 'mini_val', add_errors=True)
+            json.dump(mock, f, indent=2)
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
@@ -155,7 +156,8 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_submission(nusc, 'mini_val', add_errors=False), f, indent=2)
+            mock = self._mock_submission(nusc, 'mini_val', add_errors=False)
+            json.dump(mock, f, indent=2)
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
@@ -169,4 +171,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_gt()
+    TestMain().test_delta_mock()
