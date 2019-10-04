@@ -136,10 +136,10 @@ class TestMain(unittest.TestCase):
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=False)
-        metrics, md_list = nusc_eval.evaluate()
+        metrics = nusc_eval.evaluate()
 
         # 1. Score = TODO.
-        self.assertAlmostEqual(metrics.mota, -1)  # TODO: set score
+        self.assertAlmostEqual(metrics.compute_metric('mota'), -1)  # TODO: set score
 
     def test_delta_gt(self):
         """
@@ -160,10 +160,12 @@ class TestMain(unittest.TestCase):
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=False)
-        metrics, md_list = nusc_eval.evaluate()
+        metrics = nusc_eval.evaluate()
 
-        # TODO: check more metrics
-        self.assertAlmostEqual(metrics.mota, 1)
+        # Compare score to known solution. Know that the result is not perfect despite submitting GT as predictions.
+        # This is because we filter boxes with 0 lidar points ONLY for GT, but not for predictions.
+        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.919587385706092)
+        self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0)
 
 
 if __name__ == '__main__':

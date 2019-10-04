@@ -7,7 +7,7 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
 """
-from typing import List, Dict, Callable, Any
+from typing import List, Dict, Callable, Any, Optional
 
 import motmetrics
 import numpy as np
@@ -77,6 +77,18 @@ class TrackingEvaluation(object):
         names = []
         mh = motmetrics.metrics.create()
 
+        # Skip missing classes.
+        gt_count = 0
+        for scene_tracks_gt in self.tracks_gt.values():
+            for frame_gt in scene_tracks_gt.values():
+                for box in frame_gt:
+                    if box.tracking_name == self.class_name:
+                        gt_count += 1
+        if gt_count == 0:
+            # Do not add any metric. The average metrics will then be nan.
+            return metrics
+
+        # Specify metrics and threshold naming pattern.
         metric_names = ['num_frames', 'mota', 'motp', 'tid', 'lgd']
         name_gen = lambda _threshold: 'threshold_%.2f' % _threshold
 
@@ -95,12 +107,12 @@ class TrackingEvaluation(object):
             accumulators.append(acc)
             names.append(name_gen(threshold))
 
-            thresh_summary = mh.compute(acc, metrics=metric_names, name='threshold_%.2f' % threshold)
+            thresh_summary = mh.compute(acc, metrics=metric_names, name=name_gen(threshold))
             print(thresh_summary)
             thresh_metrics.append(thresh_summary)
 
         # Aggregate metrics. We only do this for more convenient access.
-        summary = mh.compute_many(accumulators, metrics=metric_names,  names=names, generate_overall=False)
+        summary = mh.compute_many(accumulators, metrics=metric_names, names=names, generate_overall=False)
 
         # Find best mota to determine threshold to pick for traditional metrics.
         best_thresh_idx = int(np.argmax(summary.mota.values))
@@ -118,10 +130,10 @@ class TrackingEvaluation(object):
         """
         Aggregate the raw data for the traditional CLEARMOT/MT/ML metrics.
         :param threshold: score threshold used to determine positives and negatives.
+        :returns: The MOTAccumulator that stores all the hits/misses/etc.
         """
         # Init.
         acc = motmetrics.MOTAccumulator()
-
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in self.tracks_gt.keys():
@@ -141,6 +153,10 @@ class TrackingEvaluation(object):
             for timestamp in scene_tracks_gt.keys():
                 frame_gt = scene_tracks_gt[timestamp]
                 frame_pred = scene_tracks_pred[timestamp]
+
+                # Select only the current class.
+                frame_gt = [f for f in frame_gt if f.tracking_name == self.class_name]
+                frame_pred = [f for f in frame_pred if f.tracking_name == self.class_name]
 
                 # Calculate distances.
                 distances: np.ndarray = np.ones((len(frame_gt), len(frame_pred)))

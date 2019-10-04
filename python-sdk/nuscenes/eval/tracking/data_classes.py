@@ -35,7 +35,7 @@ class TrackingConfig:
         self.min_precision = min_precision
         self.max_boxes_per_sample = max_boxes_per_sample
 
-        self.class_names = self.class_range.keys()
+        self.class_names = sorted(self.class_range.keys())
 
     def __eq__(self, other):
         eq = True
@@ -174,7 +174,11 @@ class TrackingMetrics:
         if metric_name == 'amotp':
             raise self.amotp
         else:
-            return np.average(self.raw_metrics[metric_name].values())
+            data = list(self.raw_metrics[metric_name].values())
+            if len(data) > 0:
+                return np.mean(data)
+            else:
+                return np.nan
 
     @property
     def amota(self) -> float:
