@@ -202,7 +202,7 @@ class DetectionMetrics:
         self._label_tp_errors = defaultdict(lambda: defaultdict(float))
         self.eval_time = None
 
-    def add_label_ap(self, detection_name: str, dist_th: float, ap: float):
+    def add_label_ap(self, detection_name: str, dist_th: float, ap: float) -> None:
         self._label_aps[detection_name][dist_th] = ap
 
     def get_label_ap(self, detection_name: str, dist_th: float) -> float:
@@ -214,7 +214,7 @@ class DetectionMetrics:
     def get_label_tp(self, detection_name: str, metric_name: str) -> float:
         return self._label_tp_errors[detection_name][metric_name]
 
-    def add_runtime(self, eval_time: float):
+    def add_runtime(self, eval_time: float) -> None:
         self.eval_time = eval_time
 
     @property

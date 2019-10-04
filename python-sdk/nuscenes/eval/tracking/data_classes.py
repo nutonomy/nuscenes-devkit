@@ -2,7 +2,8 @@
 # Code written by Holger Caesar, 2019.
 # Licensed under the Creative Commons [see licence.txt]
 
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
+from collections import defaultdict
 
 import numpy as np
 
@@ -159,6 +160,21 @@ class TrackingMetrics:
 
         self.cfg = cfg
         self.eval_time = None
+        self.raw_metrics = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+
+    def add_raw_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
+        self.raw_metrics[metric_name][tracking_name] = value
+
+    def add_runtime(self, eval_time: float) -> None:
+        self.eval_time = eval_time
+
+    def compute_metric(self, metric_name: str) -> float:
+        if metric_name == 'amota':
+            raise self.amota
+        if metric_name == 'amotp':
+            raise self.amotp
+        else:
+            return np.average(self.raw_metrics[metric_name].values())
 
     @property
     def amota(self) -> float:
@@ -168,99 +184,21 @@ class TrackingMetrics:
     def amotp(self) -> float:
         raise NotImplementedError
 
-    @property
-    def mota(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def motp(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def idf1(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def faf(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def mt(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def ml(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def fp(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def fn(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def ids(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def frag(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def trans_err(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def scale_err(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def orient_err(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def vel_err(self) -> float:
-        raise NotImplementedError
-
-    def add_runtime(self, eval_time: float):
-        self.eval_time = eval_time
-
-    def serialize(self):
-        return {
-            'amota': self.amota,
-            'amotp': self.amotp,
-            'mota': self.mota,
-            'motp': self.motp,
-            'idf1': self.idf1,
-            'faf': self.faf,
-            'mt': self.mt,
-            'ml': self.ml,
-            'fp': self.fp,
-            'fn': self.fn,
-            'ids': self.ids,
-            'frag': self.frag,
-            'trans_err': self.trans_err,
-            'scale_err': self.scale_err,
-            'orient_err': self.orient_err,
-            'vel_err': self.vel_err,
-            'eval_time': self.eval_time,
-            'cfg': self.cfg.serialize()
-        }
+    def serialize(self) -> Dict[str, Any]:
+        metrics = self.raw_metrics
+        metrics['eval_time'] = self.eval_time
+        metrics['cfg'] = self.cfg.serialize()
+        return metrics
 
     @classmethod
-    def deserialize(cls, content: dict):
+    def deserialize(cls, content: dict) -> 'TrackingMetrics':
         """ Initialize from serialized dictionary. """
-
         cfg = TrackingConfig.deserialize(content['cfg'])
+        tm = cls(cfg=cfg)
+        tm.add_runtime(content['eval_time'])
+        tm.raw_metrics = content['raw_metrics']
 
-        metrics = cls(cfg=cfg)
-        metrics.add_runtime(content['eval_time'])
-
-        # TODO: add stuff
-
-        return metrics
+        return tm
 
     def __eq__(self, other):
 

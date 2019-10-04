@@ -12,7 +12,7 @@ from typing import List, Dict, Callable, Any
 import motmetrics
 import numpy as np
 
-from nuscenes.eval.tracking.data_classes import TrackingBox
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 
 
 class TrackingEvaluation(object):
@@ -64,14 +64,21 @@ class TrackingEvaluation(object):
 
         self.n_scenes = len(self.tracks_gt)
 
-    def compute_all_metrics(self) -> None:
+    def compute_all_metrics(self, metrics: TrackingMetrics) -> TrackingMetrics:
         """
         Compute all relevant metrics for the current class.
+        :param metrics: The TrackingMetrics to be augmented with the metric values.
+        :returns: Augmented TrackingMetrics instance.
         """
         # Init.
+        print('Computing metrics for class %s...' % self.class_name)
         accumulators = []
+        thresh_metrics = []
         names = []
         mh = motmetrics.metrics.create()
+
+        metric_names = ['num_frames', 'mota', 'motp', 'tid', 'lgd']
+        name_gen = lambda _threshold: 'threshold_%.2f' % _threshold
 
         # Register custom metrics.
         mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],
@@ -86,20 +93,26 @@ class TrackingEvaluation(object):
             # Compute CLEARMOT/MT/ML metrics for current threshold.
             acc = self.accumulate(threshold)
             accumulators.append(acc)
-            names.append('threshold {0:f}'.format(threshold))
+            names.append(name_gen(threshold))
 
-            summary = mh.compute(acc,
-                                 metrics=['num_frames', 'mota', 'motp', 'tid', 'lgd'],
-                                 name='threshold {0:f}'.format(threshold))
-            print(summary)
+            thresh_summary = mh.compute(acc, metrics=metric_names, name='threshold_%.2f' % threshold)
+            print(thresh_summary)
+            thresh_metrics.append(thresh_summary)
 
-        # Compute overall metrics: AMOTA, AMOTP, mAP.
-        summary = mh.compute_many(
-            accumulators,
-            metrics=['num_frames', 'mota', 'motp', 'tid', 'lgd'],  # TODO: implement AMOTA
-            names=names,
-            generate_overall=True)
-        print(summary)
+        # Aggregate metrics. We only do this for more convenient access.
+        summary = mh.compute_many(accumulators, metrics=metric_names,  names=names, generate_overall=False)
+
+        # Find best mota to determine threshold to pick for traditional metrics.
+        best_thresh_idx = int(np.argmax(summary.mota.values))
+        best_thresh = thresholds[best_thresh_idx]
+        best_name = name_gen(best_thresh)
+
+        # Create a dictionary of all metrics.
+        for metric_name in metric_names:
+            value = summary.get(metric_name)[best_name]
+            metrics.add_raw_metric(metric_name, self.class_name, value)
+
+        return metrics
 
     def accumulate(self, threshold: float = None) -> motmetrics.MOTAccumulator:
         """

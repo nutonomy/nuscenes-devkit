@@ -50,10 +50,7 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str) -> Dict
     for sample_token in all_boxes.sample_tokens:
         sample_record = nusc.get('sample', sample_token)
         scene_token = sample_record['scene_token']
-        boxes: List[TrackingBox] = all_boxes.boxes[sample_token]
-        for box in boxes:
-            # Add box to tracks.
-            tracks[scene_token][sample_record['timestamp']].append(box)
+        tracks[scene_token][sample_record['timestamp']] = all_boxes.boxes[sample_token]
 
     # Make sure the tracks are sorted in time.
     # This is always the case for GT, but may not be the case for predictions.

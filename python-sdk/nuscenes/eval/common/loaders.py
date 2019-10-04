@@ -239,7 +239,6 @@ def filter_eval_boxes(nusc: NuScenes,
         bikerack_recs = [nusc.get('sample_annotation', ann) for ann in sample_anns if
                          nusc.get('sample_annotation', ann)['category_name'] == 'static_object.bicycle_rack']
         bikerack_boxes = [Box(rec['translation'], rec['size'], Quaternion(rec['rotation'])) for rec in bikerack_recs]
-
         filtered_boxes = []
         for box in eval_boxes[sample_token]:
             if box.__getattribute__(class_field) in ['bicycle', 'motorcycle']:

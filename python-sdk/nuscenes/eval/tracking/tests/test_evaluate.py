@@ -101,8 +101,7 @@ class TestMain(unittest.TestCase):
                     velocity *= np.random.rand(3)[:2] + 0.5
                     tracking_score = random.random()
 
-                sample_res.append(
-                    {
+                sample_res.append({
                         'sample_token': sample['token'],
                         'translation': translation,
                         'size': size,

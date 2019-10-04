@@ -12,7 +12,6 @@ from typing import Tuple, Dict, Any
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.common.data_classes import MetricDataList
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig, TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.algo import TrackingEvaluation
@@ -99,31 +98,29 @@ class TrackingEval:
         self.tracks_gt = create_tracks(self.gt_boxes, self.nusc, self.eval_set)
         self.tracks_pred = create_tracks(self.pred_boxes, self.nusc, self.eval_set)
 
-    def evaluate(self) -> Tuple[TrackingMetrics, MetricDataList]:
+    def evaluate(self) -> TrackingMetrics:
         """
         Performs the actual evaluation.
         :return: A tuple of high-level and the raw metric data.
         """
         start_time = time.time()
         metrics = TrackingMetrics(self.cfg)
-        metric_data_list = MetricDataList() # TODO: Do we still need this?
 
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
                                     self.cfg.dist_th_tp, num_thresholds=TrackingMetricData.nelem,
                                     output_dir=self.output_dir)
-            ev.compute_all_metrics()
+            metrics = ev.compute_all_metrics(metrics)
 
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
 
-        return metrics, metric_data_list
+        return metrics
 
-    def render(self, metrics: TrackingMetrics, md_list: MetricDataList) -> None:
+    def render(self, metrics: TrackingMetrics) -> None:
         """
         Renders various PR and TP curves.
         :param metrics: TrackingMetrics instance.
-        :param md_list: MetricDataList instance.
         """
         if self.verbose:
             print('Rendering curves')
