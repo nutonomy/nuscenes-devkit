@@ -6,7 +6,7 @@ TRACKING_NAMES = ['bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer'
 
 AMOT_METRICS = ['AMOTA', 'AMOTP']
 LEGACY_METRICS = ['MOTA', 'MOTP', 'IDF1', 'FAF', 'MT', 'ML', 'FP', 'FN', 'IDS', 'FRAG']
-DETECTION_METRICS = ['trans_err', 'scale_err', 'orient_err', 'vel_err']  # Excludes attr_err.
+DETECTION_METRICS = ['mAP', 'trans_err', 'scale_err', 'orient_err', 'vel_err']  # Excludes attr_err.
 TRACKING_METRICS = [*AMOT_METRICS, *LEGACY_METRICS, *DETECTION_METRICS]
 
 PRETTY_TRACKING_NAMES = {

@@ -159,7 +159,7 @@ class TrackingEval:
                                  savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
         # Run evaluation.
-        metrics = self.evaluate()
+        metrics = self.evaluate() # TODO: add classes without predictions/gt to metrics
 
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:
@@ -169,18 +169,37 @@ class TrackingEval:
         with open(os.path.join(self.output_dir, 'metrics_summary.json'), 'w') as f:
             json.dump(metrics_summary, f, indent=2)
 
-        # Print high-level metrics.
-        # TODO
-        print('Eval time: %.1fs' % metrics_summary['eval_time'])
-
-        # Print per-class metrics.
-        # TODO
+        # Print metrics to stdout.
+        self._print_metrics(metrics)
 
         # Render curves.
         if render_curves:
             self.render(metrics)
 
         return metrics_summary
+
+    def _print_metrics(self, metrics: TrackingMetrics) -> None:
+        """
+        Print metrics to stdout.
+        :param metrics: The output of evaluate().
+        """
+        # Print high-level metrics.
+        for metric_name in metrics.raw_metrics.keys():
+            print('%s\t%.1f' % (metric_name.upper(), metrics.compute_metric(metric_name, 'avg')))
+
+        print('Eval time: %.1fs' % metrics.eval_time)
+        print()
+
+        # Print per-class metrics.
+        print('\t\t', end='')
+        for metric_name in metrics.raw_metrics.keys():
+            print('%s\t' % metric_name.upper(), end='')
+        for class_name in self.cfg.class_names:
+            print('%s' % class_name, end='\t')
+            for metric_name, metric_vals in metrics.raw_metrics.items():  # TODO: get metric names from a single source
+                val = metric_vals[class_name]
+                print('\t%.3f' % val, end='')
+            print()
 
 
 if __name__ == "__main__":

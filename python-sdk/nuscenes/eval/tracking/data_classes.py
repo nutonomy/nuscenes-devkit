@@ -9,7 +9,7 @@ import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
 from nuscenes.eval.common.utils import center_distance
-from nuscenes.eval.tracking.constants import TRACKING_NAMES
+from nuscenes.eval.tracking.constants import TRACKING_NAMES, AMOT_METRICS, LEGACY_METRICS
 
 
 class TrackingConfig:
@@ -162,6 +162,12 @@ class TrackingMetrics:
         self.eval_time = None
         self.raw_metrics = defaultdict(lambda: defaultdict(float))
 
+        # Init every class.
+        metric_names = [*AMOT_METRICS, *LEGACY_METRICS]  # TODO: add DETECTION_METRICS.
+        for metric_name in metric_names:
+            for class_name in self.cfg.class_names:
+                self.raw_metrics[metric_name][class_name] = np.nan
+
     def add_raw_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
         self.raw_metrics[metric_name][tracking_name] = value
 
@@ -179,7 +185,8 @@ class TrackingMetrics:
             return float(self.raw_metrics[metric_name][class_name])
 
     def serialize(self) -> Dict[str, Any]:
-        metrics = self.raw_metrics
+        metrics = dict()
+        metrics['raw_metrics'] = self.raw_metrics
         metrics['eval_time'] = self.eval_time
         metrics['cfg'] = self.cfg.serialize()
         return metrics
