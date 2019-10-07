@@ -24,9 +24,6 @@ class TrackingEval:
     This is the official nuScenes tracking evaluation code.
     Results are written to the provided output_dir.
 
-    nuScenes uses the following tracking metrics:
-    TODO
-
     Here is an overview of the functions in this method:
     - init: Loads GT annotations and predictions stored in JSON format and filters the boxes.
     - run: Performs evaluation and dumps the metric data to disk.
@@ -122,6 +119,8 @@ class TrackingEval:
         Renders various PR and TP curves.
         :param metrics: TrackingMetrics instance.
         """
+        raise NotImplementedError
+
         if self.verbose:
             print('Rendering curves')
 
@@ -160,11 +159,7 @@ class TrackingEval:
                                  savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
         # Run evaluation.
-        metrics, metric_data_list = self.evaluate()
-
-        # Render PR and TP curves.
-        if render_curves:
-            self.render(metrics)
+        metrics = self.evaluate()
 
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:
@@ -173,8 +168,6 @@ class TrackingEval:
         metrics_summary['meta'] = self.meta.copy()
         with open(os.path.join(self.output_dir, 'metrics_summary.json'), 'w') as f:
             json.dump(metrics_summary, f, indent=2)
-        with open(os.path.join(self.output_dir, 'metrics_details.json'), 'w') as f:
-            json.dump(metric_data_list.serialize(), f, indent=2)
 
         # Print high-level metrics.
         # TODO
@@ -182,6 +175,10 @@ class TrackingEval:
 
         # Print per-class metrics.
         # TODO
+
+        # Render curves.
+        if render_curves:
+            self.render(metrics)
 
         return metrics_summary
 
@@ -222,7 +219,7 @@ if __name__ == "__main__":
     verbose_ = bool(args.verbose)
 
     if config_path == '':
-        cfg_ = config_factory('nips_tracking_2019')
+        cfg_ = config_factory('tracking_nips_2019')
     else:
         with open(config_path, 'r') as f:
             cfg_ = TrackingConfig.deserialize(json.load(f))

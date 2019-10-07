@@ -91,9 +91,9 @@ class TrackingEvaluation(object):
             # Do not add any metric. The average metrics will then be nan.
             return metrics
 
-        # Specify mapping from motmetrics names to metric names used here.
+        # Define label mappings.
         # TODO: 'idf1' Crashes when all distances are nan.
-        metric_names = {
+        mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
             'num_frames': '',
             'mota': 'mota',
             'motp_custom': 'motp',
@@ -107,6 +107,10 @@ class TrackingEvaluation(object):
             'num_fragmentations': 'frag',
             'tid': 'tid',
             'lgd': 'lgd'
+        }
+        avg_metric_map = {  # Specify mapping from motmetric names to average metric names (after averaging).
+            'mota': 'amota',
+            'motp_custom': 'amotp'
         }
 
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
@@ -129,7 +133,7 @@ class TrackingEvaluation(object):
         thresholds = self.get_thresholds(gt_count)
 
         for threshold in thresholds:
-            # TODO: If recall threshold is not achieved, assign the worst possible value.
+            # If recall threshold is not achieved, assign the worst possible value.
             if np.isnan(threshold):
                 continue
 
@@ -138,21 +142,31 @@ class TrackingEvaluation(object):
             accumulators.append(acc)
             thresh_names.append(name_gen(threshold))
 
-            thresh_summary = mh.compute(acc, metrics=metric_names.keys(), name=name_gen(threshold))
+            thresh_summary = mh.compute(acc, metrics=mot_metric_map.keys(), name=name_gen(threshold))
             print(thresh_summary)
             thresh_metrics.append(thresh_summary)
 
         # Aggregate metrics. We only do this for more convenient access.
         assert len(thresh_names) == len(set(thresh_names))
-        summary = mh.compute_many(accumulators, metrics=metric_names.keys(), names=thresh_names, generate_overall=False)
+        summary = mh.compute_many(accumulators, metrics=mot_metric_map.keys(), names=thresh_names,
+                                  generate_overall=False)
 
-        # Find best mota to determine threshold to pick for traditional metrics.
+        # Find best MOTA to determine threshold to pick for traditional metrics.
         best_thresh_idx = int(np.argmax(summary.mota.values))
         best_thresh = thresholds[best_thresh_idx]
         best_name = name_gen(best_thresh)
 
+        # Compute AMOTA / AMOTP.
+        # TODO: Use modified MOTA/MOTP.
+        for (mot_name, metric_name) in avg_metric_map.items():
+            values = summary.get(mot_name).values.tolist()
+            values.extend([np.nan] * np.sum(np.isnan(thresholds)))
+            assert len(values) == len(thresholds)
+            value = float(np.nanmean(values))
+            metrics.add_raw_metric(metric_name, self.class_name, value)
+
         # Create a dictionary of all metrics.
-        for (mot_name, metric_name) in metric_names.items():
+        for (mot_name, metric_name) in mot_metric_map.items():
             # Skip metrics which we don't output.
             if metric_name == '':
                 continue
@@ -287,9 +301,6 @@ class TrackingEvaluation(object):
 
         # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.
         thresholds[rec_interp > max_recall_achieved] = np.nan
-
-        # Keep only unique elements.
-        thresholds: List[float] = np.unique(thresholds).tolist()
 
         return thresholds
 

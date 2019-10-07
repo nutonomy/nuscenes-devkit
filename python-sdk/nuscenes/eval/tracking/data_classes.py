@@ -160,7 +160,7 @@ class TrackingMetrics:
 
         self.cfg = cfg
         self.eval_time = None
-        self.raw_metrics = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+        self.raw_metrics = defaultdict(lambda: defaultdict(float))
 
     def add_raw_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
         self.raw_metrics[metric_name][tracking_name] = value
@@ -168,12 +168,15 @@ class TrackingMetrics:
     def add_runtime(self, eval_time: float) -> None:
         self.eval_time = eval_time
 
-    def compute_metric(self, metric_name: str) -> float:
-        data = list(self.raw_metrics[metric_name].values())
-        if len(data) > 0:
-            return float(np.nanmean(data))  # Nan entries are ignored.
+    def compute_metric(self, metric_name: str, class_name: str = 'avg') -> float:
+        if class_name == 'avg':
+            data = list(self.raw_metrics[metric_name].values())
+            if len(data) > 0:
+                return float(np.nanmean(data))  # Nan entries are ignored.
+            else:
+                return np.nan
         else:
-            return np.nan
+            return float(self.raw_metrics[metric_name][class_name])
 
     def serialize(self) -> Dict[str, Any]:
         metrics = self.raw_metrics
@@ -212,8 +215,7 @@ class TrackingBox(EvalBox):
                  num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
                  tracking_id: str = '',  # Instance id of this object.
                  tracking_name: str = '',  # The class name used in the tracking challenge.
-                 tracking_score: float = -1.0,  # Does not apply to GT.
-                 ):
+                 tracking_score: float = -1.0):  # Does not apply to GT.
 
         super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
 
