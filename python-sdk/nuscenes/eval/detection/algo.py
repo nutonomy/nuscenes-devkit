@@ -28,7 +28,7 @@ def accumulate(gt_boxes: EvalBoxes,
     :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
     """
     # ---------------------------------------------
-    # Organize input and initialize accumulators
+    # Organize input and initialize accumulators.
     # ---------------------------------------------
 
     # Count the positives.
@@ -53,9 +53,9 @@ def accumulate(gt_boxes: EvalBoxes,
     sortind = [i for (v, i) in sorted((v, i) for (i, v) in enumerate(pred_confs))][::-1]
 
     # Do the actual matching.
-    tp = []  # Accumulator of true positives
-    fp = []  # Accumulator of false positives
-    conf = []  # Accumulator of confidences
+    tp = []  # Accumulator of true positives.
+    fp = []  # Accumulator of false positives.
+    conf = []  # Accumulator of confidences.
 
     # match_data holds the extra metrics we calculate for each match.
     match_data = {'trans_err': [],
@@ -68,7 +68,7 @@ def accumulate(gt_boxes: EvalBoxes,
                   'vel_magn': []}
 
     # ---------------------------------------------
-    # Match and accumulate match data
+    # Match and accumulate match data.
     # ---------------------------------------------
 
     taken = set()  # Initially no gt bounding box is matched.
@@ -92,7 +92,7 @@ def accumulate(gt_boxes: EvalBoxes,
         if is_match:
             taken.add((pred_box.sample_token, match_gt_idx))
 
-            #  Update tp, fp and confs
+            #  Update tp, fp and confs.
             tp.append(1)
             fp.append(0)
             conf.append(pred_box.detection_score)
@@ -192,4 +192,4 @@ def calc_tp(md: DetectionMetricData, min_recall: float, metric_name: str) -> flo
     if last_ind < first_ind:
         return 1.0  # Assign 1 here. If this happens for all classes, the score for that TP metric will be 0.
     else:
-        return float(np.mean(getattr(md, metric_name)[first_ind: last_ind + 1]))  # +1 to include error at max recall
+        return float(np.mean(getattr(md, metric_name)[first_ind: last_ind + 1]))  # +1 to include error at max recall.

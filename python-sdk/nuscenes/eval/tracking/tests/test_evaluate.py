@@ -41,7 +41,7 @@ class TestMain(unittest.TestCase):
         :param add_errors: Whether to use GT or add errors to it.
         """
 
-        def random_class(category_name: str, add_errors: bool = False) -> Optional[str]:
+        def random_class(category_name: str, _add_errors: bool = False) -> Optional[str]:
             # Alter 10% of the valid labels.
             class_names = sorted(TRACKING_NAMES)
             tmp = category_to_tracking_name(category_name)
@@ -49,14 +49,14 @@ class TestMain(unittest.TestCase):
             if tmp is None:
                 return None
             else:
-                if not add_errors or np.random.rand() < .9:
+                if not _add_errors or np.random.rand() < .9:
                     return tmp
                 else:
                     return class_names[np.random.randint(0, len(class_names) - 1)]
 
-        def random_id(instance_token: str, add_errors: bool = False) -> str:
+        def random_id(instance_token: str, _add_errors: bool = False) -> str:
             # Alter 10% of the valid ids to be a random string, which hopefully corresponds to a new track.
-            if not add_errors or np.random.rand() < .9:
+            if not _add_errors or np.random.rand() < .9:
                 _tracking_id = instance_token + '_pred'
             else:
                 _tracking_id = str(np.random.randint(0, sys.maxsize))
@@ -88,15 +88,15 @@ class TestMain(unittest.TestCase):
                 size = np.array(ann['size'])
                 rotation = np.array(ann['rotation'])
                 velocity = nusc.box_velocity(ann_token)[:2]
-                tracking_id = random_id(ann['instance_token'], add_errors=add_errors)
-                tracking_name = random_class(ann['category_name'], add_errors=add_errors)
+                tracking_id = random_id(ann['instance_token'], _add_errors=add_errors)
+                tracking_name = random_class(ann['category_name'], _add_errors=add_errors)
                 if tracking_name is None:
                     continue
                 tracking_score = 1.0
 
                 if add_errors:
-                    translation += 5 * (np.random.rand(3) - 0.5)
-                    size *= 2 * (np.random.rand(3) + 0.5)
+                    translation += 4 * (np.random.rand(3) - 0.5)
+                    size *= (np.random.rand(3) + 0.5)
                     rotation += (np.random.rand(4) - 0.5) * .1
                     velocity *= np.random.rand(3)[:2] + 0.5
                     tracking_score = random.random()

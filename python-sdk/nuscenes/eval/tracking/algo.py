@@ -7,7 +7,7 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
 """
-from typing import List, Dict, Callable, Any, Optional
+from typing import List, Dict, Callable, Any, Tuple
 
 import motmetrics
 import numpy as np
@@ -92,7 +92,7 @@ class TrackingEvaluation(object):
         metric_names = ['num_frames', 'mota', 'motp', 'tid', 'lgd']
 
         def name_gen(_threshold):
-            return 'threshold_%.2f' % _threshold
+            return 'threshold_%.3f' % _threshold
 
         # Register custom metrics.
         mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],
@@ -101,11 +101,11 @@ class TrackingEvaluation(object):
                     formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
-        thresholds = self.get_thresholds()
+        thresholds = self.get_thresholds(gt_count)
 
         for threshold in thresholds:
             # Compute CLEARMOT/MT/ML metrics for current threshold.
-            acc = self.accumulate(threshold)
+            acc, _ = self.accumulate(threshold)
             accumulators.append(acc)
             names.append(name_gen(threshold))
 
@@ -128,7 +128,7 @@ class TrackingEvaluation(object):
 
         return metrics
 
-    def accumulate(self, threshold: float = None) -> motmetrics.MOTAccumulator:
+    def accumulate(self, threshold: float = None) -> Tuple[motmetrics.MOTAccumulator, List[float]]:
         """
         Aggregate the raw data for the traditional CLEARMOT/MT/ML metrics.
         :param threshold: score threshold used to determine positives and negatives.
@@ -136,6 +136,8 @@ class TrackingEvaluation(object):
         """
         # Init.
         acc = motmetrics.MOTAccumulator()
+        scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.
+
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in self.tracks_gt.keys():
@@ -143,15 +145,13 @@ class TrackingEvaluation(object):
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred_unfiltered = self.tracks_pred[scene_id]
 
-            # Create map from timestamp to frame_id.
-            timestamp_map = {t: i for i, t in enumerate(scene_tracks_gt.keys())}
-
             # Threshold predicted tracks using the specified threshold.
             if threshold is None:
                 scene_tracks_pred = scene_tracks_pred_unfiltered
             else:
                 scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
 
+            frame_id = 0
             for timestamp in scene_tracks_gt.keys():
                 frame_gt = scene_tracks_gt[timestamp]
                 frame_pred = scene_tracks_pred[timestamp]
@@ -159,6 +159,12 @@ class TrackingEvaluation(object):
                 # Select only the current class.
                 frame_gt = [f for f in frame_gt if f.tracking_name == self.class_name]
                 frame_pred = [f for f in frame_pred if f.tracking_name == self.class_name]
+                gt_ids = [gg.tracking_id for gg in frame_gt]
+                pred_ids = [tt.tracking_id for tt in frame_pred]
+
+                # Abort if there are neither GT nor pred boxes.
+                if len(gt_ids) == 0 and len(pred_ids) == 0:
+                    continue
 
                 # Calculate distances.
                 distances: np.ndarray = np.ones((len(frame_gt), len(frame_pred)))
@@ -171,11 +177,19 @@ class TrackingEvaluation(object):
 
                 # Accumulate results.
                 # Note that we cannot use timestamp as frameid as motmetrics assumes it's an integer.
-                gt_ids = [gg.tracking_id for gg in frame_gt]
-                pred_ids = [tt.tracking_id for tt in frame_pred]
-                acc.update(gt_ids, pred_ids, distances, frameid=timestamp_map[timestamp])
+                acc.update(gt_ids, pred_ids, distances, frameid=frame_id)
 
-        return acc
+                # Store scores of matches, which are used to determine recall thresholds.
+                events = acc.events.ix[frame_id]  # TODO: ix is deprecated
+                matches = events[events.Type == 'MATCH']
+                match_ids = matches.HId.values
+                match_scores = [tt.tracking_score for tt in frame_pred if tt.tracking_id in match_ids]
+                scores.extend(match_scores)
+
+                # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
+                frame_id += 1
+
+        return acc, scores
 
     @staticmethod
     def _threshold_tracks(scene_tracks_pred_unfiltered: Dict[int, List[TrackingBox]],
@@ -205,14 +219,34 @@ class TrackingEvaluation(object):
 
         return scene_tracks_pred
 
-    def get_thresholds(self) -> List[float]:
+    def get_thresholds(self, gt_count: int) -> List[float]:
         """
         Specify recall thresholds.
         AMOTA/AMOTP average over all thresholds, whereas MOTA/MOTP/.. pick the threshold with the highest MOTA.
-        TODO: We need determine the thresholds from recall, not scores.
+        :param gt_count: The number of GT boxes for this class.
         :return: The list of thresholds.
         """
-        thresholds = list(np.linspace(0, 1, self.num_thresholds))
+        # Run accumulate to get the scores of TPs.
+        acc, scores = self.accumulate(0.0)
+        assert len(scores) > 0
+
+        # Sort scores.
+        scores = np.array(scores)
+        scores.sort()
+        scores = scores[::-1]
+
+        # Compute recall levels.
+        tps = np.array(range(1, len(scores) + 1))
+        rec = tps / gt_count
+        assert len(rec) > 0 and np.max(rec) <= 1
+
+        # Determine thresholds.
+        rec_interp = np.linspace(0, 1, self.num_thresholds)  # 11 steps, from 0% to 100% recall.
+        rec_interp = rec_interp[rec_interp >= 0.1]  # Remove recall values < 10%.
+        thresholds = np.interp(rec_interp, rec, scores, right=0)
+
+        # Sort thresholds to be more intuitive.
+        thresholds.sort()
 
         return thresholds
 
