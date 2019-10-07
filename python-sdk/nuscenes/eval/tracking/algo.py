@@ -22,6 +22,7 @@ class TrackingEvaluation(object):
                  class_name: str,
                  dist_fcn: Callable,
                  dist_th_tp: float,
+                 min_recall: float,
                  num_thresholds: int = 11,
                  output_dir: str = '.'):
         """
@@ -31,6 +32,7 @@ class TrackingEvaluation(object):
         :param class_name:
         :param dist_fcn:
         :param dist_th_tp:
+        :param min_recall:
         :param num_thresholds:
         :param output_dir:
 
@@ -59,6 +61,7 @@ class TrackingEvaluation(object):
         self.class_name = class_name
         self.dist_fcn = dist_fcn
         self.dist_th_tp = dist_th_tp
+        self.min_recall = min_recall
         self.num_thresholds = num_thresholds
         self.output_dir = output_dir
 
@@ -126,6 +129,10 @@ class TrackingEvaluation(object):
         thresholds = self.get_thresholds(gt_count)
 
         for threshold in thresholds:
+            # TODO: If recall threshold is not achieved, assign the worst possible value.
+            if np.isnan(threshold):
+                continue
+
             # Compute CLEARMOT/MT/ML metrics for current threshold.
             acc, _ = self.accumulate(threshold)
             accumulators.append(acc)
@@ -274,18 +281,15 @@ class TrackingEvaluation(object):
 
         # Determine thresholds.
         rec_interp = np.linspace(0, 1, self.num_thresholds)  # 11 steps, from 0% to 100% recall.
-        rec_interp = rec_interp[rec_interp >= 0.1]  # Remove recall values < 10%.
+        rec_interp = rec_interp[rec_interp >= self.min_recall]  # Remove recall values < 10%.
+        max_recall_achieved = np.max(rec)
         thresholds = np.interp(rec_interp, rec, scores, right=0)
+
+        # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.
+        thresholds[rec_interp > max_recall_achieved] = np.nan
 
         # Keep only unique elements.
         thresholds: List[float] = np.unique(thresholds).tolist()
-
-        # Sort thresholds to be more intuitive.
-        thresholds.sort()
-
-        # Check spacing.
-        assert (np.diff(thresholds) >= 1e-4).all(), \
-            'Error: Internal error: Thresholds must be at least 1e4 from each other!'
 
         return thresholds
 

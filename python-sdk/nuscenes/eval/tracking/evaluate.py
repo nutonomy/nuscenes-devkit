@@ -7,7 +7,7 @@ import json
 import os
 import random
 import time
-from typing import Tuple, Dict, Any
+from typing import Dict, Any
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
@@ -108,7 +108,7 @@ class TrackingEval:
 
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
-                                    self.cfg.dist_th_tp, num_thresholds=TrackingMetricData.nelem,
+                                    self.cfg.dist_th_tp, self.cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
                                     output_dir=self.output_dir)
             metrics = ev.compute_all_metrics(metrics)
 
@@ -164,7 +164,7 @@ class TrackingEval:
 
         # Render PR and TP curves.
         if render_curves:
-            self.render(metrics, metric_data_list)
+            self.render(metrics)
 
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:

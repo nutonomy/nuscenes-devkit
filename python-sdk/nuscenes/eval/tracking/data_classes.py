@@ -169,24 +169,11 @@ class TrackingMetrics:
         self.eval_time = eval_time
 
     def compute_metric(self, metric_name: str) -> float:
-        if metric_name == 'amota':
-            raise self.amota
-        if metric_name == 'amotp':
-            raise self.amotp
+        data = list(self.raw_metrics[metric_name].values())
+        if len(data) > 0:
+            return float(np.nanmean(data))  # Nan entries are ignored.
         else:
-            data = list(self.raw_metrics[metric_name].values())
-            if len(data) > 0:
-                return float(np.nanmean(data))  # Nan entries are ignored.
-            else:
-                return np.nan
-
-    @property
-    def amota(self) -> float:
-        raise NotImplementedError
-
-    @property
-    def amotp(self) -> float:
-        raise NotImplementedError
+            return np.nan
 
     def serialize(self) -> Dict[str, Any]:
         metrics = self.raw_metrics
@@ -205,7 +192,6 @@ class TrackingMetrics:
         return tm
 
     def __eq__(self, other):
-
         eq = True
         eq = eq and self.eval_time == other.eval_time
         eq = eq and self.cfg == other.cfg
