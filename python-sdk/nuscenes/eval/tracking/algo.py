@@ -74,7 +74,7 @@ class TrackingEvaluation(object):
         print('Computing metrics for class %s...' % self.class_name)
         accumulators = []
         thresh_metrics = []
-        names = []
+        thresh_names = []
         mh = motmetrics.metrics.create()
 
         # Skip missing classes.
@@ -88,13 +88,35 @@ class TrackingEvaluation(object):
             # Do not add any metric. The average metrics will then be nan.
             return metrics
 
-        # Specify metrics and threshold naming pattern.
-        metric_names = ['num_frames', 'mota', 'motp', 'tid', 'lgd']
+        # Specify mapping from motmetrics names to metric names used here.
+        # TODO: 'idf1' Crashes when all distances are nan.
+        metric_names = {
+            'num_frames': '',
+            'mota': 'mota',
+            'motp_custom': 'motp',
+            'faf_custom': 'faf',
+             #'idf1_custom': 'idf1',
+            'mostly_tracked': 'mt',
+            'mostly_lost': 'ml',
+            'num_false_positives': 'fp',
+            'num_misses': 'fn',
+            'num_switches': 'ids',
+            'num_fragmentations': 'frag',
+            'tid': 'tid',
+            'lgd': 'lgd'
+        }
 
+        # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
-            return 'threshold_%.3f' % _threshold
+            return 'threshold_%.4f' % _threshold
 
         # Register custom metrics.
+        mh.register(TrackingEvaluation.motp_custom,
+                    formatter='{:.2%}'.format, name='motp_custom')
+        mh.register(TrackingEvaluation.faf_custom,
+                    formatter='{:.2%}'.format, name='faf_custom')
+        #mh.register(TrackingEvaluation.idf1_custom,
+        #            formatter='{:.2%}'.format, name='idf1_custom')
         mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],
                     formatter='{:.2%}'.format, name='tid')
         mh.register(TrackingEvaluation.longest_gap_duration, ['obj_frequencies'],
@@ -107,14 +129,15 @@ class TrackingEvaluation(object):
             # Compute CLEARMOT/MT/ML metrics for current threshold.
             acc, _ = self.accumulate(threshold)
             accumulators.append(acc)
-            names.append(name_gen(threshold))
+            thresh_names.append(name_gen(threshold))
 
-            thresh_summary = mh.compute(acc, metrics=metric_names, name=name_gen(threshold))
+            thresh_summary = mh.compute(acc, metrics=metric_names.keys(), name=name_gen(threshold))
             print(thresh_summary)
             thresh_metrics.append(thresh_summary)
 
         # Aggregate metrics. We only do this for more convenient access.
-        summary = mh.compute_many(accumulators, metrics=metric_names, names=names, generate_overall=False)
+        assert len(thresh_names) == len(set(thresh_names))
+        summary = mh.compute_many(accumulators, metrics=metric_names.keys(), names=thresh_names, generate_overall=False)
 
         # Find best mota to determine threshold to pick for traditional metrics.
         best_thresh_idx = int(np.argmax(summary.mota.values))
@@ -122,8 +145,16 @@ class TrackingEvaluation(object):
         best_name = name_gen(best_thresh)
 
         # Create a dictionary of all metrics.
-        for metric_name in metric_names:
-            value = summary.get(metric_name)[best_name]
+        for (mot_name, metric_name) in metric_names.items():
+            # Skip metrics which we don't output.
+            if metric_name == '':
+                continue
+
+            value = float(summary.get(mot_name)[best_name])
+
+            # Clip all metrics to be >= 0, in particular MOTA.
+            value = np.maximum(value, 0.0)
+
             metrics.add_raw_metric(metric_name, self.class_name, value)
 
         return metrics
@@ -180,7 +211,8 @@ class TrackingEvaluation(object):
                 acc.update(gt_ids, pred_ids, distances, frameid=frame_id)
 
                 # Store scores of matches, which are used to determine recall thresholds.
-                events = acc.events.ix[frame_id]  # TODO: ix is deprecated
+                # events = acc.events.ix[frame_id]  # ix notation is deprecated
+                events = acc.events[[f == frame_id for (f, _) in acc.events.index]]
                 matches = events[events.Type == 'MATCH']
                 match_ids = matches.HId.values
                 match_scores = [tt.tracking_score for tt in frame_pred if tt.tracking_id in match_ids]
@@ -245,8 +277,15 @@ class TrackingEvaluation(object):
         rec_interp = rec_interp[rec_interp >= 0.1]  # Remove recall values < 10%.
         thresholds = np.interp(rec_interp, rec, scores, right=0)
 
+        # Keep only unique elements.
+        thresholds: List[float] = np.unique(thresholds).tolist()
+
         # Sort thresholds to be more intuitive.
         thresholds.sort()
+
+        # Check spacing.
+        assert (np.diff(thresholds) >= 1e-4).all(), \
+            'Error: Internal error: Thresholds must be at least 1e4 from each other!'
 
         return thresholds
 
@@ -297,3 +336,23 @@ class TrackingEvaluation(object):
             gap += diff * 0.5
         return gap / len(obj_frequencies)
 
+    @staticmethod
+    def motp_custom(df, num_detections):
+        """Multiple object tracker precision."""
+        # Note that the default motmetrics function throws a warning when num_detections == 0.
+        if num_detections == 0:
+            return np.nan
+        return df.noraw['D'].sum() / num_detections
+
+    @staticmethod
+    def idf1_custom(df, idtp, num_objects, num_predictions):
+        """ID measures: global min-cost F1 score."""
+
+        # Note that the default motmetrics function fails computign idtp when when all distances are nan.
+        # TODO
+
+        return 2 * idtp / (num_objects + num_predictions)
+
+    @staticmethod
+    def faf_custom(df, num_false_positives, num_frames):
+        return num_false_positives / num_frames * 100

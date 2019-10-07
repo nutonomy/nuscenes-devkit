@@ -176,7 +176,7 @@ class TrackingMetrics:
         else:
             data = list(self.raw_metrics[metric_name].values())
             if len(data) > 0:
-                return np.mean(data)
+                return float(np.nanmean(data))  # Nan entries are ignored.
             else:
                 return np.nan
 
