@@ -169,10 +169,8 @@ class TrackingEvaluation(object):
             if metric_name == '':
                 continue
 
-            value = float(summary.get(mot_name)[best_name])
-
             # Clip all metrics to be >= 0, in particular MOTA.
-            value = np.maximum(value, 0.0)
+            value = np.maximum(float(summary.loc[best_name][mot_name]), 0.0)
 
             metrics.add_raw_metric(metric_name, self.class_name, value)
 
