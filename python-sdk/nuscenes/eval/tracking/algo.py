@@ -90,7 +90,9 @@ class TrackingEvaluation(object):
 
         # Specify metrics and threshold naming pattern.
         metric_names = ['num_frames', 'mota', 'motp', 'tid', 'lgd']
-        name_gen = lambda _threshold: 'threshold_%.2f' % _threshold
+
+        def name_gen(_threshold):
+            return 'threshold_%.2f' % _threshold
 
         # Register custom metrics.
         mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],

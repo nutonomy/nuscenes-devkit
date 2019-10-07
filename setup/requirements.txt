@@ -2,7 +2,7 @@ cachetools
 descartes
 jupyter
 matplotlib
-munkres
+motmetrics
 numpy
 opencv-python
 Pillow
