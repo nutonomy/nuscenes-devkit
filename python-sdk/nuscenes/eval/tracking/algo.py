@@ -152,9 +152,7 @@ class TrackingEvaluation(object):
                                   generate_overall=False)
 
         # Find best MOTA to determine threshold to pick for traditional metrics.
-        best_thresh_idx = int(np.argmax(summary.mota.values))
-        best_thresh = thresholds[best_thresh_idx]
-        best_name = name_gen(best_thresh)
+        best_name = summary.mota.idxmax()
 
         # Compute AMOTA / AMOTP.
         # TODO: Use modified MOTA/MOTP.
