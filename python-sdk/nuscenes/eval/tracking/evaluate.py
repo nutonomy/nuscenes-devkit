@@ -119,7 +119,6 @@ class TrackingEval:
         Renders various PR and TP curves.
         :param metrics: TrackingMetrics instance.
         """
-        raise NotImplementedError
 
         if self.verbose:
             print('Rendering curves')

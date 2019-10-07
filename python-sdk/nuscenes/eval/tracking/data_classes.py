@@ -163,7 +163,7 @@ class TrackingMetrics:
         self.raw_metrics = defaultdict(lambda: defaultdict(float))
 
         # Init every class.
-        metric_names = [*AMOT_METRICS, *LEGACY_METRICS]  # TODO: add DETECTION_METRICS.
+        metric_names = [l.lower() for l in [*AMOT_METRICS, *LEGACY_METRICS]]  # TODO: add DETECTION_METRICS.
         for metric_name in metric_names:
             for class_name in self.cfg.class_names:
                 self.raw_metrics[metric_name][class_name] = np.nan
