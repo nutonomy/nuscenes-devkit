@@ -10,9 +10,9 @@ https://github.com/cheind/py-motmetrics
 from typing import List, Dict, Callable, Any, Tuple
 
 import motmetrics
-import numpy as np
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
+from nuscenes.eval.tracking.metrics import *  # TODO: Import properly
 
 
 class TrackingEvaluation(object):
@@ -95,7 +95,7 @@ class TrackingEvaluation(object):
         # TODO: 'idf1' Crashes when all distances are nan.
         mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
             'num_frames': '',
-            'mota': 'mota',
+            'mota_custom': 'mota',
             'motp_custom': 'motp',
             'faf_custom': 'faf',
              #'idf1_custom': 'idf1',
@@ -109,7 +109,7 @@ class TrackingEvaluation(object):
             'lgd': 'lgd'
         }
         avg_metric_map = {  # Specify mapping from motmetric names to average metric names (after averaging).
-            'mota': 'amota',
+            'mota_custom': 'amota',
             'motp_custom': 'amotp'
         }
 
@@ -118,15 +118,19 @@ class TrackingEvaluation(object):
             return 'threshold_%.4f' % _threshold
 
         # Register custom metrics.
-        mh.register(TrackingEvaluation.motp_custom,
+        mota_custom = MOTACustom()
+        mh.register(mota_custom,
+                    ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+                    formatter='{:.2%}'.format, name='mota_custom')
+        mh.register(motp_custom,
                     formatter='{:.2%}'.format, name='motp_custom')
-        mh.register(TrackingEvaluation.faf_custom,
+        mh.register(faf_custom,
                     formatter='{:.2%}'.format, name='faf_custom')
-        #mh.register(TrackingEvaluation.idf1_custom,
+        #mh.register(idf1_custom,
         #            formatter='{:.2%}'.format, name='idf1_custom')
-        mh.register(TrackingEvaluation.track_initialization_duration, ['obj_frequencies'],
+        mh.register(track_initialization_duration, ['obj_frequencies'],
                     formatter='{:.2%}'.format, name='tid')
-        mh.register(TrackingEvaluation.longest_gap_duration, ['obj_frequencies'],
+        mh.register(longest_gap_duration, ['obj_frequencies'],
                     formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
@@ -299,71 +303,3 @@ class TrackingEvaluation(object):
         thresholds[rec_interp > max_recall_achieved] = np.nan
 
         return thresholds
-
-    # Custom metrics.
-    @staticmethod
-    def track_initialization_duration(df: Any, obj_frequencies: Any) -> float:
-        """
-        Computes the track initialization duration, which is the duration from the first occurrance of an object to
-        it's first correct detection (TP).
-        :param df:
-        :param obj_frequencies: Stores the GT tracking_ids and their frequencies.
-        :return: The track initialization time.
-        """
-        tid = 0
-        for gt_tracking_id in obj_frequencies.index:
-            # Get matches.
-            dfo = df.noraw[df.noraw.OId == gt_tracking_id]
-            notmiss = dfo[dfo.Type != 'MISS']
-
-            if len(notmiss) == 0:
-                # For missed objects return the length of the track.
-                diff = dfo.index[-1][0] - dfo.index[0][0]
-            else:
-                # Find the first time the object was detected and compute the difference to first time the object
-                # entered the scene.
-                diff = notmiss.index[0][0] - dfo.index[0][0]
-            assert diff >= 0, 'Time difference should be larger than or equal to zero'
-            # Multiply number of sample differences with sample period (0.5 sec)
-            tid += float(diff) * 0.5
-        return tid / len(obj_frequencies)
-
-    @staticmethod
-    def longest_gap_duration(df, obj_frequencies):
-        gap = 0
-        for gt_tracking_id in obj_frequencies.index:
-            # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest
-            # gap.
-            dfo = df.noraw[df.noraw.OId == gt_tracking_id]
-            notmiss = dfo[dfo.Type != 'MISS']
-            if len(notmiss) == 0:
-                # For missed objects return the length of the track.
-                diff = dfo.index[-1][0] - dfo.index[0][0]
-            else:
-                diff = notmiss.index.get_level_values(0).to_series().diff().max() - 1
-            if np.isnan(diff):
-                diff = 0
-            assert diff >= 0, 'Time difference should be larger than or equal to zero {0:f}'.format(diff)
-            gap += diff * 0.5
-        return gap / len(obj_frequencies)
-
-    @staticmethod
-    def motp_custom(df, num_detections):
-        """Multiple object tracker precision."""
-        # Note that the default motmetrics function throws a warning when num_detections == 0.
-        if num_detections == 0:
-            return np.nan
-        return df.noraw['D'].sum() / num_detections
-
-    @staticmethod
-    def idf1_custom(df, idtp, num_objects, num_predictions):
-        """ID measures: global min-cost F1 score."""
-
-        # Note that the default motmetrics function fails computign idtp when when all distances are nan.
-        # TODO
-
-        return 2 * idtp / (num_objects + num_predictions)
-
-    @staticmethod
-    def faf_custom(df, num_false_positives, num_frames):
-        return num_false_positives / num_frames * 100
