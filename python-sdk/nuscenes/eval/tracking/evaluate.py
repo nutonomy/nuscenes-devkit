@@ -7,7 +7,7 @@ import json
 import os
 import random
 import time
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
@@ -161,6 +161,7 @@ class TrackingEval:
         metrics = self.evaluate() # TODO: add classes without predictions/gt to metrics
 
         # Dump the metric data, meta and metrics to disk.
+        # Dump the metric data, meta and metrics to disk.
         if self.verbose:
             print('Saving metrics to: %s' % self.output_dir)
         metrics_summary = metrics.serialize()
@@ -169,7 +170,7 @@ class TrackingEval:
             json.dump(metrics_summary, f, indent=2)
 
         # Print metrics to stdout.
-        self._print_metrics(metrics)
+        TrackingEval.print_metrics(metrics, self.cfg.class_names)
 
         # Render curves.
         if render_curves:
@@ -177,10 +178,12 @@ class TrackingEval:
 
         return metrics_summary
 
-    def _print_metrics(self, metrics: TrackingMetrics) -> None:
+    @staticmethod
+    def print_metrics(metrics: TrackingMetrics, class_names: List[str]) -> None:
         """
         Print metrics to stdout.
         :param metrics: The output of evaluate().
+        :param class_names: The class names used to index the metrics.
         """
         # Print high-level metrics.
         for metric_name in metrics.raw_metrics.keys():
@@ -191,13 +194,15 @@ class TrackingEval:
 
         # Print per-class metrics.
         print('\t\t', end='')
-        for metric_name in metrics.raw_metrics.keys():
-            print('%s\t' % metric_name.upper(), end='')
-        for class_name in self.cfg.class_names:
-            print('%s' % class_name, end='\t')
+        print('\t'.join(metrics.raw_metrics.keys()))
+
+        for class_name in class_names:
+            print('%s' % class_name[:7], end='\t')
+
             for metric_name, metric_vals in metrics.raw_metrics.items():  # TODO: get metric names from a single source
                 val = metric_vals[class_name]
                 print('\t%.3f' % val, end='')
+
             print()
 
 

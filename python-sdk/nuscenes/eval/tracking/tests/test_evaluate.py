@@ -92,14 +92,13 @@ class TestMain(unittest.TestCase):
                 tracking_name = random_class(ann['category_name'], _add_errors=add_errors)
                 if tracking_name is None:
                     continue
-                tracking_score = 1.0
+                tracking_score = random.random()
 
                 if add_errors:
                     translation += 4 * (np.random.rand(3) - 0.5)
                     size *= (np.random.rand(3) + 0.5)
                     rotation += (np.random.rand(4) - 0.5) * .1
                     velocity *= np.random.rand(3)[:2] + 0.5
-                    tracking_score = random.random()
 
                 sample_res.append({
                         'sample_token': sample['token'],
@@ -139,9 +138,12 @@ class TestMain(unittest.TestCase):
                                  verbose=False)
         metrics = nusc_eval.evaluate()
 
+        # Print metrics to stdout.
+        TrackingEval.print_metrics(metrics, cfg.class_names)
+
         # 1. Score = TODO.
         self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19576090841323532)
-        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3288298413783368)
+        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2963026315890758)
 
     def test_delta_gt(self):
         """
@@ -165,6 +167,9 @@ class TestMain(unittest.TestCase):
                                  verbose=False)
         metrics = nusc_eval.evaluate()
 
+        # Print metrics to stdout.
+        TrackingEval.print_metrics(metrics, cfg.class_names)
+
         # Compare score to known solution. Know that the result is not perfect despite submitting GT as predictions.
         # This is because we filter boxes with 0 lidar points ONLY for GT, but not for predictions.
         self.assertAlmostEqual(metrics.compute_metric('mota'), 0.919587385706092)
@@ -172,4 +177,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock()
+    TestMain().test_delta_gt()
