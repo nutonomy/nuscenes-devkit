@@ -7,12 +7,14 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
 """
-from typing import List, Dict, Callable, Any, Tuple
+from typing import List, Dict, Callable, Tuple
 
+import numpy as np
 import motmetrics
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
-from nuscenes.eval.tracking.metrics import *  # TODO: Import properly
+from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
+    longest_gap_duration
 
 
 class TrackingEvaluation(object):
@@ -91,12 +93,12 @@ class TrackingEvaluation(object):
             # Do not add any metric. The average metrics will then be nan.
             return metrics
 
-        # Define label mappings.
+        # Define mapping for metrics that use motmetrics library.
         # TODO: 'idf1' Crashes when all distances are nan.
         mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
             'num_frames': '',
+            'num_objects': '',  # Used in MOTAP computation.
             'mota': 'mota',  # Traditional MOTA.
-            'mota_custom': 'motap', # MOTA prime used in AMOTA
             'motp_custom': 'motp',  # Traditional MOTP.
             'faf_custom': 'faf',
              #'idf1_custom': 'idf1',
@@ -109,20 +111,12 @@ class TrackingEvaluation(object):
             'tid': 'tid',
             'lgd': 'lgd'
         }
-        avg_metric_map = {  # Specify mapping from motmetric names to average metric names (after averaging).
-            'mota_custom': 'amota',
-            'motp_custom': 'amotp'
-        }
 
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
             return 'threshold_%.4f' % _threshold
 
         # Register custom metrics.
-        mota_custom = MOTACustom()
-        mh.register(mota_custom,
-                    ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
-                    formatter='{:.2%}'.format, name='mota_custom')
         mh.register(motp_custom,
                     formatter='{:.2%}'.format, name='motp_custom')
         mh.register(faf_custom,
@@ -135,9 +129,10 @@ class TrackingEvaluation(object):
                     formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
-        thresholds = self.get_thresholds(gt_count)
+        thresholds, recalls = self.get_thresholds(gt_count) # TODO: sort in opposite order
 
-        for threshold in thresholds:
+        motaps = []
+        for threshold, recall in zip(thresholds, recalls):
             # If recall threshold is not achieved, assign the worst possible value.
             if np.isnan(threshold):
                 continue
@@ -146,10 +141,17 @@ class TrackingEvaluation(object):
             acc, _ = self.accumulate(threshold)
             accumulators.append(acc)
             thresh_names.append(name_gen(threshold))
-
             thresh_summary = mh.compute(acc, metrics=mot_metric_map.keys(), name=name_gen(threshold))
             print(thresh_summary)
             thresh_metrics.append(thresh_summary)
+
+            # Compute MOTAP which requires the recall threshold.
+            motap_value = motap(thresh_summary.get('num_misses').values[0],
+                                thresh_summary.get('num_switches').values[0],
+                                thresh_summary.get('num_false_positives').values[0],
+                                thresh_summary.get('num_objects').values[0],
+                                recall)
+            motaps.append(motap_value)
 
         # Aggregate metrics. We only do this for more convenient access.
         assert len(thresh_names) == len(set(thresh_names))
@@ -160,15 +162,18 @@ class TrackingEvaluation(object):
         best_name = summary.mota.idxmax()
 
         # Compute AMOTA / AMOTP.
-        # TODO: Use modified MOTA/MOTP.
-        for (mot_name, metric_name) in avg_metric_map.items():
-            values = summary.get(mot_name).values.tolist()
+        for metric_name in ['amota', 'amotp']:
+            if metric_name == 'amota':
+                values = motaps
+            else:
+                values = summary.get('motp_custom').values.tolist()
+
             values.extend([np.nan] * np.sum(np.isnan(thresholds)))
             assert len(values) == len(thresholds)
             value = float(np.nanmean(values))
             metrics.add_raw_metric(metric_name, self.class_name, value)
 
-        # Create a dictionary of all metrics.
+        # Store all traditional metrics.
         for (mot_name, metric_name) in mot_metric_map.items():
             # Skip metrics which we don't output.
             if metric_name == '':
@@ -273,12 +278,12 @@ class TrackingEvaluation(object):
 
         return scene_tracks_pred
 
-    def get_thresholds(self, gt_count: int) -> List[float]:
+    def get_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:
         """
         Specify recall thresholds.
         AMOTA/AMOTP average over all thresholds, whereas MOTA/MOTP/.. pick the threshold with the highest MOTA.
         :param gt_count: The number of GT boxes for this class.
-        :return: The list of thresholds.
+        :return: The lists of thresholds and their recall values.
         """
         # Run accumulate to get the scores of TPs.
         acc, scores = self.accumulate(0.0)
@@ -303,4 +308,4 @@ class TrackingEvaluation(object):
         # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.
         thresholds[rec_interp > max_recall_achieved] = np.nan
 
-        return thresholds
+        return thresholds, rec_interp

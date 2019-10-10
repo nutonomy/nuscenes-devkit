@@ -48,14 +48,25 @@ def longest_gap_duration(df, obj_frequencies):
     return gap / len(obj_frequencies)
 
 
-class MOTACustom:
-    def __init__(self):
-        self.recall = 0.5
+def motap(num_misses: int, num_switches: int, num_false_positives: int, num_objects: int, recall: float) -> float:
+    """
+    Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
+    :param num_misses: The number of missed, aka. false negatives.
+    :param num_switches: The number of identity switches.
+    :param num_false_positives: The number of false positives.
+    :param num_objects: The total number of objects of this class in the GT.
+    :param recall: The current recall threshold.
+    :return: The MOTA'.
+    """
+    nominator = num_misses + num_switches + num_false_positives + (1 - recall) * num_objects
+    denominator = recall * num_objects
+    if denominator == 0:
+        motap = np.nan
+    else:
+        motap = 1 - nominator / denominator
+        motap = np.maximum(0, motap)
 
-    def __call__(self, df, num_misses, num_switches, num_false_positives, num_objects):
-        nominator = num_misses + num_switches + num_false_positives + (1 - self.recall) * num_objects
-        denominator = self.recall * num_objects
-        return 1. - nominator / denominator
+    return motap
 
 
 def motp_custom(df, num_detections):
