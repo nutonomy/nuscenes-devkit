@@ -128,7 +128,7 @@ class TrackingEvaluation(object):
                     formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
-        thresholds, recalls = self.get_thresholds(gt_count) # TODO: sort in opposite order
+        thresholds, recalls = self.get_thresholds(gt_count)
 
         motaps = []
         for threshold, recall in zip(thresholds, recalls):
@@ -307,5 +307,13 @@ class TrackingEvaluation(object):
 
         # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.
         thresholds[rec_interp > max_recall_achieved] = np.nan
+
+        # Cast to list.
+        thresholds = list(thresholds.tolist())
+        rec_interp = list(rec_interp.tolist())
+
+        # Reverse order for more convenient presentation.
+        thresholds.reverse()
+        rec_interp.reverse()
 
         return thresholds, rec_interp
