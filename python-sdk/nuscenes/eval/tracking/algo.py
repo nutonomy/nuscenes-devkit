@@ -239,8 +239,7 @@ class TrackingEvaluation(object):
                 acc.update(gt_ids, pred_ids, distances, frameid=frame_id)
 
                 # Store scores of matches, which are used to determine recall thresholds.
-                # events = acc.events.ix[frame_id]  # ix notation is deprecated
-                events = acc.events[[f == frame_id for (f, _) in acc.events.index]]
+                events = acc.events.loc[frame_id]
                 matches = events[events.Type == 'MATCH']
                 match_ids = matches.HId.values
                 match_scores = [tt.tracking_score for tt in frame_pred if tt.tracking_id in match_ids]
