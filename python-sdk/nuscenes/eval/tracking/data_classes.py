@@ -169,6 +169,7 @@ class TrackingMetrics:
                 self.raw_metrics[metric_name][class_name] = np.nan
 
     def add_raw_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
+        assert metric_name in self.raw_metrics
         self.raw_metrics[metric_name][tracking_name] = value
 
     def add_runtime(self, eval_time: float) -> None:

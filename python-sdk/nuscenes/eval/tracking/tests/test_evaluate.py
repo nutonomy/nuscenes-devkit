@@ -79,6 +79,7 @@ class TestMain(unittest.TestCase):
                 val_samples.append(sample)
 
         # Prepare results.
+        instance_to_score = dict()
         for sample in tqdm(val_samples):
             sample_res = []
             for ann_token in sample['anns']:
@@ -91,7 +92,14 @@ class TestMain(unittest.TestCase):
                 tracking_name = random_class(ann['category_name'], _add_errors=add_errors)
                 if tracking_name is None:
                     continue
-                tracking_score = random.random()
+
+                # If we randomly assign a score in [0, 1] to each box and later average over the boxes in the track,
+                # the average score will be around 0.5 and we will have 0 predictions above that.
+                # Therefore we assign the same scores to each box in a track.
+                if ann['instance_token'] not in instance_to_score:
+                    instance_to_score[ann['instance_token']] = random.random()
+                tracking_score = instance_to_score[ann['instance_token']] + random.random() * 0.01  # small perturbation
+                # TODO: Currently the code crashed if we don't have 10 unique scores.
 
                 if add_errors:
                     translation += 4 * (np.random.rand(3) - 0.5)
@@ -171,7 +179,7 @@ class TestMain(unittest.TestCase):
 
         # Compare score to known solution. Know that the result is not perfect despite submitting GT as predictions.
         # This is because we filter boxes with 0 lidar points ONLY for GT, but not for predictions.
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.919587385706092)
+        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.7529207190394254)
         self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0)
 
 

@@ -133,7 +133,7 @@ class TrackingEvaluation(object):
         motaps = []
         for threshold, recall in zip(thresholds, recalls):
             # If recall threshold is not achieved, assign the worst possible value.
-            if np.isnan(threshold):
+            if np.isnan(threshold):  # TODO: Implement this.
                 continue
 
             # Compute CLEARMOT/MT/ML metrics for current threshold.
@@ -171,7 +171,10 @@ class TrackingEvaluation(object):
 
             values.extend([np.nan] * np.sum(np.isnan(thresholds)))
             assert len(values) == len(thresholds)
-            value = float(np.nanmean(values))
+            if np.all(np.isnan(values)):
+                value = np.nan
+            else:
+                value = float(np.nanmean(values))
             metrics.add_raw_metric(metric_name, self.class_name, value)
 
         # Store all traditional metrics.

@@ -38,6 +38,10 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
     :param obj_frequencies: Dataframe with all object frequencies.
     :return: The longest gap duration.
     """
+    # Return nan if the class is not in the GT.
+    if len(obj_frequencies.index) == 0:
+        return np.nan
+
     gap = 0
     for gt_tracking_id in obj_frequencies.index:
         # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest
