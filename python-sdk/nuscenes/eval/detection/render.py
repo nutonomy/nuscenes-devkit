@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
-# Licensed under the Creative Commons [see licence.txt]
 
 import json
 
