@@ -40,7 +40,7 @@ class TrackingEval:
                  result_path: str,
                  eval_set: str,
                  output_dir: str = None,
-                 verbose: bool = True):
+                 verbose: bool = True):  # TODO: use the verbose flag to silence the output.
         """
         Initialize a TrackingEval object.
         :param nusc: A NuScenes object.

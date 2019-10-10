@@ -152,6 +152,7 @@ Our goal is to perform tracking of all moving objects in a traffic scene.
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes tracking task.
+Contrary to most benchmarks, each metric here is averaged over all classes (except the runtime).
 The challenge winner will be determined based on AMOTA.
 Additionally a number of secondary metrics are computed and shown on the leaderboard.
 
@@ -163,7 +164,6 @@ Before running the evaluation code the following pre-processing is done on the d
 
 ### Matching criterion
 For all metrics, we define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities.
-<!--- TODO: Compute each metric per class and average -->
 
 ### AMOTA and AMOTP metrics
 Our main metrics are the AMOTA and AMOTP metrics developed in [2].
@@ -189,6 +189,8 @@ We use a number of standard MOT metrics including CLEAR MOT [3] and ML/MT as lis
 Contrary to the above AMOTA and AMOTP metrics, these metrics use a confidence threshold to determine positive and negative tracks of the respective class.
 The confidence threshold is provided by the user in `submission['meta']['conf_thresh']`.
 The track level scores is determined by averaging the frame level scores.
+Note that each metric is averaged over all classes. 
+
 * **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
 * **MOTP** (multi object tracking precision) [3]: The misalignment between the annotated and the predicted bounding boxes.
 * **FAF**: The average number of false alarms per frame.
