@@ -77,14 +77,5 @@ def motp_custom(df, num_detections):
     return df.noraw['D'].sum() / num_detections
 
 
-def idf1_custom(df, idtp, num_objects, num_predictions):
-    """ID measures: global min-cost F1 score."""
-
-    # Note that the default motmetrics function fails computign idtp when when all distances are nan.
-    # TODO
-
-    return 2 * idtp / (num_objects + num_predictions)
-
-
 def faf_custom(df, num_false_positives, num_frames):
     return num_false_positives / num_frames * 100

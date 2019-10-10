@@ -94,14 +94,12 @@ class TrackingEvaluation(object):
             return metrics
 
         # Define mapping for metrics that use motmetrics library.
-        # TODO: 'idf1' Crashes when all distances are nan.
         mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
             'num_frames': '',
             'num_objects': '',  # Used in MOTAP computation.
             'mota': 'mota',  # Traditional MOTA.
             'motp_custom': 'motp',  # Traditional MOTP.
             'faf_custom': 'faf',
-             #'idf1_custom': 'idf1',
             'mostly_tracked': 'mt',
             'mostly_lost': 'ml',
             'num_false_positives': 'fp',
@@ -121,8 +119,6 @@ class TrackingEvaluation(object):
                     formatter='{:.2%}'.format, name='motp_custom')
         mh.register(faf_custom,
                     formatter='{:.2%}'.format, name='faf_custom')
-        #mh.register(idf1_custom,
-        #            formatter='{:.2%}'.format, name='idf1_custom')
         mh.register(track_initialization_duration, ['obj_frequencies'],
                     formatter='{:.2%}'.format, name='tid')
         mh.register(longest_gap_duration, ['obj_frequencies'],
