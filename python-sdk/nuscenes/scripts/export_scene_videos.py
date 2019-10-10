@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 """
 Exports a video of each scene (with annotations) to disk.

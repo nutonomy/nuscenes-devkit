@@ -2,7 +2,6 @@
 # Code written by Sergi Adipraja Widjaja, 2019.
 # + Map mask by Kiwoo Shin, 2019.
 # + Methods operating on NuScenesMap and NuScenes by Holger Caesar, 2019.
-# Licensed under the Creative Commons [see license.txt]
 
 import os
 import json
