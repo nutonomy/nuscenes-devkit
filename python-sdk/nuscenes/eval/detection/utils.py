@@ -53,3 +53,4 @@ def detection_name_to_rel_attributes(detection_name: str) -> List[str]:
         raise ValueError('Error: %s is not a valid detection class.' % detection_name)
 
     return rel_attributes
+

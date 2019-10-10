@@ -13,6 +13,7 @@ import numpy as np
 import motmetrics
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
+from nuscenes.eval.tracking.utils import print_threshold_metrics
 from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
     longest_gap_duration
 
@@ -138,8 +139,10 @@ class TrackingEvaluation(object):
             accumulators.append(acc)
             thresh_names.append(name_gen(threshold))
             thresh_summary = mh.compute(acc, metrics=mot_metric_map.keys(), name=name_gen(threshold))
-            print(thresh_summary)
             thresh_metrics.append(thresh_summary)
+
+            # Print metrics to stdout.
+            print_threshold_metrics(thresh_summary.to_dict())
 
             # Compute MOTAP which requires the recall threshold.
             motap_value = motap(thresh_summary.get('num_misses').values[0],

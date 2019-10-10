@@ -15,7 +15,7 @@ from tqdm import tqdm
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.evaluate import TrackingEval
-from nuscenes.eval.tracking.utils import category_to_tracking_name
+from nuscenes.eval.tracking.utils import category_to_tracking_name, print_final_metrics
 from nuscenes.eval.tracking.constants import TRACKING_NAMES
 from nuscenes.utils.splits import create_splits_scenes
 
@@ -138,7 +138,7 @@ class TestMain(unittest.TestCase):
         metrics = nusc_eval.evaluate()
 
         # Print metrics to stdout.
-        TrackingEval.print_metrics(metrics, cfg.class_names)
+        print_final_metrics(metrics, cfg)
 
         # 1. Score = TODO.
         self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19576090841323532)
@@ -167,7 +167,7 @@ class TestMain(unittest.TestCase):
         metrics = nusc_eval.evaluate()
 
         # Print metrics to stdout.
-        TrackingEval.print_metrics(metrics, cfg.class_names)
+        print_final_metrics(metrics)
 
         # Compare score to known solution. Know that the result is not perfect despite submitting GT as predictions.
         # This is because we filter boxes with 0 lidar points ONLY for GT, but not for predictions.

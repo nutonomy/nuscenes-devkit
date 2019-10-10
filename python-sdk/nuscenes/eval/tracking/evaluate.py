@@ -6,7 +6,7 @@ import json
 import os
 import random
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
@@ -16,6 +16,7 @@ from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig,
 from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.render import visualize_sample
 from nuscenes.eval.tracking.loaders import create_tracks
+from nuscenes.eval.tracking.utils import print_final_metrics
 
 
 class TrackingEval:
@@ -168,41 +169,13 @@ class TrackingEval:
             json.dump(metrics_summary, f, indent=2)
 
         # Print metrics to stdout.
-        TrackingEval.print_metrics(metrics, self.cfg.class_names)
+        print_final_metrics(metrics)
 
         # Render curves.
         if render_curves:
             self.render(metrics)
 
         return metrics_summary
-
-    @staticmethod
-    def print_metrics(metrics: TrackingMetrics, class_names: List[str]) -> None:
-        """
-        Print metrics to stdout.
-        :param metrics: The output of evaluate().
-        :param class_names: The class names used to index the metrics.
-        """
-        # Print high-level metrics.
-        metric_names = metrics.raw_metrics.keys()
-        for metric_name in metric_names:
-            print('%s\t%.1f' % (metric_name.upper(), metrics.compute_metric(metric_name, 'avg')))
-
-        print('Eval time: %.1fs' % metrics.eval_time)
-        print()
-
-        # Print per-class metrics.
-        print('\t\t', end='')
-        print('\t'.join(metric_names))
-
-        for class_name in class_names:
-            print('%s' % class_name[:7], end='\t')
-
-            for metric_name in metric_names:
-                val = metrics.raw_metrics[metric_name][class_name]
-                print('\t%.3f' % val, end='')
-
-            print()
 
 
 if __name__ == "__main__":

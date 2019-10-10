@@ -160,11 +160,12 @@ class TrackingMetrics:
         self.cfg = cfg
         self.eval_time = None
         self.raw_metrics = defaultdict(lambda: defaultdict(float))
+        self.class_names = self.cfg.class_names
+        self.metric_names = [l.lower() for l in [*AMOT_METRICS, *LEGACY_METRICS]]  # TODO: add DETECTION_METRICS.
 
         # Init every class.
-        metric_names = [l.lower() for l in [*AMOT_METRICS, *LEGACY_METRICS]]  # TODO: add DETECTION_METRICS.
-        for metric_name in metric_names:
-            for class_name in self.cfg.class_names:
+        for metric_name in self.metric_names:
+            for class_name in self.class_names:
                 self.raw_metrics[metric_name][class_name] = np.nan
 
     def add_raw_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
