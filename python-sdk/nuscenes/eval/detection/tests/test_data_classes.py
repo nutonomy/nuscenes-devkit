@@ -6,9 +6,10 @@ import json
 import os
 import unittest
 
-from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
+from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics, DetectionBox
+from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics, DetectionBox, \
+    DetectionMetricDataList
 
 
 class TestDetectionConfig(unittest.TestCase):
@@ -61,14 +62,14 @@ class TestMetricData(unittest.TestCase):
         self.assertEqual(md, recovered)
 
 
-class TestMetricDataList(unittest.TestCase):
+class TestDetectionMetricDataList(unittest.TestCase):
 
     def test_serialization(self):
         """ Test that instance serialization protocol works with json encoding. """
-        mdl = MetricDataList()
+        mdl = DetectionMetricDataList()
         for i in range(10):
             mdl.set('name', 0.1, DetectionMetricData.random_md())
-        recovered = MetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())), DetectionMetricData)
+        recovered = DetectionMetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())), DetectionMetricData)
         self.assertEqual(mdl, recovered)
 
 

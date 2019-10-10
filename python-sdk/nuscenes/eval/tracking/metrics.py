@@ -1,12 +1,14 @@
 from typing import Any
 import numpy as np
 
+DataFrame = Any
 
-def track_initialization_duration(df: Any, obj_frequencies: Any) -> float:
+
+def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame):
     """
     Computes the track initialization duration, which is the duration from the first occurrance of an object to
     it's first correct detection (TP).
-    :param df:
+    :param df: Motmetrics dataframe that is required, but not used here.
     :param obj_frequencies: Stores the GT tracking_ids and their frequencies.
     :return: The track initialization time.
     """
@@ -29,7 +31,13 @@ def track_initialization_duration(df: Any, obj_frequencies: Any) -> float:
     return tid / len(obj_frequencies)
 
 
-def longest_gap_duration(df, obj_frequencies):
+def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
+    """
+    Computes the longest gap duration, which is the longest duration of any gaps in the detection of an object.
+    :param df: Motmetrics dataframe that is required, but not used here.
+    :param obj_frequencies: Dataframe with all object frequencies.
+    :return: The longest gap duration.
+    """
     gap = 0
     for gt_tracking_id in obj_frequencies.index:
         # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest
@@ -48,7 +56,7 @@ def longest_gap_duration(df, obj_frequencies):
     return gap / len(obj_frequencies)
 
 
-def motap(num_misses: int, num_switches: int, num_false_positives: int, num_objects: int, recall: float) -> float:
+def motap(num_misses: int, num_switches: int, num_false_positives: int, num_objects: int, recall: float):
     """
     Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
     :param num_misses: The number of missed, aka. false negatives.
@@ -70,7 +78,12 @@ def motap(num_misses: int, num_switches: int, num_false_positives: int, num_obje
 
 
 def motp_custom(df, num_detections):
-    """Multiple object tracker precision."""
+    """
+    Multiple object tracker precision.
+    Note: This function cannot have type hints as it breaks the introspection of motmetrics.
+    :param df: Motmetrics dataframe that is required, but not used here.
+    :param num_detections: The number of detections.
+    """
     # Note that the default motmetrics function throws a warning when num_detections == 0.
     if num_detections == 0:
         return np.nan
@@ -78,4 +91,12 @@ def motp_custom(df, num_detections):
 
 
 def faf_custom(df, num_false_positives, num_frames):
+    """
+    The average number of false alarms per frame
+    Note: This function cannot have type hints as it breaks the introspection of motmetrics.
+    :param df: Motmetrics dataframe that is required, but not used here.
+    :param num_false_positives: The number of false positives.
+    :param num_frames: The number of frames.
+    :return: Average FAF.
+    """
     return num_false_positives / num_frames * 100

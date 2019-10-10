@@ -14,8 +14,9 @@ import numpy as np
 from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics, DetectionBox
-from nuscenes.eval.common.data_classes import MetricDataList, EvalBoxes
+from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics, DetectionBox, \
+    DetectionMetricDataList
+from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.loaders import load_prediction, load_gt
 from nuscenes.eval.common.loaders import add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
@@ -99,7 +100,7 @@ class DetectionEval:
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
-    def evaluate(self) -> Tuple[DetectionMetrics, MetricDataList]:
+    def evaluate(self) -> Tuple[DetectionMetrics, DetectionMetricDataList]:
         """
         Performs the actual evaluation.
         :return: A tuple of high-level and the raw metric data.
@@ -111,7 +112,7 @@ class DetectionEval:
         # -----------------------------------
         if self.verbose:
             print('Accumulating metric data')
-        metric_data_list = MetricDataList()
+        metric_data_list = DetectionMetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
                 md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn_callable, dist_th)
@@ -146,11 +147,11 @@ class DetectionEval:
 
         return metrics, metric_data_list
 
-    def render(self, metrics: DetectionMetrics, md_list: MetricDataList) -> None:
+    def render(self, metrics: DetectionMetrics, md_list: DetectionMetricDataList) -> None:
         """
         Renders various PR and TP curves.
         :param metrics: DetectionMetrics instance.
-        :param md_list: MetricDataList instance.
+        :param md_list: DetectionMetricDataList instance.
         """
         if self.verbose:
             print('Rendering PR and TP curves')

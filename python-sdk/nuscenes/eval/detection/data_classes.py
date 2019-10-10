@@ -385,3 +385,41 @@ class DetectionBox(EvalBox):
                    detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),
                    num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
 
+
+class DetectionMetricDataList:
+    """ This stores a set of MetricData in a dict indexed by (name, match-distance). """
+
+    def __init__(self):
+        self.md = {}
+
+    def __getitem__(self, key):
+        return self.md[key]
+
+    def __eq__(self, other):
+        eq = True
+        for key in self.md.keys():
+            eq = eq and self[key] == other[key]
+        return eq
+
+    def get_class_data(self, detection_name: str) -> List[Tuple[MetricData, float]]:
+        """ Get all the MetricData entries for a certain detection_name. """
+        return [(md, dist_th) for (name, dist_th), md in self.md.items() if name == detection_name]
+
+    def get_dist_data(self, dist_th: float) -> List[Tuple[MetricData, str]]:
+        """ Get all the MetricData entries for a certain match_distance. """
+        return [(md, detection_name) for (detection_name, dist), md in self.md.items() if dist == dist_th]
+
+    def set(self, detection_name: str, match_distance: float, data: MetricData):
+        """ Sets the MetricData entry for a certain detection_name and match_distance. """
+        self.md[(detection_name, match_distance)] = data
+
+    def serialize(self) -> dict:
+        return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
+
+    @classmethod
+    def deserialize(cls, content: dict, metric_data_cls):
+        mdl = cls()
+        for key, md in content.items():
+            name, distance = key.split(':')
+            mdl.set(name, float(distance), metric_data_cls.deserialize(md))
+        return mdl

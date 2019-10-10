@@ -11,11 +11,12 @@ from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionBox
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionBox, \
+    DetectionMetricDataList
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.utils import center_distance
-from nuscenes.eval.common.data_classes import EvalBoxes, MetricDataList
+from nuscenes.eval.common.data_classes import EvalBoxes
 
 
 class TestAlgo(unittest.TestCase):
@@ -91,7 +92,7 @@ class TestAlgo(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
 
-        mdl = MetricDataList()
+        mdl = DetectionMetricDataList()
         for class_name in self.cfg.class_names:
             gt, pred = self._mock_results(30, 3, 25, class_name)
             for dist_th in self.cfg.dist_ths:

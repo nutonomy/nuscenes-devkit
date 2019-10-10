@@ -158,9 +158,8 @@ class TrackingEval:
                                  savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
 
         # Run evaluation.
-        metrics = self.evaluate() # TODO: add classes without predictions/gt to metrics
+        metrics = self.evaluate()
 
-        # Dump the metric data, meta and metrics to disk.
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:
             print('Saving metrics to: %s' % self.output_dir)
@@ -186,7 +185,8 @@ class TrackingEval:
         :param class_names: The class names used to index the metrics.
         """
         # Print high-level metrics.
-        for metric_name in metrics.raw_metrics.keys():
+        metric_names = metrics.raw_metrics.keys()
+        for metric_name in metric_names:
             print('%s\t%.1f' % (metric_name.upper(), metrics.compute_metric(metric_name, 'avg')))
 
         print('Eval time: %.1fs' % metrics.eval_time)
@@ -194,13 +194,13 @@ class TrackingEval:
 
         # Print per-class metrics.
         print('\t\t', end='')
-        print('\t'.join(metrics.raw_metrics.keys()))
+        print('\t'.join(metric_names))
 
         for class_name in class_names:
             print('%s' % class_name[:7], end='\t')
 
-            for metric_name, metric_vals in metrics.raw_metrics.items():  # TODO: get metric names from a single source
-                val = metric_vals[class_name]
+            for metric_name in metric_names:
+                val = metrics.raw_metrics[metric_name][class_name]
                 print('\t%.3f' % val, end='')
 
             print()
@@ -222,11 +222,11 @@ if __name__ == "__main__":
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
     parser.add_argument('--config_path', type=str, default='',
                         help='Path to the configuration file.'
-                             'If no path given, the CVPR 2019 configuration will be used.')
+                             'If no path given, the NIPS 2019 configuration will be used.')
     parser.add_argument('--plot_examples', type=int, default=10,
                         help='How many example visualizations to write to disk.')
     parser.add_argument('--render_curves', type=int, default=1,
-                        help='Whether to render PR and TP curves to disk.')
+                        help='Whether to render statistic curves to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     args = parser.parse_args()
