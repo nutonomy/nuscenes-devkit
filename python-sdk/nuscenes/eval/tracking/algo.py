@@ -95,8 +95,9 @@ class TrackingEvaluation(object):
         # TODO: 'idf1' Crashes when all distances are nan.
         mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
             'num_frames': '',
-            'mota_custom': 'mota',
-            'motp_custom': 'motp',
+            'mota': 'mota',  # Traditional MOTA.
+            'mota_custom': 'motap', # MOTA prime used in AMOTA
+            'motp_custom': 'motp',  # Traditional MOTP.
             'faf_custom': 'faf',
              #'idf1_custom': 'idf1',
             'mostly_tracked': 'mt',
