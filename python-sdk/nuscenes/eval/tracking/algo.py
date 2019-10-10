@@ -77,7 +77,7 @@ class TrackingEvaluation(object):
         :returns: Augmented TrackingMetrics instance.
         """
         # Init.
-        print('Computing metrics for class %s...' % self.class_name)
+        print('Computing metrics for class %s...\n' % self.class_name)
         accumulators = []
         thresh_metrics = []
         thresh_names = []
@@ -96,8 +96,10 @@ class TrackingEvaluation(object):
 
         # Define mapping for metrics that use motmetrics library.
         mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
-            'num_frames': '',
+            'num_frames': '',  # Used in FAF.
             'num_objects': '',  # Used in MOTAP computation.
+            'num_predictions': '',  # Only printed out.
+            'num_matches': '',  # Only printed out.
             'mota': 'mota',  # Traditional MOTA.
             'motp_custom': 'motp',  # Traditional MOTP.
             'faf_custom': 'faf',

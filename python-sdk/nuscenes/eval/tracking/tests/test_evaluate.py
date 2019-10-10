@@ -138,7 +138,7 @@ class TestMain(unittest.TestCase):
         metrics = nusc_eval.evaluate()
 
         # Print metrics to stdout.
-        print_final_metrics(metrics, cfg)
+        print_final_metrics(metrics)
 
         # 1. Score = TODO.
         self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19576090841323532)

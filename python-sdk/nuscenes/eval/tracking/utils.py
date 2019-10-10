@@ -54,16 +54,17 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
 
         for metric_name in metric_names:
             val = metrics.raw_metrics[metric_name][class_name]
-            print_type = '%.3f' if np.isnan(val) or val != int(val) else '%d'
-            print_str = '\t%s' % print_type
-            print(print_str % val, end='')
+            print_format = '%.3f' if np.isnan(val) or val != int(val) else '%d'
+            print('\t%s' % (print_format % val), end='')
 
         print()
 
     # Print high-level metrics.
     print('\nPer class-average results:')
     for metric_name in metric_names:
-        print('%s\t%.3f' % (metric_name.upper(), metrics.compute_metric(metric_name, 'avg')))
+        val = metrics.compute_metric(metric_name, 'avg')
+        print_format = '%.3f' if np.isnan(val) or val != int(val) else '%d'
+        print('%s\t%s' % (metric_name.upper(), print_format % val))
 
     print('Eval time: %.1fs' % metrics.eval_time)
     print()
@@ -75,16 +76,28 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     :param metrics: A dictionary representation of the metrics.
     """
     # Retrieve metrics.
+    assert len(metrics['mota'].keys()) == 1
     threshold_str = list(metrics['mota'].keys())[0]
     mota = metrics['mota'][threshold_str]
     motp = metrics['motp_custom'][threshold_str]
     num_objects = metrics['num_objects'][threshold_str]
+    num_predictions = metrics['num_predictions'][threshold_str]
     num_false_positives = metrics['num_false_positives'][threshold_str]
     num_misses = metrics['num_misses'][threshold_str]
+    num_switches = metrics['num_switches'][threshold_str]
+    num_matches = metrics['num_matches'][threshold_str]
 
     # Print.
-    print('%s\t%s\t%s\t%s\t%s\t%s\t%s' % ('\t\t', 'MOTA', 'MOTP', 'P', 'TP', 'FP', 'FN'))
-    print('%s\t%.3f\t%.3f\t%d\t%d\t%d\t%d'
-          % (threshold_str, mota, motp, num_objects, num_objects - num_false_positives,
-             num_false_positives, num_misses))
+    print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
+          % ('\t\t', 'MOTA', 'MOTP',
+             'Gt', 'Gt-Mtch', 'Gt-IDS', 'Gt-Miss',
+             'Pred', 'Pred-TP', 'Pred-FP'))
+    print('%s\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
+          % (threshold_str, mota, motp,
+             num_objects, num_matches, num_switches, num_misses,
+             num_predictions, num_matches, num_false_positives))
     print()
+
+    # Check metrics for consistency.
+    assert num_objects == num_matches + num_switches + num_misses
+    assert num_predictions == num_matches + num_false_positives
