@@ -4,32 +4,37 @@ In this document we present the rules, result format, classes, evaluation metric
 
 ## Overview
 - [Introduction](#introduction)
+- [Participation](#participation)
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
 - [Results format](#results-format)
 - [Classes and attributes](#classes-attributes-and-detection-ranges)
 - [Evaluation metrics](#evaluation-metrics)
-- [Leaderboard](#leaderboard)
 
 ## Introduction
 Here we define the 3D object detection task on nuScenes.
 The goal of this task is to place a 3D bounding box around 10 different object categories,
-as well as estimating a set of attributes and the current velocity vector. 
+as well as estimating a set of attributes and the current velocity vector.
+
+## Participation
+The nuScenes detection [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) is open all year round for submission.
+To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356).
+Then upload your zipped result file including all of the required [meta data](#results-format).
+The results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/object-detection) shown above.
+This is the only way to benchmark your method against the test dataset. 
 
 ## Challenges
-To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](#leaderboard) all-year round.
+To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](https://www.nuscenes.org/object-detection) all-year round.
 Additionally we organize a number of challenges at leading Computer Vision conference workshops.
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
 ### Workshop on Autonomous Driving, CVPR 2019
-The first nuScenes detection challenge will be held at CVPR 2019.
-**Submission opened May 6 and closes June 12**.
-To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356).
-Then upload your zipped result file and provide all of the meta data if possible: method name, description, project URL and publication URL.
-The leaderboard will remain private until the end of the challenge.
-Results and winners will be announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
-Please note that this workshop is not related to the similarly named [Workshop on Autonomous Driving Beyond Single-Frame Perception](http://www.wad.ai).
+The first nuScenes detection challenge was held at CVPR 2019.
+Submission opened May 6 and closed June 12.
+Results and winners were announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
+For more information see the [leaderboard](https://www.nuscenes.org/object-detection).
+Note that the detection server can still be used to benchmark your results.
 
 ## Submission rules
 ### Detection-specific rules
@@ -129,11 +134,11 @@ For more information on the classes and their frequencies, see [this page](https
 Below we list which nuScenes classes can have which attributes.
 Note that some annotations are missing attributes (0.4% of all sample_annotations).
 
-For each nuScenes detection class, the number of annotations decreases with increasing radius from the ego vehicle, 
-but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
-detection radius, as shown below:
+For each nuScenes detection class, the number of annotations decreases with increasing range from the ego vehicle, 
+but the number of annotations per range varies by class. Therefore, each class has its own upper bound on evaluated
+detection range, as shown below:
 
-|   nuScenes detection class    |   Attributes                                          | Detection Range (meters)  |
+|   nuScenes detection class    |   Attributes                                          | Detection range (meters)  |
 |   ---                         |   ---                                                 |   ---                     |
 |   barrier                     |   void                                                |   30                      |
 |   traffic_cone                |   void                                                |   30                      |
@@ -200,24 +205,24 @@ We define three such filters here which correspond to the tracks in the nuScenes
 Methods will be compared within these tracks and the winners will be decided for each track separately.
 Furthermore, there will also be an award for novel ideas, as well as the best student submission.
 
-**Lidar detection track**: 
+**Lidar track**: 
 * Only lidar input allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
   
-**Vision detection track**: 
+**Vision track**: 
 * Only camera input allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
  
-**Open detection track**: 
+**Open track**: 
 * Any sensor input allowed.
 * External data and map data allowed.  
 * May use pre-training.
 
 **Details**:
 * *Sensor input:*
-For the lidar and vision detection tracks we restrict the type of sensor input that may be used.
+For the lidar and vision tracks we restrict the type of sensor input that may be used.
 Note that this restriction applies only at test time.
 At training time any sensor input may be used.
 In particular this also means that at training time you are allowed to filter the GT boxes using `num_lidar_pts` and `num_radar_pts`, regardless of the track.
