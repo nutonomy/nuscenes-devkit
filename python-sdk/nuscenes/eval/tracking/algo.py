@@ -11,10 +11,11 @@ from typing import List, Dict, Callable, Tuple
 
 import numpy as np
 import motmetrics
+import pandas
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics
-from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
+from nuscenes.eval.tracking.metrics import MOTAP, motp_custom, faf_custom, track_initialization_duration, \
     longest_gap_duration
 
 
@@ -95,11 +96,12 @@ class TrackingEvaluation(object):
             return metrics
 
         # Define mapping for metrics that use motmetrics library.
-        mot_metric_map = {  # Specify mapping from motmetrics names to metric names used here.
+        mot_metric_map = {  # Mapping from motmetrics names to metric names used here.
             'num_frames': '',  # Used in FAF.
             'num_objects': '',  # Used in MOTAP computation.
             'num_predictions': '',  # Only printed out.
             'num_matches': '',  # Only printed out.
+            'motap': '',  # Only used in AMOTA.
             'mota': 'mota',  # Traditional MOTA.
             'motp_custom': 'motp',  # Traditional MOTP.
             'faf_custom': 'faf',
@@ -113,11 +115,21 @@ class TrackingEvaluation(object):
             'lgd': 'lgd'
         }
 
+        # Define mapping for metrics averaged over classes.
+        avg_metric_map = {  # Mapping from average metric name to individual per-threshold metric name.
+            'amota': 'motap',
+            'amotp': 'motp_custom'
+        }
+
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
             return 'threshold_%.4f' % _threshold
 
         # Register custom metrics.
+        motap_computation = MOTAP()  # We use a class so we can modify the recall value on the fly.
+        mh.register(motap_computation,
+                    ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+                    formatter='{:.2%}'.format, name='motap')
         mh.register(motp_custom,
                     formatter='{:.2%}'.format, name='motp_custom')
         mh.register(faf_custom,
@@ -130,11 +142,13 @@ class TrackingEvaluation(object):
         # Get thresholds.
         thresholds, recalls = self.get_thresholds(gt_count)
 
-        motaps = []
         for threshold, recall in zip(thresholds, recalls):
             # If recall threshold is not achieved, assign the worst possible value.
             if np.isnan(threshold):  # TODO: Implement this.
                 continue
+
+            # Set recall which is required for MOTAP aka MOTA'.
+            motap_computation.recall = recall
 
             # Compute CLEARMOT/MT/ML metrics for current threshold.
             acc, _ = self.accumulate(threshold)
@@ -146,29 +160,16 @@ class TrackingEvaluation(object):
             # Print metrics to stdout.
             print_threshold_metrics(thresh_summary.to_dict())
 
-            # Compute MOTAP which requires the recall threshold.
-            motap_value = motap(thresh_summary.get('num_misses').values[0],
-                                thresh_summary.get('num_switches').values[0],
-                                thresh_summary.get('num_false_positives').values[0],
-                                thresh_summary.get('num_objects').values[0],
-                                recall)
-            motaps.append(motap_value)
-
-        # Aggregate metrics. We only do this for more convenient access.
+        # Concatenate all metrics. We only do this for more convenient access.
         assert len(thresh_names) == len(set(thresh_names))
-        summary = mh.compute_many(accumulators, metrics=mot_metric_map.keys(), names=thresh_names,
-                                  generate_overall=False)
+        summary = pandas.concat(thresh_metrics)
 
         # Find best MOTA to determine threshold to pick for traditional metrics.
         best_name = summary.mota.idxmax()
 
         # Compute AMOTA / AMOTP.
-        for metric_name in ['amota', 'amotp']:
-            if metric_name == 'amota':
-                values = motaps
-            else:
-                values = summary.get('motp_custom').values.tolist()
-
+        for metric_name in avg_metric_map.keys():
+            values = summary.get(avg_metric_map[metric_name]).values.tolist()
             values.extend([np.nan] * np.sum(np.isnan(thresholds)))
             assert len(values) == len(thresholds)
             if np.all(np.isnan(values)):
