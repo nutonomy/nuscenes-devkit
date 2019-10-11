@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2019.
-# Licensed under the Creative Commons [see licence.txt]
 
 """
 This script converts nuScenes data to KITTI format and KITTI results to nuScenes.

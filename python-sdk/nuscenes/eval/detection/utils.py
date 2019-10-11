@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 from typing import List, Dict, Optional
 

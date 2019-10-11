@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom and Varun Bankiti, 2019.
-# Licensed under the Creative Commons [see licence.txt]
 
 DETECTION_NAMES = ['car', 'truck', 'bus', 'trailer', 'construction_vehicle', 'pedestrian', 'motorcycle', 'bicycle',
                    'traffic_cone', 'barrier']
