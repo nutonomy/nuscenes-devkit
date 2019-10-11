@@ -203,6 +203,7 @@ class TrackingEvaluation(object):
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
+        frame_id = 0
         for scene_id in self.tracks_gt.keys():
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
@@ -214,7 +215,6 @@ class TrackingEvaluation(object):
             else:
                 scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
 
-            frame_id = 0
             for timestamp in scene_tracks_gt.keys():
                 frame_gt = scene_tracks_gt[timestamp]
                 frame_pred = scene_tracks_pred[timestamp]
