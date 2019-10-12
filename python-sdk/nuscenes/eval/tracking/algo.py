@@ -200,10 +200,10 @@ class TrackingEvaluation(object):
         # Init.
         acc = motmetrics.MOTAccumulator()
         scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.
+        frame_id = 0  # Frame ids must be unique across all scenes
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
-        frame_id = 0
         for scene_id in self.tracks_gt.keys():
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]

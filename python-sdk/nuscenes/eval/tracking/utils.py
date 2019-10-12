@@ -80,6 +80,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     threshold_str = list(metrics['mota'].keys())[0]
     mota = metrics['mota'][threshold_str]
     motp = metrics['motp_custom'][threshold_str]
+    num_frames = metrics['num_frames'][threshold_str]
     num_objects = metrics['num_objects'][threshold_str]
     num_predictions = metrics['num_predictions'][threshold_str]
     num_false_positives = metrics['num_false_positives'][threshold_str]
@@ -88,16 +89,16 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     num_matches = metrics['num_matches'][threshold_str]
 
     # Print.
-    print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
-          % ('\t\t', 'MOTA', 'MOTP',
-             'Gt', 'Gt-Mtch', 'Gt-IDS', 'Gt-Miss',
-             'Pred', 'Pred-TP', 'Pred-FP'))
-    print('%s\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
-          % (threshold_str, mota, motp,
-             num_objects, num_matches, num_switches, num_misses,
-             num_predictions, num_matches, num_false_positives))
+    print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
+          % ('\t\t', 'MOTA', 'MOTP', 'Frames',
+             'Gt', 'Gt-Mtch', 'Gt-Miss', 'Gt-IDS',
+             'Pred', 'Pred-TP', 'Pred-FP', 'Pred-IDS',))
+    print('%s\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
+          % (threshold_str, mota, motp, num_frames,
+             num_objects, num_matches, num_misses, num_switches,
+             num_predictions, num_matches, num_false_positives, num_switches))
     print()
 
     # Check metrics for consistency.
-    assert num_objects == num_matches + num_switches + num_misses
-    assert num_predictions == num_matches + num_false_positives
+    assert num_objects == num_matches + num_misses + num_switches
+    assert num_predictions == num_matches + num_false_positives + num_switches

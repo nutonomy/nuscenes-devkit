@@ -149,8 +149,8 @@ class TestMain(unittest.TestCase):
         print_final_metrics(metrics)
 
         # 1. Score = TODO.
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19576090841323532)
-        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2963026315890758)
+        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.1942032760144814)
+        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2940224375456253)
 
     def test_delta_gt(self):
         """
@@ -184,4 +184,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_gt()
+    TestMain().test_delta_mock()
