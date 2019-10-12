@@ -60,37 +60,33 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
     return gap / len(obj_frequencies)
 
 
-class MOTAP:
+def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int):
     """
-    Implements MOTAP aka MOTA'.
-    The function is wrapped in a class to store the recall and manipulate it outside motmetrics.
+    Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
+    Note that we use the measured recall, which is not identical to the hypothetical recall of the
+    AMOTA/AMOTP thresholds.
+    :param num_matches: The number of matches, aka. false positives.
+    :param num_misses: The number of misses, aka. false negatives.
+    :param num_switches: The number of identity switches.
+    :param num_false_positives: The number of false positives.
+    :param num_objects: The total number of objects of this class in the GT.
+    :param recall: The current recall threshold.
+    :return: The MOTA'.
     """
-    def __init__(self):
-        self.recall = np.nan
+    recall = num_matches / num_objects
+    nominator = num_misses + num_switches + num_false_positives - (1 - recall) * num_objects
+    denominator = recall * num_objects
+    if denominator == 0:
+        motap = np.nan
+    else:
+        motap = 1 - nominator / denominator
+        motap = np.maximum(0, motap)
 
-    def __call__(self, df, num_misses, num_switches, num_false_positives, num_objects):
-        assert not np.isnan(self.recall)  # Check that current recall has been set.
-        return MOTAP.motap(num_misses, num_switches, num_false_positives, num_objects, self.recall)
-
-    @staticmethod
-    def motap(num_misses: int, num_switches: int, num_false_positives: int, num_objects: int, recall: float):
-        """
-        Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
-        :param num_misses: The number of missed, aka. false negatives.
-        :param num_switches: The number of identity switches.
-        :param num_false_positives: The number of false positives.
-        :param num_objects: The total number of objects of this class in the GT.
-        :param recall: The current recall threshold.
-        :return: The MOTA'.
-        """
-        nominator = num_misses + num_switches + num_false_positives + (1 - recall) * num_objects
-        denominator = recall * num_objects
-        if denominator == 0:
-            motap = np.nan
-        else:
-            motap = 1 - nominator / denominator
-            motap = np.maximum(0, motap)
-        return motap
+    # Consistency checks to make sure that a positive MOTA also leads to a positive MOTAP.
+    mota = 1 - (num_misses + num_switches + num_false_positives) / num_objects
+    if mota > 0:
+        assert motap > 0
+    return motap
 
 
 def motp_custom(df, num_detections):

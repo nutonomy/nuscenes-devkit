@@ -15,7 +15,7 @@ import pandas
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics
-from nuscenes.eval.tracking.metrics import MOTAP, motp_custom, faf_custom, track_initialization_duration, \
+from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
     longest_gap_duration
 
 
@@ -100,7 +100,7 @@ class TrackingEvaluation(object):
             'num_frames': '',  # Used in FAF.
             'num_objects': '',  # Used in MOTAP computation.
             'num_predictions': '',  # Only printed out.
-            'num_matches': '',  # Only printed out.
+            'num_matches': '',  # Used in MOTAP computation and printed out.
             'motap': '',  # Only used in AMOTA.
             'mota': 'mota',  # Traditional MOTA.
             'motp_custom': 'motp',  # Traditional MOTP.
@@ -126,9 +126,8 @@ class TrackingEvaluation(object):
             return 'threshold_%.4f' % _threshold
 
         # Register custom metrics.
-        motap_computation = MOTAP()  # We use a class so we can modify the recall value on the fly.
-        mh.register(motap_computation,
-                    ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+        mh.register(motap,
+                    ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
                     formatter='{:.2%}'.format, name='motap')
         mh.register(motp_custom,
                     formatter='{:.2%}'.format, name='motp_custom')
@@ -140,15 +139,14 @@ class TrackingEvaluation(object):
                     formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
+        # Note: The recall values are the "desired" recall (10%, 20%, ..).
+        # The actual recall may vary as there is no way to compute it without trying all thresholds.
         thresholds, recalls = self.get_thresholds(gt_count)
 
         for threshold, recall in zip(thresholds, recalls):
             # If recall threshold is not achieved, assign the worst possible value.
             if np.isnan(threshold):  # TODO: Implement this.
                 continue
-
-            # Set recall which is required for MOTAP aka MOTA'.
-            motap_computation.recall = recall
 
             # Compute CLEARMOT/MT/ML metrics for current threshold.
             acc, _ = self.accumulate(threshold)
