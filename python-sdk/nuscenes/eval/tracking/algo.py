@@ -266,17 +266,18 @@ class TrackingEvaluation(object):
         assert threshold is not None, 'Error: threshold must be specified!'
         scene_tracks_pred = {}
         for track_id, track in scene_tracks_pred_unfiltered.items():
-            # Compute average score for current track.
-            track_scores = []
-            for box in track:
-                track_scores.append(box.tracking_score)
-            avg_score = np.mean(track_scores)
-
-            # Decide whether to keep track by thresholding.
-            if avg_score >= threshold:
-                scene_tracks_pred[track_id] = track
-            else:
+            if len(track) == 0:
                 scene_tracks_pred[track_id] = []
+            else:
+                # Compute average score for current track.
+                track_scores = [box.tracking_score for box in track]
+                avg_score = np.mean(track_scores)
+
+                # Decide whether to keep track by thresholding.
+                if avg_score >= threshold:
+                    scene_tracks_pred[track_id] = track
+                else:
+                    scene_tracks_pred[track_id] = []
 
         return scene_tracks_pred
 
