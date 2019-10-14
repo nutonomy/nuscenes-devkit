@@ -15,7 +15,7 @@ In this document we present the rules, result format, classes, evaluation metric
 - [Leaderboard](#leaderboard)
 
 ## Introduction
-The [nuScenes dataset](http://www.nuScenes.org) [1] has achieved widespread acceptance in academia and industry as a standard dataset for AV perception problems.
+The [nuScenes dataset](http://www.nuScenes.org) \[1\] has achieved widespread acceptance in academia and industry as a standard dataset for AV perception problems.
 To advance the state-of-the-art on the problems of interest we propose benchmark challenges to measure the performance on our dataset.
 At CVPR 2019 we organized the [nuScenes detection challenge](https://www.nuscenes.org/object-detection).
 The nuScenes tracking challenge is a natural progression to the detection challenge, building on the best known detection algorithms and tracking these across time.
@@ -23,7 +23,7 @@ Here we describe the challenge, the rules, the classes, evaluation metrics and g
 
 ## Authors
 The tracking task and challenge are a joint work between **Aptiv** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
-They are based upon the [nuScenes dataset](http://www.nuScenes.org) [1] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in [2].
+They are based upon the [nuScenes dataset](http://www.nuScenes.org) \[1\] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in \[2\].
 
 ## Participation
 *Note: The tracking server will open soon.*
@@ -48,9 +48,9 @@ Results and winners will be announced at the [AI Driving Olympics](http://www.dr
 
 ## Submission rules
 ### Tracking-specific rules
-* We perform 3D Multi Object Tracking (MOT) as in [2], rather than 2D MOT as in KITTI [4]. 
+* We perform 3D Multi Object Tracking (MOT) as in \[2\], rather than 2D MOT as in KITTI \[4\]. 
 * Possible input modalities are camera, lidar and radar.
-* We perform online tracking [2]. This means that the tracker may only use past and current, but not future sensor data.
+* We perform online tracking \[2\]. This means that the tracker may only use past and current, but not future sensor data.
 * Noisy object detections are provided below (including for the test split), but do not have to be used.
 * At inference time users may use all past sensor data and ego poses from the current scene, but not from a previous scene. At training time there are no restrictions.
 
@@ -158,7 +158,7 @@ detection radius, as shown below:
 |   trailer                     |   -           |   50                      |
 |   truck                       |   truck       |   50                      |
 
-In the above table we also provide the mapping from nuScenes tracking class to KITTI [4] class.
+In the above table we also provide the mapping from nuScenes tracking class to KITTI \[4\] class.
 While KITTI defines 8 classes in total, only `car` and `pedestrian` are used for the tracking benchmark, as the other classes do not have enough samples.
 Our goal is to perform tracking of all moving objects in a traffic scene.
 
@@ -184,12 +184,12 @@ We find that this measure is more forgiving for far-away objects than IOU which 
 The matching threshold (center distance) is 2m.
 
 ### AMOTA and AMOTP metrics
-Our main metrics are the AMOTA and AMOTP metrics developed in [2].
+Our main metrics are the AMOTA and AMOTP metrics developed in \[2\].
 These are integrals over the MOTA/MOTP curves using `n`-point interpolation (`n` to be determined).
 Similar to the detection challenge, we drop points with `recall < 0.1` (not shown in the equation), as these are typically noisy.
 
 - **AMOTA** (average multi object tracking accuracy):
-Average over the MOTA [3] metric (see below) at different recall thresholds.
+Average over the MOTA \[3\] metric (see below) at different recall thresholds.
 For the traditional MOTA formulation at recall 10% there are at least 90% false negatives, which may lead to negative MOTAs.
 Therefore the contribution of identity switches and false positives becomes negligible at low recall values.
 In `MOTA'` we include the term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
@@ -203,19 +203,19 @@ These guarantee that the values span the entire `[0, 1]` range and brings the th
 
 - **AMOTP** (average multi object tracking precision):
 Average over the MOTP metric defined below.
-Here `d_{i,t}` indicates the position error of track `i` at time `t` and `c_t` indicates the number of matches at time `t`. See [3]. 
+Here `d_{i,t}` indicates the position error of track `i` at time `t` and `c_t` indicates the number of matches at time `t`. See \[3\]. 
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;c_t}" target="_blank">
 <img width="300" src="https://latex.codecogs.com/png.latex?\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;c_t}" title="\mathit{AMOTP} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1}, .., 1\}} \frac{\sum_{i,t} d_{i,t}}{\sum_t c_t}" />
 </a>
 
 ### Secondary metrics
-We use a number of standard MOT metrics including CLEAR MOT [3] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
+We use a number of standard MOT metrics including CLEAR MOT \[3\] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
 Contrary to the above AMOTA and AMOTP metrics, these metrics use a confidence threshold to determine positive and negative tracks.
 The confidence threshold is selected for every class independently by picking the threshold that achieves the highest MOTA.
 The track level scores are determined by averaging the frame level scores.
 Tracks with a score below the confidence threshold are discarded.
-* **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
-* **MOTP** (multi object tracking precision) [3]: The misalignment between the annotated and the predicted bounding boxes.
+* **MOTA** (multi object tracking accuracy) \[3\]: This measure combines three error sources: false positives, missed targets and identity switches.
+* **MOTP** (multi object tracking precision) \[3\]: The misalignment between the annotated and the predicted bounding boxes.
 * **FAF**: The average number of false alarms per frame.
 * **MT** (ratio of mostly tracked trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at least 80% of their respective life span.
 * **ML** (ratio of mostly lost trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at most 20% of their respective life span.
@@ -240,15 +240,15 @@ To allow the user focus on the tracking problem, we release object detections fr
 We thank Alex Lang (Aptiv), Benjin Zhu (Megvii) and Andrea Simonelli (Mapillary) for providing these.
 The use of these detections is entirely optional.
 The detections on the train, val and test splits can be downloaded from the table below.
-Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* [2] and uses each of the provided detections.
+Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* \[2\] and uses each of the provided detections.
 The results for object detection and tracking can be seen below.
 Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
 
-|   Method           | NDS  | mAP (detection)| mAP (tracking) | AMOTA | AMOTP | Detections download                        |
-|   ---              | ---  | ---  | ---   | ---   | ---          | ---                                                    |
-|   PointPillars [5] | 44.8 | 29.5 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
-|   Megvii [6]       | 62.8 | 51.9 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
-|   Mapillary [7]    | 36.9 | 29.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
+|   Method             | NDS  | mAP (detection)| mAP (tracking) | AMOTA | AMOTP | Detections download                        |
+|   ---                | ---  | ---  | ---   | ---   | ---          | ---                                                    |
+|   PointPillars \[5\] | 44.8 | 29.5 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
+|   Megvii \[6\]       | 62.8 | 51.9 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
+|   Mapillary \[7\]    | 36.9 | 29.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.
@@ -258,7 +258,7 @@ To remedy this problem we have split the existing `train` set into `train_detect
 Both splits have the same distribution of Singapore, Boston, night and rain data.
 You can use these splits to train your own detection and tracking algorithms.
 The use of these splits is entirely optional.
-The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline [2] is not learning-based and therefore not prone to overfitting.
+The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline \[2\] is not learning-based and therefore not prone to overfitting.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the tracking task.
@@ -311,11 +311,11 @@ Users are required to report detailed information on their method regarding sens
 Users that fail to adequately report this information may be excluded from the challenge. 
 
 ## References
-- [1] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv 2019.
-- [2] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, In arXiv 2019.
-- [3] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, In Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
-- [4] *"Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite"*, A. Geiger, P. Lenz, R. Urtasun, In CVPR 2012.
-- [5] *"PointPillars: Fast Encoders for Object Detection from Point Clouds"*, A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang and O. Beijbom, In CVPR 2019.
-- [6] *"Class-balanced Grouping and Sampling for Point Cloud 3D Object Detection"*, B. Zhu, Z. Jiang, X. Zhou, Z. Li, G. Yu, In arXiv 2019.
-- [7] *"Disentangling Monocular 3D Object Detection"*, A. Simonelli, S. R. Bulo, L. Porzi, M. Lopez-Antequera, P. Kontschieder, In arXiv 2019.
-- [8] *"PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud"*, S. Shi, X. Wang, H. Li, In CVPR 2019.
+- \[1\] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv 2019.
+- \[2\] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, In arXiv 2019.
+- \[3\] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, In Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
+- \[4\] *"Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite"*, A. Geiger, P. Lenz, R. Urtasun, In CVPR 2012.
+- \[5\] *"PointPillars: Fast Encoders for Object Detection from Point Clouds"*, A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang and O. Beijbom, In CVPR 2019.
+- \[6\] *"Class-balanced Grouping and Sampling for Point Cloud 3D Object Detection"*, B. Zhu, Z. Jiang, X. Zhou, Z. Li, G. Yu, In arXiv 2019.
+- \[7\] *"Disentangling Monocular 3D Object Detection"*, A. Simonelli, S. R. Bulo, L. Porzi, M. Lopez-Antequera, P. Kontschieder, In arXiv 2019.
+- \[8\] *"PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud"*, S. Shi, X. Wang, H. Li, In CVPR 2019.
