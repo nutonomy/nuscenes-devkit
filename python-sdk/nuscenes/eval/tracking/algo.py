@@ -29,17 +29,19 @@ class TrackingEvaluation(object):
                  dist_th_tp: float,
                  min_recall: float,
                  num_thresholds: int = 11,
-                 output_dir: str = '.'):
+                 output_dir: str = '.',
+                 verbose: bool = True):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
-        :param tracks_gt:
-        :param tracks_pred:
-        :param class_name:
-        :param dist_fcn:
-        :param dist_th_tp:
-        :param min_recall:
-        :param num_thresholds:
-        :param output_dir:
+        :param tracks_gt: The ground-truth tracks.
+        :param tracks_pred: The predicted tracks.
+        :param class_name: The current class we are evaluating on.
+        :param dist_fcn: The distance function used for evaluation.
+        :param dist_th_tp: The distance threshold used to determine matches.
+        :param min_recall: The minimum recall value below which we drop thresholds due to too much noise.
+        :param num_thresholds: The number of recall thresholds from 0 to 1. Note that some of these may be dropped.
+        :param output_dir: Folder to save plots and results to.
+        :param verbose: Whether to print to stdout.
 
         Tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
          MOTA	        - Multi-object tracking accuracy in [0,100].
@@ -69,6 +71,7 @@ class TrackingEvaluation(object):
         self.min_recall = min_recall
         self.num_thresholds = num_thresholds
         self.output_dir = output_dir
+        self.verbose = verbose
 
         self.n_scenes = len(self.tracks_gt)
 
@@ -79,7 +82,8 @@ class TrackingEvaluation(object):
         :returns: Augmented TrackingMetrics instance.
         """
         # Init.
-        print('Computing metrics for class %s...\n' % self.class_name)
+        if self.verbose:
+            print('Computing metrics for class %s...\n' % self.class_name)
         accumulators = []
         thresh_metrics = []
         thresh_names = []
@@ -210,7 +214,10 @@ class TrackingEvaluation(object):
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
-        for scene_id in self.tracks_gt.keys():
+        for i, scene_id in enumerate(self.tracks_gt.keys()):
+            if self.verbose:
+                print('Processing scene %d of %d: %s...' % (i, len(self.tracks_gt), scene_id))
+
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred_unfiltered = self.tracks_pred[scene_id]

@@ -110,6 +110,7 @@ def create_motmetrics() -> MetricsHost:
     """
     Creates a MetricsHost and populates it with default metrics.
     It does not populate the global metrics which are more time consuming.
+    :return The initialized MetricsHost object with default MOT metrics.
     """
     mh = MetricsHost()
     fields = [

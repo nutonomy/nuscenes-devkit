@@ -40,7 +40,7 @@ class TrackingEval:
                  result_path: str,
                  eval_set: str,
                  output_dir: str = None,
-                 verbose: bool = True):  # TODO: use the verbose flag to silence the output.
+                 verbose: bool = True):
         """
         Initialize a TrackingEval object.
         :param nusc: A NuScenes object.
@@ -51,11 +51,11 @@ class TrackingEval:
         :param verbose: Whether to print to stdout.
         """
         self.nusc = nusc
+        self.cfg = config
         self.result_path = result_path
         self.eval_set = eval_set
         self.output_dir = output_dir
         self.verbose = verbose
-        self.cfg = config
 
         # Check result file exists.
         assert os.path.exists(result_path), 'Error: The result file does not exist!'
@@ -106,7 +106,7 @@ class TrackingEval:
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
                                     self.cfg.dist_th_tp, self.cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                    output_dir=self.output_dir)
+                                    output_dir=self.output_dir, verbose=self.verbose)
             metrics = ev.compute_all_metrics(metrics)
 
         # Compute evaluation time.
