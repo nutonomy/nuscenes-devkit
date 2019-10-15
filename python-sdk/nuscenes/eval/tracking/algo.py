@@ -12,6 +12,7 @@ from typing import List, Dict, Callable, Tuple
 import numpy as np
 import motmetrics
 import pandas
+import sklearn
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
@@ -82,7 +83,6 @@ class TrackingEvaluation(object):
         accumulators = []
         thresh_metrics = []
         thresh_names = []
-        mh = motmetrics.metrics.create()
 
         # Skip missing classes.
         gt_count = 0
@@ -199,8 +199,9 @@ class TrackingEvaluation(object):
     def accumulate(self, threshold: float = None) -> Tuple[motmetrics.MOTAccumulator, List[float]]:
         """
         Aggregate the raw data for the traditional CLEARMOT/MT/ML metrics.
+        The scores are only computed if threshold is set to None. This is used to infer the recall thresholds.
         :param threshold: score threshold used to determine positives and negatives.
-        :returns: The MOTAccumulator that stores all the hits/misses/etc.
+        :returns: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
         """
         # Init.
         acc = motmetrics.MOTAccumulator()
@@ -221,10 +222,9 @@ class TrackingEvaluation(object):
                 scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
 
             for timestamp in scene_tracks_gt.keys():
+                # Select only the current class.
                 frame_gt = scene_tracks_gt[timestamp]
                 frame_pred = scene_tracks_pred[timestamp]
-
-                # Select only the current class.
                 frame_gt = [f for f in frame_gt if f.tracking_name == self.class_name]
                 frame_pred = [f for f in frame_pred if f.tracking_name == self.class_name]
                 gt_ids = [gg.tracking_id for gg in frame_gt]
@@ -235,10 +235,14 @@ class TrackingEvaluation(object):
                     continue
 
                 # Calculate distances.
-                distances: np.ndarray = np.ones((len(frame_gt), len(frame_pred)))
-                for y, gg in enumerate(frame_gt):
-                    for x, tt in enumerate(frame_pred):
-                        distances[y, x] = float(self.dist_fcn(gg, tt))
+                # Note that the distance function is hard-coded to achieve significant speedups via vectorization.
+                assert self.dist_fcn.__name__ == 'center_distance'
+                if len(frame_gt) == 0 or len(frame_pred) == 0:
+                    distances = np.ones((0, 0))
+                else:
+                    gt_boxes = np.array([b.translation[:2] for b in frame_gt])
+                    pred_boxes = np.array([b.translation[:2] for b in frame_pred])
+                    distances = sklearn.metrics.pairwise.euclidean_distances(gt_boxes, pred_boxes)
 
                 # Distances that are larger than the threshold won't be associated.
                 distances[distances >= self.dist_th_tp] = np.nan
@@ -248,11 +252,12 @@ class TrackingEvaluation(object):
                 acc.update(gt_ids, pred_ids, distances, frameid=frame_id)
 
                 # Store scores of matches, which are used to determine recall thresholds.
-                events = acc.events.loc[frame_id]
-                matches = events[events.Type == 'MATCH']
-                match_ids = matches.HId.values
-                match_scores = [tt.tracking_score for tt in frame_pred if tt.tracking_id in match_ids]
-                scores.extend(match_scores)
+                if threshold is None:
+                    events = acc.events.loc[frame_id]
+                    matches = events[events.Type == 'MATCH']
+                    match_ids = matches.HId.values
+                    match_scores = [tt.tracking_score for tt in frame_pred if tt.tracking_id in match_ids]
+                    scores.extend(match_scores)
 
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1
@@ -296,7 +301,7 @@ class TrackingEvaluation(object):
         :return: The lists of thresholds and their recall values.
         """
         # Run accumulate to get the scores of TPs.
-        acc, scores = self.accumulate(0.0)
+        acc, scores = self.accumulate(threshold=None)
         assert len(scores) > 0
 
         # Sort scores.
