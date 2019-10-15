@@ -1,9 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2019.
 
-from typing import Optional, List, Dict
+from typing import Optional, Dict
+from importlib import import_module
 
 import numpy as np
+from motmetrics.metrics import MetricsHost
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
 
@@ -102,3 +104,22 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     # Check metrics for consistency.
     assert num_objects == num_matches + num_misses + num_switches
     assert num_predictions == num_matches + num_false_positives + num_switches
+
+
+def create_motmetrics() -> MetricsHost:
+    """
+    Creates a MetricsHost and populates it with default metrics.
+    It does not populate the global metrics which are more time consuming.
+    """
+    mh = MetricsHost()
+    fields = [
+        'num_frames', 'obj_frequencies', 'num_matches', 'num_switches', 'num_false_positives', 'num_misses',
+        'num_detections', 'num_objects', 'num_predictions', 'mostly_tracked', 'mostly_lost', 'num_fragmentations',
+        'motp', 'mota', 'precision', 'recall', 'track_ratios'
+    ]
+
+    for field in fields:
+        mod = import_module('.metrics', package='motmetrics')
+        mh.register(getattr(mod, field), formatter='{:d}'.format)
+
+    return mh

@@ -14,7 +14,7 @@ import motmetrics
 import pandas
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
-from nuscenes.eval.tracking.utils import print_threshold_metrics
+from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
     longest_gap_duration
 
@@ -128,6 +128,9 @@ class TrackingEvaluation(object):
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
             return 'threshold_%.4f' % _threshold
+
+        # Register default mot metrics.
+        mh = create_motmetrics()
 
         # Register custom metrics.
         mh.register(motap,
