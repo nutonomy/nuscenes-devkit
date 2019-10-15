@@ -16,8 +16,6 @@ import sklearn
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
-from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
-    longest_gap_duration
 
 
 class TrackingEvaluation(object):
@@ -43,18 +41,6 @@ class TrackingEvaluation(object):
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
 
-        Tracking statistics (CLEAR MOT, id-switches, fragments, ML/PT/MT, precision/recall)
-         MOTA	        - Multi-object tracking accuracy in [0,100].
-         MOTP	        - Multi-object tracking precision in [0,100] (3D) / [td,100] (2D).
-         id-switches    - number of id switches.
-         fragments      - number of fragmentations.
-         MT, ML	        - number of mostly tracked and mostly lost trajectories.
-         recall	        - recall = percentage of detected targets.
-         precision	    - precision = percentage of correctly detected targets.
-         FAR		    - number of false alarms per frame.
-         falsepositives - number of false positives (FP).
-         missed         - number of missed targets (FN).
-
         Computes the metrics defined in:
         - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
           MOTA, MOTP
@@ -74,6 +60,41 @@ class TrackingEvaluation(object):
         self.verbose = verbose
 
         self.n_scenes = len(self.tracks_gt)
+
+        # Define mapping for metrics that use motmetrics library.
+        self.mot_metric_map = {  # Mapping from motmetrics names to metric names used here.
+            'num_frames': '',  # Used in FAF.
+            'num_objects': '',  # Used in MOTAP computation.
+            'num_predictions': '',  # Only printed out.
+            'num_matches': '',  # Used in MOTAP computation and printed out.
+            'motap': '',  # Only used in AMOTA.
+            'mota': 'mota',  # Traditional MOTA.
+            'motp_custom': 'motp',  # Traditional MOTP.
+            'faf_custom': 'faf',
+            'mostly_tracked': 'mt',
+            'mostly_lost': 'ml',
+            'num_false_positives': 'fp',
+            'num_misses': 'fn',
+            'num_switches': 'ids',
+            'num_fragmentations': 'frag',
+            'tid': 'tid',
+            'lgd': 'lgd'
+        }
+
+        # Define mapping for metrics averaged over classes.
+        self.avg_metric_map = {  # Mapping from average metric name to individual per-threshold metric name.
+            'amota': 'motap',
+            'amotp': 'motp_custom'
+        }
+        self.avg_metric_worst = {  # Mapping to the worst possible value.
+            'amota': 0.0,
+            'amotp': self.dist_th_tp
+        }
+
+        # Specify threshold naming pattern. Note that no two thresholds may have the same name.
+        def name_gen(_threshold):
+            return 'threshold_%.4f' % _threshold
+        self.name_gen = name_gen
 
     def compute_all_metrics(self, metrics: TrackingMetrics) -> TrackingMetrics:
         """
@@ -99,55 +120,8 @@ class TrackingEvaluation(object):
             # Do not add any metric. The average metrics will then be nan.
             return metrics
 
-        # Define mapping for metrics that use motmetrics library.
-        mot_metric_map = {  # Mapping from motmetrics names to metric names used here.
-            'num_frames': '',  # Used in FAF.
-            'num_objects': '',  # Used in MOTAP computation.
-            'num_predictions': '',  # Only printed out.
-            'num_matches': '',  # Used in MOTAP computation and printed out.
-            'motap': '',  # Only used in AMOTA.
-            'mota': 'mota',  # Traditional MOTA.
-            'motp_custom': 'motp',  # Traditional MOTP.
-            'faf_custom': 'faf',
-            'mostly_tracked': 'mt',
-            'mostly_lost': 'ml',
-            'num_false_positives': 'fp',
-            'num_misses': 'fn',
-            'num_switches': 'ids',
-            'num_fragmentations': 'frag',
-            'tid': 'tid',
-            'lgd': 'lgd'
-        }
-
-        # Define mapping for metrics averaged over classes.
-        avg_metric_map = {  # Mapping from average metric name to individual per-threshold metric name.
-            'amota': 'motap',
-            'amotp': 'motp_custom'
-        }
-        avg_metric_worst = {  # Mapping to the worst possible value.
-            'amota': 0.0,
-            'amotp': self.dist_th_tp
-        }
-
-        # Specify threshold naming pattern. Note that no two thresholds may have the same name.
-        def name_gen(_threshold):
-            return 'threshold_%.4f' % _threshold
-
-        # Register default mot metrics.
+        # Register mot metrics.
         mh = create_motmetrics()
-
-        # Register custom metrics.
-        mh.register(motap,
-                    ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
-                    formatter='{:.2%}'.format, name='motap')
-        mh.register(motp_custom,
-                    formatter='{:.2%}'.format, name='motp_custom')
-        mh.register(faf_custom,
-                    formatter='{:.2%}'.format, name='faf_custom')
-        mh.register(track_initialization_duration, ['obj_frequencies'],
-                    formatter='{:.2%}'.format, name='tid')
-        mh.register(longest_gap_duration, ['obj_frequencies'],
-                    formatter='{:.2%}'.format, name='lgd')
 
         # Get thresholds.
         # Note: The recall values are the "desired" recall (10%, 20%, ..).
@@ -162,8 +136,8 @@ class TrackingEvaluation(object):
             # Compute CLEARMOT/MT/ML metrics for current threshold.
             acc, _ = self.accumulate(threshold)
             accumulators.append(acc)
-            thresh_names.append(name_gen(threshold))
-            thresh_summary = mh.compute(acc, metrics=mot_metric_map.keys(), name=name_gen(threshold))
+            thresh_names.append(self.name_gen(threshold))
+            thresh_summary = mh.compute(acc, metrics=self.mot_metric_map.keys(), name=self.name_gen(threshold))
             thresh_metrics.append(thresh_summary)
 
             # Print metrics to stdout.
@@ -177,9 +151,9 @@ class TrackingEvaluation(object):
         best_name = summary.mota.idxmax()
 
         # Compute AMOTA / AMOTP.
-        for metric_name in avg_metric_map.keys():
-            values = summary.get(avg_metric_map[metric_name]).values.tolist()
-            values.extend([avg_metric_worst[metric_name]] * np.sum(np.isnan(thresholds)))
+        for metric_name in self.avg_metric_map.keys():
+            values = summary.get(self.avg_metric_map[metric_name]).values.tolist()
+            values.extend([self.avg_metric_worst[metric_name]] * np.sum(np.isnan(thresholds)))
             assert len(values) == len(thresholds)
             if np.all(np.isnan(values)):
                 value = np.nan
@@ -188,7 +162,7 @@ class TrackingEvaluation(object):
             metrics.add_raw_metric(metric_name, self.class_name, value)
 
         # Store all traditional metrics.
-        for (mot_name, metric_name) in mot_metric_map.items():
+        for (mot_name, metric_name) in self.mot_metric_map.items():
             # Skip metrics which we don't output.
             if metric_name == '':
                 continue
