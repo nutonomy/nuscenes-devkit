@@ -13,6 +13,7 @@ import numpy as np
 import motmetrics
 import pandas
 import sklearn
+import tqdm
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
@@ -103,11 +104,9 @@ class TrackingEvaluation(object):
         :returns: Augmented TrackingMetrics instance.
         """
         # Init.
-        if self.verbose:
-            print('Computing metrics for class %s...\n' % self.class_name)
+        print('Computing metrics for class %s...\n' % self.class_name)
         accumulators = []
         thresh_metrics = []
-        thresh_names = []
 
         # Skip missing classes.
         gt_count = 0
@@ -133,18 +132,19 @@ class TrackingEvaluation(object):
             if np.isnan(threshold):
                 continue
 
-            # Compute CLEARMOT/MT/ML metrics for current threshold.
+            # Accumulate track data.
             acc, _ = self.accumulate(threshold)
             accumulators.append(acc)
-            thresh_names.append(self.name_gen(threshold))
-            thresh_summary = mh.compute(acc, metrics=self.mot_metric_map.keys(), name=self.name_gen(threshold))
+
+            # Compute CLEARMOT/MT/ML metrics for current threshold.
+            thresh_name = self.name_gen(threshold)
+            thresh_summary = mh.compute(acc, metrics=self.mot_metric_map.keys(), name=thresh_name)
             thresh_metrics.append(thresh_summary)
 
             # Print metrics to stdout.
             print_threshold_metrics(thresh_summary.to_dict())
 
         # Concatenate all metrics. We only do this for more convenient access.
-        assert len(thresh_names) == len(set(thresh_names))
         summary = pandas.concat(thresh_metrics)
 
         # Find best MOTA to determine threshold to pick for traditional metrics.
@@ -188,9 +188,7 @@ class TrackingEvaluation(object):
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
-        for i, scene_id in enumerate(self.tracks_gt.keys()):
-            if self.verbose:
-                print('Processing scene %d of %d: %s...' % (i, len(self.tracks_gt), scene_id))
+        for scene_id in tqdm.tqdm(self.tracks_gt.keys(), disable=not self.verbose):
 
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]

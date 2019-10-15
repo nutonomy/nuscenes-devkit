@@ -142,7 +142,7 @@ class TestMain(unittest.TestCase):
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
-                                 verbose=False)
+                                 verbose=True)
         metrics = nusc_eval.evaluate()
 
         # Print metrics to stdout.
@@ -171,7 +171,7 @@ class TestMain(unittest.TestCase):
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
-                                 verbose=False)
+                                 verbose=True)
         metrics = nusc_eval.evaluate()
 
         # Print metrics to stdout.
