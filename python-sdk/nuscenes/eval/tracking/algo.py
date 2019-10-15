@@ -10,13 +10,13 @@ https://github.com/cheind/py-motmetrics
 from typing import List, Dict, Callable, Tuple
 
 import numpy as np
-import motmetrics
 import pandas
 import sklearn
 import tqdm
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
+import nuscenes.eval.tracking.motmetrics as motmetrics
 
 
 class TrackingEvaluation(object):
