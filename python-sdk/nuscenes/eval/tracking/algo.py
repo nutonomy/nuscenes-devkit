@@ -120,6 +120,10 @@ class TrackingEvaluation(object):
             'amota': 'motap',
             'amotp': 'motp_custom'
         }
+        avg_metric_worst = {  # Mapping to the worst possible value.
+            'amota': 0.0,
+            'amotp': self.dist_th_tp
+        }
 
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
@@ -144,8 +148,8 @@ class TrackingEvaluation(object):
         thresholds, recalls = self.get_thresholds(gt_count)
 
         for threshold, recall in zip(thresholds, recalls):
-            # If recall threshold is not achieved, assign the worst possible value.
-            if np.isnan(threshold):  # TODO: Implement this.
+            # If recall threshold is not achieved, we assign the worst possible value in AMOTA and AMOTP.
+            if np.isnan(threshold):
                 continue
 
             # Compute CLEARMOT/MT/ML metrics for current threshold.
@@ -168,7 +172,7 @@ class TrackingEvaluation(object):
         # Compute AMOTA / AMOTP.
         for metric_name in avg_metric_map.keys():
             values = summary.get(avg_metric_map[metric_name]).values.tolist()
-            values.extend([np.nan] * np.sum(np.isnan(thresholds)))
+            values.extend([avg_metric_worst[metric_name]] * np.sum(np.isnan(thresholds)))
             assert len(values) == len(thresholds)
             if np.all(np.isnan(values)):
                 value = np.nan
