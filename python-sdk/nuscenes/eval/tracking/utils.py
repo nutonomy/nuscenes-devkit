@@ -4,11 +4,12 @@
 from typing import Optional, Dict
 
 import numpy as np
+import motmetrics
+from motmetrics.metrics import MetricsHost
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
 from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
     longest_gap_duration
-import nuscenes.eval.tracking.motmetrics as mm
 
 
 def category_to_tracking_name(category_name: str) -> Optional[str]:
@@ -107,13 +108,13 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     assert num_predictions == num_matches + num_false_positives + num_switches
 
 
-def create_motmetrics() -> mm.metrics.MetricsHost:
+def create_motmetrics() -> MetricsHost:
     """
     Creates a MetricsHost and populates it with default and custom metrics.
     It does not populate the global metrics which are more time consuming.
     :return The initialized MetricsHost object with default MOT metrics.
     """
-    mh = mm.metrics.MetricsHost()
+    mh = MetricsHost()
     fields = [
         'num_frames', 'obj_frequencies', 'num_matches', 'num_switches', 'num_false_positives', 'num_misses',
         'num_detections', 'num_objects', 'num_predictions', 'mostly_tracked', 'mostly_lost', 'num_fragmentations',
@@ -121,7 +122,7 @@ def create_motmetrics() -> mm.metrics.MetricsHost:
     ]
 
     for field in fields:
-        mh.register(getattr(mm.metrics, field), formatter='{:d}'.format)
+        mh.register(getattr(motmetrics.metrics, field), formatter='{:d}'.format)
 
     # Register custom metrics.
     mh.register(motap,

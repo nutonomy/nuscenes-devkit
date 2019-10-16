@@ -16,7 +16,7 @@ import tqdm
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
-import nuscenes.eval.tracking.motmetrics as motmetrics
+from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 
 
 class TrackingEvaluation(object):
@@ -174,7 +174,7 @@ class TrackingEvaluation(object):
 
         return metrics
 
-    def accumulate(self, threshold: float = None) -> Tuple[motmetrics.MOTAccumulator, List[float]]:
+    def accumulate(self, threshold: float = None) -> Tuple[MOTAccumulatorCustom, List[float]]:
         """
         Aggregate the raw data for the traditional CLEARMOT/MT/ML metrics.
         The scores are only computed if threshold is set to None. This is used to infer the recall thresholds.
@@ -182,7 +182,7 @@ class TrackingEvaluation(object):
         :returns: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
         """
         # Init.
-        acc = motmetrics.MOTAccumulator()
+        acc = MOTAccumulatorCustom()
         scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.
         frame_id = 0  # Frame ids must be unique across all scenes
 

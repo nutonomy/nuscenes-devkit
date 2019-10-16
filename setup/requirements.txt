@@ -3,6 +3,7 @@ descartes
 jupyter
 lap
 matplotlib
+motmetrics
 numpy
 opencv-python
 Pillow
