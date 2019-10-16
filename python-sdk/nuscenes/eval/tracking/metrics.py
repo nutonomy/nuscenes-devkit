@@ -13,14 +13,16 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame):
     :return: The track initialization time.
     """
     tid = 0
+    counter = 0
     for gt_tracking_id in obj_frequencies.index:
         # Get matches.
         dfo = df.noraw[df.noraw.OId == gt_tracking_id]
         notmiss = dfo[dfo.Type != 'MISS']
 
         if len(notmiss) == 0:
-            # For missed objects return the length of the track.
-            diff = dfo.index[-1][0] - dfo.index[0][0]
+            # Consider only tracked objects
+            diff = 0
+            counter += 1
         else:
             # Find the first time the object was detected and compute the difference to first time the object
             # entered the scene.
@@ -28,7 +30,7 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame):
         assert diff >= 0, 'Time difference should be larger than or equal to zero'
         # Multiply number of sample differences with sample period (0.5 sec)
         tid += float(diff) * 0.5
-    return tid / len(obj_frequencies)
+    return tid / (len(obj_frequencies) - counter)
 
 
 def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
@@ -43,21 +45,27 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
         return np.nan
 
     gap = 0
+    counter = 0
     for gt_tracking_id in obj_frequencies.index:
         # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest
         # gap.
         dfo = df.noraw[df.noraw.OId == gt_tracking_id]
         notmiss = dfo[dfo.Type != 'MISS']
         if len(notmiss) == 0:
-            # For missed objects return the length of the track.
-            diff = dfo.index[-1][0] - dfo.index[0][0]
+            # Consider only tracked objects
+            diff = 0
+            counter += 1
         else:
-            diff = notmiss.index.get_level_values(0).to_series().diff().max() - 1
+            # Concat the last timestamp to the tracked ones take the difference to compute the gap
+            last = dfo.index.get_level_values(0)[-1]
+            sr = notmiss.index.get_level_values(0).to_series()
+            sr.at[last] = last
+            diff = sr.diff().max() - 1
         if np.isnan(diff):
             diff = 0
         assert diff >= 0, 'Time difference should be larger than or equal to zero {0:f}'.format(diff)
         gap += diff * 0.5
-    return gap / len(obj_frequencies)
+    return gap / (len(obj_frequencies) - counter)
 
 
 def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int):
