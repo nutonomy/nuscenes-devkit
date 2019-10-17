@@ -110,7 +110,7 @@ class DetectionEval:
         # Step 1: Accumulate metric data for all classes and distance thresholds.
         # -----------------------------------
         if self.verbose:
-            print('Accumulating metric data')
+            print('Accumulating metric data...')
         metric_data_list = DetectionMetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
@@ -121,7 +121,7 @@ class DetectionEval:
         # Step 2: Calculate metrics from the data.
         # -----------------------------------
         if self.verbose:
-            print('Calculating metrics')
+            print('Calculating metrics...')
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
             # Compute APs.

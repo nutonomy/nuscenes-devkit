@@ -14,7 +14,7 @@ import pandas
 import sklearn
 import tqdm
 
-from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics, TrackingMetricData
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 
@@ -68,8 +68,8 @@ class TrackingEvaluation(object):
             'num_objects': '',  # Used in MOTAP computation.
             'num_predictions': '',  # Only printed out.
             'num_matches': '',  # Used in MOTAP computation and printed out.
-            'motap': '',  # Only used in AMOTA.
             'mota': 'mota',  # Traditional MOTA.
+            'motap': 'motap',  # Only used in AMOTA.
             'motp_custom': 'motp',  # Traditional MOTP.
             'faf_custom': 'faf',
             'mostly_tracked': 'mt',
@@ -82,31 +82,21 @@ class TrackingEvaluation(object):
             'lgd': 'lgd'
         }
 
-        # Define mapping for metrics averaged over classes.
-        self.avg_metric_map = {  # Mapping from average metric name to individual per-threshold metric name.
-            'amota': 'motap',
-            'amotp': 'motp_custom'
-        }
-        self.avg_metric_worst = {  # Mapping to the worst possible value.
-            'amota': 0.0,
-            'amotp': self.dist_th_tp
-        }
-
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
             return 'threshold_%.4f' % _threshold
         self.name_gen = name_gen
 
-    def compute_all_metrics(self, metrics: TrackingMetrics) -> TrackingMetrics:
+    def accumulate(self) -> TrackingMetricData:
         """
-        Compute all relevant metrics for the current class.
-        :param metrics: The TrackingMetrics to be augmented with the metric values.
-        :returns: Augmented TrackingMetrics instance.
+        Compute metrics for all recall thresholds of the current class.
+        :returns: TrackingMetricData instance which holds the metrics for each threshold.
         """
         # Init.
         print('Computing metrics for class %s...\n' % self.class_name)
         accumulators = []
         thresh_metrics = []
+        md = TrackingMetricData()
 
         # Skip missing classes.
         gt_count = 0
@@ -117,7 +107,7 @@ class TrackingEvaluation(object):
                         gt_count += 1
         if gt_count == 0:
             # Do not add any metric. The average metrics will then be nan.
-            return metrics
+            return md
 
         # Register mot metrics.
         mh = create_motmetrics()
@@ -133,10 +123,10 @@ class TrackingEvaluation(object):
                 continue
 
             # Accumulate track data.
-            acc, _ = self.accumulate(threshold)
+            acc, _ = self.accumulate_threshold(threshold)
             accumulators.append(acc)
 
-            # Compute CLEARMOT/MT/ML metrics for current threshold.
+            # Compute metrics for current threshold.
             thresh_name = self.name_gen(threshold)
             thresh_summary = mh.compute(acc, metrics=self.mot_metric_map.keys(), name=thresh_name)
             thresh_metrics.append(thresh_summary)
@@ -147,36 +137,28 @@ class TrackingEvaluation(object):
         # Concatenate all metrics. We only do this for more convenient access.
         summary = pandas.concat(thresh_metrics)
 
-        # Find best MOTA to determine threshold to pick for traditional metrics.
-        best_name = summary.mota.idxmax()
-
-        # Compute AMOTA / AMOTP.
-        for metric_name in self.avg_metric_map.keys():
-            values = summary.get(self.avg_metric_map[metric_name]).values.tolist()
-            values.extend([self.avg_metric_worst[metric_name]] * np.sum(np.isnan(thresholds)))
-            assert len(values) == len(thresholds)
-            if np.all(np.isnan(values)):
-                value = np.nan
-            else:
-                value = float(np.nanmean(values))
-            metrics.add_raw_metric(metric_name, self.class_name, value)
+        # Create TrackingMetricsData object with the raw results.
+        md.confidence = thresholds
 
         # Store all traditional metrics.
+        unachieved_thresholds = np.sum(np.isnan(thresholds))
         for (mot_name, metric_name) in self.mot_metric_map.items():
             # Skip metrics which we don't output.
             if metric_name == '':
                 continue
 
-            # Clip all metrics to be >= 0, in particular MOTA.
-            value = np.maximum(float(summary.loc[best_name][mot_name]), 0.0)
+            # Retrieve and store values for current metric.
+            values = [np.nan] * unachieved_thresholds  # Pad values with nans for unachieved recall thresholds.
+            values.extend(summary.get(mot_name).values)
+            md.__setattr__(metric_name, values)
+            # TODO: check that nans make sense.
+            # TODO: clip mota to be >0.
 
-            metrics.add_raw_metric(metric_name, self.class_name, value)
+        return md
 
-        return metrics
-
-    def accumulate(self, threshold: float = None) -> Tuple[MOTAccumulatorCustom, List[float]]:
+    def accumulate_threshold(self, threshold: float = None) -> Tuple[MOTAccumulatorCustom, List[float]]:
         """
-        Aggregate the raw data for the traditional CLEARMOT/MT/ML metrics.
+        Accumulate metrics for a particular recall threshold of the current class.
         The scores are only computed if threshold is set to None. This is used to infer the recall thresholds.
         :param threshold: score threshold used to determine positives and negatives.
         :returns: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
@@ -280,7 +262,7 @@ class TrackingEvaluation(object):
         :return: The lists of thresholds and their recall values.
         """
         # Run accumulate to get the scores of TPs.
-        acc, scores = self.accumulate(threshold=None)
+        acc, scores = self.accumulate_threshold(threshold=None)
         assert len(scores) > 0
 
         # Sort scores.
@@ -294,8 +276,8 @@ class TrackingEvaluation(object):
         assert len(rec) > 0 and np.max(rec) <= 1
 
         # Determine thresholds.
-        rec_interp = np.linspace(0, 1, self.num_thresholds)  # 11 steps, from 0% to 100% recall.
-        rec_interp = rec_interp[rec_interp >= self.min_recall]  # Remove recall values < 10%.
+        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds)
+        rec_interp = rec_interp[rec_interp >= self.min_recall]  # Remove small recall values.
         max_recall_achieved = np.max(rec)
         thresholds = np.interp(rec_interp, rec, scores, right=0)
 
@@ -309,5 +291,8 @@ class TrackingEvaluation(object):
         # Reverse order for more convenient presentation.
         thresholds.reverse()
         rec_interp.reverse()
+
+        # Check that we return the correct number of thresholds.
+        assert len(thresholds) == len(rec_interp) == self.num_thresholds
 
         return thresholds, rec_interp

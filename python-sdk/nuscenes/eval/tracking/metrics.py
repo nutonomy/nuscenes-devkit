@@ -4,7 +4,7 @@ import numpy as np
 DataFrame = Any
 
 
-def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame):
+def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     """
     Computes the track initialization duration, which is the duration from the first occurrance of an object to
     it's first correct detection (TP).
@@ -40,7 +40,7 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame):
         return tid / matched_tracks
 
 
-def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
+def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     """
     Computes the longest gap duration, which is the longest duration of any gaps in the detection of an object.
     :param df: Motmetrics dataframe that is required, but not used here.
@@ -84,7 +84,8 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
         return lgd / matched_tracks
 
 
-def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int):
+def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int)\
+        -> float:
     """
     Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
     Note that we use the measured recall, which is not identical to the hypothetical recall of the

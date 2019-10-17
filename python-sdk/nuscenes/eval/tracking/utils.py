@@ -46,7 +46,7 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
     print('\n### Final results ###')
 
     # Print per-class metrics.
-    metric_names = metrics.raw_metrics.keys()
+    metric_names = metrics.label_metrics.keys()
     print('\nPer-class results:')
     print('\t\t', end='')
     print('\t'.join([m.upper() for m in metric_names]))
@@ -57,7 +57,7 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
         print('%s' % class_name.ljust(max_name_length), end='')
 
         for metric_name in metric_names:
-            val = metrics.raw_metrics[metric_name][class_name]
+            val = metrics.label_metrics[metric_name][class_name]
             print_format = '%.3f' if np.isnan(val) or val != int(val) else '%d'
             print('\t%s' % (print_format % val), end='')
 

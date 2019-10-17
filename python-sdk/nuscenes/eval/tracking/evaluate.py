@@ -8,11 +8,14 @@ import random
 import time
 from typing import Dict, Any
 
+import numpy as np
+
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingConfig, TrackingBox, TrackingMetricData
+from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricDataList, TrackingConfig, TrackingBox,\
+    TrackingMetricData
 from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.render import visualize_sample
 from nuscenes.eval.tracking.loaders import create_tracks
@@ -103,11 +106,60 @@ class TrackingEval:
         start_time = time.time()
         metrics = TrackingMetrics(self.cfg)
 
+        # -----------------------------------
+        # Step 1: Accumulate metric data for all classes and distance thresholds.
+        # -----------------------------------
+        if self.verbose:
+            print('Accumulating metric data...')
+        metric_data_list = TrackingMetricDataList()
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
                                     self.cfg.dist_th_tp, self.cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
                                     output_dir=self.output_dir, verbose=self.verbose)
-            metrics = ev.compute_all_metrics(metrics)
+            md = ev.accumulate()
+            metric_data_list.set(class_name, md)
+
+        # -----------------------------------
+        # Step 2: Calculate metrics from the data.
+        # -----------------------------------
+        if self.verbose:
+            print('Calculating metrics...')
+        # Define mapping for metrics averaged over classes.
+        avg_metric_map = {  # Mapping from average metric name to individual per-threshold metric name.
+            'amota': 'motap',
+            'amotp': 'motp'
+        }
+        avg_metric_worst = {  # Mapping to the worst possible value.
+            'amota': 0.0,
+            'amotp': self.cfg.dist_th_tp
+        }
+        for class_name in self.cfg.class_names:
+            # Find best MOTA to determine threshold to pick for traditional metrics.
+            md = metric_data_list[class_name]
+            if np.all(np.isnan(md.mota)):
+                best_thresh_idx = None
+            else:
+                best_thresh_idx = np.nanargmax(md.mota)
+
+            # Pick best value for traditional metrics.
+            unachieved_thresholds = np.sum(np.isnan(md.confidence))
+            if best_thresh_idx is not None:
+                for metric_name in ev.mot_metric_map.values():  # TODO: store these somewhere else
+                    if metric_name == '':
+                        continue
+                    value = md.__getattribute__(metric_name)[best_thresh_idx]
+                    metrics.add_label_metric(metric_name, class_name, value)
+
+            # Compute AMOTA / AMOTP.
+            for metric_name in avg_metric_map.keys():
+                values = md.__getattribute__(avg_metric_map[metric_name])
+                assert len(values) == TrackingMetricData.nelem
+
+                if np.all(np.isnan(values)):
+                    value = np.nan
+                else:
+                    value = float(np.nanmean(values))
+                metrics.add_label_metric(metric_name, class_name, value)
 
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)

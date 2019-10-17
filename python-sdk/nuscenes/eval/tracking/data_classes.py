@@ -8,7 +8,7 @@ import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
 from nuscenes.eval.common.utils import center_distance
-from nuscenes.eval.tracking.constants import TRACKING_NAMES, AMOT_METRICS, LEGACY_METRICS
+from nuscenes.eval.tracking.constants import TRACKING_NAMES, AMOT_METRICS, INTERNAL_METRICS, LEGACY_METRICS
 
 
 class TrackingConfig:
@@ -77,32 +77,40 @@ class TrackingConfig:
 class TrackingMetricData(MetricData):
     """ This class holds accumulated and interpolated data required to calculate the tracking metrics. """
 
-    nelem = 11
+    nelem = 10
+    metrics = ['recall', 'mota', 'motap', 'motp', 'faf', 'mt', 'ml', 'fp', 'fn', 'ids', 'frag',
+               'tid', 'lgd']  # TODO: store metrics in a single file
 
-    def __init__(self,
-                 recall: np.array,
-                 precision: np.array,
-                 confidence: np.array):
-
-        # Assert lengths.
-        assert len(recall) == self.nelem
-        assert len(precision) == self.nelem
-        assert len(confidence) == self.nelem
-
-        # Assert ordering.
-        assert all(confidence == sorted(confidence, reverse=True))  # Confidences should be descending.
-        assert all(recall == sorted(recall))  # Recalls should be ascending.
+    def __init__(self):
 
         # Set attributes explicitly to help IDEs figure out what is going on.
-        self.recall = recall
-        self.precision = precision
-        self.confidence = confidence
+        init = np.full(TrackingMetricData.nelem, np.nan)
+        self.confidence = init
+        self.recall = init
+        self.mota = init
+        self.motap = init
+        self.motp = init
+        self.faf = init
+        self.mt = init
+        self.ml = init
+        self.fp = init
+        self.fn = init
+        self.ids = init
+        self.frag = init
+        self.tid = init
+        self.lgd = init
 
     def __eq__(self, other):
         eq = True
         for key in self.serialize().keys():
             eq = eq and np.array_equal(getattr(self, key), getattr(other, key))
         return eq
+
+    def __setattr__(self, *args, **kwargs):
+        name = args[0]
+        value = args[1]
+        super(TrackingMetricData, self).__setattr__(name, value)
+        assert value is None or len(value) == TrackingMetricData.nelem
 
     @property
     def max_recall_ind(self):
@@ -125,31 +133,37 @@ class TrackingMetricData(MetricData):
 
     def serialize(self):
         """ Serialize instance into json-friendly format. """
-        return {
-            'recall': self.recall.tolist(),
-            'precision': self.precision.tolist(),
-            'confidence': self.confidence.tolist(),
-        }
+        ret_dict = dict()
+        for metric in ['confidence'] + TrackingMetricData.metrics:
+            ret_dict[metric] = self.__getattribute__(metric).tolist()
+        return ret_dict
 
     @classmethod
     def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
-        return cls(recall=np.array(content['recall']),
-                   precision=np.array(content['precision']),
-                   confidence=np.array(content['confidence']))
+        md = cls()
+        for metric in ['confidence'] + TrackingMetricData.metrics:
+            md.__setattr__(metric, content[metric])
+        return md
 
     @classmethod
     def no_predictions(cls):
         """ Returns an md instance corresponding to having no predictions. """
-        return cls(recall=np.linspace(0, 1, cls.nelem),
-                   precision=np.zeros(cls.nelem),
-                   confidence=np.zeros(cls.nelem))
+        md = cls()
+        md.confidence = np.zeros(cls.nelem)
+        for metric in TrackingMetricData.metrics:
+            md.__setattr__(metric, np.zeros(cls.nelem))
+        md.recall = np.linspace(0, 1, cls.nelem)
+        return md
 
     @classmethod
     def random_md(cls):
-        return cls(recall=np.linspace(0, 1, cls.nelem),
-                   precision=np.random.random(cls.nelem),
-                   confidence=np.linspace(0, 1, cls.nelem)[::-1])
+        md = cls()
+        md.confidence = np.linspace(0, 1, cls.nelem)[::-1]
+        for metric in TrackingMetricData.metrics:
+            md.__setattr__(metric, np.random.random(cls.nelem))
+        md.recall = np.linspace(0, 1, cls.nelem)
+        return md
 
 
 class TrackingMetrics:
@@ -159,35 +173,36 @@ class TrackingMetrics:
 
         self.cfg = cfg
         self.eval_time = None
-        self.raw_metrics = defaultdict(lambda: defaultdict(float))
+        self.label_metrics = defaultdict(lambda: defaultdict(float))
         self.class_names = self.cfg.class_names
-        self.metric_names = [l.lower() for l in [*AMOT_METRICS, *LEGACY_METRICS]]  # TODO: add DETECTION_METRICS.
+        self.metric_names = [l.lower() for l in [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]]
+        # TODO: add DETECTION_METRICS.
 
         # Init every class.
         for metric_name in self.metric_names:
             for class_name in self.class_names:
-                self.raw_metrics[metric_name][class_name] = np.nan
+                self.label_metrics[metric_name][class_name] = np.nan
 
-    def add_raw_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
-        assert metric_name in self.raw_metrics
-        self.raw_metrics[metric_name][tracking_name] = value
+    def add_label_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
+        assert metric_name in self.label_metrics
+        self.label_metrics[metric_name][tracking_name] = value
 
     def add_runtime(self, eval_time: float) -> None:
         self.eval_time = eval_time
 
     def compute_metric(self, metric_name: str, class_name: str = 'avg') -> float:
         if class_name == 'avg':
-            data = list(self.raw_metrics[metric_name].values())
+            data = list(self.label_metrics[metric_name].values())
             if len(data) > 0:
                 return float(np.nanmean(data))  # Nan entries are ignored.
             else:
                 return np.nan
         else:
-            return float(self.raw_metrics[metric_name][class_name])
+            return float(self.label_metrics[metric_name][class_name])
 
     def serialize(self) -> Dict[str, Any]:
         metrics = dict()
-        metrics['raw_metrics'] = self.raw_metrics
+        metrics['label_metrics'] = self.label_metrics
         metrics['eval_time'] = self.eval_time
         metrics['cfg'] = self.cfg.serialize()
         return metrics
@@ -198,7 +213,7 @@ class TrackingMetrics:
         cfg = TrackingConfig.deserialize(content['cfg'])
         tm = cls(cfg=cfg)
         tm.add_runtime(content['eval_time'])
-        tm.raw_metrics = content['raw_metrics']
+        tm.label_metrics = content['label_metrics']
 
         return tm
 
@@ -278,3 +293,33 @@ class TrackingBox(EvalBox):
                    tracking_id=content['tracking_id'],
                    tracking_name=content['tracking_name'],
                    tracking_score=-1.0 if 'tracking_score' not in content else float(content['tracking_score']))
+
+
+class TrackingMetricDataList:
+    """ This stores a set of MetricData in a dict indexed by name. """
+
+    def __init__(self):
+        self.md = {}
+
+    def __getitem__(self, key) -> MetricData:
+        return self.md[key]
+
+    def __eq__(self, other):
+        eq = True
+        for key in self.md.keys():
+            eq = eq and self[key] == other[key]
+        return eq
+
+    def set(self, tracking_name: str, data: MetricData):
+        """ Sets the MetricData entry for a certain tracking_name. """
+        self.md[tracking_name] = data
+
+    def serialize(self) -> dict:
+        return {key: value.serialize() for key, value in self.md.items()}
+
+    @classmethod
+    def deserialize(cls, content: dict, metric_data_cls):
+        mdl = cls()
+        for name, md in content.items():
+            mdl.set(name, metric_data_cls.deserialize(md))
+        return mdl
