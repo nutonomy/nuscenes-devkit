@@ -13,24 +13,31 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame):
     :return: The track initialization time.
     """
     tid = 0
-    counter = 0
+    missed_tracks = 0
     for gt_tracking_id in obj_frequencies.index:
         # Get matches.
         dfo = df.noraw[df.noraw.OId == gt_tracking_id]
         notmiss = dfo[dfo.Type != 'MISS']
 
         if len(notmiss) == 0:
-            # Consider only tracked objects
+            # Consider only tracked objects.
             diff = 0
-            counter += 1
+            missed_tracks += 1
         else:
             # Find the first time the object was detected and compute the difference to first time the object
             # entered the scene.
             diff = notmiss.index[0][0] - dfo.index[0][0]
-        assert diff >= 0, 'Time difference should be larger than or equal to zero'
-        # Multiply number of sample differences with sample period (0.5 sec)
-        tid += float(diff) * 0.5
-    return tid / (len(obj_frequencies) - counter)
+
+        # Multiply number of sample differences with approx. sample period (0.5 sec).
+        assert diff >= 0, 'Time difference should be larger than or equal to zero: %.2f'
+        tid += diff * 0.5
+
+    matched_tracks = len(obj_frequencies) - missed_tracks
+    if matched_tracks == 0:
+        # Return nan if there are no matches.
+        return np.nan
+    else:
+        return tid / matched_tracks
 
 
 def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
@@ -44,28 +51,37 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame):
     if len(obj_frequencies.index) == 0:
         return np.nan
 
-    gap = 0
-    counter = 0
+    lgd = 0
+    missed_tracks = 0
     for gt_tracking_id in obj_frequencies.index:
-        # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest
-        # gap.
+        # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest gap.
         dfo = df.noraw[df.noraw.OId == gt_tracking_id]
         notmiss = dfo[dfo.Type != 'MISS']
+
         if len(notmiss) == 0:
-            # Consider only tracked objects
+            # Consider only tracked objects.
             diff = 0
-            counter += 1
+            missed_tracks += 1
         else:
-            # Concat the last timestamp to the tracked ones take the difference to compute the gap
+            # Concat the last timestamp to the tracked ones take the difference to compute the gap.
             last = dfo.index.get_level_values(0)[-1]
             sr = notmiss.index.get_level_values(0).to_series()
             sr.at[last] = last
             diff = sr.diff().max() - 1
+
         if np.isnan(diff):
             diff = 0
-        assert diff >= 0, 'Time difference should be larger than or equal to zero {0:f}'.format(diff)
-        gap += diff * 0.5
-    return gap / (len(obj_frequencies) - counter)
+
+        # Multiply number of sample differences with approx. sample period (0.5 sec).
+        assert diff >= 0, 'Time difference should be larger than or equal to zero: %.2f'
+        lgd += diff * 0.5
+
+    matched_tracks = len(obj_frequencies) - missed_tracks
+    if matched_tracks == 0:
+        # Return nan if there are no matches.
+        return np.nan
+    else:
+        return lgd / matched_tracks
 
 
 def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int):
