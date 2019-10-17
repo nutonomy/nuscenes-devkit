@@ -8,7 +8,7 @@ import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
 from nuscenes.eval.common.utils import center_distance
-from nuscenes.eval.tracking.constants import TRACKING_NAMES, AMOT_METRICS, INTERNAL_METRICS, LEGACY_METRICS
+from nuscenes.eval.tracking.constants import TRACKING_NAMES, TRACKING_METRICS, AMOT_METRICS
 
 
 class TrackingConfig:
@@ -21,7 +21,8 @@ class TrackingConfig:
                  dist_th_tp: float,
                  min_recall: float,
                  min_precision: float,
-                 max_boxes_per_sample: float):
+                 max_boxes_per_sample: float,
+                 avg_metric_worst: Dict[str, float]):
 
         assert set(class_range.keys()) == set(TRACKING_NAMES), "Class count mismatch."
         assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
@@ -33,6 +34,7 @@ class TrackingConfig:
         self.min_recall = min_recall
         self.min_precision = min_precision
         self.max_boxes_per_sample = max_boxes_per_sample
+        self.avg_metric_worst = avg_metric_worst
 
         self.class_names = sorted(self.class_range.keys())
 
@@ -51,7 +53,8 @@ class TrackingConfig:
             'dist_th_tp': self.dist_th_tp,
             'min_recall': self.min_recall,
             'min_precision': self.min_precision,
-            'max_boxes_per_sample': self.max_boxes_per_sample
+            'max_boxes_per_sample': self.max_boxes_per_sample,
+            'avg_metric_worst': self.avg_metric_worst
         }
 
     @classmethod
@@ -63,7 +66,8 @@ class TrackingConfig:
                    content['dist_th_tp'],
                    content['min_recall'],
                    content['min_precision'],
-                   content['max_boxes_per_sample'])
+                   content['max_boxes_per_sample'],
+                   content['avg_metric_worst'])
 
     @property
     def dist_fcn_callable(self):
@@ -78,11 +82,9 @@ class TrackingMetricData(MetricData):
     """ This class holds accumulated and interpolated data required to calculate the tracking metrics. """
 
     nelem = 10
-    metrics = ['recall', 'mota', 'motap', 'motp', 'faf', 'mt', 'ml', 'fp', 'fn', 'ids', 'frag',
-               'tid', 'lgd']  # TODO: store metrics in a single file
+    metrics = [m.lower() for m in list(set(TRACKING_METRICS) - set(AMOT_METRICS))]
 
     def __init__(self):
-
         # Set attributes explicitly to help IDEs figure out what is going on.
         init = np.full(TrackingMetricData.nelem, np.nan)
         self.confidence = init
@@ -128,7 +130,6 @@ class TrackingMetricData(MetricData):
     @property
     def max_recall(self):
         """ Returns max recall achieved. """
-
         return self.recall[self.max_recall_ind]
 
     def serialize(self):
@@ -158,6 +159,7 @@ class TrackingMetricData(MetricData):
 
     @classmethod
     def random_md(cls):
+        """ Returns an md instance corresponding to a random results. """
         md = cls()
         md.confidence = np.linspace(0, 1, cls.nelem)[::-1]
         for metric in TrackingMetricData.metrics:
@@ -175,8 +177,7 @@ class TrackingMetrics:
         self.eval_time = None
         self.label_metrics = defaultdict(lambda: defaultdict(float))
         self.class_names = self.cfg.class_names
-        self.metric_names = [l.lower() for l in [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]]
-        # TODO: add DETECTION_METRICS.
+        self.metric_names = [l.lower() for l in TRACKING_METRICS]
 
         # Init every class.
         for metric_name in self.metric_names:
@@ -301,7 +302,7 @@ class TrackingMetricDataList:
     def __init__(self):
         self.md = {}
 
-    def __getitem__(self, key) -> MetricData:
+    def __getitem__(self, key) -> TrackingMetricData:
         return self.md[key]
 
     def __eq__(self, other):
@@ -310,7 +311,7 @@ class TrackingMetricDataList:
             eq = eq and self[key] == other[key]
         return eq
 
-    def set(self, tracking_name: str, data: MetricData):
+    def set(self, tracking_name: str, data: TrackingMetricData):
         """ Sets the MetricData entry for a certain tracking_name. """
         self.md[tracking_name] = data
 

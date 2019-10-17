@@ -14,9 +14,10 @@ import pandas
 import sklearn
 import tqdm
 
-from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetrics, TrackingMetricData
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
+from nuscenes.eval.tracking.constants import MOT_METRIC_MAP
 
 
 class TrackingEvaluation(object):
@@ -62,26 +63,6 @@ class TrackingEvaluation(object):
 
         self.n_scenes = len(self.tracks_gt)
 
-        # Define mapping for metrics that use motmetrics library.
-        self.mot_metric_map = {  # Mapping from motmetrics names to metric names used here.
-            'num_frames': '',  # Used in FAF.
-            'num_objects': '',  # Used in MOTAP computation.
-            'num_predictions': '',  # Only printed out.
-            'num_matches': '',  # Used in MOTAP computation and printed out.
-            'mota': 'mota',  # Traditional MOTA.
-            'motap': 'motap',  # Only used in AMOTA.
-            'motp_custom': 'motp',  # Traditional MOTP.
-            'faf_custom': 'faf',
-            'mostly_tracked': 'mt',
-            'mostly_lost': 'ml',
-            'num_false_positives': 'fp',
-            'num_misses': 'fn',
-            'num_switches': 'ids',
-            'num_fragmentations': 'frag',
-            'tid': 'tid',
-            'lgd': 'lgd'
-        }
-
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
             return 'threshold_%.4f' % _threshold
@@ -116,6 +97,7 @@ class TrackingEvaluation(object):
         # Note: The recall values are the "desired" recall (10%, 20%, ..).
         # The actual recall may vary as there is no way to compute it without trying all thresholds.
         thresholds, recalls = self.get_thresholds(gt_count)
+        md.confidence = thresholds
 
         for threshold, recall in zip(thresholds, recalls):
             # If recall threshold is not achieved, we assign the worst possible value in AMOTA and AMOTP.
@@ -128,21 +110,19 @@ class TrackingEvaluation(object):
 
             # Compute metrics for current threshold.
             thresh_name = self.name_gen(threshold)
-            thresh_summary = mh.compute(acc, metrics=self.mot_metric_map.keys(), name=thresh_name)
+            thresh_summary = mh.compute(acc, metrics=MOT_METRIC_MAP.keys(), name=thresh_name)
             thresh_metrics.append(thresh_summary)
 
             # Print metrics to stdout.
             print_threshold_metrics(thresh_summary.to_dict())
 
         # Concatenate all metrics. We only do this for more convenient access.
+        unachieved_thresholds = np.sum(np.isnan(thresholds))
+        assert unachieved_thresholds + len(thresh_metrics) == self.num_thresholds
         summary = pandas.concat(thresh_metrics)
 
-        # Create TrackingMetricsData object with the raw results.
-        md.confidence = thresholds
-
         # Store all traditional metrics.
-        unachieved_thresholds = np.sum(np.isnan(thresholds))
-        for (mot_name, metric_name) in self.mot_metric_map.items():
+        for (mot_name, metric_name) in MOT_METRIC_MAP.items():
             # Skip metrics which we don't output.
             if metric_name == '':
                 continue

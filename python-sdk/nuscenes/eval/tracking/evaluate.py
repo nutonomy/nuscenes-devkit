@@ -20,6 +20,7 @@ from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.render import visualize_sample
 from nuscenes.eval.tracking.loaders import create_tracks
 from nuscenes.eval.tracking.utils import print_final_metrics
+from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP
 
 
 class TrackingEval:
@@ -124,15 +125,6 @@ class TrackingEval:
         # -----------------------------------
         if self.verbose:
             print('Calculating metrics...')
-        # Define mapping for metrics averaged over classes.
-        avg_metric_map = {  # Mapping from average metric name to individual per-threshold metric name.
-            'amota': 'motap',
-            'amotp': 'motp'
-        }
-        avg_metric_worst = {  # Mapping to the worst possible value.
-            'amota': 0.0,
-            'amotp': self.cfg.dist_th_tp
-        }
         for class_name in self.cfg.class_names:
             # Find best MOTA to determine threshold to pick for traditional metrics.
             md = metric_data_list[class_name]
@@ -144,21 +136,24 @@ class TrackingEval:
             # Pick best value for traditional metrics.
             unachieved_thresholds = np.sum(np.isnan(md.confidence))
             if best_thresh_idx is not None:
-                for metric_name in ev.mot_metric_map.values():  # TODO: store these somewhere else
+                for metric_name in MOT_METRIC_MAP.values():
                     if metric_name == '':
                         continue
                     value = md.__getattribute__(metric_name)[best_thresh_idx]
                     metrics.add_label_metric(metric_name, class_name, value)
 
             # Compute AMOTA / AMOTP.
-            for metric_name in avg_metric_map.keys():
-                values = md.__getattribute__(avg_metric_map[metric_name])
+            for metric_name in AVG_METRIC_MAP.keys():
+                values = np.array(md.__getattribute__(AVG_METRIC_MAP[metric_name]))
                 assert len(values) == TrackingMetricData.nelem
 
-                if np.all(np.isnan(values)):
-                    value = np.nan
-                else:
-                    value = float(np.nanmean(values))
+                # Overwrite any nan value with the worst possible value.
+                values[np.isnan(values)] = self.cfg.avg_metric_worst[metric_name]
+
+                # Clip values.
+                assert np.all(values >= 0)
+
+                value = float(np.nanmean(values))
                 metrics.add_label_metric(metric_name, class_name, value)
 
         # Compute evaluation time.

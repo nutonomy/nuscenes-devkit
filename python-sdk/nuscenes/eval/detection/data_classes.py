@@ -181,6 +181,7 @@ class DetectionMetricData(MetricData):
 
     @classmethod
     def random_md(cls):
+        """ Returns an md instance corresponding to a random results. """
         return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.random.random(cls.nelem),
                    confidence=np.linspace(0, 1, cls.nelem)[::-1],
