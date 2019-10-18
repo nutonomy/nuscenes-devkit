@@ -779,8 +779,8 @@ class NuScenesExplorer:
             sample_rec = self.nusc.get('sample', sd_record['sample_token'])
             chan = sd_record['channel']
             ref_chan = 'LIDAR_TOP'
-            ref_token = sample_rec['data'][ref_chan]
-            ref_sd_record = self.nusc.get('sample_data', ref_token)
+            ref_sd_token = sample_rec['data'][ref_chan]
+            ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
                 # Get aggregated lidar point cloud in lidar frame.
@@ -854,7 +854,7 @@ class NuScenesExplorer:
             ax.plot(0, 0, 'x', color='red')
 
             # Get boxes in lidar frame.
-            _, boxes, _ = self.nusc.get_sample_data(ref_token, box_vis_level=box_vis_level,
+            _, boxes, _ = self.nusc.get_sample_data(ref_sd_token, box_vis_level=box_vis_level,
                                                     use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
 
             # Show boxes.
