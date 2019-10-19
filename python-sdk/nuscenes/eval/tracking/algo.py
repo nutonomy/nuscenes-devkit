@@ -29,7 +29,6 @@ class TrackingEvaluation(object):
                  dist_th_tp: float,
                  min_recall: float,
                  num_thresholds: int,
-                 output_dir: str = '.',
                  verbose: bool = True):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
@@ -40,7 +39,6 @@ class TrackingEvaluation(object):
         :param dist_th_tp: The distance threshold used to determine matches.
         :param min_recall: The minimum recall value below which we drop thresholds due to too much noise.
         :param num_thresholds: The number of recall thresholds from 0 to 1. Note that some of these may be dropped.
-        :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
 
         Computes the metrics defined in:
@@ -58,7 +56,6 @@ class TrackingEvaluation(object):
         self.dist_th_tp = dist_th_tp
         self.min_recall = min_recall
         self.num_thresholds = num_thresholds
-        self.output_dir = output_dir
         self.verbose = verbose
 
         self.n_scenes = len(self.tracks_gt)

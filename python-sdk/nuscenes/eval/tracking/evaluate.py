@@ -116,7 +116,7 @@ class TrackingEval:
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
                                     self.cfg.dist_th_tp, self.cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                    output_dir=self.output_dir, verbose=self.verbose)
+                                    verbose=self.verbose)
             md = ev.accumulate()
             metric_data_list.set(class_name, md)
 
@@ -134,7 +134,6 @@ class TrackingEval:
                 best_thresh_idx = np.nanargmax(md.mota)
 
             # Pick best value for traditional metrics.
-            unachieved_thresholds = np.sum(np.isnan(md.confidence))
             if best_thresh_idx is not None:
                 for metric_name in MOT_METRIC_MAP.values():
                     if metric_name == '':
@@ -176,34 +175,12 @@ class TrackingEval:
         # TODO
 
     def main(self,
-             plot_examples: int = 0,
              render_curves: bool = True) -> Dict[str, Any]:
         """
         Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
-        :param plot_examples: How many example visualizations to write to disk.
         :param render_curves: Whether to render PR and TP curves to disk.
         :return: A dict that stores the high-level metrics and meta data.
         """
-        if plot_examples > 0:
-            # Select a random but fixed subset to plot.
-            random.seed(42)
-            sample_tokens = list(self.sample_tokens)
-            random.shuffle(sample_tokens)
-            sample_tokens = sample_tokens[:plot_examples]
-
-            # Visualize samples.
-            example_dir = os.path.join(self.output_dir, 'examples')
-            if not os.path.isdir(example_dir):
-                os.mkdir(example_dir)
-            for sample_token in sample_tokens:
-                visualize_sample(self.nusc,
-                                 sample_token,
-                                 self.gt_boxes if self.eval_set != 'test' else EvalBoxes(),
-                                 # Don't render test GT.
-                                 self.pred_boxes,
-                                 eval_range=max(self.cfg.class_range.values()),
-                                 savepath=os.path.join(example_dir, '{}.png'.format(sample_token)))
-
         # Run evaluation.
         metrics = self.evaluate()
 
@@ -242,8 +219,6 @@ if __name__ == "__main__":
     parser.add_argument('--config_path', type=str, default='',
                         help='Path to the configuration file.'
                              'If no path given, the NIPS 2019 configuration will be used.')
-    parser.add_argument('--plot_examples', type=int, default=10,
-                        help='How many example visualizations to write to disk.')
     parser.add_argument('--render_curves', type=int, default=1,
                         help='Whether to render statistic curves to disk.')
     parser.add_argument('--verbose', type=int, default=1,
@@ -256,7 +231,6 @@ if __name__ == "__main__":
     dataroot_ = args.dataroot
     version_ = args.version
     config_path = args.config_path
-    plot_examples_ = args.plot_examples
     render_curves_ = bool(args.render_curves)
     verbose_ = bool(args.verbose)
 
@@ -269,4 +243,4 @@ if __name__ == "__main__":
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
     nusc_eval = TrackingEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
                              output_dir=output_dir_, verbose=verbose_)
-    nusc_eval.main(plot_examples=plot_examples_, render_curves=render_curves_)
+    nusc_eval.main(render_curves=render_curves_)
