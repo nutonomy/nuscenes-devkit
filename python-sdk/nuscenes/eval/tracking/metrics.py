@@ -103,52 +103,61 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     return lgd
 
 
-def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int) \
-        -> float:
+def motap(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int,
+          num_objects: int) -> float:
     """
     Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
     Note that we use the measured recall, which is not identical to the hypothetical recall of the
     AMOTA/AMOTP thresholds.
+    :param df: Motmetrics dataframe that is required, but not used here.
     :param num_matches: The number of matches, aka. false positives.
     :param num_misses: The number of misses, aka. false negatives.
     :param num_switches: The number of identity switches.
     :param num_false_positives: The number of false positives.
     :param num_objects: The total number of objects of this class in the GT.
-    :param recall: The current recall threshold.
     :return: The MOTAP or nan if there are no GT objects.
     """
     recall = num_matches / num_objects
     nominator = num_misses + num_switches + num_false_positives - (1 - recall) * num_objects
     denominator = recall * num_objects
     if denominator == 0:
-        motap = np.nan
+        motap_val = np.nan
     else:
-        motap = 1 - nominator / denominator
-        motap = np.maximum(0, motap)
+        motap_val = 1 - nominator / denominator
+        motap_val = np.maximum(0, motap_val)
 
     # Consistency checks to make sure that a positive MOTA also leads to a positive MOTAP.
     mota = 1 - (num_misses + num_switches + num_false_positives) / num_objects
     if mota > 0:
-        assert motap > 0
-    return motap
+        assert motap_val > 0
+    return motap_val
 
 
-def mota_custom(df, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int):
+def mota_custom(df: DataFrame, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int) -> float:
     """
     Multiple object tracker accuracy.
+    Based on py-motmetric's mota function.
     Compared to the original MOTA definition, we clip values below 0.
+    :param df: Motmetrics dataframe that is required, but not used here.
+    :param num_misses: The number of misses, aka. false negatives.
+    :param num_switches: The number of identity switches.
+    :param num_false_positives: The number of false positives.
+    :param num_objects: The total number of objects of this class in the GT.
+    :return: The MOTA or 0 if below 0.
     """
     mota = 1. - (num_misses + num_switches + num_false_positives) / num_objects
     mota = np.maximum(0, mota)
     return mota
 
 
-def motp_custom(df, num_detections):
+def motp_custom(df: DataFrame, num_detections: float) -> float:
     """
     Multiple object tracker precision.
-    Note: This function cannot have type hints as it breaks the introspection of motmetrics.
+    Based on py-motmetric's motp function.
+    Additionally we check whether there are any detections.
     :param df: Motmetrics dataframe that is required, but not used here.
     :param num_detections: The number of detections.
+    :return: The MOTP or 0 if there are no detections.
     """
     # Note that the default motmetrics function throws a warning when num_detections == 0.
     if num_detections == 0:
@@ -156,13 +165,36 @@ def motp_custom(df, num_detections):
     return df.noraw['D'].sum() / num_detections
 
 
-def faf_custom(df, num_false_positives, num_frames):
+def faf(df: DataFrame, num_false_positives: float, num_frames: float) -> float:
     """
-    The average number of false alarms per frame
-    Note: This function cannot have type hints as it breaks the introspection of motmetrics.
+    The average number of false alarms per frame.
     :param df: Motmetrics dataframe that is required, but not used here.
     :param num_false_positives: The number of false positives.
     :param num_frames: The number of frames.
     :return: Average FAF.
     """
     return num_false_positives / num_frames * 100
+
+
+def num_fragmentations_custom(df: DataFrame, obj_frequencies: DataFrame) -> float:
+    """
+    Total number of switches from tracked to not tracked.
+    Based on py-motmetric's num_fragmentations function.
+    :param df: Motmetrics dataframe that is required, but not used here.
+    :param obj_frequencies: Stores the GT tracking_ids and their frequencies.
+    :return: The number of fragmentations.
+    """
+    fra = 0
+    for o in obj_frequencies.index:
+        # Find first and last time object was not missed (track span). Then count
+        # the number switches from NOT MISS to MISS state.
+        dfo = df.noraw[df.noraw.OId == o]
+        notmiss = dfo[dfo.Type != 'MISS']
+        if len(notmiss) == 0:
+            continue
+        first = notmiss.index[0]
+        last = notmiss.index[-1]
+        diffs = dfo.loc[first:last].Type.apply(lambda x: 1 if x == 'MISS' else 0).diff()
+        fra += diffs[diffs == 1].count()
+
+    return fra

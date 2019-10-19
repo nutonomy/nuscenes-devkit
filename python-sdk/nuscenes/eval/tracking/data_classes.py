@@ -22,7 +22,8 @@ class TrackingConfig:
                  min_recall: float,
                  min_precision: float,
                  max_boxes_per_sample: float,
-                 avg_metric_worst: Dict[str, float]):
+                 avg_metric_worst: Dict[str, float],
+                 num_thresholds: int):
 
         assert set(class_range.keys()) == set(TRACKING_NAMES), "Class count mismatch."
         assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
@@ -35,6 +36,9 @@ class TrackingConfig:
         self.min_precision = min_precision
         self.max_boxes_per_sample = max_boxes_per_sample
         self.avg_metric_worst = avg_metric_worst
+        self.num_thresholds = num_thresholds
+
+        TrackingMetricData.set_nelem(num_thresholds)
 
         self.class_names = sorted(self.class_range.keys())
 
@@ -54,7 +58,8 @@ class TrackingConfig:
             'min_recall': self.min_recall,
             'min_precision': self.min_precision,
             'max_boxes_per_sample': self.max_boxes_per_sample,
-            'avg_metric_worst': self.avg_metric_worst
+            'avg_metric_worst': self.avg_metric_worst,
+            'num_thresholds': self.num_thresholds
         }
 
     @classmethod
@@ -67,7 +72,8 @@ class TrackingConfig:
                    content['min_recall'],
                    content['min_precision'],
                    content['max_boxes_per_sample'],
-                   content['avg_metric_worst'])
+                   content['avg_metric_worst'],
+                   content['num_thresholds'])
 
     @property
     def dist_fcn_callable(self):
@@ -81,11 +87,12 @@ class TrackingConfig:
 class TrackingMetricData(MetricData):
     """ This class holds accumulated and interpolated data required to calculate the tracking metrics. """
 
-    nelem = 10
+    nelem = None
     metrics = [m for m in list(set(TRACKING_METRICS) - set(AMOT_METRICS))]
 
     def __init__(self):
         # Set attributes explicitly to help IDEs figure out what is going on.
+        assert TrackingMetricData.nelem is not None
         init = np.full(TrackingMetricData.nelem, np.nan)
         self.confidence = init
         self.recall_hypo = init
@@ -148,6 +155,10 @@ class TrackingMetricData(MetricData):
         for metric_name in ['confidence', 'recall_hypo'] + TrackingMetricData.metrics:
             ret_dict[metric_name] = self.get_metric(metric_name).tolist()
         return ret_dict
+
+    @classmethod
+    def set_nelem(cls, nelem: int) -> None:
+        cls.nelem = nelem
 
     @classmethod
     def deserialize(cls, content: dict):

@@ -17,5 +17,6 @@
   "avg_metric_worst": {
     "amota": 0.0,
     "amotp": 2.0
-  }
+  },
+  "num_thresholds": 10
 }

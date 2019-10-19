@@ -62,7 +62,7 @@ class TrackingEvaluation(object):
 
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
-            return 'threshold_%.4f' % _threshold
+            return 'thr_%.4f' % _threshold
         self.name_gen = name_gen
 
         # Check that metric definitions are consistent.
@@ -154,7 +154,7 @@ class TrackingEvaluation(object):
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
-        for scene_id in tqdm.tqdm(self.tracks_gt.keys(), disable=not self.verbose):
+        for scene_id in tqdm.tqdm(self.tracks_gt.keys(), disable=not self.verbose, leave=False):
 
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]

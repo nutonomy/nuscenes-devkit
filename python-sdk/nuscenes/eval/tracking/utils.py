@@ -8,8 +8,8 @@ import motmetrics
 from motmetrics.metrics import MetricsHost
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
-from nuscenes.eval.tracking.metrics import motap, mota_custom, motp_custom, faf_custom, track_initialization_duration, \
-    longest_gap_duration
+from nuscenes.eval.tracking.metrics import motap, mota_custom, motp_custom, faf, track_initialization_duration, \
+    longest_gap_duration, num_fragmentations_custom
 
 
 def category_to_tracking_name(category_name: str) -> Optional[str]:
@@ -48,13 +48,13 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
     # Print per-class metrics.
     metric_names = metrics.label_metrics.keys()
     print('\nPer-class results:')
-    print('\t', end='')
+    print('\t\t', end='')
     print('\t'.join([m.upper() for m in metric_names]))
 
     class_names = metrics.class_names
     max_name_length = 7
     for class_name in class_names:
-        print_class_name = class_name[:max_name_length].ljust(max_name_length)
+        print_class_name = class_name[:max_name_length].ljust(max_name_length + 1)
         print('%s' % print_class_name, end='')
 
         for metric_name in metric_names:
@@ -101,7 +101,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
 
     # Print.
     print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
-          % ('\t\t', 'MOTA', 'MOTP', 'Recall', 'Frames',
+          % ('\t', 'MOTA', 'MOTP', 'Recall', 'Frames',
              'Gt', 'Gt-Mtch', 'Gt-Miss', 'Gt-IDS',
              'Pred', 'Pred-TP', 'Pred-FP', 'Pred-IDS',))
     print('%s\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
@@ -124,7 +124,7 @@ def create_motmetrics() -> MetricsHost:
     # Create new metrics host object.
     mh = MetricsHost()
 
-    # Register essential metrics.
+    # Register standard metrics.
     fields = [
         'num_frames', 'obj_frequencies', 'num_matches', 'num_switches', 'num_false_positives', 'num_misses',
         'num_detections', 'num_objects', 'num_predictions', 'mostly_tracked', 'mostly_lost', 'num_fragmentations',
@@ -134,16 +134,17 @@ def create_motmetrics() -> MetricsHost:
         mh.register(getattr(motmetrics.metrics, field), formatter='{:d}'.format)
 
     # Register custom metrics.
-    mh.register(motap,
-                ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+    # Specify all inputs to avoid errors incompatibility between type hints and py-motmetric's introspection.
+    mh.register(motap, ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
                 formatter='{:.2%}'.format, name='motap')
-    mh.register(mota_custom,
-                ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+    mh.register(mota_custom, ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
                 formatter='{:.2%}'.format, name='mota_custom')
-    mh.register(motp_custom,
+    mh.register(motp_custom, ['num_detections'],
                 formatter='{:.2%}'.format, name='motp_custom')
-    mh.register(faf_custom,
-                formatter='{:.2%}'.format, name='faf_custom')
+    mh.register(num_fragmentations_custom, ['obj_frequencies'],
+                formatter='{:.2%}'.format, name='num_fragmentations_custom')
+    mh.register(faf, ['num_false_positives', 'num_frames'],
+                formatter='{:.2%}'.format, name='faf')
     mh.register(track_initialization_duration, ['obj_frequencies'],
                 formatter='{:.2%}'.format, name='tid')
     mh.register(longest_gap_duration, ['obj_frequencies'],

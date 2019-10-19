@@ -177,6 +177,8 @@ class TestMain(unittest.TestCase):
         if eval_set == 'mini_val':
             self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19781953149674467)
             self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3272223679357442)
+        else:
+            print('Skipping checks due to choice of custom eval_set!')
 
     def test_delta_gt(self, eval_set: str = 'mini_val'):
         """
@@ -192,19 +194,22 @@ class TestMain(unittest.TestCase):
         # Compare score to known solution. Do not check:
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
-        self.assertAlmostEqual(metrics.compute_metric('motap'), 1.0)
-        self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 1.0)
-        self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0, delta=1e-5)
-        self.assertAlmostEqual(metrics.compute_metric('faf'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('ml'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('fp'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('fn'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('ids'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('frag'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('tid'), 0.0)
-        self.assertAlmostEqual(metrics.compute_metric('lgd'), 0.0)
+        if eval_set == 'mini_val':
+            self.assertAlmostEqual(metrics.compute_metric('motap'), 1.0)
+            self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
+            self.assertAlmostEqual(metrics.compute_metric('mota'), 1.0)
+            self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics.compute_metric('faf'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('ml'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('fp'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('fn'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('ids'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('frag'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('tid'), 0.0)
+            self.assertAlmostEqual(metrics.compute_metric('lgd'), 0.0)
+        else:
+            print('Skipping checks due to choice of custom eval_set!')
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock(eval_set='mini_train')  # TODO: (eval_set='mini_train')
+    TestMain().test_delta_gt(eval_set='mini_train')

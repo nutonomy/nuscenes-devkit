@@ -24,7 +24,10 @@ def summary_plot(md_list: TrackingMetricDataList,
     :param ncols: How many columns the resulting plot should have.
     :param savepath: If given, saves the the rendering here instead of displaying.
     """
+    # Select metrics and setup plot.
     rel_metrics = LEGACY_METRICS
+    rel_metrics.insert(2, 'motap')
+    rel_metrics.insert(3, 'recall')
     n_metrics = len(rel_metrics)
     nrows = int(np.ceil(n_metrics / ncols))
     _, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(7.5 * ncols, 5 * nrows))
@@ -35,6 +38,7 @@ def summary_plot(md_list: TrackingMetricDataList,
         col = np.mod(ind, ncols)
         recall_metric_curve(md_list, metric_name, min_recall, ax=axes[row, col])
 
+    # Set layout with little white space and save to disk.
     plt.tight_layout()
     if savepath is not None:
         plt.savefig(savepath)
@@ -80,9 +84,12 @@ def recall_metric_curve(md_list: TrackingMetricDataList,
     if metric_name in ['mt', 'ml', 'faf', 'tp', 'fp', 'fn', 'ids', 'frag']:
         ax.set_yscale('symlog')
 
-    # Some metrics have an upper bound of 1.
     if metric_name in ['amota', 'motap', 'recall', 'mota']:
+        # Some metrics have an upper bound of 1.
         ax.set_ylim(0, 1)
+    elif metric_name != 'motp':
+        # For all other metrics except MOTP we set a lower bound of 0.
+        ax.set_ylim(bottom=0)
 
     ax.legend(loc='upper right', borderaxespad=0)
     plt.tight_layout()

@@ -19,7 +19,7 @@ PRETTY_TRACKING_NAMES = {
 }
 
 TRACKING_COLORS = {
-    'bicycle': 'C7',
+    'bicycle': 'C9',  # Differs from detection.
     'bus': 'C2',
     'car': 'C0',
     'motorcycle': 'C6',
@@ -43,13 +43,13 @@ MOT_METRIC_MAP = {  # Mapping from motmetrics names to metric names used here.
     'motap': 'motap',  # Only used in AMOTA.
     'mota_custom': 'mota',  # Traditional MOTA.
     'motp_custom': 'motp',  # Traditional MOTP.
-    'faf_custom': 'faf',
+    'faf': 'faf',
     'mostly_tracked': 'mt',
     'mostly_lost': 'ml',
     'num_false_positives': 'fp',
     'num_misses': 'fn',
     'num_switches': 'ids',
-    'num_fragmentations': 'frag',
+    'num_fragmentations_custom': 'frag',
     'recall': 'recall',
     'tid': 'tid',
     'lgd': 'lgd'
