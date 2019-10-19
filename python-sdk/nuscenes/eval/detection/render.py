@@ -154,7 +154,17 @@ def class_pr_curve(md_list: DetectionMetricDataList,
                    min_precision: float,
                    min_recall: float,
                    savepath: str = None,
-                   ax=None):
+                   ax=None) -> None:
+    """
+    Plot a precision recall curve for the specified class.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param detection_name: The detection class.
+    :param min_precision:
+    :param min_recall: Minimum recall value.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    :param ax: Axes onto which to render.
+    """
     # Prepare axis.
     if ax is None:
         ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Precision', xlim=1,
@@ -181,7 +191,17 @@ def class_tp_curve(md_list: DetectionMetricDataList,
                    min_recall: float,
                    dist_th_tp: float,
                    savepath: str = None,
-                   ax=None):
+                   ax=None) -> None:
+    """
+    Plot the true positive curve for the specified class.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param detection_name:
+    :param min_recall: Minimum recall value.
+    :param dist_th_tp: The distance threshold used to determine matches.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    :param ax: Axes onto which to render.
+    """
     # Get metric data for given detection class with tp distance threshold.
     md = md_list[(detection_name, dist_th_tp)]
     min_recall_ind = round(100 * min_recall)
@@ -230,6 +250,15 @@ def dist_pr_curve(md_list: DetectionMetricDataList,
                   min_precision: float,
                   min_recall: float,
                   savepath: str = None) -> None:
+    """
+    Plot the PR curves for different distance thresholds.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param dist_th: Distance threshold for matching.
+    :param min_precision: Minimum precision value.
+    :param min_recall: Minimum recall value.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    """
     # Prepare axis.
     fig, (ax, lax) = plt.subplots(ncols=2, gridspec_kw={"width_ratios": [4, 1]},
                                   figsize=(7.5, 5))
@@ -258,7 +287,15 @@ def summary_plot(md_list: DetectionMetricDataList,
                  min_recall: float,
                  dist_th_tp: float,
                  savepath: str = None) -> None:
-
+    """
+    Creates a summary plot with PR and TP curves for each class.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param min_precision: Minimum precision value.
+    :param min_recall: Minimum recall value.
+    :param dist_th_tp: The distance threshold used to determine matches.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    """
     n_classes = len(DETECTION_NAMES)
     _, axes = plt.subplots(nrows=n_classes, ncols=2, figsize=(15, 5 * n_classes))
     for ind, detection_name in enumerate(DETECTION_NAMES):
@@ -289,7 +326,6 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     :param metrics_path: path to a serialized DetectionMetrics file.
     :param output_path: path to the output file.
     """
-
     with open(metrics_path, 'r') as f:
         metrics = json.load(f)
 

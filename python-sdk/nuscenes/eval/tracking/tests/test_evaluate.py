@@ -153,8 +153,8 @@ class TestMain(unittest.TestCase):
         metrics = nusc_eval.main(render_curves=True)  # TODO: Change to false
 
         # 1. Score = TODO.
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.20346253527374067)
-        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2884866130831902)
+        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.17467138334859653)
+        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.257798952863419)
 
     def test_delta_gt(self):
         """

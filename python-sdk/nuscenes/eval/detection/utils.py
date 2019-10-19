@@ -37,7 +37,7 @@ def category_to_detection_name(category_name: str) -> Optional[str]:
 def detection_name_to_rel_attributes(detection_name: str) -> List[str]:
     """
     Returns a list of relevant attributes for a given detection class.
-    :param detection_name: The detection classs.
+    :param detection_name: The detection class.
     :return: List of relevant attributes.
     """
     if detection_name in ['pedestrian']:

@@ -5,7 +5,7 @@ import argparse
 import json
 import os
 import time
-from typing import Dict, Any, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -18,7 +18,7 @@ from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.loaders import create_tracks
 from nuscenes.eval.tracking.utils import print_final_metrics
 from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP, LEGACY_METRICS
-from nuscenes.eval.tracking.render import recall_metric_curve
+from nuscenes.eval.tracking.render import recall_metric_curve, summary_plot
 
 
 class TrackingEval:
@@ -172,9 +172,12 @@ class TrackingEval:
         def savepath(name):
             return os.path.join(self.plot_dir, name + '.pdf')
 
+        # Plot a summary.
+        summary_plot(md_list, min_recall=self.cfg.min_recall, savepath=savepath('summary'))
+
         # For each metric, plot all the classes in one diagram.
         for metric_name in LEGACY_METRICS:
-            recall_metric_curve(md_list, metrics, metric_name, self.cfg.min_precision,
+            recall_metric_curve(md_list, metric_name,
                                 self.cfg.min_recall, savepath=savepath('%s' % metric_name))
 
     def main(self, render_curves: bool = True) -> TrackingMetrics:
