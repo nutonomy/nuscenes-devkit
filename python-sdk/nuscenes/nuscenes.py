@@ -777,37 +777,38 @@ class NuScenesExplorer:
 
         if sensor_modality in ['lidar', 'radar']:
             sample_rec = self.nusc.get('sample', sd_record['sample_token'])
-            lidar_token = sample_rec['data']['LIDAR_TOP']
             chan = sd_record['channel']
             ref_chan = 'LIDAR_TOP'
+            ref_sd_token = sample_rec['data'][ref_chan]
+            ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
                 # Get aggregated lidar point cloud in lidar frame.
                 pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+                velocities = None
             else:
-                # Get aggregated radar point cloud in lidar frame.
-                # The point cloud is transformed to the lidar frame for visualization purposes.
+                # Get aggregated radar point cloud in reference frame.
+                # The point cloud is transformed to the reference frame for visualization purposes.
                 pc, times = RadarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
 
                 # Transform radar velocities (x is front, y is left), as these are not transformed when loading the
                 # point cloud.
                 radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
-                lidar_sd_record = self.nusc.get('sample_data', lidar_token)
-                lidar_cs_record = self.nusc.get('calibrated_sensor', lidar_sd_record['calibrated_sensor_token'])
+                ref_cs_record = self.nusc.get('calibrated_sensor', ref_sd_record['calibrated_sensor_token'])
                 velocities = pc.points[8:10, :]  # Compensated velocity
                 velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
                 velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
-                velocities = np.dot(Quaternion(lidar_cs_record['rotation']).rotation_matrix.T, velocities)
+                velocities = np.dot(Quaternion(ref_cs_record['rotation']).rotation_matrix.T, velocities)
                 velocities[2, :] = np.zeros(pc.points.shape[1])
 
-            # By default we render the sample_data top down in the lidar frame.
-            # This is slightly inaccurate when rendering the map as the lidar frame may not be perfectly upright.
+            # By default we render the sample_data top down in the sensor frame.
+            # This is slightly inaccurate when rendering the map as the sensor frame may not be perfectly upright.
             # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
             if use_flat_vehicle_coordinates:
-                # Compute transformation matrices for lidar point cloud.
-                cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
-                pose_record = self.nusc.get('ego_pose', sd_record['ego_pose_token'])
-                lid_to_ego = transform_matrix(translation=cs_record['translation'],
+                # Retrieve transformation matrices for reference point cloud.
+                cs_record = self.nusc.get('calibrated_sensor', ref_sd_record['calibrated_sensor_token'])
+                pose_record = self.nusc.get('ego_pose', ref_sd_record['ego_pose_token'])
+                ref_to_ego = transform_matrix(translation=cs_record['translation'],
                                               rotation=Quaternion(cs_record["rotation"]))
 
                 # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
@@ -817,7 +818,7 @@ class NuScenesExplorer:
                     Quaternion(pose_record['rotation']).inverse.rotation_matrix)
                 vehicle_flat_from_vehicle = np.eye(4)
                 vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
-                viewpoint = np.dot(vehicle_flat_from_vehicle, lid_to_ego)
+                viewpoint = np.dot(vehicle_flat_from_vehicle, ref_to_ego)
             else:
                 viewpoint = np.eye(4)
 
@@ -853,7 +854,7 @@ class NuScenesExplorer:
             ax.plot(0, 0, 'x', color='red')
 
             # Get boxes in lidar frame.
-            _, boxes, _ = self.nusc.get_sample_data(lidar_token, box_vis_level=box_vis_level,
+            _, boxes, _ = self.nusc.get_sample_data(ref_sd_token, box_vis_level=box_vis_level,
                                                     use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
 
             # Show boxes.
