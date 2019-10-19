@@ -175,12 +175,11 @@ class TrackingEval:
             recall_metric_curve(md_list, metrics, metric_name, self.cfg.min_precision,
                                 self.cfg.min_recall, savepath=savepath('%s' % metric_name))
 
-    def main(self,
-             render_curves: bool = True) -> Dict[str, Any]:
+    def main(self, render_curves: bool = True) -> TrackingMetrics:
         """
         Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
         :param render_curves: Whether to render PR and TP curves to disk.
-        :return: A dict that stores the high-level metrics and meta data.
+        :return: The TrackingMetrics computed during evaluation.
         """
         # Run evaluation.
         metrics, metric_data_list = self.evaluate()
@@ -192,6 +191,8 @@ class TrackingEval:
         metrics_summary['meta'] = self.meta.copy()
         with open(os.path.join(self.output_dir, 'metrics_summary.json'), 'w') as f:
             json.dump(metrics_summary, f, indent=2)
+        with open(os.path.join(self.output_dir, 'metrics_details.json'), 'w') as f:
+            json.dump(metric_data_list.serialize(), f, indent=2)
 
         # Print metrics to stdout.
         print_final_metrics(metrics)
@@ -200,7 +201,7 @@ class TrackingEval:
         if render_curves:
             self.render(metrics, metric_data_list)
 
-        return metrics_summary
+        return metrics
 
 
 if __name__ == "__main__":

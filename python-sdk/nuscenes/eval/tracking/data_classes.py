@@ -111,11 +111,15 @@ class TrackingMetricData(MetricData):
     def __setattr__(self, *args, **kwargs):
         assert len(args) == 2
         name = args[0]
-        value = args[1]
-        super(TrackingMetricData, self).__setattr__(name, value)
-        assert value is None or len(value) == TrackingMetricData.nelem
+        values = np.array(args[1])
+        assert values is None or len(values) == TrackingMetricData.nelem
+        super(TrackingMetricData, self).__setattr__(name, values)
 
-    def get_metric(self, metric_name) -> np.ndarray:
+    def set_metric(self, metric_name: str, values: np.ndarray) -> None:
+        """ Sets the specified metric. """
+        self.__setattr__(metric_name, values)
+
+    def get_metric(self, metric_name: str) -> np.ndarray:
         """ Returns the specified metric. """
         return self.__getattribute__(metric_name)
 
@@ -149,7 +153,7 @@ class TrackingMetricData(MetricData):
         """ Initialize from serialized content. """
         md = cls()
         for metric in ['confidence'] + TrackingMetricData.metrics:
-            md.__setattr__(metric, content[metric])
+            md.set_metric(metric, content[metric])
         return md
 
     @classmethod
@@ -158,7 +162,7 @@ class TrackingMetricData(MetricData):
         md = cls()
         md.confidence = np.zeros(cls.nelem)
         for metric in TrackingMetricData.metrics:
-            md.__setattr__(metric, np.zeros(cls.nelem))
+            md.set_metric(metric, np.zeros(cls.nelem))
         md.recall = np.linspace(0, 1, cls.nelem)
         return md
 
@@ -168,7 +172,7 @@ class TrackingMetricData(MetricData):
         md = cls()
         md.confidence = np.linspace(0, 1, cls.nelem)[::-1]
         for metric in TrackingMetricData.metrics:
-            md.__setattr__(metric, np.random.random(cls.nelem))
+            md.set_metric(metric, np.random.random(cls.nelem))
         md.recall = np.linspace(0, 1, cls.nelem)
         return md
 
@@ -180,18 +184,19 @@ class TrackingMetrics:
 
         self.cfg = cfg
         self.eval_time = None
-        self.label_metrics = defaultdict(lambda: defaultdict(float))
+        self.label_metrics: Dict[str, Dict[str, float]] = {}
         self.class_names = self.cfg.class_names
         self.metric_names = [l for l in TRACKING_METRICS]
 
         # Init every class.
         for metric_name in self.metric_names:
+            self.label_metrics[metric_name] = {}
             for class_name in self.class_names:
                 self.label_metrics[metric_name][class_name] = np.nan
 
     def add_label_metric(self, metric_name: str, tracking_name: str, value: float) -> None:
         assert metric_name in self.label_metrics
-        self.label_metrics[metric_name][tracking_name] = value
+        self.label_metrics[metric_name][tracking_name] = float(value)
 
     def add_runtime(self, eval_time: float) -> None:
         self.eval_time = eval_time
