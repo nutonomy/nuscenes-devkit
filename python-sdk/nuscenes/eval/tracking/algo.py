@@ -17,7 +17,7 @@ import tqdm
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
-from nuscenes.eval.tracking.constants import MOT_METRIC_MAP
+from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
 
 
 class TrackingEvaluation(object):
@@ -28,7 +28,7 @@ class TrackingEvaluation(object):
                  dist_fcn: Callable,
                  dist_th_tp: float,
                  min_recall: float,
-                 num_thresholds: int = 11,
+                 num_thresholds: int,
                  output_dir: str = '.',
                  verbose: bool = True):
         """
@@ -67,6 +67,10 @@ class TrackingEvaluation(object):
         def name_gen(_threshold):
             return 'threshold_%.4f' % _threshold
         self.name_gen = name_gen
+
+        # Check that metric definitions are consistent.
+        for metric_name in MOT_METRIC_MAP.values():
+            assert metric_name == '' or metric_name.upper() in TRACKING_METRICS
 
     def accumulate(self) -> TrackingMetricData:
         """
@@ -117,11 +121,11 @@ class TrackingEvaluation(object):
             print_threshold_metrics(thresh_summary.to_dict())
 
         # Concatenate all metrics. We only do this for more convenient access.
-        unachieved_thresholds = np.sum(np.isnan(thresholds))
-        assert unachieved_thresholds + len(thresh_metrics) == self.num_thresholds
         summary = pandas.concat(thresh_metrics)
 
         # Store all traditional metrics.
+        unachieved_thresholds = np.sum(np.isnan(thresholds))
+        assert unachieved_thresholds + len(thresh_metrics) == self.num_thresholds
         for (mot_name, metric_name) in MOT_METRIC_MAP.items():
             # Skip metrics which we don't output.
             if metric_name == '':

@@ -4,7 +4,7 @@
 TRACKING_NAMES = ['bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer', 'truck']
 
 AMOT_METRICS = ['AMOTA', 'AMOTP']
-INTERNAL_METRICS = ['MOTAP']
+INTERNAL_METRICS = ['MOTAP', 'RECALL']
 LEGACY_METRICS = ['MOTA', 'MOTP', 'FAF', 'MT', 'ML', 'FP', 'FN', 'IDS', 'FRAG', 'TID', 'LGD']
 DETECTION_METRICS = ['mAP', 'trans_err', 'scale_err', 'orient_err', 'vel_err']  # Excludes attr_err.
 TRACKING_METRICS = [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]  # TODO: add *DETECTION_METRICS
@@ -51,6 +51,7 @@ MOT_METRIC_MAP = {  # Mapping from motmetrics names to metric names used here.
     'num_misses': 'fn',
     'num_switches': 'ids',
     'num_fragmentations': 'frag',
+    'recall': 'recall',
     'tid': 'tid',
     'lgd': 'lgd'
 }
