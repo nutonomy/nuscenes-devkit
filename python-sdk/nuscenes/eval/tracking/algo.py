@@ -95,14 +95,15 @@ class TrackingEvaluation(object):
         mh = create_motmetrics()
 
         # Get thresholds.
-        # Note: The recall values are the "desired" recall (10%, 20%, ..).
+        # Note: The recall values are the hypothetical recall (10%, 20%, ..).
         # The actual recall may vary as there is no way to compute it without trying all thresholds.
         thresholds, recalls = self.get_thresholds(gt_count)
         md.confidence = thresholds
+        md.recall_hypo = recalls
         if self.verbose:
             print('Computed thresholds\n')
 
-        for threshold, recall in zip(thresholds, recalls):
+        for threshold in thresholds:
             # If recall threshold is not achieved, we assign the worst possible value in AMOTA and AMOTP.
             if np.isnan(threshold):
                 continue

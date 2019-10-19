@@ -105,9 +105,8 @@ class TestMain(unittest.TestCase):
                 # Therefore we assign the same scores to each box in a track.
                 if ann['instance_token'] not in instance_to_score:
                     instance_to_score[ann['instance_token']] = random.random()
-                tracking_score = instance_to_score[ann['instance_token']] + random.random() * 0.3
-                tracking_score = np.clip(tracking_score, 0, 1)
-                # TODO: Currently the code crashed if we don't have 10 unique scores.
+                tracking_score = instance_to_score[ann['instance_token']]
+                tracking_score = np.clip(tracking_score + random.random() * 0.3, 0, 1)
 
                 if add_errors:
                     translation += 4 * (np.random.rand(3) - 0.5)
@@ -197,4 +196,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_gt()
+    TestMain().test_delta_mock()

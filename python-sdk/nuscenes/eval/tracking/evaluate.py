@@ -125,6 +125,7 @@ class TrackingEval:
             print('Calculating metrics...')
         for class_name in self.cfg.class_names:
             # Find best MOTA to determine threshold to pick for traditional metrics.
+            # If multiple thresholds have the same value, pick the one with the highest recall.
             md = metric_data_list[class_name]
             if np.all(np.isnan(md.mota)):
                 best_thresh_idx = None

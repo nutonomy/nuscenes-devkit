@@ -70,7 +70,7 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
         if metric_name in ['amota', 'amotp', 'motap', 'recall', 'mota', 'motp']:
             print_format = '%.3f'
         elif metric_name in ['faf', 'tid', 'lgd']:
-            print_format = '%.1f'
+            print_format = '%.2f'
         else:
             print_format = '%d'
         print('%s\t%s' % (metric_name.upper(), print_format % val))

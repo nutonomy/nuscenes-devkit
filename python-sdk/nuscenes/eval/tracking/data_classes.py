@@ -88,6 +88,7 @@ class TrackingMetricData(MetricData):
         # Set attributes explicitly to help IDEs figure out what is going on.
         init = np.full(TrackingMetricData.nelem, np.nan)
         self.confidence = init
+        self.recall_hypo = init
         self.recall = init
         self.mota = init
         self.motap = init
@@ -144,7 +145,7 @@ class TrackingMetricData(MetricData):
     def serialize(self):
         """ Serialize instance into json-friendly format. """
         ret_dict = dict()
-        for metric_name in ['confidence'] + TrackingMetricData.metrics:
+        for metric_name in ['confidence', 'recall_hypo'] + TrackingMetricData.metrics:
             ret_dict[metric_name] = self.get_metric(metric_name).tolist()
         return ret_dict
 
@@ -152,7 +153,7 @@ class TrackingMetricData(MetricData):
     def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
         md = cls()
-        for metric in ['confidence'] + TrackingMetricData.metrics:
+        for metric in ['confidence', 'recall_hypo'] + TrackingMetricData.metrics:
             md.set_metric(metric, content[metric])
         return md
 
