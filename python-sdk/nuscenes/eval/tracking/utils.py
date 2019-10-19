@@ -64,9 +64,9 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
         print()
 
     # Print high-level metrics.
-    print('\nPer class-average results:')
+    print('\nAggregated results:')
     for metric_name in metric_names:
-        val = metrics.compute_metric(metric_name, 'avg')
+        val = metrics.compute_metric(metric_name, 'all')
         print_format = '%.3f' if np.isnan(val) or val != int(val) else '%d'
         print('%s\t%s' % (metric_name.upper(), print_format % val))
 
@@ -84,6 +84,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     threshold_str = list(metrics['mota'].keys())[0]
     mota = metrics['mota'][threshold_str]
     motp = metrics['motp_custom'][threshold_str]
+    recall = metrics['recall'][threshold_str]
     num_frames = metrics['num_frames'][threshold_str]
     num_objects = metrics['num_objects'][threshold_str]
     num_predictions = metrics['num_predictions'][threshold_str]
@@ -93,12 +94,12 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     num_matches = metrics['num_matches'][threshold_str]
 
     # Print.
-    print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
-          % ('\t\t', 'MOTA', 'MOTP', 'Frames',
+    print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
+          % ('\t\t', 'MOTA', 'MOTP', 'Recall', 'Frames',
              'Gt', 'Gt-Mtch', 'Gt-Miss', 'Gt-IDS',
              'Pred', 'Pred-TP', 'Pred-FP', 'Pred-IDS',))
-    print('%s\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
-          % (threshold_str, mota, motp, num_frames,
+    print('%s\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
+          % (threshold_str, mota, motp, recall, num_frames,
              num_objects, num_matches, num_misses, num_switches,
              num_predictions, num_matches, num_false_positives, num_switches))
     print()

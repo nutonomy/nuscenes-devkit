@@ -56,32 +56,51 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     for gt_tracking_id in obj_frequencies.index:
         # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest gap.
         dfo = df.noraw[df.noraw.OId == gt_tracking_id]
-        notmiss = dfo[dfo.Type != 'MISS']
+        matched = dfo[dfo.Type != 'MISS']
 
-        if len(notmiss) == 0:
+        if len(matched) == 0:
             # Consider only tracked objects.
-            diff = 0
+            gap = 0
             missed_tracks += 1
         else:
-            # Concat the last timestamp to the tracked ones take the difference to compute the gap.
-            last = dfo.index.get_level_values(0)[-1]
-            sr = notmiss.index.get_level_values(0).to_series()
-            sr.at[last] = last
-            diff = sr.diff().max() - 1
+            # Find the biggest gap. This looks more difficult as some samples may be occluded and therefore don't have
+            # GT. In that case we assume that the gap size did not grow, rather than ending the gap or growing it.
+            gap = 0  # The biggest gap found.
+            cur_gap = 0  # Current gap.
 
-        if np.isnan(diff):
-            diff = 0
+            matches = set(dfo[dfo.Type == 'MATCH'].index.get_level_values(0).values)
+            misses = set(dfo[dfo.Type == 'MISS'].index.get_level_values(0).values)
+            first_index = dfo.index[0][0]
+            last_index = dfo.index[-1][0]
+
+            for i in range(first_index, last_index + 1):
+                # Find biggest gap.
+                if i in misses:
+                    # Gap grows.
+                    cur_gap += 1
+                elif i in matches:
+                    # Reset when matched.
+                    gap = np.maximum(gap, cur_gap)
+                    cur_gap = 0
+                else:
+                    # We have no GT here, so we make no assumptions and don't grow the gap.
+                    pass
+
+            gap = np.maximum(gap, cur_gap)
+            assert gap <= len(misses)
 
         # Multiply number of sample differences with approx. sample period (0.5 sec).
-        assert diff >= 0, 'Time difference should be larger than or equal to zero: %.2f'
-        lgd += diff * 0.5
+        assert gap >= 0, 'Time difference should be larger than or equal to zero: %.2f'
+        lgd += gap * 0.5
 
     matched_tracks = len(obj_frequencies) - missed_tracks
     if matched_tracks == 0:
         # Return nan if there are no matches.
-        return np.nan
+        lgd = np.nan
     else:
-        return lgd / matched_tracks
+        lgd = lgd / matched_tracks
+
+    return lgd
 
 
 def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int)\

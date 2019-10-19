@@ -189,6 +189,7 @@ class TrackingEvaluation(object):
                     distances = sklearn.metrics.pairwise.euclidean_distances(gt_boxes, pred_boxes)
 
                 # Distances that are larger than the threshold won't be associated.
+                assert len(distances) == 0 or not np.all(np.isnan(distances))
                 distances[distances >= self.dist_th_tp] = np.nan
 
                 # Accumulate results.

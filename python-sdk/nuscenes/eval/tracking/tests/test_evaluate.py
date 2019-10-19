@@ -90,7 +90,14 @@ class TestMain(unittest.TestCase):
                 velocity = nusc.box_velocity(ann_token)[:2]
                 tracking_id = random_id(ann['instance_token'], _add_errors=add_errors)
                 tracking_name = random_class(ann['category_name'], _add_errors=add_errors)
+
+                # Skip annotations for classes not part of the detection challenge.
                 if tracking_name is None:
+                    continue
+
+                # Skip annotations with 0 lidar/radar points.
+                num_pts = ann['num_lidar_pts'] + ann['num_radar_pts']
+                if num_pts == 0:
                     continue
 
                 # If we randomly assign a score in [0, 1] to each box and later average over the boxes in the track,
@@ -98,7 +105,8 @@ class TestMain(unittest.TestCase):
                 # Therefore we assign the same scores to each box in a track.
                 if ann['instance_token'] not in instance_to_score:
                     instance_to_score[ann['instance_token']] = random.random()
-                tracking_score = instance_to_score[ann['instance_token']] + random.random() * 0.01  # small perturbation
+                tracking_score = instance_to_score[ann['instance_token']] + random.random() * 0.3
+                tracking_score = np.clip(tracking_score, 0, 1)
                 # TODO: Currently the code crashed if we don't have 10 unique scores.
 
                 if add_errors:
@@ -146,8 +154,8 @@ class TestMain(unittest.TestCase):
         metrics = nusc_eval.main(render_curves=True)  # TODO: Change to false
 
         # 1. Score = TODO.
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.1942032760144814)
-        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2940224375456253)
+        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.20346253527374067)
+        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2884866130831902)
 
     def test_delta_gt(self):
         """
@@ -171,11 +179,22 @@ class TestMain(unittest.TestCase):
                                  verbose=True)
         metrics = nusc_eval.main(render_curves=True)  # TODO: Change to false
 
-        # Compare score to known solution. Know that the result is not perfect despite submitting GT as predictions.
-        # This is because we filter boxes with 0 lidar points ONLY for GT, but not for predictions.
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.7529207190394254)
+        # Compare score to known solution. Do not check:
+        # - MT (hard to figure out here).
+        # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
+        self.assertAlmostEqual(metrics.compute_metric('motap'), 1.0)
+        self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
+        self.assertAlmostEqual(metrics.compute_metric('mota'), 1.0)
         self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0, delta=1e-5)
+        self.assertAlmostEqual(metrics.compute_metric('faf'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('ml'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('fp'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('fn'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('ids'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('frag'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('tid'), 0.0)
+        self.assertAlmostEqual(metrics.compute_metric('lgd'), 0.0)
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock()
+    TestMain().test_delta_gt()

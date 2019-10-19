@@ -201,11 +201,16 @@ class TrackingMetrics:
     def add_runtime(self, eval_time: float) -> None:
         self.eval_time = eval_time
 
-    def compute_metric(self, metric_name: str, class_name: str = 'avg') -> float:
-        if class_name == 'avg':
+    def compute_metric(self, metric_name: str, class_name: str = 'all') -> float:
+        if class_name == 'all':
             data = list(self.label_metrics[metric_name].values())
             if len(data) > 0:
-                return float(np.nanmean(data))  # Nan entries are ignored.
+                # Some metrics need to be summed, not averaged.
+                # Nan entries are ignored.
+                if metric_name in ['mt', 'ml', 'fp', 'fn', 'ids', 'frag']:
+                    return float(np.nansum(data))  # TODO: is nan valid here?
+                else:
+                    return float(np.nanmean(data))
             else:
                 return np.nan
         else:

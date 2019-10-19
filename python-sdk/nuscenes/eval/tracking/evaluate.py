@@ -144,13 +144,14 @@ class TrackingEval:
                 values = np.array(md.get_metric(AVG_METRIC_MAP[metric_name]))
                 assert len(values) == TrackingMetricData.nelem
 
-                # Overwrite any nan value with the worst possible value.
-                values[np.isnan(values)] = self.cfg.avg_metric_worst[metric_name]
-
-                # Clip values.
-                assert np.all(values >= 0)
-
-                value = float(np.nanmean(values))
+                if np.all(np.isnan(values)):
+                    # If no GT/pred exist, set to nan.
+                    value = np.nan
+                else:
+                    # Overwrite any nan value with the worst possible value.
+                    np.all(values[np.logical_not(np.isnan(values))] >= 0)
+                    values[np.isnan(values)] = self.cfg.avg_metric_worst[metric_name]
+                    value = float(np.nanmean(values))
                 metrics.add_label_metric(metric_name, class_name, value)
 
         # Compute evaluation time.
