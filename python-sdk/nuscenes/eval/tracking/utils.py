@@ -67,7 +67,12 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
     print('\nAggregated results:')
     for metric_name in metric_names:
         val = metrics.compute_metric(metric_name, 'all')
-        print_format = '%.3f' if np.isnan(val) or val != int(val) else '%d'
+        if metric_name in ['amota', 'amotp', 'motap', 'recall', 'mota', 'motp']:
+            print_format = '%.3f'
+        elif metric_name in ['faf', 'tid', 'lgd']:
+            print_format = '%.1f'
+        else:
+            print_format = '%d'
         print('%s\t%s' % (metric_name.upper(), print_format % val))
 
     print('Eval time: %.1fs' % metrics.eval_time)
@@ -79,7 +84,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     Print only a subset of the metrics for the current class and threshold.
     :param metrics: A dictionary representation of the metrics.
     """
-    # Retrieve metrics.
+    # Specify threshold name and metrics.
     assert len(metrics['mota'].keys()) == 1
     threshold_str = list(metrics['mota'].keys())[0]
     mota = metrics['mota'][threshold_str]
@@ -115,13 +120,15 @@ def create_motmetrics() -> MetricsHost:
     It does not populate the global metrics which are more time consuming.
     :return The initialized MetricsHost object with default MOT metrics.
     """
+    # Create new metrics host object.
     mh = MetricsHost()
+
+    # Register essential metrics.
     fields = [
         'num_frames', 'obj_frequencies', 'num_matches', 'num_switches', 'num_false_positives', 'num_misses',
         'num_detections', 'num_objects', 'num_predictions', 'mostly_tracked', 'mostly_lost', 'num_fragmentations',
         'motp', 'mota', 'precision', 'recall', 'track_ratios'
     ]
-
     for field in fields:
         mh.register(getattr(motmetrics.metrics, field), formatter='{:d}'.format)
 
