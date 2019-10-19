@@ -10,8 +10,9 @@ from nuscenes import NuScenes
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
     PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionMetricDataList
 from nuscenes.eval.common.utils import boxes_to_sensor
+from nuscenes.eval.common.render import setup_axis
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionMetricDataList
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
 
@@ -97,55 +98,6 @@ def visualize_sample(nusc: NuScenes,
         plt.close()
     else:
         plt.show()
-
-
-def setup_axis(xlabel: str = None,
-               ylabel: str = None,
-               xlim: int = None,
-               ylim: int = None,
-               title: str = None,
-               min_precision: float = None,
-               min_recall: float = None,
-               ax=None):
-    """
-    Helper method that sets up the axis for a plot.
-    :param xlabel: x label text.
-    :param ylabel: y label text.
-    :param xlim: Upper limit for x axis.
-    :param ylim: Upper limit for y axis.
-    :param title: Axis title.
-    :param min_precision: Visualize minimum precision as horizontal line.
-    :param min_recall: Visualize minimum recall as vertical line.
-    :param ax: (optional) an existing axis to be modified.
-    :return: The axes object.
-    """
-    if ax is None:
-        ax = plt.subplot()
-
-    ax.get_xaxis().tick_bottom()
-    ax.tick_params(labelsize=16)
-    ax.get_yaxis().tick_left()
-    ax.spines["top"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-
-    if title is not None:
-        ax.set_title(title, size=24)
-    if xlabel is not None:
-        ax.set_xlabel(xlabel, size=16)
-    if ylabel is not None:
-        ax.set_ylabel(ylabel, size=16)
-    if xlim is not None:
-        ax.set_xlim(0, xlim)
-    if ylim is not None:
-        ax.set_ylim(0, ylim)
-    if min_recall is not None:
-        ax.axvline(x=min_recall, linestyle='--', color=(0, 0, 0, 0.3))
-    if min_precision is not None:
-        ax.axhline(y=min_precision, linestyle='--', color=(0, 0, 0, 0.3))
-
-    return ax
 
 
 def class_pr_curve(md_list: DetectionMetricDataList,

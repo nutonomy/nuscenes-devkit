@@ -209,7 +209,7 @@ class TrackingMetrics:
                 # Some metrics need to be summed, not averaged.
                 # Nan entries are ignored.
                 if metric_name in ['mt', 'ml', 'fp', 'fn', 'ids', 'frag']:
-                    return float(np.nansum(data))  # TODO: is nan valid here?
+                    return float(np.nansum(data))
                 else:
                     return float(np.nanmean(data))
             else:

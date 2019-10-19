@@ -1,10 +1,10 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar, 2019.
+# Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nuscenes.eval.detection.render import setup_axis  # TODO: move to common
+from nuscenes.eval.common.render import setup_axis
 from nuscenes.eval.tracking.data_classes import TrackingMetricDataList
 from nuscenes.eval.tracking.constants import TRACKING_NAMES, TRACKING_COLORS, PRETTY_TRACKING_NAMES, LEGACY_METRICS
 

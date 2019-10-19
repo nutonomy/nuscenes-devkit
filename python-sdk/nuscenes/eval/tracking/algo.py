@@ -136,7 +136,6 @@ class TrackingEvaluation(object):
             values = [np.nan] * unachieved_thresholds  # Pad values with nans for unachieved recall thresholds.
             values.extend(summary.get(mot_name).values)
             md.set_metric(metric_name, values)
-            # TODO: check that nans make sense.
 
         return md
 
