@@ -2,19 +2,22 @@
 # Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
 
 import json
+from typing import Any
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from nuscenes import NuScenes
-from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
-    PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.utils import boxes_to_sensor
 from nuscenes.eval.common.render import setup_axis
 from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionMetricDataList
+from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
+    PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
+
+Axis = Any
 
 
 def visualize_sample(nusc: NuScenes,
@@ -106,7 +109,7 @@ def class_pr_curve(md_list: DetectionMetricDataList,
                    min_precision: float,
                    min_recall: float,
                    savepath: str = None,
-                   ax=None) -> None:
+                   ax: Axis = None) -> None:
     """
     Plot a precision recall curve for the specified class.
     :param md_list: DetectionMetricDataList instance.
@@ -143,7 +146,7 @@ def class_tp_curve(md_list: DetectionMetricDataList,
                    min_recall: float,
                    dist_th_tp: float,
                    savepath: str = None,
-                   ax=None) -> None:
+                   ax: Axis = None) -> None:
     """
     Plot the true positive curve for the specified class.
     :param md_list: DetectionMetricDataList instance.

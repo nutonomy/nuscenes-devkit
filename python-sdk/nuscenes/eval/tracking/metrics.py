@@ -115,7 +115,7 @@ def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_po
     :param num_false_positives: The number of false positives.
     :param num_objects: The total number of objects of this class in the GT.
     :param recall: The current recall threshold.
-    :return: The MOTA'.
+    :return: The MOTAP or nan if there are no GT objects.
     """
     recall = num_matches / num_objects
     nominator = num_misses + num_switches + num_false_positives - (1 - recall) * num_objects

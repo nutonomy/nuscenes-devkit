@@ -48,13 +48,14 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
     # Print per-class metrics.
     metric_names = metrics.label_metrics.keys()
     print('\nPer-class results:')
-    print('\t\t', end='')
+    print('\t', end='')
     print('\t'.join([m.upper() for m in metric_names]))
 
     class_names = metrics.class_names
-    max_name_length = np.max([len(c) for c in class_names])
+    max_name_length = 7
     for class_name in class_names:
-        print('%s' % class_name.ljust(max_name_length), end='')
+        print_class_name = class_name[:max_name_length].ljust(max_name_length)
+        print('%s' % print_class_name, end='')
 
         for metric_name in metric_names:
             val = metrics.label_metrics[metric_name][class_name]

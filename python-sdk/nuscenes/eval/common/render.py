@@ -1,7 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
 
+from typing import Any
+
 import matplotlib.pyplot as plt
+
+Axis = Any
 
 
 def setup_axis(xlabel: str = None,
@@ -11,7 +15,8 @@ def setup_axis(xlabel: str = None,
                title: str = None,
                min_precision: float = None,
                min_recall: float = None,
-               ax=None):
+               ax: Axis = None,
+               show_spines: str = 'none'):
     """
     Helper method that sets up the axis for a plot.
     :param xlabel: x label text.
@@ -22,6 +27,7 @@ def setup_axis(xlabel: str = None,
     :param min_precision: Visualize minimum precision as horizontal line.
     :param min_recall: Visualize minimum recall as vertical line.
     :param ax: (optional) an existing axis to be modified.
+    :param show_spines: Whether to show axes spines, set to 'none' by default.
     :return: The axes object.
     """
     if ax is None:
@@ -30,10 +36,19 @@ def setup_axis(xlabel: str = None,
     ax.get_xaxis().tick_bottom()
     ax.tick_params(labelsize=16)
     ax.get_yaxis().tick_left()
-    ax.spines["top"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
+
+    # Hide the selected axes spines.
+    if show_spines in ['bottomleft', 'none']:
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        if show_spines == 'none':
+            ax.spines['bottom'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+    elif show_spines in ['all']:
+        pass
+    else:
+        raise NotImplementedError
 
     if title is not None:
         ax.set_title(title, size=24)

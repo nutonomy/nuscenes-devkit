@@ -132,10 +132,11 @@ class TrackingEvaluation(object):
                 continue
 
             # Retrieve and store values for current metric.
-            assert np.all(summary.get(mot_name).values >= 0)
-            values = [np.nan] * unachieved_thresholds  # Pad values with nans for unachieved recall thresholds.
-            values.extend(summary.get(mot_name).values)
-            md.set_metric(metric_name, values)
+            values = summary.get(mot_name).values
+            assert np.all(values[np.logical_not(np.isnan(values))] >= 0)
+            all_values = [np.nan] * unachieved_thresholds  # Pad values with nans for unachieved recall thresholds.
+            all_values.extend(values)
+            md.set_metric(metric_name, all_values)
 
         return md
 

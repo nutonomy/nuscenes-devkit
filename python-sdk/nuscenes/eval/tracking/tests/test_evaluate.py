@@ -13,11 +13,12 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
+from nuscenes.utils.splits import create_splits_scenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.evaluate import TrackingEval
-from nuscenes.eval.tracking.utils import category_to_tracking_name, print_final_metrics
+from nuscenes.eval.tracking.utils import category_to_tracking_name
 from nuscenes.eval.tracking.constants import TRACKING_NAMES
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.eval.tracking.data_classes import TrackingMetrics
 
 
 class TestMain(unittest.TestCase):
@@ -131,55 +132,65 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
-    def test_delta_mock(self):
+    def basic_test(self, eval_set: str = 'mini_val', add_errors: bool = False) -> TrackingMetrics:
         """
-        This tests runs the evaluation for an arbitrary random set of predictions.
-        This score is then captured in this very test such that if we change the eval code,
-        this test will trigger if the results changed.
+        Run the evaluation with fixed randomness on the specified subset, with or without introducing errors in the
+        submission.
+        :param eval_set: Which split to evaluate on.
+        :param add_errors: Whether to use GT as submission or introduce additional errors.
+        :return: The metrics returned by the evaluation.
         """
         random.seed(42)
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
 
-        nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
+        if eval_set.startswith('mini'):
+            version = 'v1.0-mini'
+        elif eval_set == 'test':
+            version = 'v1.0-test'
+        else:
+            version = 'v1.0-trainval'
+        nusc = NuScenes(version=version, dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            mock = self._mock_submission(nusc, 'mini_val', add_errors=True)
+            mock = self._mock_submission(nusc, eval_set, add_errors=add_errors)
             json.dump(mock, f, indent=2)
 
         cfg = config_factory('tracking_nips_2019')
-        nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
+        nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
                                  verbose=True)
         metrics = nusc_eval.main(render_curves=True)  # TODO: Change to false
 
-        # 1. Score = TODO.
-        self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19781953149674467)
-        self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3272223679357442)
+        return metrics
 
-    def test_delta_gt(self):
+    def test_delta_mock(self, eval_set: str = 'mini_val'):
+        """
+        This tests runs the evaluation for an arbitrary random set of predictions.
+        This score is then captured in this very test such that if we change the eval code,
+        this test will trigger if the results changed.
+        :param eval_set: Which set to evaluate on.
+        """
+        # Run the evaluation with errors.
+        metrics = self.basic_test(eval_set, add_errors=True)
+
+        # 1. Score = TODO.
+        if eval_set == 'mini_val':
+            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19781953149674467)
+            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3272223679357442)
+
+    def test_delta_gt(self, eval_set: str = 'mini_val'):
         """
         This tests runs the evaluation with the ground truth used as predictions.
         This should result in a perfect score for every metric.
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
+        :param eval_set: Which set to evaluate on.
         """
-        random.seed(42)
-        np.random.seed(42)
-        assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
-
-        nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
-
-        with open(self.res_mockup, 'w') as f:
-            mock = self._mock_submission(nusc, 'mini_val', add_errors=False)
-            json.dump(mock, f, indent=2)
-
-        cfg = config_factory('tracking_nips_2019')
-        nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
-                                 verbose=True)
-        metrics = nusc_eval.main(render_curves=True)  # TODO: Change to false
+        # Run the evaluation without errors.
+        metrics = self.basic_test(eval_set, add_errors=False)
 
         # Compare score to known solution. Do not check:
-        # - MT (hard to figure out here).
+        # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
         self.assertAlmostEqual(metrics.compute_metric('motap'), 1.0)
         self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
@@ -196,4 +207,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock()
+    TestMain().test_delta_mock(eval_set='mini_train')  # TODO: (eval_set='mini_train')
