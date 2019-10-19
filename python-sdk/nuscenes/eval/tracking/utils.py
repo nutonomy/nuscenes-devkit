@@ -8,7 +8,7 @@ import motmetrics
 from motmetrics.metrics import MetricsHost
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
-from nuscenes.eval.tracking.metrics import motap, motp_custom, faf_custom, track_initialization_duration, \
+from nuscenes.eval.tracking.metrics import motap, mota_custom, motp_custom, faf_custom, track_initialization_duration, \
     longest_gap_duration
 
 
@@ -85,9 +85,9 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     :param metrics: A dictionary representation of the metrics.
     """
     # Specify threshold name and metrics.
-    assert len(metrics['mota'].keys()) == 1
-    threshold_str = list(metrics['mota'].keys())[0]
-    mota = metrics['mota'][threshold_str]
+    assert len(metrics['mota_custom'].keys()) == 1
+    threshold_str = list(metrics['mota_custom'].keys())[0]
+    mota = metrics['mota_custom'][threshold_str]
     motp = metrics['motp_custom'][threshold_str]
     recall = metrics['recall'][threshold_str]
     num_frames = metrics['num_frames'][threshold_str]
@@ -136,6 +136,9 @@ def create_motmetrics() -> MetricsHost:
     mh.register(motap,
                 ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
                 formatter='{:.2%}'.format, name='motap')
+    mh.register(mota_custom,
+                ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+                formatter='{:.2%}'.format, name='mota_custom')
     mh.register(motp_custom,
                 formatter='{:.2%}'.format, name='motp_custom')
     mh.register(faf_custom,

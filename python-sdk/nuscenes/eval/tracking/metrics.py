@@ -103,7 +103,7 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     return lgd
 
 
-def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int)\
+def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int) \
         -> float:
     """
     Initializes a MOTAP (MOTA') class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
@@ -131,6 +131,16 @@ def motap(df, num_matches: int, num_misses: int, num_switches: int, num_false_po
     if mota > 0:
         assert motap > 0
     return motap
+
+
+def mota_custom(df, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int):
+    """
+    Multiple object tracker accuracy.
+    Compared to the original MOTA definition, we clip values below 0.
+    """
+    mota = 1. - (num_misses + num_switches + num_false_positives) / num_objects
+    mota = np.maximum(0, mota)
+    return mota
 
 
 def motp_custom(df, num_detections):

@@ -40,8 +40,8 @@ MOT_METRIC_MAP = {  # Mapping from motmetrics names to metric names used here.
     'num_objects': '',  # Used in MOTAP computation.
     'num_predictions': '',  # Only printed out.
     'num_matches': '',  # Used in MOTAP computation and printed out.
-    'mota': 'mota',  # Traditional MOTA.
     'motap': 'motap',  # Only used in AMOTA.
+    'mota_custom': 'mota',  # Traditional MOTA.
     'motp_custom': 'motp',  # Traditional MOTP.
     'faf_custom': 'faf',
     'mostly_tracked': 'mt',
