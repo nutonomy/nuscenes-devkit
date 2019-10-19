@@ -119,7 +119,6 @@ def setup_axis(xlabel: str = None,
     :param ax: (optional) an existing axis to be modified.
     :return: The axes object.
     """
-
     if ax is None:
         ax = plt.subplot()
 
@@ -156,6 +155,7 @@ def class_pr_curve(md_list: DetectionMetricDataList,
                    min_recall: float,
                    savepath: str = None,
                    ax=None):
+    # Prepare axis.
     if ax is None:
         ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Precision', xlim=1,
                         ylim=1, min_precision=min_precision, min_recall=min_recall)
@@ -192,10 +192,12 @@ def class_tp_curve(md_list: DetectionMetricDataList,
     else:
         ylimit = 1.0
 
+    # Prepare axis.
     if ax is None:
         ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Error', xlim=1,
                         min_recall=min_recall)
     ax.set_ylim(0, ylimit)
+
     # Plot the recall vs. error curve for each tp metric.
     for metric in TP_METRICS:
         tp = metrics.get_label_tp(detection_name, metric)
@@ -228,9 +230,9 @@ def dist_pr_curve(md_list: DetectionMetricDataList,
                   min_precision: float,
                   min_recall: float,
                   savepath: str = None) -> None:
+    # Prepare axis.
     fig, (ax, lax) = plt.subplots(ncols=2, gridspec_kw={"width_ratios": [4, 1]},
                                   figsize=(7.5, 5))
-
     ax = setup_axis(xlabel='Recall', ylabel='Precision',
                     xlim=1, ylim=1, min_precision=min_precision, min_recall=min_recall, ax=ax)
 

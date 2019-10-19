@@ -143,10 +143,12 @@ class TestMain(unittest.TestCase):
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=True)
-        metrics = nusc_eval.evaluate()
+        metrics, metric_data_list = nusc_eval.evaluate()
 
         # Print metrics to stdout.
         print_final_metrics(metrics)
+
+        nusc_eval.render(metrics, metric_data_list)  # TODO: remove this line.
 
         # 1. Score = TODO.
         self.assertAlmostEqual(metrics.compute_metric('mota'), 0.1942032760144814)
@@ -172,7 +174,7 @@ class TestMain(unittest.TestCase):
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
                                  verbose=True)
-        metrics = nusc_eval.evaluate()
+        metrics, _ = nusc_eval.evaluate()
 
         # Print metrics to stdout.
         print_final_metrics(metrics)

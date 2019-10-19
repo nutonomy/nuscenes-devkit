@@ -67,7 +67,7 @@ class TrackingEvaluation(object):
 
         # Check that metric definitions are consistent.
         for metric_name in MOT_METRIC_MAP.values():
-            assert metric_name == '' or metric_name.upper() in TRACKING_METRICS
+            assert metric_name == '' or metric_name in TRACKING_METRICS
 
     def accumulate(self) -> TrackingMetricData:
         """
@@ -99,6 +99,8 @@ class TrackingEvaluation(object):
         # The actual recall may vary as there is no way to compute it without trying all thresholds.
         thresholds, recalls = self.get_thresholds(gt_count)
         md.confidence = thresholds
+        if self.verbose:
+            print('Computed thresholds\n')
 
         for threshold, recall in zip(thresholds, recalls):
             # If recall threshold is not achieved, we assign the worst possible value in AMOTA and AMOTP.

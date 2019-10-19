@@ -4,23 +4,21 @@
 import argparse
 import json
 import os
-import random
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import numpy as np
 
 from nuscenes import NuScenes
-from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricDataList, TrackingConfig, TrackingBox,\
     TrackingMetricData
 from nuscenes.eval.tracking.algo import TrackingEvaluation
-from nuscenes.eval.tracking.render import visualize_sample
 from nuscenes.eval.tracking.loaders import create_tracks
 from nuscenes.eval.tracking.utils import print_final_metrics
-from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP
+from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP, LEGACY_METRICS
+from nuscenes.eval.tracking.render import recall_metric_curve
 
 
 class TrackingEval:
@@ -79,7 +77,7 @@ class TrackingEval:
         self.gt_boxes = load_gt(self.nusc, self.eval_set, TrackingBox, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
-            "Samples in split doesn't match samples in predicted tracks."
+            "Samples in split don't match samples in predicted tracks."
 
         # Add center distances.
         self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
@@ -99,7 +97,7 @@ class TrackingEval:
         self.tracks_gt = create_tracks(self.gt_boxes, self.nusc, self.eval_set)
         self.tracks_pred = create_tracks(self.pred_boxes, self.nusc, self.eval_set)
 
-    def evaluate(self) -> TrackingMetrics:
+    def evaluate(self) -> Tuple[TrackingMetrics, TrackingMetricDataList]:
         """
         Performs the actual evaluation.
         :return: A tuple of high-level and the raw metric data.
@@ -138,12 +136,12 @@ class TrackingEval:
                 for metric_name in MOT_METRIC_MAP.values():
                     if metric_name == '':
                         continue
-                    value = md.__getattribute__(metric_name)[best_thresh_idx]
+                    value = md.get_metric(metric_name)[best_thresh_idx]
                     metrics.add_label_metric(metric_name, class_name, value)
 
             # Compute AMOTA / AMOTP.
             for metric_name in AVG_METRIC_MAP.keys():
-                values = np.array(md.__getattribute__(AVG_METRIC_MAP[metric_name]))
+                values = np.array(md.get_metric(AVG_METRIC_MAP[metric_name]))
                 assert len(values) == TrackingMetricData.nelem
 
                 # Overwrite any nan value with the worst possible value.
@@ -158,21 +156,24 @@ class TrackingEval:
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
 
-        return metrics
+        return metrics, metric_data_list
 
-    def render(self, metrics: TrackingMetrics) -> None:
+    def render(self, metrics: TrackingMetrics, md_list: TrackingMetricDataList) -> None:
         """
-        Renders various PR and TP curves.
+        Renders a plot for each class and each metric.
         :param metrics: TrackingMetrics instance.
+        :param md_list: TrackingMetricDataList instance.
         """
-
         if self.verbose:
             print('Rendering curves')
 
         def savepath(name):
             return os.path.join(self.plot_dir, name + '.pdf')
 
-        # TODO
+        # For each metric, plot all the classes in one diagram.
+        for metric_name in LEGACY_METRICS:
+            recall_metric_curve(md_list, metrics, metric_name, self.cfg.min_precision,
+                                self.cfg.min_recall, savepath=savepath('%s' % metric_name))
 
     def main(self,
              render_curves: bool = True) -> Dict[str, Any]:
@@ -182,7 +183,7 @@ class TrackingEval:
         :return: A dict that stores the high-level metrics and meta data.
         """
         # Run evaluation.
-        metrics = self.evaluate()
+        metrics, metric_data_list = self.evaluate()
 
         # Dump the metric data, meta and metrics to disk.
         if self.verbose:
@@ -197,7 +198,7 @@ class TrackingEval:
 
         # Render curves.
         if render_curves:
-            self.render(metrics)
+            self.render(metrics, metric_data_list)
 
         return metrics_summary
 
@@ -237,8 +238,8 @@ if __name__ == "__main__":
     if config_path == '':
         cfg_ = config_factory('tracking_nips_2019')
     else:
-        with open(config_path, 'r') as f:
-            cfg_ = TrackingConfig.deserialize(json.load(f))
+        with open(config_path, 'r') as _f:
+            cfg_ = TrackingConfig.deserialize(json.load(_f))
 
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
     nusc_eval = TrackingEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,

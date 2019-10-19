@@ -82,7 +82,7 @@ class TrackingMetricData(MetricData):
     """ This class holds accumulated and interpolated data required to calculate the tracking metrics. """
 
     nelem = 10
-    metrics = [m.lower() for m in list(set(TRACKING_METRICS) - set(AMOT_METRICS))]
+    metrics = [m for m in list(set(TRACKING_METRICS) - set(AMOT_METRICS))]
 
     def __init__(self):
         # Set attributes explicitly to help IDEs figure out what is going on.
@@ -109,10 +109,15 @@ class TrackingMetricData(MetricData):
         return eq
 
     def __setattr__(self, *args, **kwargs):
+        assert len(args) == 2
         name = args[0]
         value = args[1]
         super(TrackingMetricData, self).__setattr__(name, value)
         assert value is None or len(value) == TrackingMetricData.nelem
+
+    def get_metric(self, metric_name) -> np.ndarray:
+        """ Returns the specified metric. """
+        return self.__getattribute__(metric_name)
 
     @property
     def max_recall_ind(self):
@@ -135,8 +140,8 @@ class TrackingMetricData(MetricData):
     def serialize(self):
         """ Serialize instance into json-friendly format. """
         ret_dict = dict()
-        for metric in ['confidence'] + TrackingMetricData.metrics:
-            ret_dict[metric] = self.__getattribute__(metric).tolist()
+        for metric_name in ['confidence'] + TrackingMetricData.metrics:
+            ret_dict[metric_name] = self.get_metric(metric_name).tolist()
         return ret_dict
 
     @classmethod
@@ -177,7 +182,7 @@ class TrackingMetrics:
         self.eval_time = None
         self.label_metrics = defaultdict(lambda: defaultdict(float))
         self.class_names = self.cfg.class_names
-        self.metric_names = [l.lower() for l in TRACKING_METRICS]
+        self.metric_names = [l for l in TRACKING_METRICS]
 
         # Init every class.
         for metric_name in self.metric_names:
@@ -300,7 +305,7 @@ class TrackingMetricDataList:
     """ This stores a set of MetricData in a dict indexed by name. """
 
     def __init__(self):
-        self.md = {}
+        self.md: Dict[str, TrackingMetricData] = {}
 
     def __getitem__(self, key) -> TrackingMetricData:
         return self.md[key]

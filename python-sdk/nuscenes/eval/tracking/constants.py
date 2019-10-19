@@ -3,11 +3,10 @@
 
 TRACKING_NAMES = ['bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer', 'truck']
 
-AMOT_METRICS = ['AMOTA', 'AMOTP']
-INTERNAL_METRICS = ['MOTAP', 'RECALL']
-LEGACY_METRICS = ['MOTA', 'MOTP', 'FAF', 'MT', 'ML', 'FP', 'FN', 'IDS', 'FRAG', 'TID', 'LGD']
-DETECTION_METRICS = ['mAP', 'trans_err', 'scale_err', 'orient_err', 'vel_err']  # Excludes attr_err.
-TRACKING_METRICS = [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]  # TODO: add *DETECTION_METRICS
+AMOT_METRICS = ['amota', 'amotp']
+INTERNAL_METRICS = ['motap', 'recall']
+LEGACY_METRICS = ['mota', 'motp', 'faf', 'mt', 'ml', 'fp', 'fn', 'ids', 'frag', 'tid', 'lgd']
+TRACKING_METRICS = [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]
 
 PRETTY_TRACKING_NAMES = {
     'bicycle': 'Bicycle',
