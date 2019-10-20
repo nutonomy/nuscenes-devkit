@@ -97,7 +97,7 @@ class TrackingEvaluation(object):
         # Get thresholds.
         # Note: The recall values are the hypothetical recall (10%, 20%, ..).
         # The actual recall may vary as there is no way to compute it without trying all thresholds.
-        thresholds, recalls = self.get_thresholds(gt_count)
+        thresholds, recalls = self.compute_thresholds(gt_count)
         md.confidence = thresholds
         md.recall_hypo = recalls
         if self.verbose:
@@ -239,9 +239,9 @@ class TrackingEvaluation(object):
 
         return scene_tracks_pred
 
-    def get_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:
+    def compute_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:
         """
-        Specify recall thresholds.
+        Compute the score thresholds for predefined recall values.
         AMOTA/AMOTP average over all thresholds, whereas MOTA/MOTP/.. pick the threshold with the highest MOTA.
         :param gt_count: The number of GT boxes for this class.
         :return: The lists of thresholds and their recall values.
@@ -261,9 +261,8 @@ class TrackingEvaluation(object):
         assert len(rec) > 0 and np.max(rec) <= 1
 
         # Determine thresholds.
-        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds)
-        rec_interp = rec_interp[rec_interp >= self.min_recall]  # Remove small recall values.
         max_recall_achieved = np.max(rec)
+        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds)  # TODO: replace 1 with max_recall_achieved
         thresholds = np.interp(rec_interp, rec, scores, right=0)
 
         # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.

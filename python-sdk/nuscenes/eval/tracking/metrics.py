@@ -8,6 +8,7 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame) -> 
     """
     Computes the track initialization duration, which is the duration from the first occurrance of an object to
     it's first correct detection (TP).
+    Note that this True Positive metrics is undefined if there are no matched tracks.
     :param df: Motmetrics dataframe that is required, but not used here.
     :param obj_frequencies: Stores the GT tracking_ids and their frequencies.
     :return: The track initialization time.
@@ -43,6 +44,7 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame) -> 
 def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     """
     Computes the longest gap duration, which is the longest duration of any gaps in the detection of an object.
+    Note that this True Positive metrics is undefined if there are no matched tracks.
     :param df: Motmetrics dataframe that is required, but not used here.
     :param obj_frequencies: Dataframe with all object frequencies.
     :return: The longest gap duration.
@@ -59,7 +61,7 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
         matched = dfo[dfo.Type != 'MISS']
 
         if len(matched) == 0:
-            # Consider only tracked objects.
+            # Ignore untracked objects.
             gap = 0
             missed_tracks += 1
         else:
@@ -185,7 +187,7 @@ def num_fragmentations_custom(df: DataFrame, obj_frequencies: DataFrame) -> floa
     :return: The number of fragmentations.
     """
     fra = 0
-    for o in obj_frequencies.index:
+    for o in obj_frequencies.index:  # TODO: deal with GT tracks missing in frames due to occlusion.
         # Find first and last time object was not missed (track span). Then count
         # the number switches from NOT MISS to MISS state.
         dfo = df.noraw[df.noraw.OId == o]

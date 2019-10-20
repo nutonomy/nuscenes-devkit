@@ -66,14 +66,19 @@ def recall_metric_curve(md_list: TrackingMetricDataList,
 
     # Plot the recall vs. precision curve for each detection class.
     for tracking_name, md in md_list.md.items():
+        # Get values.
+        confidence = md.confidence
+        recalls = md.recall_hypo
         values = md.get_metric(metric_name)
-        nans = np.where(np.logical_not(np.isnan(values)))[0]
-        if len(nans) == 0:
+
+        # Filter unachieved recall thresholds.
+        valid = np.where(np.logical_not(np.isnan(confidence)))[0]
+        if len(valid) == 0:
             continue
-        first_valid = nans[0]
-        last_valid = nans[-1]
-        recalls = md.recall_hypo[first_valid:last_valid + 1]
-        values = values[first_valid:last_valid + 1]
+        first_valid = valid[0]
+        assert not np.isnan(confidence[-1])
+        recalls = recalls[first_valid:]
+        values = values[first_valid:]
 
         ax.plot(recalls,
                 values,

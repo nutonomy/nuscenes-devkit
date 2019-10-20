@@ -30,7 +30,7 @@ TRACKING_COLORS = {
 
 # Define mapping for metrics averaged over classes.
 AVG_METRIC_MAP = {  # Mapping from average metric name to individual per-threshold metric name.
-    'amota': 'motap',
+    'amota': 'mota',  # TODO: decide whether to use mota or motap
     'amotp': 'motp'
 }
 
