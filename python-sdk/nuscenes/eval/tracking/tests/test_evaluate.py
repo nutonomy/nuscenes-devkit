@@ -178,7 +178,7 @@ class TestMain(unittest.TestCase):
             self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19781953149674467)
             self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3272223679357442)
         else:
-            print('Skipping checks due to choice of custom eval_set!')
+            print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
     def test_delta_gt(self, eval_set: str = 'mini_val'):
         """
@@ -208,8 +208,8 @@ class TestMain(unittest.TestCase):
             self.assertAlmostEqual(metrics.compute_metric('tid'), 0.0)
             self.assertAlmostEqual(metrics.compute_metric('lgd'), 0.0)
         else:
-            print('Skipping checks due to choice of custom eval_set!')
+            print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock() # TODO eval_set='mini_train')
+    TestMain().test_delta_mock()  # TODO eval_set='mini_train')

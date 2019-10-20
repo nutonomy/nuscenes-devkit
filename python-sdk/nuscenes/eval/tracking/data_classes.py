@@ -101,6 +101,7 @@ class TrackingMetricData(MetricData):
         self.motap = init
         self.motp = init
         self.faf = init
+        self.tp = init
         self.mt = init
         self.ml = init
         self.fp = init
