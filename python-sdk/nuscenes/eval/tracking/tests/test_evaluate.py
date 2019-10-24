@@ -32,7 +32,9 @@ class TestMain(unittest.TestCase):
             shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
-    def _mock_submission(nusc: NuScenes, split: str, add_errors: bool = False) -> Dict[str, dict]:
+    def _mock_submission(nusc: NuScenes,
+                         split: str,
+                         add_errors: bool = False) -> Dict[str, dict]:
         """
         Creates "reasonable" submission (results and metadata) by looping through the mini-val set, adding 1 GT
         prediction per sample. Predictions will be permuted randomly along all axes.
@@ -132,12 +134,16 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
-    def basic_test(self, eval_set: str = 'mini_val', add_errors: bool = False) -> TrackingMetrics:
+    def basic_test(self,
+                   eval_set: str = 'mini_val',
+                   add_errors: bool = False,
+                   render_curves: bool = False) -> TrackingMetrics:
         """
         Run the evaluation with fixed randomness on the specified subset, with or without introducing errors in the
         submission.
         :param eval_set: Which split to evaluate on.
         :param add_errors: Whether to use GT as submission or introduce additional errors.
+        :param render_curves: Whether to render stats curves to disk.
         :return: The metrics returned by the evaluation.
         """
         random.seed(42)
@@ -159,39 +165,45 @@ class TestMain(unittest.TestCase):
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
                                  verbose=True)
-        metrics = nusc_eval.main(render_curves=True)  # TODO: Change to false
+        metrics = nusc_eval.main(render_curves=render_curves)
 
         return metrics
 
-    def test_delta_mock(self, eval_set: str = 'mini_val'):
+    def test_delta_mock(self,
+                        eval_set: str = 'mini_val',
+                        render_curves: bool = False):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         :param eval_set: Which set to evaluate on.
+        :param render_curves: Whether to render stats curves to disk.
         """
         # Run the evaluation with errors.
-        metrics = self.basic_test(eval_set, add_errors=True)
+        metrics = self.basic_test(eval_set, add_errors=True, render_curves=render_curves)
 
-        # 1. Score = TODO.
+        # Compare metrics to known solution.
         if eval_set == 'mini_val':
             self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19781953149674467)
             self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3272223679357442)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-    def test_delta_gt(self, eval_set: str = 'mini_val'):
+    def test_delta_gt(self,
+                      eval_set: str = 'mini_val',
+                      render_curves: bool = False):
         """
         This tests runs the evaluation with the ground truth used as predictions.
         This should result in a perfect score for every metric.
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         :param eval_set: Which set to evaluate on.
+        :param render_curves: Whether to render stats curves to disk.
         """
         # Run the evaluation without errors.
-        metrics = self.basic_test(eval_set, add_errors=False)
+        metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
 
-        # Compare score to known solution. Do not check:
+        # Compare metrics to known solution. Do not check:
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
         if eval_set == 'mini_val':
@@ -212,4 +224,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock()  # TODO eval_set='mini_train')
+    TestMain().test_delta_mock(render_curves=True)

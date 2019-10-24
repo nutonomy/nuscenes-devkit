@@ -4,7 +4,7 @@
 TRACKING_NAMES = ['bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer', 'truck']
 
 AMOT_METRICS = ['amota', 'amotp']
-INTERNAL_METRICS = ['motar', 'recall']
+INTERNAL_METRICS = ['recall', 'motar']
 LEGACY_METRICS = ['mota', 'motp', 'mt', 'ml', 'faf', 'tp', 'fp', 'fn', 'ids', 'frag', 'tid', 'lgd']
 TRACKING_METRICS = [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]
 
@@ -30,7 +30,7 @@ TRACKING_COLORS = {
 
 # Define mapping for metrics averaged over classes.
 AVG_METRIC_MAP = {  # Mapping from average metric name to individual per-threshold metric name.
-    'amota': 'motar',  # TODO: decide whether to use mota or motar
+    'amota': 'motar',
     'amotp': 'motp'
 }
 

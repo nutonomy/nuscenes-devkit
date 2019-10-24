@@ -244,11 +244,11 @@ Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* 
 The results for object detection and tracking can be seen below.
 Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
 
-|   Method             | NDS  | mAP (detection)| mAP (tracking) | AMOTA | AMOTP | Detections download                        |
-|   ---                | ---  | ---  | ---   | ---   | ---          | ---                                                    |
-|   PointPillars \[5\] | 44.8 | 29.5 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
-|   Megvii \[6\]       | 62.8 | 51.9 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
-|   Mapillary \[7\]    | 36.9 | 29.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
+|   Method             | NDS  | mAP  | AMOTA | AMOTP        | Detections download                                    |
+|   ---                | ---  | ---  | ---   | ---          | ---                                                    |
+|   PointPillars \[5\] | 44.8 | 29.5 | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
+|   Megvii \[6\]       | 62.8 | 51.9 | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
+|   Mapillary \[7\]    | 36.9 | 29.8 | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.
