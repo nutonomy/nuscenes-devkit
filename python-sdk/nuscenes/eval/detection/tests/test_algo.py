@@ -48,10 +48,10 @@ class TestAlgo(unittest.TestCase):
             this_gt = []
 
             for box_itt in range(ngt):
-
+                translation_xy = tuple(np.random.rand(2) * 15)
                 this_gt.append(DetectionBox(
                     sample_token=str(sample_itt),
-                    translation=tuple(list(np.random.rand(2)*15) + [0.0]),
+                    translation=(translation_xy[0], translation_xy[1], 0.0),
                     size=tuple(np.random.rand(3)*4),
                     rotation=tuple(np.random.rand(4)),
                     velocity=tuple(np.random.rand(3)[:2]*4),
@@ -66,10 +66,10 @@ class TestAlgo(unittest.TestCase):
             this_pred = []
 
             for box_itt in range(npred):
-
+                translation_xy = tuple(np.random.rand(2) * 10)
                 this_pred.append(DetectionBox(
                     sample_token=str(sample_itt),
-                    translation=tuple(list(np.random.rand(2) * 10) + [0.0]),
+                    translation=(translation_xy[0], translation_xy[1], 0.0),
                     size=tuple(np.random.rand(3) * 4),
                     rotation=tuple(np.random.rand(4)),
                     velocity=tuple(np.random.rand(3)[:2] * 4),
@@ -184,7 +184,7 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             pred_eval_boxes.add_boxes(sample_token, pred_boxes)
 
         metric_data = accumulate(gt_eval_boxes, pred_eval_boxes, class_name=detection_name,
-                                 dist_fcn_name=center_distance, dist_th=dist_th)
+                                 dist_fcn=center_distance, dist_th=dist_th)
 
         return metric_data
 

@@ -2,7 +2,6 @@
 # Code written by Holger Caesar, 2019.
 
 from typing import List, Dict, Tuple, Any
-from collections import defaultdict
 
 import numpy as np
 
