@@ -30,7 +30,7 @@ TRACKING_COLORS = {
 
 # Define mapping for metrics averaged over classes.
 AVG_METRIC_MAP = {  # Mapping from average metric name to individual per-threshold metric name.
-    'amota': 'mota',  # TODO: decide whether to use mota or motap
+    'amota': 'motap',  # TODO: decide whether to use mota or motap
     'amotp': 'motp'
 }
 
@@ -41,7 +41,7 @@ MOT_METRIC_MAP = {  # Mapping from motmetrics names to metric names used here.
     'num_predictions': '',  # Only printed out.
     'num_matches': 'tp',  # Used in MOTAP computation and printed out.
     'motap': 'motap',  # Only used in AMOTA.
-    'mota_custom': 'mota',  # Traditional MOTA.
+    'mota_custom': 'mota',  # Traditional MOTA, but clipped below 0.
     'motp_custom': 'motp',  # Traditional MOTP.
     'faf': 'faf',
     'mostly_tracked': 'mt',
