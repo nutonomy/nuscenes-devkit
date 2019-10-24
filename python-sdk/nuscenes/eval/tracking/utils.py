@@ -38,6 +38,23 @@ def category_to_tracking_name(category_name: str) -> Optional[str]:
         return None
 
 
+def metric_name_to_print_format(metric_name) -> str:
+    """
+    Get the standard print format (numerical precision) for each metric.
+    :param metric_name: The lowercase metric name.
+    :return: The print format.
+    """
+    if metric_name in ['amota', 'amotp', 'motar', 'recall', 'mota', 'motp']:
+        print_format = '%.3f'
+    elif metric_name in ['tid', 'lgd']:
+        print_format = '%.2f'
+    elif metric_name in ['faf']:
+        print_format = '%.1f'
+    else:
+        print_format = '%d'
+    return print_format
+
+
 def print_final_metrics(metrics: TrackingMetrics) -> None:
     """
     Print metrics to stdout.
@@ -59,7 +76,7 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
 
         for metric_name in metric_names:
             val = metrics.label_metrics[metric_name][class_name]
-            print_format = '%.3f' if np.isnan(val) or val != int(val) else '%d'
+            print_format = '%f' if np.isnan(val) else metric_name_to_print_format(metric_name)
             print('\t%s' % (print_format % val), end='')
 
         print()
@@ -68,12 +85,7 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
     print('\nAggregated results:')
     for metric_name in metric_names:
         val = metrics.compute_metric(metric_name, 'all')
-        if metric_name in ['amota', 'amotp', 'motar', 'recall', 'mota', 'motp']:
-            print_format = '%.3f'
-        elif metric_name in ['faf', 'tid', 'lgd']:
-            print_format = '%.2f'
-        else:
-            print_format = '%d'
+        print_format = metric_name_to_print_format(metric_name)
         print('%s\t%s' % (metric_name.upper(), print_format % val))
 
     print('Eval time: %.1fs' % metrics.eval_time)
