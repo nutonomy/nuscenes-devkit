@@ -98,7 +98,7 @@ class TrackingMetricData(MetricData):
         self.recall_hypo = init
         self.recall = init
         self.mota = init
-        self.motap = init
+        self.motar = init
         self.motp = init
         self.faf = init
         self.tp = init

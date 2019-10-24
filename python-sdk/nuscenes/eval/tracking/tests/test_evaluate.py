@@ -195,7 +195,7 @@ class TestMain(unittest.TestCase):
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
         if eval_set == 'mini_val':
-            self.assertAlmostEqual(metrics.compute_metric('motap'), 1.0)
+            self.assertAlmostEqual(metrics.compute_metric('motar'), 1.0)
             self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
             self.assertAlmostEqual(metrics.compute_metric('mota'), 1.0)
             self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0, delta=1e-5)

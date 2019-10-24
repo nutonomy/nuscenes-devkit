@@ -8,7 +8,7 @@ import motmetrics
 from motmetrics.metrics import MetricsHost
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
-from nuscenes.eval.tracking.metrics import motap, mota_custom, motp_custom, faf, track_initialization_duration, \
+from nuscenes.eval.tracking.metrics import motar, mota_custom, motp_custom, faf, track_initialization_duration, \
     longest_gap_duration, num_fragmentations_custom
 
 
@@ -68,7 +68,7 @@ def print_final_metrics(metrics: TrackingMetrics) -> None:
     print('\nAggregated results:')
     for metric_name in metric_names:
         val = metrics.compute_metric(metric_name, 'all')
-        if metric_name in ['amota', 'amotp', 'motap', 'recall', 'mota', 'motp']:
+        if metric_name in ['amota', 'amotp', 'motar', 'recall', 'mota', 'motp']:
             print_format = '%.3f'
         elif metric_name in ['faf', 'tid', 'lgd']:
             print_format = '%.2f'
@@ -135,8 +135,8 @@ def create_motmetrics() -> MetricsHost:
 
     # Register custom metrics.
     # Specify all inputs to avoid errors incompatibility between type hints and py-motmetric's introspection.
-    mh.register(motap, ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
-                formatter='{:.2%}'.format, name='motap')
+    mh.register(motar, ['num_matches', 'num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
+                formatter='{:.2%}'.format, name='motar')
     mh.register(mota_custom, ['num_misses', 'num_switches', 'num_false_positives', 'num_objects'],
                 formatter='{:.2%}'.format, name='mota_custom')
     mh.register(motp_custom, ['num_detections'],

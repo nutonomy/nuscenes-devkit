@@ -26,7 +26,7 @@ def summary_plot(md_list: TrackingMetricDataList,
     """
     # Select metrics and setup plot.
     rel_metrics = LEGACY_METRICS
-    rel_metrics.insert(2, 'motap')
+    rel_metrics.insert(2, 'motar')
     rel_metrics.insert(3, 'recall')
     n_metrics = len(rel_metrics)
     nrows = int(np.ceil(n_metrics / ncols))
@@ -89,7 +89,7 @@ def recall_metric_curve(md_list: TrackingMetricDataList,
     if metric_name in ['mt', 'ml', 'faf', 'tp', 'fp', 'fn', 'ids', 'frag']:
         ax.set_yscale('symlog')
 
-    if metric_name in ['amota', 'motap', 'recall', 'mota']:
+    if metric_name in ['amota', 'motar', 'recall', 'mota']:
         # Some metrics have an upper bound of 1.
         ax.set_ylim(0, 1)
     elif metric_name != 'motp':

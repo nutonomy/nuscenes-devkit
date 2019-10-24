@@ -105,10 +105,10 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     return lgd
 
 
-def motap(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int,
+def motar(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int,
           num_objects: int) -> float:
     """
-    Initializes a MOTAP class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
+    Initializes a MOTAR class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
     Note that we use the measured recall, which is not identical to the hypothetical recall of the
     AMOTA/AMOTP thresholds.
     :param df: Motmetrics dataframe that is required, but not used here.
@@ -117,22 +117,22 @@ def motap(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, n
     :param num_switches: The number of identity switches.
     :param num_false_positives: The number of false positives.
     :param num_objects: The total number of objects of this class in the GT.
-    :return: The MOTAP or nan if there are no GT objects.
+    :return: The MOTAR or nan if there are no GT objects.
     """
     recall = num_matches / num_objects
     nominator = num_misses + num_switches + num_false_positives - (1 - recall) * num_objects
     denominator = recall * num_objects
     if denominator == 0:
-        motap_val = np.nan
+        motar_val = np.nan
     else:
-        motap_val = 1 - nominator / denominator
-        motap_val = np.maximum(0, motap_val)
+        motar_val = 1 - nominator / denominator
+        motar_val = np.maximum(0, motar_val)
 
-    # Consistency checks to make sure that a positive MOTA also leads to a positive MOTAP.
+    # Consistency checks to make sure that a positive MOTA also leads to a positive MOTAR.
     mota = 1 - (num_misses + num_switches + num_false_positives) / num_objects
     if mota > 0:
-        assert motap_val > 0
-    return motap_val
+        assert motar_val > 0
+    return motar_val
 
 
 def mota_custom(df: DataFrame, num_misses: int, num_switches: int, num_false_positives: int, num_objects: int) -> float:
