@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Qiang Xu and Oscar Beijbom, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 import os.path as osp
 from typing import Tuple, Any

@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 """
 Export fused point clouds of a scene to a Wavefront OBJ file.

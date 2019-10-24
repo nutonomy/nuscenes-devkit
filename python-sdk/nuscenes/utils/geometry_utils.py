@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom and Alex Lang, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 from enum import IntEnum
 from typing import Tuple
