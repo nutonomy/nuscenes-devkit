@@ -262,7 +262,7 @@ class TrackingEvaluation(object):
 
         # Determine thresholds.
         max_recall_achieved = np.max(rec)
-        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds)  # TODO: replace 1 with max_recall_achieved?
+        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds)
         thresholds = np.interp(rec_interp, rec, scores, right=0)
 
         # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.

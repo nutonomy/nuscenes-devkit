@@ -224,4 +224,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_mock(render_curves=True)
+    TestMain().test_delta_gt(render_curves=False)
