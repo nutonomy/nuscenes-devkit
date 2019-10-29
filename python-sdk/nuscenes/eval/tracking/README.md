@@ -173,10 +173,11 @@ Before running the evaluation code the following pre-processing is done on the d
 * All boxes (GT and prediction) are removed if they exceed the class-specific detection range.  
 
 ### Preprocessing
-Before running the evaluation code the following pre-processing is done on the data
+Before running the evaluation code the following pre-processing is done on the data:
 * All boxes (GT and prediction) are removed if they exceed the class-specific tracking range. 
 * All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
 * All boxes (GT) without lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes based on number of points.
+* To avoid excessive track fragmentation from lidar/radar point filtering, we linearly interpolate GT and predicted tracks.
 
 ### Matching criterion
 For all metrics, we define a match by thresholding the 2D center distance on the ground plane rather than Intersection Over Union (IOU) based affinities.

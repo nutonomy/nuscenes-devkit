@@ -184,8 +184,8 @@ class TestMain(unittest.TestCase):
 
         # Compare metrics to known solution.
         if eval_set == 'mini_val':
-            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.19781953149674467)
-            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.3272223679357442)
+            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.24774512061150836)
+            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.297255420410163)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
@@ -225,3 +225,4 @@ class TestMain(unittest.TestCase):
 
 if __name__ == '__main__':
     TestMain().test_delta_gt(render_curves=False)
+    TestMain().test_delta_mock(render_curves=False)

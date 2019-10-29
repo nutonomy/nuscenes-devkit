@@ -34,6 +34,9 @@ def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, ri
         amount=right_ratio
     ).elements
 
+    # Score will remain -1 for GT.
+    tracking_score = interp_float(left_box.tracking_score, right_box.tracking_score, right_ratio)
+
     return TrackingBox(sample_token=right_box.sample_token,
                        translation=interp_list(left_box.translation, right_box.translation, right_ratio),
                        size=interp_list(left_box.size, right_box.size, right_ratio),
@@ -41,7 +44,8 @@ def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, ri
                        velocity=interp_list(left_box.velocity, right_box.velocity, right_ratio),
                        ego_dist=interp_float(left_box.ego_dist, right_box.ego_dist, right_ratio),  # May be inaccurate.
                        tracking_id=right_box.tracking_id,
-                       tracking_name=right_box.tracking_name)
+                       tracking_name=right_box.tracking_name,
+                       tracking_score=tracking_score)
 
 
 def interpolate_tracks(tracks_by_timestamp: Dict[int, List[TrackingBox]]) -> Dict[int, List[TrackingBox]]:
@@ -65,6 +69,7 @@ def interpolate_tracks(tracks_by_timestamp: Dict[int, List[TrackingBox]]) -> Dic
 
     # Interpolate missing timestamps for each track.
     timestamps = tracks_by_timestamp.keys()
+    interpolate_count = 0
     for timestamp in timestamps:
         for tracking_id, track in tracks_by_id.items():
             if track_timestamps_by_id[tracking_id][0] <= timestamp <= track_timestamps_by_id[tracking_id][-1] and \
@@ -81,7 +86,9 @@ def interpolate_tracks(tracks_by_timestamp: Dict[int, List[TrackingBox]]) -> Dic
 
                 # Interpolate.
                 tracking_box = interpolate_tracking_boxes(left_tracking_box, right_tracking_box, right_ratio)
+                interpolate_count += 1
                 tracks_by_timestamp[timestamp].append(tracking_box)
+    print('Interpolated %d boxes' % interpolate_count)
 
     return tracks_by_timestamp
 
@@ -134,10 +141,9 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
         scene_token = sample_record['scene_token']
         tracks[scene_token][sample_record['timestamp']] = all_boxes.boxes[sample_token]
 
-    # Interpolate GT tracks.
-    if gt: # TODO
-        for scene_token in tracks.keys():
-            tracks[scene_token] = interpolate_tracks(tracks[scene_token])
+    # Interpolate GT and predicted tracks.
+    for scene_token in tracks.keys():
+        tracks[scene_token] = interpolate_tracks(tracks[scene_token])
 
     # Make sure the tracks are sorted in time.
     # This is always the case for GT, but may not be the case for predictions.
