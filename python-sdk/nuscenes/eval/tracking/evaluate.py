@@ -52,7 +52,6 @@ class TrackingEval:
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
         """
-        self.nusc = nusc
         self.cfg = config
         self.result_path = result_path
         self.eval_set = eval_set
@@ -72,30 +71,30 @@ class TrackingEval:
         # Load data.
         if verbose:
             print('Initializing nuScenes tracking evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, TrackingBox,
+        pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, TrackingBox,
                                                      verbose=verbose)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, TrackingBox, verbose=verbose)
+        gt_boxes = load_gt(nusc, self.eval_set, TrackingBox, verbose=verbose)
 
-        assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
+        assert set(pred_boxes.sample_tokens) == set(gt_boxes.sample_tokens), \
             "Samples in split don't match samples in predicted tracks."
 
         # Add center distances.
-        self.pred_boxes = add_center_dist(nusc, self.pred_boxes)
-        self.gt_boxes = add_center_dist(nusc, self.gt_boxes)
+        pred_boxes = add_center_dist(nusc, pred_boxes)
+        gt_boxes = add_center_dist(nusc, gt_boxes)
 
         # Filter boxes (distance, points per box, etc.).
         if verbose:
             print('Filtering tracks')
-        self.pred_boxes = filter_eval_boxes(nusc, self.pred_boxes, self.cfg.class_range, verbose=verbose)
+        pred_boxes = filter_eval_boxes(nusc, pred_boxes, self.cfg.class_range, verbose=verbose)
         if verbose:
             print('Filtering ground truth tracks')
-        self.gt_boxes = filter_eval_boxes(nusc, self.gt_boxes, self.cfg.class_range, verbose=verbose)
+        gt_boxes = filter_eval_boxes(nusc, gt_boxes, self.cfg.class_range, verbose=verbose)
 
-        self.sample_tokens = self.gt_boxes.sample_tokens
+        self.sample_tokens = gt_boxes.sample_tokens
 
         # Convert boxes to tracks format.
-        self.tracks_gt = create_tracks(self.gt_boxes, self.nusc, self.eval_set, gt=True)
-        self.tracks_pred = create_tracks(self.pred_boxes, self.nusc, self.eval_set, gt=False)
+        self.tracks_gt = create_tracks(gt_boxes, nusc, self.eval_set, gt=True)
+        self.tracks_pred = create_tracks(pred_boxes, nusc, self.eval_set, gt=False)
 
     def evaluate(self) -> Tuple[TrackingMetrics, TrackingMetricDataList]:
         """
