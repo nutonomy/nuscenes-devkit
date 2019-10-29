@@ -135,9 +135,9 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
         tracks[scene_token][sample_record['timestamp']] = all_boxes.boxes[sample_token]
 
     # Interpolate GT tracks.
-    #if gt: # TODO
-    #for scene_token in tracks.keys():
-    #    tracks[scene_token] = interpolate_tracks(tracks[scene_token])
+    if gt: # TODO
+        for scene_token in tracks.keys():
+            tracks[scene_token] = interpolate_tracks(tracks[scene_token])
 
     # Make sure the tracks are sorted in time.
     # This is always the case for GT, but may not be the case for predictions.
