@@ -103,9 +103,14 @@ class TrackingEvaluation(object):
         if self.verbose:
             print('Computed thresholds\n')
 
-        for threshold in thresholds:
+        for t, threshold in enumerate(thresholds):
             # If recall threshold is not achieved, we assign the worst possible value in AMOTA and AMOTP.
             if np.isnan(threshold):
+                continue
+
+            # Do not compute the same threshold twice.
+            # This becomes relevant when a user submits many boxes with the exact same score.
+            if threshold in thresholds[:t]:
                 continue
 
             # Accumulate track data.
@@ -123,9 +128,17 @@ class TrackingEvaluation(object):
         # Concatenate all metrics. We only do this for more convenient access.
         summary = pandas.concat(thresh_metrics)
 
-        # Store all traditional metrics.
+        # Sanity checks.
         unachieved_thresholds = np.sum(np.isnan(thresholds))
-        assert unachieved_thresholds + len(thresh_metrics) == self.num_thresholds
+        duplicate_thresholds = len(thresholds) - len(np.unique(thresholds))
+        assert unachieved_thresholds + duplicate_thresholds + len(thresh_metrics) == self.num_thresholds
+
+        # Figure out how many times each threshold should be repeated.
+        valid_thresholds = [t for t in thresholds if not np.isnan(t)]
+        assert valid_thresholds == sorted(valid_thresholds)
+        rep_counts = [np.sum(thresholds == t) for t in np.unique(valid_thresholds)]
+
+        # Store all traditional metrics.
         for (mot_name, metric_name) in MOT_METRIC_MAP.items():
             # Skip metrics which we don't output.
             if metric_name == '':
@@ -134,8 +147,14 @@ class TrackingEvaluation(object):
             # Retrieve and store values for current metric.
             values = summary.get(mot_name).values
             assert np.all(values[np.logical_not(np.isnan(values))] >= 0)
+
+            # If a threshold occurred more than once, duplicate the metric values.
+            assert len(rep_counts) == len(values)
+            values = np.concatenate([([v] * r) for (v, r) in zip(values, rep_counts)])
+
             all_values = [np.nan] * unachieved_thresholds  # Pad values with nans for unachieved recall thresholds.
             all_values.extend(values)
+            assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
 
         return md
@@ -247,7 +266,7 @@ class TrackingEvaluation(object):
         :return: The lists of thresholds and their recall values.
         """
         # Run accumulate to get the scores of TPs.
-        acc, scores = self.accumulate_threshold(threshold=None)
+        _, scores = self.accumulate_threshold(threshold=None)
         assert len(scores) > 0
 
         # Sort scores.
@@ -262,7 +281,7 @@ class TrackingEvaluation(object):
 
         # Determine thresholds.
         max_recall_achieved = np.max(rec)
-        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds)
+        rec_interp = np.linspace(self.min_recall, 1, self.num_thresholds).round(12)
         thresholds = np.interp(rec_interp, rec, scores, right=0)
 
         # Set thresholds for unachieved recall values to nan to penalize AMOTA/AMOTP later.
