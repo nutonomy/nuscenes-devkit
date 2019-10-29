@@ -164,7 +164,7 @@ class TestMain(unittest.TestCase):
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
-                                 verbose=True)
+                                 verbose=False)
         metrics = nusc_eval.main(render_curves=render_curves)
 
         return metrics
@@ -224,5 +224,4 @@ class TestMain(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    TestMain().test_delta_gt(render_curves=False)
-    TestMain().test_delta_mock(render_curves=False)
+    unittest.main()

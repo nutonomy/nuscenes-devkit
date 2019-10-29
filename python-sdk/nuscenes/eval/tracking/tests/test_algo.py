@@ -182,9 +182,4 @@ class TestAlgo(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    algo = TestAlgo()
-    algo.test_perfect_gt()
-    algo.test_drop_prediction()
-    algo.test_identity_switch()
-    algo.test_drop_gt()
-    algo.test_drop_gt_interpolate()
+    unittest.main()
