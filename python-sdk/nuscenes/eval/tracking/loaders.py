@@ -1,5 +1,5 @@
 from bisect import bisect
-from typing import List, Dict
+from typing import List, Dict, DefaultDict
 from collections import defaultdict
 
 import numpy as np
@@ -49,8 +49,8 @@ def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, ri
                        tracking_score=tracking_score)
 
 
-def interpolate_tracks(tracks_by_timestamp: Dict[int, List[TrackingBox]], verbose: bool = False) -> \
-        Dict[int, List[TrackingBox]]:
+def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]], verbose: bool = False) -> \
+        DefaultDict[int, List[TrackingBox]]:
     """
     Interpolate the tracks to fill in holes, especially since GT boxes with 0 lidar points are removed.
     We are rediscovering an information that already exists in nuscenes.
