@@ -1,3 +1,9 @@
+"""
+This code is based on:
+
+py-motmetrics at:
+https://github.com/cheind/py-motmetrics
+"""
 from typing import Any
 import numpy as np
 
