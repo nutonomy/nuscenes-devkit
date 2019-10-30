@@ -9,6 +9,7 @@ https://github.com/cheind/py-motmetrics
 """
 from typing import List, Dict, Callable, Tuple
 
+import motmetrics
 import numpy as np
 import pandas
 import sklearn
@@ -16,8 +17,11 @@ import tqdm
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
-from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
+# from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
+
+# Use original accumulator (for now)
+MOTAccumulatorCustom = motmetrics.MOTAccumulator
 
 
 class TrackingEvaluation(object):
