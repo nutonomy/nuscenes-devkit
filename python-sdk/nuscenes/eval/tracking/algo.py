@@ -75,7 +75,8 @@ class TrackingEvaluation(object):
         :returns: TrackingMetricData instance which holds the metrics for each threshold.
         """
         # Init.
-        print('Computing metrics for class %s...\n' % self.class_name)
+        if self.verbose:
+            print('Computing metrics for class %s...\n' % self.class_name)
         accumulators = []
         thresh_metrics = []
         md = TrackingMetricData()
@@ -123,7 +124,8 @@ class TrackingEvaluation(object):
             thresh_metrics.append(thresh_summary)
 
             # Print metrics to stdout.
-            print_threshold_metrics(thresh_summary.to_dict())
+            if self.verbose:
+                print_threshold_metrics(thresh_summary.to_dict())
 
         # Concatenate all metrics. We only do this for more convenient access.
         summary = pandas.concat(thresh_metrics)

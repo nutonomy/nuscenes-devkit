@@ -104,7 +104,7 @@ def load_gt(nusc: NuScenes, eval_split: str, box_cls, verbose: bool = False) -> 
 
     # Load annotations and filter predictions and annotations.
     tracking_id_set = set()
-    for sample_token in tqdm.tqdm(sample_tokens):
+    for sample_token in tqdm.tqdm(sample_tokens, leave=verbose):
 
         sample = nusc.get('sample', sample_token)
         sample_annotation_tokens = sample['anns']

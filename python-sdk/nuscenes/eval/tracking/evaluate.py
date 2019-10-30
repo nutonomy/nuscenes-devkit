@@ -93,8 +93,8 @@ class TrackingEval:
         self.sample_tokens = gt_boxes.sample_tokens
 
         # Convert boxes to tracks format.
-        self.tracks_gt = create_tracks(gt_boxes, nusc, self.eval_set, gt=True)
-        self.tracks_pred = create_tracks(pred_boxes, nusc, self.eval_set, gt=False)
+        self.tracks_gt = create_tracks(gt_boxes, nusc, self.eval_set, gt=True, verbose=verbose)
+        self.tracks_pred = create_tracks(pred_boxes, nusc, self.eval_set, gt=False, verbose=verbose)
 
     def evaluate(self) -> Tuple[TrackingMetrics, TrackingMetricDataList]:
         """
@@ -199,7 +199,8 @@ class TrackingEval:
             json.dump(metric_data_list.serialize(), f, indent=2)
 
         # Print metrics to stdout.
-        print_final_metrics(metrics)
+        if self.verbose:
+            print_final_metrics(metrics)
 
         # Render curves.
         if render_curves:

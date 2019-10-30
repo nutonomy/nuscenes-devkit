@@ -49,12 +49,14 @@ def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, ri
                        tracking_score=tracking_score)
 
 
-def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]]) -> DefaultDict[int, List[TrackingBox]]:
+def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]], verbose: bool = False) -> \
+        DefaultDict[int, List[TrackingBox]]:
     """
     Interpolate the tracks to fill in holes, especially since GT boxes with 0 lidar points are removed.
     We are rediscovering an information that already exists in nuscenes.
     This interpolation does not take into account visibility. It interpolates despite occlusion.
     :param tracks_by_timestamp: The tracks.
+    :param verbose: Whether to print verbose outputs to stdout.
     :return: The interpolated tracks.
     """
     # Group tracks by id.
@@ -86,12 +88,13 @@ def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]])
                 tracking_box = interpolate_tracking_boxes(left_tracking_box, right_tracking_box, right_ratio)
                 interpolate_count += 1
                 tracks_by_timestamp[timestamp].append(tracking_box)
-    print('Interpolated %d boxes' % interpolate_count)
+    if verbose:
+        print('Interpolated %d boxes' % interpolate_count)
 
     return tracks_by_timestamp
 
 
-def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: bool)\
+def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: bool, verbose: bool)\
         -> Dict[str, Dict[int, List[TrackingBox]]]:
     """
     Returns all tracks for all scenes. Samples within a track are sorted in chronological order.
@@ -100,6 +103,7 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
     :param nusc: The NuScenes instance to load the sample information from.
     :param eval_split: The evaluation split for which we create tracks.
     :param gt: Whether we are creating tracks for GT or predictions
+    :param verbose: Whether to print verbose outputs to stdout.
     :return: The tracks.
     """
     # Only keep samples from this split.
@@ -139,7 +143,7 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
 
     # Interpolate GT and predicted tracks.
     for scene_token in tracks.keys():
-        tracks[scene_token] = interpolate_tracks(tracks[scene_token])
+        tracks[scene_token] = interpolate_tracks(tracks[scene_token], verbose=verbose)
 
         if not gt:
             # Make sure predictions are sorted in in time. (Always true for GT).
