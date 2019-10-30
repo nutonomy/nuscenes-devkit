@@ -7,12 +7,14 @@ import os
 import time
 from typing import Tuple
 
+from joblib import Parallel, delayed, parallel_backend
+import multiprocessing
 import numpy as np
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
-from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricDataList, TrackingConfig, TrackingBox,\
+from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricDataList, TrackingConfig, TrackingBox, \
     TrackingMetricData
 from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.loaders import create_tracks
@@ -110,12 +112,22 @@ class TrackingEval:
         if self.verbose:
             print('Accumulating metric data...')
         metric_data_list = TrackingMetricDataList()
-        for class_name in self.cfg.class_names:
-            ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
-                                    self.cfg.dist_th_tp, self.cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                    verbose=self.verbose)
-            md = ev.accumulate()
-            metric_data_list.set(class_name, md)
+
+        num_cores = multiprocessing.cpu_count()
+        num_classes = len(self.cfg.class_names)
+        num_jobs = min(num_classes, num_cores)
+
+        # Wrap accumulation for parallelization
+        def accumulate_class(curr_class_name):
+            curr_ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, curr_class_name, self.cfg.dist_fcn_callable,
+                                         self.cfg.dist_th_tp, self.cfg.min_recall,
+                                         num_thresholds=TrackingMetricData.nelem,
+                                         verbose=self.verbose)
+            curr_md = curr_ev.accumulate()
+            metric_data_list.set(curr_class_name, curr_md)
+
+        with parallel_backend('threading', n_jobs=num_jobs):
+            Parallel()(delayed(accumulate_class)(class_name) for class_name in self.cfg.class_names)
 
         # -----------------------------------
         # Step 2: Aggregate metrics from the metric data.
