@@ -2,6 +2,7 @@
 # Code written by Holger Caesar, 2019.
 
 from typing import Optional, Dict
+import warnings
 
 import numpy as np
 import motmetrics
@@ -136,6 +137,9 @@ def create_motmetrics() -> MetricsHost:
     # Create new metrics host object.
     mh = MetricsHost()
 
+    # Suppress deprecation warning from py-motmetrics.
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
+
     # Register standard metrics.
     fields = [
         'num_frames', 'obj_frequencies', 'num_matches', 'num_switches', 'num_false_positives', 'num_misses',
@@ -144,6 +148,9 @@ def create_motmetrics() -> MetricsHost:
     ]
     for field in fields:
         mh.register(getattr(motmetrics.metrics, field), formatter='{:d}'.format)
+
+    # Reenable deprecation warning.
+    warnings.filterwarnings('default', category=DeprecationWarning)
 
     # Register custom metrics.
     # Specify all inputs to avoid errors incompatibility between type hints and py-motmetric's introspection.
