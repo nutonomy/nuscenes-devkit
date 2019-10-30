@@ -27,3 +27,10 @@ class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
         idx = pd.MultiIndex.from_tuples(indices, names=['FrameId', 'Event'])
         df = pd.DataFrame(events, index=idx, columns=['Type', 'OId', 'HId', 'D'])
         return df
+
+    @property
+    def events(self):
+        if self.dirty_events:
+            self.cached_events_df = MOTAccumulatorCustom.new_event_dataframe_with_data(self._indices, self._events)
+            self.dirty_events = False
+        return self.cached_events_df
