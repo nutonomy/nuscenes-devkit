@@ -126,8 +126,10 @@ class TrackingEval:
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
 
-        with parallel_backend('threading', n_jobs=num_jobs):
-            Parallel()(delayed(accumulate_class)(class_name) for class_name in self.cfg.class_names)
+        # with parallel_backend('threading', n_jobs=num_jobs):
+        #     Parallel()(delayed(accumulate_class)(class_name) for class_name in self.cfg.class_names)
+        for class_name in self.cfg.class_names:
+            accumulate_class(class_name)
 
         # -----------------------------------
         # Step 2: Aggregate metrics from the metric data.
