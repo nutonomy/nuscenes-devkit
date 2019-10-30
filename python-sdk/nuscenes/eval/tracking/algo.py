@@ -168,14 +168,16 @@ class TrackingEvaluation(object):
         :param threshold: score threshold used to determine positives and negatives.
         :returns: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
         """
-        # Init.
-        acc = MOTAccumulatorCustom()
+        accs = []
         scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.
-        frame_id = 0  # Frame ids must be unique across all scenes
 
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in tqdm.tqdm(self.tracks_gt.keys(), disable=not self.verbose, leave=False):
+
+            # Initialize accumulator and frame_id for this scene
+            acc = MOTAccumulatorCustom()
+            frame_id = 0  # Frame ids must be unique across all scenes
 
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
@@ -226,8 +228,10 @@ class TrackingEvaluation(object):
 
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1
-
-        return acc, scores
+            accs.append(acc)
+        # Merge accumulators
+        acc_merged = MOTAccumulatorCustom.merge_event_dataframes(accs)
+        return acc_merged, scores
 
     def compute_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:
         """
