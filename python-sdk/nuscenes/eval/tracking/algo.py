@@ -179,13 +179,7 @@ class TrackingEvaluation(object):
 
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
-            scene_tracks_pred_unfiltered = self.tracks_pred[scene_id]
-
-            # Threshold predicted tracks using the specified threshold.
-            if threshold is None:
-                scene_tracks_pred = scene_tracks_pred_unfiltered
-            else:
-                scene_tracks_pred = TrackingEvaluation._threshold_tracks(scene_tracks_pred_unfiltered, threshold)
+            scene_tracks_pred = self.tracks_pred[scene_id]
 
             for timestamp in scene_tracks_gt.keys():
                 # Select only the current class.
@@ -193,10 +187,14 @@ class TrackingEvaluation(object):
                 frame_pred = scene_tracks_pred[timestamp]
                 frame_gt = [f for f in frame_gt if f.tracking_name == self.class_name]
                 frame_pred = [f for f in frame_pred if f.tracking_name == self.class_name]
-                gt_ids = [gg.tracking_id for gg in frame_gt]
-                pred_ids = [tt.tracking_id for tt in frame_pred]
+
+                # Threshold boxes by score. Note that the scores were previously averaged over the whole track.
+                if threshold is not None:
+                    frame_pred = [f for f in frame_pred if f.tracking_score >= threshold]
 
                 # Abort if there are neither GT nor pred boxes.
+                gt_ids = [gg.tracking_id for gg in frame_gt]
+                pred_ids = [tt.tracking_id for tt in frame_pred]
                 if len(gt_ids) == 0 and len(pred_ids) == 0:
                     continue
 
@@ -230,35 +228,6 @@ class TrackingEvaluation(object):
                 frame_id += 1
 
         return acc, scores
-
-    @staticmethod
-    def _threshold_tracks(scene_tracks_pred_unfiltered: Dict[int, List[TrackingBox]],
-                          threshold: float) \
-            -> Dict[int, List[TrackingBox]]:
-        """
-        For the current threshold, remove the tracks with low confidence for each frame.
-        Note that the average of the per-frame scores forms the track-level score.
-        :param scene_tracks_pred_unfiltered: The predicted tracks for this scene.
-        :param threshold: The score threshold.
-        :return: A subset of the predicted tracks with scores above the threshold.
-        """
-        assert threshold is not None, 'Error: threshold must be specified!'
-        scene_tracks_pred = {}
-        for track_id, track in scene_tracks_pred_unfiltered.items():
-            if len(track) == 0:
-                scene_tracks_pred[track_id] = []
-            else:
-                # Compute average score for current track.
-                track_scores = [box.tracking_score for box in track]
-                avg_score = np.mean(track_scores)
-
-                # Decide whether to keep track by thresholding.
-                if avg_score >= threshold:
-                    scene_tracks_pred[track_id] = track
-                else:
-                    scene_tracks_pred[track_id] = []
-
-        return scene_tracks_pred
 
     def compute_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:
         """

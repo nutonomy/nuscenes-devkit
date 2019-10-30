@@ -141,6 +141,26 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
         scene_token = sample_record['scene_token']
         tracks[scene_token][sample_record['timestamp']] = all_boxes.boxes[sample_token]
 
+    # Replace box scores with track score (average box score). This only affects the compute_thresholds method and
+    # should be done before interpolation to avoid diluting the original scores with interpolated boxes.
+    if not gt:
+        for scene_id, scene_tracks in tracks.items():
+            # For each track_id, collect the scores.
+            track_id_scores = defaultdict(list)
+            for timestamp, boxes in scene_tracks.items():
+                for box in boxes:
+                    track_id_scores[box.tracking_id].append(box.tracking_score)
+
+            # Compute average scores for each track.
+            track_id_avg_scores = {}
+            for tracking_id, scores in track_id_scores.items():
+                track_id_avg_scores[tracking_id] = np.mean(scores)
+
+            # Apply average score to each box.
+            for timestamp, boxes in scene_tracks.items():
+                for box in boxes:
+                    box.tracking_score = track_id_avg_scores[box.tracking_id]
+
     # Interpolate GT and predicted tracks.
     for scene_token in tracks.keys():
         tracks[scene_token] = interpolate_tracks(tracks[scene_token], verbose=verbose)
