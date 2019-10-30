@@ -1,5 +1,6 @@
 from bisect import bisect
-from typing import List, Dict
+from typing import List, Dict, DefaultDict
+from collections import defaultdict
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -48,7 +49,7 @@ def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, ri
                        tracking_score=tracking_score)
 
 
-def interpolate_tracks(tracks_by_timestamp: Dict[int, List[TrackingBox]]) -> Dict[int, List[TrackingBox]]:
+def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]]) -> DefaultDict[int, List[TrackingBox]]:
     """
     Interpolate the tracks to fill in holes, especially since GT boxes with 0 lidar points are removed.
     We are rediscovering an information that already exists in nuscenes.
@@ -57,13 +58,10 @@ def interpolate_tracks(tracks_by_timestamp: Dict[int, List[TrackingBox]]) -> Dic
     :return: The interpolated tracks.
     """
     # Group tracks by id.
-    tracks_by_id = {}
-    track_timestamps_by_id = {}
+    tracks_by_id = defaultdict(list)
+    track_timestamps_by_id = defaultdict(list)
     for timestamp, tracking_boxes in tracks_by_timestamp.items():
         for tracking_box in tracking_boxes:
-            if tracking_box.tracking_id not in tracks_by_id.keys():
-                tracks_by_id[tracking_box.tracking_id] = []
-                track_timestamps_by_id[tracking_box.tracking_id] = []
             tracks_by_id[tracking_box.tracking_id].append(tracking_box)
             track_timestamps_by_id[tracking_box.tracking_id].append(timestamp)
 
@@ -113,13 +111,11 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
         if scene['name'] in splits[eval_split]:
             scene_tokens.add(scene_token)
 
-    # Init all scenes and timestamps to guarantee completeness.
-    tracks = {}
-    for scene_token in scene_tokens:
-        # Init scene.
-        if scene_token not in tracks:
-            tracks[scene_token] = {}
+    # Tracks are stored as dict {scene_token: {timestamp: List[TrackingBox]}}.
+    tracks = defaultdict(lambda: defaultdict(list))
 
+    # Init all scenes and timestamps to guarantee completeness.
+    for scene_token in scene_tokens:
         # Init all timestamps in this scene.
         scene = nusc.get('scene', scene_token)
         cur_sample_token = scene['first_sample_token']
@@ -145,10 +141,8 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
     for scene_token in tracks.keys():
         tracks[scene_token] = interpolate_tracks(tracks[scene_token])
 
-    # Make sure the tracks are sorted in time.
-    # This is always the case for GT, but may not be the case for predictions.
-    if not gt:
-        for scene_token in tracks.keys():
-            tracks[scene_token] = dict(sorted(tracks[scene_token].items(), key=lambda kv: kv[0]))
+        if not gt:
+            # Make sure predictions are sorted in in time. (Always true for GT).
+            tracks[scene_token] = defaultdict(list, sorted(tracks[scene_token].items(), key=lambda kv: kv[0]))
 
     return tracks
