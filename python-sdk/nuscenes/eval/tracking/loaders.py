@@ -53,7 +53,7 @@ def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]],
         DefaultDict[int, List[TrackingBox]]:
     """
     Interpolate the tracks to fill in holes, especially since GT boxes with 0 lidar points are removed.
-    We are rediscovering an information that already exists in nuscenes.
+    We are rediscovering information that already exists in nuScenes.
     This interpolation does not take into account visibility. It interpolates despite occlusion.
     :param tracks_by_timestamp: The tracks.
     :param verbose: Whether to print verbose outputs to stdout.

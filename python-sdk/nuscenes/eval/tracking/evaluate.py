@@ -72,7 +72,7 @@ class TrackingEval:
         if verbose:
             print('Initializing nuScenes tracking evaluation')
         pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, TrackingBox,
-                                                     verbose=verbose)
+                                                verbose=verbose)
         gt_boxes = load_gt(nusc, self.eval_set, TrackingBox, verbose=verbose)
 
         assert set(pred_boxes.sample_tokens) == set(gt_boxes.sample_tokens), \
@@ -118,7 +118,7 @@ class TrackingEval:
             metric_data_list.set(class_name, md)
 
         # -----------------------------------
-        # Step 2: Calculate metrics from the data.
+        # Step 2: Aggregate metrics from the metric data.
         # -----------------------------------
         if self.verbose:
             print('Calculating metrics...')
@@ -159,10 +159,9 @@ class TrackingEval:
 
         return metrics, metric_data_list
 
-    def render(self, metrics: TrackingMetrics, md_list: TrackingMetricDataList) -> None:
+    def render(self, md_list: TrackingMetricDataList) -> None:
         """
         Renders a plot for each class and each metric.
-        :param metrics: TrackingMetrics instance.
         :param md_list: TrackingMetricDataList instance.
         """
         if self.verbose:
@@ -204,7 +203,7 @@ class TrackingEval:
 
         # Render curves.
         if render_curves:
-            self.render(metrics, metric_data_list)
+            self.render(metric_data_list)
 
         return metrics
 

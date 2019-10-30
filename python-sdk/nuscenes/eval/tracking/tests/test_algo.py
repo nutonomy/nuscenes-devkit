@@ -1,6 +1,7 @@
 import unittest
 from typing import Tuple, Dict, List
 import copy
+from collections import defaultdict
 
 import numpy as np
 
@@ -163,7 +164,7 @@ class TestAlgo(unittest.TestCase):
         tracks_pred = {'scene-1': timestamp_boxes_pred}
 
         # Interpolate to "restore" dropped GT.
-        tracks_gt['scene-1'] = interpolate_tracks(tracks_gt['scene-1'])
+        tracks_gt['scene-1'] = interpolate_tracks(defaultdict(list, tracks_gt['scene-1']))
 
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,

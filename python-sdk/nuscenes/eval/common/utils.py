@@ -1,13 +1,15 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
 
-from typing import List, Dict
+from typing import List, Dict, Any
 
 import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.data_classes import EvalBox
 from nuscenes.utils.data_classes import Box
+
+DetectionBox = Any  # Workaround as direct imports lead to cyclic dependencies.
 
 
 def center_distance(gt_box: EvalBox, pred_box: EvalBox) -> float:
@@ -62,7 +64,7 @@ def angle_diff(x: float, y: float, period: float):
     return diff
 
 
-def attr_acc(gt_box: 'DetectionBox', pred_box: 'DetectionBox') -> float:
+def attr_acc(gt_box: DetectionBox, pred_box: DetectionBox) -> float:
     """
     Computes the classification accuracy for the attribute of this class (if any).
     If the GT class has no attributes or the annotation is missing attributes, we assign an accuracy of nan, which is
