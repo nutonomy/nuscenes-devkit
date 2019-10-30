@@ -83,7 +83,7 @@ class TestMain(unittest.TestCase):
 
         # Prepare results.
         instance_to_score = dict()
-        for sample in tqdm(val_samples):
+        for sample in tqdm(val_samples, leave=False):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)
