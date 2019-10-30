@@ -184,8 +184,8 @@ class TestMain(unittest.TestCase):
 
         # Compare metrics to known solution.
         if eval_set == 'mini_val':
-            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.24774512061150836)
-            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.297255420410163)
+            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.24081829757545278)
+            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2974351821696868)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
@@ -207,6 +207,8 @@ class TestMain(unittest.TestCase):
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
         if eval_set == 'mini_val':
+            self.assertAlmostEqual(metrics.compute_metric('amota'), 1.0)
+            self.assertAlmostEqual(metrics.compute_metric('amotp'), 0.0, delta=1e-5)
             self.assertAlmostEqual(metrics.compute_metric('motar'), 1.0)
             self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
             self.assertAlmostEqual(metrics.compute_metric('mota'), 1.0)
