@@ -115,7 +115,7 @@ class TestAlgo(unittest.TestCase):
         assert md.tp[5] == 2
         assert md.fp[5] == 0
         assert md.fn[5] == 0
-        assert md.lgd[5] == 0  # TODO: Fix this. IDS should count as misses in LGD and TID.
+        assert md.lgd[5] == 0
         assert md.tid[5] == 0
         assert md.frag[5] == 0
         assert md.ids[5] == 2  # One wrong id leads to 2 identity switches.
@@ -144,7 +144,7 @@ class TestAlgo(unittest.TestCase):
         assert np.all(md.tp == 3)
         assert np.all(md.fp == 1)
         assert np.all(md.fn == 0)
-        assert np.all(md.lgd == 0)
+        assert np.all(md.lgd == 0.5)
         assert np.all(md.tid == 0)
         assert np.all(md.frag == 0)
         assert np.all(md.ids == 0)

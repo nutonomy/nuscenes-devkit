@@ -15,9 +15,9 @@ DataFrame = Any
 
 def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     """
-    Computes the track initialization duration, which is the duration from the first occurrance of an object to
+    Computes the track initialization duration, which is the duration from the first occurrence of an object to
     it's first correct detection (TP).
-    Note that this True Positive metrics is undefined if there are no matched tracks.
+    Note that this True Positive metric is undefined if there are no matched tracks.
     :param df: Motmetrics dataframe that is required, but not used here.
     :param obj_frequencies: Stores the GT tracking_ids and their frequencies.
     :return: The track initialization time.
@@ -53,7 +53,7 @@ def track_initialization_duration(df: DataFrame, obj_frequencies: DataFrame) -> 
 def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     """
     Computes the longest gap duration, which is the longest duration of any gaps in the detection of an object.
-    Note that this True Positive metrics is undefined if there are no matched tracks.
+    Note that this True Positive metric is undefined if there are no matched tracks.
     :param df: Motmetrics dataframe that is required, but not used here.
     :param obj_frequencies: Dataframe with all object frequencies.
     :return: The longest gap duration.
@@ -67,43 +67,36 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
     for gt_tracking_id in obj_frequencies.index:
         # Find the frame_ids object is tracked and compute the gaps between those. Take the maximum one for longest gap.
         dfo = df.noraw[df.noraw.OId == gt_tracking_id]
-        matched = dfo[dfo.Type != 'MISS']
+        matched = set(dfo[dfo.Type != 'MISS'].index.get_level_values(0).values)
 
         if len(matched) == 0:
             # Ignore untracked objects.
             gap = 0
             missed_tracks += 1
         else:
-            # Find the biggest gap. This looks more difficult as some samples may be occluded and therefore don't have
-            # GT. In that case we assume that the gap size did not grow, rather than ending the gap or growing it.
+            # Find the biggest gap.
+            # Note that we don't need to deal with FPs within the track as the GT is interpolated.
             gap = 0  # The biggest gap found.
             cur_gap = 0  # Current gap.
-
-            matches = set(dfo[dfo.Type == 'MATCH'].index.get_level_values(0).values)
-            misses = set(dfo[dfo.Type == 'MISS'].index.get_level_values(0).values)
             first_index = dfo.index[0][0]
             last_index = dfo.index[-1][0]
 
             for i in range(first_index, last_index + 1):
-                # Find biggest gap.
-                if i in misses:
-                    # Gap grows.
-                    cur_gap += 1
-                elif i in matches:
+                if i in matched:
                     # Reset when matched.
                     gap = np.maximum(gap, cur_gap)
                     cur_gap = 0
-                else:
-                    # We have no GT here, so we make no assumptions and don't grow the gap.
-                    pass
+                else:  # Grow gap when missed.
+                    # Gap grows.
+                    cur_gap += 1
 
             gap = np.maximum(gap, cur_gap)
-            assert gap <= len(misses)
 
         # Multiply number of sample differences with approx. sample period (0.5 sec).
         assert gap >= 0, 'Time difference should be larger than or equal to zero: %.2f'
         lgd += gap * 0.5
 
+    # Average LGD over the number of tracks.
     matched_tracks = len(obj_frequencies) - missed_tracks
     if matched_tracks == 0:
         # Return nan if there are no matches.
@@ -196,7 +189,7 @@ def num_fragmentations_custom(df: DataFrame, obj_frequencies: DataFrame) -> floa
     :return: The number of fragmentations.
     """
     fra = 0
-    for o in obj_frequencies.index:  # TODO: deal with GT tracks missing in frames due to occlusion.
+    for o in obj_frequencies.index:
         # Find first and last time object was not missed (track span). Then count
         # the number switches from NOT MISS to MISS state.
         dfo = df.noraw[df.noraw.OId == o]
