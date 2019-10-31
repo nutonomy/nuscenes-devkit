@@ -164,7 +164,7 @@ class TestMain(unittest.TestCase):
 
         cfg = config_factory('tracking_nips_2019')
         nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
-                                 verbose=False)
+                                 verbose=True)  # TODO: set to false
         metrics = nusc_eval.main(render_curves=render_curves)
 
         return metrics

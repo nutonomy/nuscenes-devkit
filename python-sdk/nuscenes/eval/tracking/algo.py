@@ -1,4 +1,7 @@
 """
+nuScenes dev-kit.
+Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
+
 This code is based on two repositories:
 
 Xinshuo Weng's AB3DMOT code at:
@@ -161,7 +164,7 @@ class TrackingEvaluation(object):
 
         return md
 
-    def accumulate_threshold(self, threshold: float = None) -> Tuple[MOTAccumulatorCustom, List[float]]:
+    def accumulate_threshold(self, threshold: float = None) -> Tuple[pandas.DataFrame, List[float]]:
         """
         Accumulate metrics for a particular recall threshold of the current class.
         The scores are only computed if threshold is set to None. This is used to infer the recall thresholds.
@@ -229,8 +232,10 @@ class TrackingEvaluation(object):
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1
             accs.append(acc)
+
         # Merge accumulators
         acc_merged = MOTAccumulatorCustom.merge_event_dataframes(accs)
+
         return acc_merged, scores
 
     def compute_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:

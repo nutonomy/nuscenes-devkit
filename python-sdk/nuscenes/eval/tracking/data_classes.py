@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar, 2019.
+# Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
 
 from typing import List, Dict, Tuple, Any
 

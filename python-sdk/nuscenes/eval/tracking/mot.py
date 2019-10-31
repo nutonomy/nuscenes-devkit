@@ -1,4 +1,7 @@
 """
+nuScenes dev-kit.
+Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
+
 This code is based on:
 
 py-motmetrics at:
@@ -13,6 +16,10 @@ import pandas as pd
 
 
 class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
+    def __init__(self):
+        super().__init__()
+
+
     @staticmethod
     def new_event_dataframe_with_data(indices, events):
         """
@@ -34,7 +41,7 @@ class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
 
     @staticmethod
     def new_event_dataframe():
-        """Create a new DataFrame for event tracking."""
+        """ Create a new DataFrame for event tracking. """
         idx = pd.MultiIndex(levels=[[], []], codes=[[], []], names=['FrameId', 'Event'])
         cats = pd.Categorical([], categories=['RAW', 'FP', 'MISS', 'SWITCH', 'MATCH'])
         df = pd.DataFrame(

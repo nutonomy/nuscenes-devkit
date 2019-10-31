@@ -1,4 +1,7 @@
 """
+nuScenes dev-kit.
+Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
+
 This code is based on:
 
 py-motmetrics at:

@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar, 2019.
+# Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
 
 import argparse
 import json
@@ -7,8 +7,6 @@ import os
 import time
 from typing import Tuple
 
-from joblib import Parallel, delayed, parallel_backend
-import multiprocessing
 import numpy as np
 
 from nuscenes import NuScenes
@@ -113,11 +111,6 @@ class TrackingEval:
             print('Accumulating metric data...')
         metric_data_list = TrackingMetricDataList()
 
-        num_cores = multiprocessing.cpu_count()
-        num_classes = len(self.cfg.class_names)
-        num_jobs = min(num_classes, num_cores)
-
-        # Wrap accumulation for parallelization
         def accumulate_class(curr_class_name):
             curr_ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, curr_class_name, self.cfg.dist_fcn_callable,
                                          self.cfg.dist_th_tp, self.cfg.min_recall,
@@ -126,8 +119,6 @@ class TrackingEval:
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
 
-        # with parallel_backend('threading', n_jobs=num_jobs):
-        #     Parallel()(delayed(accumulate_class)(class_name) for class_name in self.cfg.class_names)
         for class_name in self.cfg.class_names:
             accumulate_class(class_name)
 
