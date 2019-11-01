@@ -215,9 +215,9 @@ class TestAlgo(unittest.TestCase):
         assert np.all(md.tp == 4)
         assert np.all(md.fp == 0)
         assert np.all(md.fn == 0)
-        assert np.all(md.frag == 0)
         assert np.all(md.lgd == 0)
         assert np.all(md.tid == 0)
+        assert np.all(md.frag == 0)
         assert np.all(md.ids == 0)
 
 

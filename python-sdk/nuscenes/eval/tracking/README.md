@@ -6,6 +6,8 @@ In this document we present the rules, result format, classes, evaluation metric
 ## Overview
 - [Introduction](#introduction)
 - [Authors](#authors)
+- [Getting started](#getting-started)
+- [Participation](#participation)
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
 - [Results format](#results-format)
@@ -25,6 +27,16 @@ Here we describe the challenge, the rules, the classes, evaluation metrics and g
 The tracking task and challenge are a joint work between **Aptiv** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
 They are based upon the [nuScenes dataset](http://www.nuScenes.org) \[1\] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in \[2\].
 
+# Getting started
+To participate in the tracking challenge you should first [get familiar with the nuScenes dataset and install it](https://github.com/nutonomy/nuscenes-devkit/blob/master/README.md).
+In particular, the [tutorial](https://www.nuscenes.org/tutorial) explains how to use the various database tables.
+The tutorial also shows how to retrieve the images, lidar pointclouds and annotations for each sample (timestamp).
+To retrieve the instance/track of an object, take a look at the [instance table](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#instance).
+Now you are ready to train your tracking algorithm on the dataset.
+If you are only interested in tracking (as opposed to detection), you can use the provided detections for several state-of-the-art methods [below](#baselines).
+To evaluate the tracking results, use `evaluate.py` in the [eval folder](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/eval/tracking).
+In `loaders.py` we provide some methods to organize the raw box data into tracks that may be helpful.
+ 
 ## Participation
 *Note: The tracking server will open soon.*
  
@@ -206,6 +218,7 @@ These guarantee that the values span the entire `[0, 1]` range and brings the th
 - **AMOTP** (average multi object tracking precision):
 Average over the MOTP metric defined below.
 Here `d_{i,t}` indicates the position error of track `i` at time `t` and `TP_t` indicates the number of matches at time `t`. See \[3\]. 
+<br />
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;\mathit{TP}_t}" target="_blank">
 <img width="300" src="https://latex.codecogs.com/png.latex?\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;\mathit{TP}_t}" title="\mathit{AMOTP} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1}, .., 1\}} \frac{\sum_{i,t} d_{i,t}}{\sum_t \mathit{TP}_t}" />
 </a>

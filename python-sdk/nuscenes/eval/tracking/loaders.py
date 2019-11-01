@@ -92,7 +92,7 @@ def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]])
     return tracks_by_timestamp
 
 
-def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: bool, verbose: bool)\
+def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: bool) \
         -> Dict[str, Dict[int, List[TrackingBox]]]:
     """
     Returns all tracks for all scenes. Samples within a track are sorted in chronological order.
@@ -101,7 +101,6 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
     :param nusc: The NuScenes instance to load the sample information from.
     :param eval_split: The evaluation split for which we create tracks.
     :param gt: Whether we are creating tracks for GT or predictions
-    :param verbose: Whether to print verbose outputs to stdout.
     :return: The tracks.
     """
     # Only keep samples from this split.
