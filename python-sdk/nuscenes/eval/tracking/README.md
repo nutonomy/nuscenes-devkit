@@ -258,11 +258,11 @@ Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* 
 The results for object detection and tracking can be seen below.
 Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
 
-|   Method             | NDS  | mAP  | AMOTA | AMOTP        | Detections download                                    |
-|   ---                | ---  | ---  | ---   | ---          | ---                                                    |
-|   PointPillars \[5\] | 44.8 | 29.5 | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
-|   Megvii \[6\]       | 62.8 | 51.9 | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
-|   Mapillary \[7\]    | 36.9 | 29.8 | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
+|   Method             | NDS  | mAP  | AMOTA | AMOTP | Modality | Detections download                                              | Tracking download                                               |
+|   ---                | ---  | ---  | ---   | ---   | ---      | ---                                                              | ---                                                             |
+|   Megvii \[6\]       | 62.8 | 51.9 | 16.6  | 1.49  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
+|   PointPillars \[5\] | 44.8 | 29.5 | TBD   | TBD   | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
+|   Mapillary \[7\]    | 36.9 | 29.8 | 0.02  | 1.77  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.

@@ -93,8 +93,8 @@ class TrackingEval:
         self.sample_tokens = gt_boxes.sample_tokens
 
         # Convert boxes to tracks format.
-        self.tracks_gt = create_tracks(gt_boxes, nusc, self.eval_set, gt=True, verbose=verbose)
-        self.tracks_pred = create_tracks(pred_boxes, nusc, self.eval_set, gt=False, verbose=verbose)
+        self.tracks_gt = create_tracks(gt_boxes, nusc, self.eval_set, gt=True)
+        self.tracks_pred = create_tracks(pred_boxes, nusc, self.eval_set, gt=False)
 
     def evaluate(self) -> Tuple[TrackingMetrics, TrackingMetricDataList]:
         """

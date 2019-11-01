@@ -131,7 +131,11 @@ class TrackingEvaluation(object):
                 print_threshold_metrics(thresh_summary.to_dict())
 
         # Concatenate all metrics. We only do this for more convenient access.
-        summary = pandas.concat(thresh_metrics)
+        if len(thresh_metrics) == 0:
+            # No achieved recall threshold. Abort and set worst possible result.
+            return md  # TODO: Set the worst possible result.
+        else:
+            summary = pandas.concat(thresh_metrics)
 
         # Sanity checks.
         unachieved_thresholds = np.sum(np.isnan(thresholds))
