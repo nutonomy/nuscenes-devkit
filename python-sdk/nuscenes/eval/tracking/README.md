@@ -6,6 +6,8 @@ In this document we present the rules, result format, classes, evaluation metric
 ## Overview
 - [Introduction](#introduction)
 - [Authors](#authors)
+- [Getting started](#getting-started)
+- [Participation](#participation)
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
 - [Results format](#results-format)
@@ -15,7 +17,7 @@ In this document we present the rules, result format, classes, evaluation metric
 - [Leaderboard](#leaderboard)
 
 ## Introduction
-The [nuScenes dataset](http://www.nuScenes.org) [1] has achieved widespread acceptance in academia and industry as a standard dataset for AV perception problems.
+The [nuScenes dataset](http://www.nuScenes.org) \[1\] has achieved widespread acceptance in academia and industry as a standard dataset for AV perception problems.
 To advance the state-of-the-art on the problems of interest we propose benchmark challenges to measure the performance on our dataset.
 At CVPR 2019 we organized the [nuScenes detection challenge](https://www.nuscenes.org/object-detection).
 The nuScenes tracking challenge is a natural progression to the detection challenge, building on the best known detection algorithms and tracking these across time.
@@ -23,8 +25,18 @@ Here we describe the challenge, the rules, the classes, evaluation metrics and g
 
 ## Authors
 The tracking task and challenge are a joint work between **Aptiv** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
-They are based upon the [nuScenes dataset](http://www.nuScenes.org) [1] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in [2].
+They are based upon the [nuScenes dataset](http://www.nuScenes.org) \[1\] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in \[2\].
 
+# Getting started
+To participate in the tracking challenge you should first [get familiar with the nuScenes dataset and install it](https://github.com/nutonomy/nuscenes-devkit/blob/master/README.md).
+In particular, the [tutorial](https://www.nuscenes.org/tutorial) explains how to use the various database tables.
+The tutorial also shows how to retrieve the images, lidar pointclouds and annotations for each sample (timestamp).
+To retrieve the instance/track of an object, take a look at the [instance table](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#instance).
+Now you are ready to train your tracking algorithm on the dataset.
+If you are only interested in tracking (as opposed to detection), you can use the provided detections for several state-of-the-art methods [below](#baselines).
+To evaluate the tracking results, use `evaluate.py` in the [eval folder](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/eval/tracking).
+In `loaders.py` we provide some methods to organize the raw box data into tracks that may be helpful.
+ 
 ## Participation
 *Note: The tracking server will open soon.*
  
@@ -48,9 +60,9 @@ Results and winners will be announced at the [AI Driving Olympics](http://www.dr
 
 ## Submission rules
 ### Tracking-specific rules
-* We perform 3D Multi Object Tracking (MOT) as in [2], rather than 2D MOT as in KITTI [4]. 
+* We perform 3D Multi Object Tracking (MOT) as in \[2\], rather than 2D MOT as in KITTI \[4\]. 
 * Possible input modalities are camera, lidar and radar.
-* We perform online tracking [2]. This means that the tracker may only use past and current, but not future sensor data.
+* We perform online tracking \[2\]. This means that the tracker may only use past and current, but not future sensor data.
 * Noisy object detections are provided below (including for the test split), but do not have to be used.
 * At inference time users may use all past sensor data and ego poses from the current scene, but not from a previous scene. At training time there are no restrictions.
 
@@ -100,8 +112,9 @@ sample_result {
     "size":           <float> [3]   -- Estimated bounding box size in meters: width, length, height.
     "rotation":       <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
-    "tracking_id":    <int>         -- Unique object id that is used to identify an object track across samples.
-    "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian. Note that the tracking_name cannot change throughout a track.
+    "tracking_id":    <str>         -- Unique object id that is used to identify an object track across samples.
+    "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian.
+                                       Note that the tracking_name cannot change throughout a track.
     "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name.
                                        We average over frame level scores to compute the track level score.
                                        The score is used to determine positive and negative tracks via thresholding.
@@ -113,7 +126,7 @@ Note that except for the `tracking_*` fields the result format is identical to t
 The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
-From these [detection challenge](https://www.nuscenes.org/object-detection) classes we further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
+From these *detection challenge classes* we further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
 Below we show the table of the 7 tracking classes and their counterparts in the nuScenes dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
 
@@ -143,9 +156,9 @@ For more information on the classes and their frequencies, see [this page](https
 |   vehicle.trailer                         |   trailer                 |
 |   vehicle.truck                           |   truck                   |
 
-For each nuScenes class, the number of annotations decreases with increasing range from the ego vehicle, 
-but the number of annotations per range varies by class. Therefore, each class has its own upper bound on evaluated
-tracking range, as shown below: 
+For each nuScenes class, the number of annotations decreases with increasing radius from the ego vehicle, 
+but the number of annotations per radius varies by class. Therefore, each class has its own upper bound on evaluated
+detection radius, as shown below:
 
 |   nuScenes tracking class     |   KITTI class |   Tracking range (meters) |
 |   ---                         |   ---         |   ---                     |
@@ -157,21 +170,26 @@ tracking range, as shown below:
 |   trailer                     |   -           |   50                      |
 |   truck                       |   truck       |   50                      |
 
-In the above table we also provide the mapping from nuScenes tracking class to KITTI [4] class.
+In the above table we also provide the mapping from nuScenes tracking class to KITTI \[4\] class.
 While KITTI defines 8 classes in total, only `car` and `pedestrian` are used for the tracking benchmark, as the other classes do not have enough samples.
 Our goal is to perform tracking of all moving objects in a traffic scene.
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes tracking task.
+Note that all metrics below (except FPS) are computed per class and then averaged over all classes.
 The challenge winner will be determined based on AMOTA.
 Additionally a number of secondary metrics are computed and shown on the leaderboard.
-Note that all metrics below (except FPS) are computed per class and then averaged over all classes. 
 
 ### Preprocessing
 Before running the evaluation code the following pre-processing is done on the data
+* All boxes (GT and prediction) are removed if they exceed the class-specific detection range.  
+
+### Preprocessing
+Before running the evaluation code the following pre-processing is done on the data:
 * All boxes (GT and prediction) are removed if they exceed the class-specific tracking range. 
 * All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
 * All boxes (GT) without lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes based on number of points.
+* To avoid excessive track fragmentation from lidar/radar point filtering, we linearly interpolate GT and predicted tracks.
 
 ### Matching criterion
 For all metrics, we define a match by thresholding the 2D center distance on the ground plane rather than Intersection Over Union (IOU) based affinities.
@@ -179,39 +197,41 @@ We find that this measure is more forgiving for far-away objects than IOU which 
 The matching threshold (center distance) is 2m.
 
 ### AMOTA and AMOTP metrics
-Our main metrics are the AMOTA and AMOTP metrics developed in [2].
+Our main metrics are the AMOTA and AMOTP metrics developed in \[2\].
 These are integrals over the MOTA/MOTP curves using `n`-point interpolation (`n` to be determined).
 Similar to the detection challenge, we drop points with `recall < 0.1` (not shown in the equation), as these are typically noisy.
 
 - **AMOTA** (average multi object tracking accuracy):
-Average over the MOTA [3] metric (see below) at different recall thresholds.
+Average over the MOTA \[3\] metric (see below) at different recall thresholds.
 For the traditional MOTA formulation at recall 10% there are at least 90% false negatives, which may lead to negative MOTAs.
 Therefore the contribution of identity switches and false positives becomes negligible at low recall values.
-In `MOTA'` we include the term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
+In `MOTAR` we include recall-normalization term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
 These guarantee that the values span the entire `[0, 1]` range and brings the three error types into a similar value range.
+`P` refers to the number of ground-truth positives for the current class.
+The weighting factor `⍺ = 0.2` is to avoid that MOTAR is 0 on difficult classes. 
 <br />
-<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTA'}" target="_blank">
-<img width="400" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTA'}" title="\dpi{400} \tiny \mathit{AMOTA} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1} \, ... \, \, 1\}} \mathit{MOTA'}" /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTAR}" target="_blank">
+<img width="400" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTAR}" title="\dpi{400} \tiny \mathit{AMOTA} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1} \, ... \, \, 1\}} \mathit{MOTAR}" /></a>
 <br />
-<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{MOTA'}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;&plus;&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" target="_blank">
-<img width="450" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\mathit{MOTA'}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;&plus;&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" title="\mathit{MOTA'} = \max (0,\; 1 \, - \, \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r + (1-r) * \mathit{P}}{r * \mathit{P}})" /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{MOTAR}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\alpha*\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" target="_blank">
+<img width="450" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\mathit{MOTAR}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\alpha*\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" title="\mathit{MOTAR} = \max (0,\; 1 \, - \, \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r + (1-r) * \mathit{P}}{r * \mathit{P}})" /></a>
 
 - **AMOTP** (average multi object tracking precision):
 Average over the MOTP metric defined below.
-Here `d_{i,t}` indicates the position error of track `i` at time `t` and `c_t` indicates the number of matches at time `t`. See [3]. 
-<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;c_t}" target="_blank">
-<img width="300" src="https://latex.codecogs.com/png.latex?\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;c_t}" title="\mathit{AMOTP} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1}, .., 1\}} \frac{\sum_{i,t} d_{i,t}}{\sum_t c_t}" />
+Here `d_{i,t}` indicates the position error of track `i` at time `t` and `TP_t` indicates the number of matches at time `t`. See \[3\]. 
+<br />
+<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;\mathit{TP}_t}" target="_blank">
+<img width="300" src="https://latex.codecogs.com/png.latex?\dpi{300}&space;\mathit{AMOTP}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1},&space;..,&space;1\}}&space;\frac{\sum_{i,t}&space;d_{i,t}}{\sum_t&space;\mathit{TP}_t}" title="\mathit{AMOTP} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1}, .., 1\}} \frac{\sum_{i,t} d_{i,t}}{\sum_t \mathit{TP}_t}" />
 </a>
 
 ### Secondary metrics
-We use a number of standard MOT metrics including CLEAR MOT [3] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
+We use a number of standard MOT metrics including CLEAR MOT \[3\] and ML/MT as listed on [motchallenge.net](https://motchallenge.net).
 Contrary to the above AMOTA and AMOTP metrics, these metrics use a confidence threshold to determine positive and negative tracks.
 The confidence threshold is selected for every class independently by picking the threshold that achieves the highest MOTA.
 The track level scores are determined by averaging the frame level scores.
 Tracks with a score below the confidence threshold are discarded.
-* **MOTA** (multi object tracking accuracy) [3]: This measure combines three error sources: false positives, missed targets and identity switches.
-* **MOTP** (multi object tracking precision) [3]: The misalignment between the annotated and the predicted bounding boxes.
-* **IDF1** (ID F1 score): The ratio of correctly identified detections over the average number of ground-truth and computed detections.
+* **MOTA** (multi object tracking accuracy) \[3\]: This measure combines three error sources: false positives, missed targets and identity switches.
+* **MOTP** (multi object tracking precision) \[3\]: The misalignment between the annotated and the predicted bounding boxes.
 * **FAF**: The average number of false alarms per frame.
 * **MT** (ratio of mostly tracked trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at least 80% of their respective life span.
 * **ML** (ratio of mostly lost trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at most 20% of their respective life span.
@@ -226,7 +246,6 @@ Users are asked to provide the runtime of their method:
 Furthermore we propose a number of additional metrics:
 * **TID** (average track initialization duration in seconds): Some trackers require a fixed window of past sensor readings. Trackers may also perform poorly without a good initialization. The purpose of this metric is to measure for each track the initialization duration until the first object was successfully detected. If an object is not tracked, we assign the entire track duration as initialization duration. Then we compute the average over all tracks.     
 * **LGD** (average longest gap duration in seconds): *Frag* measures the number of fragmentations. For the application of Autonomous Driving it is crucial to know how long an object has been missed. We compute this duration for each track. If an object is not tracked, we assign the entire track duration as initialization duration.
-- **mAP / TP metrics**: Analog to the detection challenge, we compute the mean Average Precision (mAP) and True Positive (TP) metrics: scale, translation, orientation and velocity error, but not attributes. The purpose is to show the improvement that a tracker provides over the underlying object detection method (if any). Note that three static classes from the detection challenge were removed and therefore results are only comparable per class.
 
 ### Configuration
 The default evaluation metrics configurations can be found in `nuscenes/eval/tracking/configs/tracking_nips_2019.json`.
@@ -236,15 +255,15 @@ To allow the user focus on the tracking problem, we release object detections fr
 We thank Alex Lang (Aptiv), Benjin Zhu (Megvii) and Andrea Simonelli (Mapillary) for providing these.
 The use of these detections is entirely optional.
 The detections on the train, val and test splits can be downloaded from the table below.
-Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* [2] and uses each of the provided detections.
+Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* \[2\] and uses each of the provided detections.
 The results for object detection and tracking can be seen below.
 Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
 
-|   Method           | NDS  | mAP (detection)| mAP (tracking) | AMOTA | AMOTP | Detections download                        |
-|   ---              | ---  | ---  | ---   | ---   | ---          | ---                                                    |
-|   PointPillars [5] | 44.8 | 29.5 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/pointpillars.zip) |
-|   Megvii [6]       | 62.8 | 51.9 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/megvii.zip)       |
-|   Mapillary [7]    | 36.9 | 29.8 | TBD   | TBD   | TBD          | [link](https://www.nuscenes.org/data/mapillary.zip)    |
+|   Method             | NDS  | mAP  | AMOTA | AMOTP | Modality | Detections download                                              | Tracking download                                               |
+|   ---                | ---  | ---  | ---   | ---   | ---      | ---                                                              | ---                                                             |
+|   Megvii \[6\]       | 62.8 | 51.9 | 28.2  | 1.49  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
+|   PointPillars \[5\] | 44.8 | 29.5 |  6.9  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
+|   Mapillary \[7\]    | 36.9 | 29.8 |  8.2  | 1.77  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.
@@ -254,7 +273,7 @@ To remedy this problem we have split the existing `train` set into `train_detect
 Both splits have the same distribution of Singapore, Boston, night and rain data.
 You can use these splits to train your own detection and tracking algorithms.
 The use of these splits is entirely optional.
-The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline [2] is not learning-based and therefore not prone to overfitting.
+The object detection baselines provided in the table above are trained on the *entire* training set, as our tracking baseline \[2\] is not learning-based and therefore not prone to overfitting.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the tracking task.
@@ -276,7 +295,7 @@ Note that the tracks are identical to the [nuScenes detection challenge](https:/
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
  
-**Open track**: 
+**Open track**:
 * Any sensor input allowed (radar, lidar, camera, ego pose).
 * External data and map data allowed.  
 * May use pre-training.
@@ -307,11 +326,11 @@ Users are required to report detailed information on their method regarding sens
 Users that fail to adequately report this information may be excluded from the challenge. 
 
 ## References
-- [1] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv 2019.
-- [2] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, In arXiv 2019.
-- [3] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, In Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
-- [4] *"Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite"*, A. Geiger, P. Lenz, R. Urtasun, In CVPR 2012.
-- [5] *"PointPillars: Fast Encoders for Object Detection from Point Clouds"*, A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang and O. Beijbom, In CVPR 2019.
-- [6] *"Class-balanced Grouping and Sampling for Point Cloud 3D Object Detection"*, B. Zhu, Z. Jiang, X. Zhou, Z. Li, G. Yu, In arXiv 2019.
-- [7] *"Disentangling Monocular 3D Object Detection"*, A. Simonelli, S. R. Bulo, L. Porzi, M. Lopez-Antequera, P. Kontschieder, In arXiv 2019.
-- [8] *"PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud"*, S. Shi, X. Wang, H. Li, In CVPR 2019.
+- \[1\] *"nuScenes: A multimodal dataset for autonomous driving"*, H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan and O. Beijbom, In arXiv 2019.
+- \[2\] *"A Baseline for 3D Multi-Object Tracking"*, X. Weng and K. Kitani, In arXiv 2019.
+- \[3\] *"Multiple object tracking performance metrics and evaluation in a smart room environment"*, K. Bernardin, A. Elbs, R. Stiefelhagen, In Sixth IEEE International Workshop on Visual Surveillance, in conjunction with ECCV, 2006.
+- \[4\] *"Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite"*, A. Geiger, P. Lenz, R. Urtasun, In CVPR 2012.
+- \[5\] *"PointPillars: Fast Encoders for Object Detection from Point Clouds"*, A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang and O. Beijbom, In CVPR 2019.
+- \[6\] *"Class-balanced Grouping and Sampling for Point Cloud 3D Object Detection"*, B. Zhu, Z. Jiang, X. Zhou, Z. Li, G. Yu, In arXiv 2019.
+- \[7\] *"Disentangling Monocular 3D Object Detection"*, A. Simonelli, S. R. Bulo, L. Porzi, M. Lopez-Antequera, P. Kontschieder, In arXiv 2019.
+- \[8\] *"PointRCNN: 3D Object Proposal Generation and Detection from Point Cloud"*, S. Shi, X. Wang, H. Li, In CVPR 2019.

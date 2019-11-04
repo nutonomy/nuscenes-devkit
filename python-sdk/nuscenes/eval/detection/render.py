@@ -2,18 +2,22 @@
 # Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
 
 import json
+from typing import Any
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from nuscenes import NuScenes
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.common.utils import boxes_to_sensor
+from nuscenes.eval.common.render import setup_axis
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionMetricDataList
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
     PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
-from nuscenes.eval.detection.data_classes import EvalBoxes
-from nuscenes.eval.detection.data_classes import MetricDataList, DetectionMetrics
-from nuscenes.eval.detection.utils import boxes_to_sensor
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
+
+Axis = Any
 
 
 def visualize_sample(nusc: NuScenes,
@@ -99,63 +103,24 @@ def visualize_sample(nusc: NuScenes,
         plt.show()
 
 
-def setup_axis(xlabel: str = None,
-               ylabel: str = None,
-               xlim: int = None,
-               ylim: int = None,
-               title: str = None,
-               min_precision: float = None,
-               min_recall: float = None,
-               ax = None):
-    """
-    Helper method that sets up the axis for a plot.
-    :param xlabel: x label text.
-    :param ylabel: y label text.
-    :param xlim: Upper limit for x axis.
-    :param ylim: Upper limit for y axis.
-    :param title: Axis title.
-    :param min_precision: Visualize minimum precision as horizontal line.
-    :param min_recall: Visualize minimum recall as vertical line.
-    :param ax: (optional) an existing axis to be modified.
-    :return: The axes object.
-    """
-
-    if ax is None:
-        ax = plt.subplot()
-
-    ax.get_xaxis().tick_bottom()
-    ax.tick_params(labelsize=16)
-    ax.get_yaxis().tick_left()
-    ax.spines["top"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-
-    if title is not None:
-        ax.set_title(title, size=24)
-    if xlabel is not None:
-        ax.set_xlabel(xlabel, size=16)
-    if ylabel is not None:
-        ax.set_ylabel(ylabel, size=16)
-    if xlim is not None:
-        ax.set_xlim(0, xlim)
-    if ylim is not None:
-        ax.set_ylim(0, ylim)
-    if min_recall is not None:
-        ax.axvline(x=min_recall, linestyle='--', color=(0, 0, 0, 0.3))
-    if min_precision is not None:
-        ax.axhline(y=min_precision, linestyle='--', color=(0, 0, 0, 0.3))
-
-    return ax
-
-
-def class_pr_curve(md_list: MetricDataList,
+def class_pr_curve(md_list: DetectionMetricDataList,
                    metrics: DetectionMetrics,
                    detection_name: str,
                    min_precision: float,
                    min_recall: float,
                    savepath: str = None,
-                   ax=None):
+                   ax: Axis = None) -> None:
+    """
+    Plot a precision recall curve for the specified class.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param detection_name: The detection class.
+    :param min_precision:
+    :param min_recall: Minimum recall value.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    :param ax: Axes onto which to render.
+    """
+    # Prepare axis.
     if ax is None:
         ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Precision', xlim=1,
                         ylim=1, min_precision=min_precision, min_recall=min_recall)
@@ -165,6 +130,7 @@ def class_pr_curve(md_list: MetricDataList,
 
     # Plot the recall vs. precision curve for each distance threshold.
     for md, dist_th in data:
+        md: DetectionMetricData
         ap = metrics.get_label_ap(detection_name, dist_th)
         ax.plot(md.recall, md.precision, label='Dist. : {}, AP: {:.1f}'.format(dist_th, ap * 100))
 
@@ -174,13 +140,23 @@ def class_pr_curve(md_list: MetricDataList,
         plt.close()
 
 
-def class_tp_curve(md_list: MetricDataList,
+def class_tp_curve(md_list: DetectionMetricDataList,
                    metrics: DetectionMetrics,
                    detection_name: str,
                    min_recall: float,
                    dist_th_tp: float,
                    savepath: str = None,
-                   ax=None):
+                   ax: Axis = None) -> None:
+    """
+    Plot the true positive curve for the specified class.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param detection_name:
+    :param min_recall: Minimum recall value.
+    :param dist_th_tp: The distance threshold used to determine matches.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    :param ax: Axes onto which to render.
+    """
     # Get metric data for given detection class with tp distance threshold.
     md = md_list[(detection_name, dist_th_tp)]
     min_recall_ind = round(100 * min_recall)
@@ -191,10 +167,12 @@ def class_tp_curve(md_list: MetricDataList,
     else:
         ylimit = 1.0
 
+    # Prepare axis.
     if ax is None:
         ax = setup_axis(title=PRETTY_DETECTION_NAMES[detection_name], xlabel='Recall', ylabel='Error', xlim=1,
                         min_recall=min_recall)
     ax.set_ylim(0, ylimit)
+
     # Plot the recall vs. error curve for each tp metric.
     for metric in TP_METRICS:
         tp = metrics.get_label_tp(detection_name, metric)
@@ -221,15 +199,24 @@ def class_tp_curve(md_list: MetricDataList,
         plt.close()
 
 
-def dist_pr_curve(md_list: MetricDataList,
+def dist_pr_curve(md_list: DetectionMetricDataList,
                   metrics: DetectionMetrics,
                   dist_th: float,
                   min_precision: float,
                   min_recall: float,
                   savepath: str = None) -> None:
+    """
+    Plot the PR curves for different distance thresholds.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param dist_th: Distance threshold for matching.
+    :param min_precision: Minimum precision value.
+    :param min_recall: Minimum recall value.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    """
+    # Prepare axis.
     fig, (ax, lax) = plt.subplots(ncols=2, gridspec_kw={"width_ratios": [4, 1]},
                                   figsize=(7.5, 5))
-
     ax = setup_axis(xlabel='Recall', ylabel='Precision',
                     xlim=1, ylim=1, min_precision=min_precision, min_recall=min_recall, ax=ax)
 
@@ -249,13 +236,21 @@ def dist_pr_curve(md_list: MetricDataList,
         plt.close()
 
 
-def summary_plot(md_list: MetricDataList,
+def summary_plot(md_list: DetectionMetricDataList,
                  metrics: DetectionMetrics,
                  min_precision: float,
                  min_recall: float,
                  dist_th_tp: float,
                  savepath: str = None) -> None:
-
+    """
+    Creates a summary plot with PR and TP curves for each class.
+    :param md_list: DetectionMetricDataList instance.
+    :param metrics: DetectionMetrics instance.
+    :param min_precision: Minimum precision value.
+    :param min_recall: Minimum recall value.
+    :param dist_th_tp: The distance threshold used to determine matches.
+    :param savepath: If given, saves the the rendering here instead of displaying.
+    """
     n_classes = len(DETECTION_NAMES)
     _, axes = plt.subplots(nrows=n_classes, ncols=2, figsize=(15, 5 * n_classes))
     for ind, detection_name in enumerate(DETECTION_NAMES):
@@ -286,7 +281,6 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     :param metrics_path: path to a serialized DetectionMetrics file.
     :param output_path: path to the output file.
     """
-
     with open(metrics_path, 'r') as f:
         metrics = json.load(f)
 

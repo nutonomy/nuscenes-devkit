@@ -13,31 +13,34 @@ import numpy as np
 from nuscenes import NuScenes
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, MetricDataList, DetectionMetrics, EvalBoxes
-from nuscenes.eval.detection.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics, DetectionBox, \
+    DetectionMetricDataList
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.common.loaders import load_prediction, load_gt
+from nuscenes.eval.common.loaders import add_center_dist, filter_eval_boxes
 from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
-from nuscenes.eval.detection.config import config_factory
+from nuscenes.eval.common.config import config_factory
 
 
-class NuScenesEval:
+class DetectionEval:
     """
     This is the official nuScenes detection evaluation code.
     Results are written to the provided output_dir.
 
-    nuScenes uses the following metrics:
+    nuScenes uses the following detection metrics:
     - Mean Average Precision (mAP): Uses center-distance as matching criterion; averaged over distance thresholds.
     - True Positive (TP) metrics: Average of translation, velocity, scale, orientation and attribute errors.
     - nuScenes Detection Score (NDS): The weighted sum of the above.
 
     Here is an overview of the functions in this method:
-    - init: Loads GT annotations an predictions stored in JSON format and filters the boxes.
+    - init: Loads GT annotations and predictions stored in JSON format and filters the boxes.
     - run: Performs evaluation and dumps the metric data to disk.
     - render: Renders various plots and dumps to disk.
 
     We assume that:
     - Every sample_token is given in the results, although there may be not predictions for that sample.
 
-    Please see https://github.com/nutonomy/nuscenes-devkit for more details.
+    Please see https://www.nuscenes.org/object-detection for more details.
     """
     def __init__(self,
                  nusc: NuScenes,
@@ -47,11 +50,11 @@ class NuScenesEval:
                  output_dir: str = None,
                  verbose: bool = True):
         """
-        Initialize a NuScenesEval object.
+        Initialize a DetectionEval object.
         :param nusc: A NuScenes object.
         :param config: A DetectionConfig object.
         :param result_path: Path of the nuScenes JSON result file.
-        :param eval_set: The dataset split to evaluate on, e.g. train or val.
+        :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
         :param output_dir: Folder to save plots and results to.
         :param verbose: Whether to print to stdout.
         """
@@ -74,9 +77,10 @@ class NuScenesEval:
 
         # Load data.
         if verbose:
-            print('Initializing nuScenes evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, verbose=verbose)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, verbose=verbose)
+            print('Initializing nuScenes detection evaluation')
+        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, DetectionBox,
+                                                     verbose=verbose)
+        self.gt_boxes = load_gt(self.nusc, self.eval_set, DetectionBox, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."
@@ -95,37 +99,38 @@ class NuScenesEval:
 
         self.sample_tokens = self.gt_boxes.sample_tokens
 
-    def evaluate(self) -> Tuple[DetectionMetrics, MetricDataList]:
+    def evaluate(self) -> Tuple[DetectionMetrics, DetectionMetricDataList]:
         """
         Performs the actual evaluation.
         :return: A tuple of high-level and the raw metric data.
         """
-
         start_time = time.time()
 
         # -----------------------------------
         # Step 1: Accumulate metric data for all classes and distance thresholds.
         # -----------------------------------
         if self.verbose:
-            print('Accumulating metric data')
-        metric_data_list = MetricDataList()
+            print('Accumulating metric data...')
+        metric_data_list = DetectionMetricDataList()
         for class_name in self.cfg.class_names:
             for dist_th in self.cfg.dist_ths:
-                md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn, dist_th)
+                md = accumulate(self.gt_boxes, self.pred_boxes, class_name, self.cfg.dist_fcn_callable, dist_th)
                 metric_data_list.set(class_name, dist_th, md)
 
         # -----------------------------------
         # Step 2: Calculate metrics from the data.
         # -----------------------------------
         if self.verbose:
-            print('Calculating metrics')
+            print('Calculating metrics...')
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
+            # Compute APs.
             for dist_th in self.cfg.dist_ths:
                 metric_data = metric_data_list[(class_name, dist_th)]
                 ap = calc_ap(metric_data, self.cfg.min_recall, self.cfg.min_precision)
                 metrics.add_label_ap(class_name, dist_th, ap)
 
+            # Compute TP metrics.
             for metric_name in TP_METRICS:
                 metric_data = metric_data_list[(class_name, self.cfg.dist_th_tp)]
                 if class_name in ['traffic_cone'] and metric_name in ['attr_err', 'vel_err', 'orient_err']:
@@ -136,17 +141,17 @@ class NuScenesEval:
                     tp = calc_tp(metric_data, self.cfg.min_recall, metric_name)
                 metrics.add_label_tp(class_name, metric_name, tp)
 
+        # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
 
         return metrics, metric_data_list
 
-    def render(self, metrics: DetectionMetrics, md_list: MetricDataList) -> None:
+    def render(self, metrics: DetectionMetrics, md_list: DetectionMetricDataList) -> None:
         """
         Renders various PR and TP curves.
         :param metrics: DetectionMetrics instance.
-        :param md_list: MetricDataList instance.
+        :param md_list: DetectionMetricDataList instance.
         """
-
         if self.verbose:
             print('Rendering PR and TP curves')
 
@@ -176,10 +181,9 @@ class NuScenesEval:
         :param render_curves: Whether to render PR and TP curves to disk.
         :return: A dict that stores the high-level metrics and meta data.
         """
-
         if plot_examples > 0:
             # Select a random but fixed subset to plot.
-            random.seed(43)
+            random.seed(42)
             sample_tokens = list(self.sample_tokens)
             random.shuffle(sample_tokens)
             sample_tokens = sample_tokens[:plot_examples]
@@ -246,10 +250,16 @@ class NuScenesEval:
         return metrics_summary
 
 
+class NuScenesEval(DetectionEval):
+    """
+    Dummy class for backward-compatibility. Same as DetectionEval.
+    """
+
+
 if __name__ == "__main__":
 
     # Settings.
-    parser = argparse.ArgumentParser(description='Evaluate nuScenes result submission.',
+    parser = argparse.ArgumentParser(description='Evaluate nuScenes detection results.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('result_path', type=str, help='The submission as a JSON file.')
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
@@ -282,12 +292,12 @@ if __name__ == "__main__":
     verbose_ = bool(args.verbose)
 
     if config_path == '':
-        cfg_ = config_factory('cvpr_2019')
+        cfg_ = config_factory('detection_cvpr_2019')
     else:
-        with open(config_path, 'r') as f:
-            cfg_ = DetectionConfig.deserialize(json.load(f))
+        with open(config_path, 'r') as _f:
+            cfg_ = DetectionConfig.deserialize(json.load(_f))
 
     nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
-    nusc_eval = NuScenesEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
-                             output_dir=output_dir_, verbose=verbose_)
+    nusc_eval = DetectionEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
+                              output_dir=output_dir_, verbose=verbose_)
     nusc_eval.main(plot_examples=plot_examples_, render_curves=render_curves_)

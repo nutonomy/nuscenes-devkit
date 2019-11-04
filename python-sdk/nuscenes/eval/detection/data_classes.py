@@ -6,6 +6,8 @@ from typing import List, Dict, Tuple
 
 import numpy as np
 
+from nuscenes.eval.common.data_classes import MetricData, EvalBox
+from nuscenes.eval.common.utils import center_distance
 from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES, TP_METRICS
 
 
@@ -20,8 +22,7 @@ class DetectionConfig:
                  min_recall: float,
                  min_precision: float,
                  max_boxes_per_sample: float,
-                 mean_ap_weight: int
-                 ):
+                 mean_ap_weight: int):
 
         assert set(class_range.keys()) == set(DETECTION_NAMES), "Class count mismatch."
         assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
@@ -57,7 +58,7 @@ class DetectionConfig:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
         return cls(content['class_range'],
                    content['dist_fcn'],
@@ -68,164 +69,17 @@ class DetectionConfig:
                    content['max_boxes_per_sample'],
                    content['mean_ap_weight'])
 
-
-class EvalBox:
-    """ Data class used during detection evaluation. Can be a prediction or ground truth."""
-
-    def __init__(self,
-                 sample_token: str = "",
-                 translation: Tuple[float, float, float] = (0, 0, 0),
-                 size: Tuple[float, float, float] = (0, 0, 0),
-                 rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
-                 velocity: Tuple[float, float] = (0, 0),
-                 detection_name: str = "car",
-                 attribute_name: str = "",  # Box attribute. Each box can have at most 1 attribute.
-                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
-                 detection_score: float = -1.0,  # Only applies to predictions.
-                 num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
-
-        # Assert data for shape and NaNs.
-        assert type(sample_token) == str, 'Error: sample_token must be a string!'
-
-        assert len(translation) == 3, 'Error: Translation must have 3 elements!'
-        assert not np.any(np.isnan(translation)), 'Error: Translation may not be NaN!'
-
-        assert len(size) == 3, 'Error: Size must have 3 elements!'
-        assert not np.any(np.isnan(size)), 'Error: Size may not be NaN!'
-
-        assert len(rotation) == 4, 'Error: Rotation must have 4 elements!'
-        assert not np.any(np.isnan(rotation)), 'Error: Rotation may not be NaN!'
-
-        # Velocity can be NaN from our database for certain annotations.
-        assert len(velocity) == 2, 'Error: Velocity must have 2 elements!'
-
-        assert detection_name is not None, 'Error: detection_name cannot be empty!'
-        assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
-
-        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == '', \
-            'Error: Unknown attribute_name %s' % attribute_name
-
-        assert type(ego_dist) == float, 'Error: ego_dist must be a float!'
-        assert not np.any(np.isnan(ego_dist)), 'Error: ego_dist may not be NaN!'
-
-        assert type(detection_score) == float, 'Error: detection_score must be a float!'
-        assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
-
-        assert type(num_pts) == int, 'Error: num_pts must be int!'
-        assert not np.any(np.isnan(num_pts)), 'Error: num_pts may not be NaN!'
-
-        # Assign.
-        self.sample_token = sample_token
-        self.translation = translation
-        self.size = size
-        self.rotation = rotation
-        self.velocity = velocity
-        self.detection_name = detection_name
-        self.attribute_name = attribute_name
-        self.ego_dist = ego_dist
-        self.detection_score = detection_score
-        self.num_pts = num_pts
-
-    def __repr__(self):
-        return str(self.serialize())
-
-    def __eq__(self, other):
-        return (self.sample_token == other.sample_token and
-                self.translation == other.translation and
-                self.size == other.size and
-                self.rotation == other.rotation and
-                self.velocity == other.velocity and
-                self.detection_name == other.detection_name and
-                self.attribute_name == other.attribute_name and
-                self.ego_dist == other.ego_dist and
-                self.detection_score == other.detection_score and
-                self.num_pts == other.num_pts)
-
-    def serialize(self) -> dict:
-        """ Serialize instance into json-friendly format. """
-        return {
-            'sample_token': self.sample_token,
-            'translation': self.translation,
-            'size': self.size,
-            'rotation': self.rotation,
-            'velocity': self.velocity,
-            'detection_name': self.detection_name,
-            'attribute_name': self.attribute_name,
-            'ego_dist': self.ego_dist,
-            'detection_score': self.detection_score,
-            'num_pts': self.num_pts
-        }
-
-    @classmethod
-    def deserialize(cls, content):
-        """ Initialize from serialized content. """
-        return cls(sample_token=content['sample_token'],
-                   translation=tuple(content['translation']),
-                   size=tuple(content['size']),
-                   rotation=tuple(content['rotation']),
-                   velocity=tuple(content['velocity']),
-                   detection_name=content['detection_name'],
-                   attribute_name=content['attribute_name'],
-                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
-                   detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),
-                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
-
-
-class EvalBoxes:
-    """ Data class that groups EvalBox instances by sample. """
-
-    def __init__(self):
-        self.boxes = defaultdict(list)
-
-    def __repr__(self):
-        return "EvalBoxes with {} boxes across {} samples".format(len(self.all), len(self.sample_tokens))
-
-    def __getitem__(self, item) -> List[EvalBox]:
-        return self.boxes[item]
-
-    def __eq__(self, other):
-        if not set(self.sample_tokens) == set(other.sample_tokens):
-            return False
-        ok = True
-        for token in self.sample_tokens:
-            if not len(self[token]) == len(other[token]):
-                return False
-            for box1, box2 in zip(self[token], other[token]):
-                ok = ok and box1 == box2
-        return ok
-
     @property
-    def all(self) -> List[EvalBox]:
-        """ Returns all EvalBoxes in a list. """
-        ab = []
-        for sample_token in self.sample_tokens:
-            ab.extend(self[sample_token])
-        return ab
-
-    @property
-    def sample_tokens(self) -> List[str]:
-        """ Returns a list of all keys. """
-        return list(self.boxes.keys())
-
-    def add_boxes(self, sample_token: str, boxes: List[EvalBox]) -> None:
-        """ Adds a list of boxes. """
-        self.boxes[sample_token].extend(boxes)
-
-    def serialize(self) -> dict:
-        """ Serialize instance into json-friendly format. """
-        return {key: [box.serialize() for box in boxes] for key, boxes in self.boxes.items()}
-
-    @classmethod
-    def deserialize(cls, content):
-        """ Initialize from serialized content. """
-        eb = cls()
-        for sample_token, boxes in content.items():
-            eb.add_boxes(sample_token, [EvalBox.deserialize(box) for box in boxes])
-        return eb
+    def dist_fcn_callable(self):
+        """ Return the distance function corresponding to the dist_fcn string. """
+        if self.dist_fcn == 'center_distance':
+            return center_distance
+        else:
+            raise Exception('Error: Unknown distance function %s!' % self.dist_fcn)
 
 
-class MetricData:
-    """ This class holds accumulated and interpolated data required to calculate the metrics. """
+class DetectionMetricData(MetricData):
+    """ This class holds accumulated and interpolated data required to calculate the detection metrics. """
 
     nelem = 101
 
@@ -237,10 +91,9 @@ class MetricData:
                  vel_err: np.array,
                  scale_err: np.array,
                  orient_err: np.array,
-                 attr_err: np.array,
-                 ):
+                 attr_err: np.array):
 
-        # Assert lengths
+        # Assert lengths.
         assert len(recall) == self.nelem
         assert len(precision) == self.nelem
         assert len(confidence) == self.nelem
@@ -250,7 +103,7 @@ class MetricData:
         assert len(orient_err) == self.nelem
         assert len(attr_err) == self.nelem
 
-        # Assert ordering
+        # Assert ordering.
         assert all(confidence == sorted(confidence, reverse=True))  # Confidences should be descending.
         assert all(recall == sorted(recall))  # Recalls should be ascending.
 
@@ -303,7 +156,7 @@ class MetricData:
         }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized content. """
         return cls(recall=np.array(content['recall']),
                    precision=np.array(content['precision']),
@@ -328,6 +181,7 @@ class MetricData:
 
     @classmethod
     def random_md(cls):
+        """ Returns an md instance corresponding to a random results. """
         return cls(recall=np.linspace(0, 1, cls.nelem),
                    precision=np.random.random(cls.nelem),
                    confidence=np.linspace(0, 1, cls.nelem)[::-1],
@@ -338,47 +192,8 @@ class MetricData:
                    attr_err=np.random.random(cls.nelem))
 
 
-class MetricDataList:
-    """ This stores a set of MetricData in a dict indexed by (detection-name, match-distance). """
-
-    def __init__(self):
-        self.md = {}
-
-    def __getitem__(self, key):
-        return self.md[key]
-
-    def __eq__(self, other):
-        eq = True
-        for key in self.md.keys():
-            eq = eq and self[key] == other[key]
-        return eq
-
-    def get_class_data(self, detection_name: str) -> List[Tuple[MetricData, float]]:
-        """ Get all the MetricData entries for a certain detection_name. """
-        return [(md, dist_th) for (name, dist_th), md in self.md.items() if name == detection_name]
-
-    def get_dist_data(self, dist_th: float) -> List[Tuple[MetricData, str]]:
-        """ Get all the MetricData entries for a certain match_distance. """
-        return [(md, detection_name) for (detection_name, dist), md in self.md.items() if dist == dist_th]
-
-    def set(self, detection_name: str, match_distance: float, data: MetricData):
-        """ Sets the MetricData entry for a certain detectdion_name and match_distance. """
-        self.md[(detection_name, match_distance)] = data
-
-    def serialize(self) -> dict:
-        return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
-
-    @classmethod
-    def deserialize(cls, content):
-        mdl = cls()
-        for key, md in content.items():
-            name, distance = key.split(':')
-            mdl.set(name, float(distance), MetricData.deserialize(md))
-        return mdl
-
-
 class DetectionMetrics:
-    """ Stores average precision and true positive metrics. Provides properties to summarize. """
+    """ Stores average precision and true positive metric results. Provides properties to summarize. """
 
     def __init__(self, cfg: DetectionConfig):
 
@@ -387,7 +202,7 @@ class DetectionMetrics:
         self._label_tp_errors = defaultdict(lambda: defaultdict(float))
         self.eval_time = None
 
-    def add_label_ap(self, detection_name: str, dist_th: float, ap: float):
+    def add_label_ap(self, detection_name: str, dist_th: float, ap: float) -> None:
         self._label_aps[detection_name][dist_th] = ap
 
     def get_label_ap(self, detection_name: str, dist_th: float) -> float:
@@ -399,7 +214,7 @@ class DetectionMetrics:
     def get_label_tp(self, detection_name: str, metric_name: str) -> float:
         return self._label_tp_errors[detection_name][metric_name]
 
-    def add_runtime(self, eval_time: float):
+    def add_runtime(self, eval_time: float) -> None:
         self.eval_time = eval_time
 
     @property
@@ -419,7 +234,6 @@ class DetectionMetrics:
         for metric_name in TP_METRICS:
             class_errors = []
             for detection_name in self.cfg.class_names:
-
                 class_errors.append(self.get_label_tp(detection_name, metric_name))
 
             errors[metric_name] = float(np.nanmean(class_errors))
@@ -445,10 +259,9 @@ class DetectionMetrics:
     @property
     def nd_score(self) -> float:
         """
-        Compute the nuTonomy detection score (NDS, weighted sum of the individual scores).
+        Compute the nuScenes detection score (NDS, weighted sum of the individual scores).
         :return: The NDS.
         """
-
         # Summarize.
         total = float(self.cfg.mean_ap_weight * self.mean_ap + np.sum(list(self.tp_scores.values())))
 
@@ -458,18 +271,20 @@ class DetectionMetrics:
         return total
 
     def serialize(self):
-        return {'label_aps': self._label_aps,
-                'mean_dist_aps': self.mean_dist_aps,
-                'mean_ap': self.mean_ap,
-                'label_tp_errors': self._label_tp_errors,
-                'tp_errors': self.tp_errors,
-                'tp_scores': self.tp_scores,
-                'nd_score': self.nd_score,
-                'eval_time': self.eval_time,
-                'cfg': self.cfg.serialize()}
+        return {
+            'label_aps': self._label_aps,
+            'mean_dist_aps': self.mean_dist_aps,
+            'mean_ap': self.mean_ap,
+            'label_tp_errors': self._label_tp_errors,
+            'tp_errors': self.tp_errors,
+            'tp_scores': self.tp_scores,
+            'nd_score': self.nd_score,
+            'eval_time': self.eval_time,
+            'cfg': self.cfg.serialize()
+        }
 
     @classmethod
-    def deserialize(cls, content):
+    def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
 
         cfg = DetectionConfig.deserialize(content['cfg'])
@@ -488,7 +303,6 @@ class DetectionMetrics:
         return metrics
 
     def __eq__(self, other):
-
         eq = True
         eq = eq and self._label_aps == other._label_aps
         eq = eq and self._label_tp_errors == other._label_tp_errors
@@ -496,3 +310,115 @@ class DetectionMetrics:
         eq = eq and self.cfg == other.cfg
 
         return eq
+
+
+class DetectionBox(EvalBox):
+    """ Data class used during detection evaluation. Can be a prediction or ground truth."""
+
+    def __init__(self,
+                 sample_token: str = "",
+                 translation: Tuple[float, float, float] = (0, 0, 0),
+                 size: Tuple[float, float, float] = (0, 0, 0),
+                 rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
+                 velocity: Tuple[float, float] = (0, 0),
+                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
+                 num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
+                 detection_name: str = 'car',  # The class name used in the detection challenge.
+                 detection_score: float = -1.0,  # GT samples do not have a score.
+                 attribute_name: str = ''):  # Box attribute. Each box can have at most 1 attribute.
+
+        super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
+
+        assert detection_name is not None, 'Error: detection_name cannot be empty!'
+        assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
+
+        assert attribute_name in ATTRIBUTE_NAMES or attribute_name == '', \
+            'Error: Unknown attribute_name %s' % attribute_name
+
+        assert type(detection_score) == float, 'Error: detection_score must be a float!'
+        assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
+
+        # Assign.
+        self.detection_name = detection_name
+        self.attribute_name = attribute_name
+        self.detection_score = detection_score
+
+    def __eq__(self, other):
+        return (self.sample_token == other.sample_token and
+                self.translation == other.translation and
+                self.size == other.size and
+                self.rotation == other.rotation and
+                self.velocity == other.velocity and
+                self.detection_name == other.detection_name and
+                self.attribute_name == other.attribute_name and
+                self.ego_dist == other.ego_dist and
+                self.detection_score == other.detection_score and
+                self.num_pts == other.num_pts)
+
+    def serialize(self) -> dict:
+        """ Serialize instance into json-friendly format. """
+        return {
+            'sample_token': self.sample_token,
+            'translation': self.translation,
+            'size': self.size,
+            'rotation': self.rotation,
+            'velocity': self.velocity,
+            'detection_name': self.detection_name,
+            'attribute_name': self.attribute_name,
+            'ego_dist': self.ego_dist,
+            'detection_score': self.detection_score,
+            'num_pts': self.num_pts
+        }
+
+    @classmethod
+    def deserialize(cls, content: dict):
+        """ Initialize from serialized content. """
+        return cls(sample_token=content['sample_token'],
+                   translation=tuple(content['translation']),
+                   size=tuple(content['size']),
+                   rotation=tuple(content['rotation']),
+                   velocity=tuple(content['velocity']),
+                   detection_name=content['detection_name'],
+                   attribute_name=content['attribute_name'],
+                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),
+                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
+
+
+class DetectionMetricDataList:
+    """ This stores a set of MetricData in a dict indexed by (name, match-distance). """
+
+    def __init__(self):
+        self.md = {}
+
+    def __getitem__(self, key):
+        return self.md[key]
+
+    def __eq__(self, other):
+        eq = True
+        for key in self.md.keys():
+            eq = eq and self[key] == other[key]
+        return eq
+
+    def get_class_data(self, detection_name: str) -> List[Tuple[DetectionMetricData, float]]:
+        """ Get all the MetricData entries for a certain detection_name. """
+        return [(md, dist_th) for (name, dist_th), md in self.md.items() if name == detection_name]
+
+    def get_dist_data(self, dist_th: float) -> List[Tuple[DetectionMetricData, str]]:
+        """ Get all the MetricData entries for a certain match_distance. """
+        return [(md, detection_name) for (detection_name, dist), md in self.md.items() if dist == dist_th]
+
+    def set(self, detection_name: str, match_distance: float, data: DetectionMetricData):
+        """ Sets the MetricData entry for a certain detection_name and match_distance. """
+        self.md[(detection_name, match_distance)] = data
+
+    def serialize(self) -> dict:
+        return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
+
+    @classmethod
+    def deserialize(cls, content: dict, metric_data_cls):
+        mdl = cls()
+        for key, md in content.items():
+            name, distance = key.split(':')
+            mdl.set(name, float(distance), metric_data_cls.deserialize(md))
+        return mdl

@@ -5,9 +5,10 @@ import json
 import os
 import unittest
 
+from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import MetricData, EvalBox, EvalBoxes, MetricDataList, DetectionConfig, \
-    DetectionMetrics
+from nuscenes.eval.detection.data_classes import DetectionMetricData, DetectionConfig, DetectionMetrics, DetectionBox, \
+    DetectionMetricDataList
 
 
 class TestDetectionConfig(unittest.TestCase):
@@ -16,8 +17,8 @@ class TestDetectionConfig(unittest.TestCase):
         """ test that instance serialization protocol works with json encoding """
 
         this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_name = 'cvpr_2019.json'
-        config_path = os.path.join(this_dir, '..', 'configs', cfg_name)
+        cfg_name = 'detection_cvpr_2019'
+        config_path = os.path.join(this_dir, '..', 'configs', cfg_name + '.json')
 
         with open(config_path) as f:
             cfg = json.load(f)
@@ -30,12 +31,12 @@ class TestDetectionConfig(unittest.TestCase):
         self.assertEqual(detect_cfg, recovered)
 
 
-class TestEvalBox(unittest.TestCase):
+class TestDetectionBox(unittest.TestCase):
 
     def test_serialization(self):
         """ Test that instance serialization protocol works with json encoding. """
-        box = EvalBox()
-        recovered = EvalBox.deserialize(json.loads(json.dumps(box.serialize())))
+        box = DetectionBox()
+        recovered = DetectionBox.deserialize(json.loads(json.dumps(box.serialize())))
         self.assertEqual(box, recovered)
 
 
@@ -45,9 +46,9 @@ class TestEvalBoxes(unittest.TestCase):
         """ Test that instance serialization protocol works with json encoding. """
         boxes = EvalBoxes()
         for i in range(10):
-            boxes.add_boxes(str(i), [EvalBox(), EvalBox(), EvalBox()])
+            boxes.add_boxes(str(i), [DetectionBox(), DetectionBox(), DetectionBox()])
 
-        recovered = EvalBoxes.deserialize(json.loads(json.dumps(boxes.serialize())))
+        recovered = EvalBoxes.deserialize(json.loads(json.dumps(boxes.serialize())), DetectionBox)
         self.assertEqual(boxes, recovered)
 
 
@@ -55,19 +56,19 @@ class TestMetricData(unittest.TestCase):
 
     def test_serialization(self):
         """ Test that instance serialization protocol works with json encoding. """
-        md = MetricData.random_md()
-        recovered = MetricData.deserialize(json.loads(json.dumps(md.serialize())))
+        md = DetectionMetricData.random_md()
+        recovered = DetectionMetricData.deserialize(json.loads(json.dumps(md.serialize())))
         self.assertEqual(md, recovered)
 
 
-class TestMetricDataList(unittest.TestCase):
+class TestDetectionMetricDataList(unittest.TestCase):
 
     def test_serialization(self):
         """ Test that instance serialization protocol works with json encoding. """
-        mdl = MetricDataList()
+        mdl = DetectionMetricDataList()
         for i in range(10):
-            mdl.set('name', 0.1, MetricData.random_md())
-        recovered = MetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())))
+            mdl.set('name', 0.1, DetectionMetricData.random_md())
+        recovered = DetectionMetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())), DetectionMetricData)
         self.assertEqual(mdl, recovered)
 
 

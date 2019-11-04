@@ -1,6 +1,9 @@
 cachetools
+descartes
 jupyter
+lap
 matplotlib
+motmetrics
 numpy
 opencv-python
 Pillow
@@ -9,4 +12,3 @@ scikit-learn
 scipy
 Shapely
 tqdm
-descartes
