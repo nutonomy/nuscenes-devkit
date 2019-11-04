@@ -122,18 +122,15 @@ def motar(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, n
     :return: The MOTAR or nan if there are no GT objects.
     """
     recall = num_matches / num_objects
-    nominator = num_misses + num_switches + num_false_positives - (1 - recall) * num_objects
+    discount_factor = 0.5
+    nominator = (num_misses + num_switches + num_false_positives) - (1 - recall) * num_objects
     denominator = recall * num_objects
     if denominator == 0:
         motar_val = np.nan
     else:
-        motar_val = 1 - nominator / denominator
+        motar_val = 1 - discount_factor * nominator / denominator
         motar_val = np.maximum(0, motar_val)
 
-    # Consistency checks to make sure that a positive MOTA also leads to a positive MOTAR.
-    mota = 1 - (num_misses + num_switches + num_false_positives) / num_objects
-    if mota > 0:
-        assert motar_val > 0
     return motar_val
 
 

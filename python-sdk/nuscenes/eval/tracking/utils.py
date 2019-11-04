@@ -101,7 +101,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     # Specify threshold name and metrics.
     assert len(metrics['mota_custom'].keys()) == 1
     threshold_str = list(metrics['mota_custom'].keys())[0]
-    mota = metrics['mota_custom'][threshold_str]
+    motar = metrics['motar'][threshold_str]
     motp = metrics['motp_custom'][threshold_str]
     recall = metrics['recall'][threshold_str]
     num_frames = metrics['num_frames'][threshold_str]
@@ -114,11 +114,11 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
 
     # Print.
     print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
-          % ('\t', 'MOTA', 'MOTP', 'Recall', 'Frames',
+          % ('\t', 'MOTAR', 'MOTP', 'Recall', 'Frames',
              'GT', 'GT-Mtch', 'GT-Miss', 'GT-IDS',
              'Pred', 'Pred-TP', 'Pred-FP', 'Pred-IDS',))
     print('%s\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
-          % (threshold_str, mota, motp, recall, num_frames,
+          % (threshold_str, motar, motp, recall, num_frames,
              num_objects, num_matches, num_misses, num_switches,
              num_predictions, num_matches, num_false_positives, num_switches))
     print()
