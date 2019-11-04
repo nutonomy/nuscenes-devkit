@@ -25,9 +25,7 @@ def summary_plot(md_list: TrackingMetricDataList,
     :param savepath: If given, saves the the rendering here instead of displaying.
     """
     # Select metrics and setup plot.
-    rel_metrics = LEGACY_METRICS
-    rel_metrics.insert(2, 'motar')
-    rel_metrics.insert(3, 'recall')
+    rel_metrics = ['motar', 'motp', 'mota', 'recall', 'mt', 'ml', 'faf', 'tp', 'fp', 'fn', 'ids', 'frag', 'tid', 'lgd']
     n_metrics = len(rel_metrics)
     nrows = int(np.ceil(n_metrics / ncols))
     _, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(7.5 * ncols, 5 * nrows))
