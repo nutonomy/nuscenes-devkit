@@ -115,7 +115,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     # Print.
     print('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s'
           % ('\t', 'MOTA', 'MOTP', 'Recall', 'Frames',
-             'Gt', 'Gt-Mtch', 'Gt-Miss', 'Gt-IDS',
+             'GT', 'GT-Mtch', 'GT-Miss', 'GT-IDS',
              'Pred', 'Pred-TP', 'Pred-FP', 'Pred-IDS',))
     print('%s\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
           % (threshold_str, mota, motp, recall, num_frames,

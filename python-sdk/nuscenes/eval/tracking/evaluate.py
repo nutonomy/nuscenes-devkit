@@ -115,6 +115,7 @@ class TrackingEval:
             curr_ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, curr_class_name, self.cfg.dist_fcn_callable,
                                          self.cfg.dist_th_tp, self.cfg.min_recall,
                                          num_thresholds=TrackingMetricData.nelem,
+                                         metric_worst=self.cfg.metric_worst,
                                          verbose=self.verbose)
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
@@ -150,12 +151,12 @@ class TrackingEval:
                 assert len(values) == TrackingMetricData.nelem
 
                 if np.all(np.isnan(values)):
-                    # If no GT/pred exist, set to nan.
+                    # If no GT exists, set to nan.
                     value = np.nan
                 else:
                     # Overwrite any nan value with the worst possible value.
                     np.all(values[np.logical_not(np.isnan(values))] >= 0)
-                    values[np.isnan(values)] = self.cfg.avg_metric_worst[metric_name]
+                    values[np.isnan(values)] = self.cfg.metric_worst[metric_name]
                     value = float(np.nanmean(values))
                 metrics.add_label_metric(metric_name, class_name, value)
 

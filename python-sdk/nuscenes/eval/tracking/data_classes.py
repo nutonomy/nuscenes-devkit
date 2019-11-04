@@ -21,7 +21,7 @@ class TrackingConfig:
                  min_recall: float,
                  min_precision: float,
                  max_boxes_per_sample: float,
-                 avg_metric_worst: Dict[str, float],
+                 metric_worst: Dict[str, float],
                  num_thresholds: int):
 
         assert set(class_range.keys()) == set(TRACKING_NAMES), "Class count mismatch."
@@ -34,7 +34,7 @@ class TrackingConfig:
         self.min_recall = min_recall
         self.min_precision = min_precision
         self.max_boxes_per_sample = max_boxes_per_sample
-        self.avg_metric_worst = avg_metric_worst
+        self.metric_worst = metric_worst
         self.num_thresholds = num_thresholds
 
         TrackingMetricData.set_nelem(num_thresholds)
@@ -57,7 +57,7 @@ class TrackingConfig:
             'min_recall': self.min_recall,
             'min_precision': self.min_precision,
             'max_boxes_per_sample': self.max_boxes_per_sample,
-            'avg_metric_worst': self.avg_metric_worst,
+            'metric_worst': self.metric_worst,
             'num_thresholds': self.num_thresholds
         }
 
@@ -71,7 +71,7 @@ class TrackingConfig:
                    content['min_recall'],
                    content['min_precision'],
                    content['max_boxes_per_sample'],
-                   content['avg_metric_worst'],
+                   content['metric_worst'],
                    content['num_thresholds'])
 
     @property
@@ -100,6 +100,7 @@ class TrackingMetricData(MetricData):
         self.mota = init
         self.motp = init
         self.faf = init
+        self.gt = init
         self.tp = init
         self.mt = init
         self.ml = init

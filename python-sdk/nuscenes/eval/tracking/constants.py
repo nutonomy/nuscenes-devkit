@@ -4,7 +4,7 @@
 TRACKING_NAMES = ['bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer', 'truck']
 
 AMOT_METRICS = ['amota', 'amotp']
-INTERNAL_METRICS = ['recall', 'motar']
+INTERNAL_METRICS = ['recall', 'motar', 'gt']
 LEGACY_METRICS = ['mota', 'motp', 'mt', 'ml', 'faf', 'tp', 'fp', 'fn', 'ids', 'frag', 'tid', 'lgd']
 TRACKING_METRICS = [*AMOT_METRICS, *INTERNAL_METRICS, *LEGACY_METRICS]
 
@@ -37,7 +37,7 @@ AVG_METRIC_MAP = {  # Mapping from average metric name to individual per-thresho
 # Define mapping for metrics that use motmetrics library.
 MOT_METRIC_MAP = {  # Mapping from motmetrics names to metric names used here.
     'num_frames': '',  # Used in FAF.
-    'num_objects': '',  # Used in MOTAR computation.
+    'num_objects': 'gt',  # Used in MOTAR computation.
     'num_predictions': '',  # Only printed out.
     'num_matches': 'tp',  # Used in MOTAR computation and printed out.
     'motar': 'motar',  # Only used in AMOTA.

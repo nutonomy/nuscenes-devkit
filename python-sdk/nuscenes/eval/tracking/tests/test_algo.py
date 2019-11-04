@@ -49,7 +49,7 @@ class TestAlgo(unittest.TestCase):
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
                                 cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                verbose=verbose)
+                                metric_worst=cfg.metric_worst, verbose=verbose)
         md = ev.accumulate()
 
         # Check outputs.
@@ -60,6 +60,38 @@ class TestAlgo(unittest.TestCase):
         assert np.all(md.tid == 0)
         assert np.all(md.frag == 0)
         assert np.all(md.ids == 0)
+
+    def test_empty_submission(self):
+        # Get config.
+        cfg = config_factory('tracking_nips_2019')
+
+        # Define inputs.
+        class_name, tracks_gt = TestAlgo.single_scene()
+        verbose = False
+
+        # Remove all predictions.
+        timestamp_boxes_pred = copy.deepcopy(tracks_gt['scene-1'])
+        for id, box in timestamp_boxes_pred.items():
+            timestamp_boxes_pred[id] = []
+        tracks_pred = {'scene-1': timestamp_boxes_pred}
+
+        # Accumulate metrics.
+        ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
+                                cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
+                                metric_worst=cfg.metric_worst, verbose=verbose)
+        md = ev.accumulate()
+
+        # Check outputs.
+        assert np.all(md.mota == 0)
+        assert np.all(md.motar == 0)
+        assert np.all(np.isnan(md.recall_hypo))
+        assert np.all(md.tp == 0)
+        assert np.all(md.fn == 4)
+        assert np.all(np.isnan(md.fp))  # FP/Frag/IDS are nan as we there were no predictions.
+        assert np.all(md.lgd == 20)
+        assert np.all(md.tid == 20)
+        assert np.all(np.isnan(md.frag))
+        assert np.all(np.isnan(md.ids))
 
     def test_drop_prediction(self):
         """ Drop one prediction from the GT submission. """
@@ -79,7 +111,7 @@ class TestAlgo(unittest.TestCase):
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
                                 cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                verbose=verbose)
+                                metric_worst=cfg.metric_worst, verbose=verbose)
         md = ev.accumulate()
 
         # Check outputs.
@@ -113,7 +145,7 @@ class TestAlgo(unittest.TestCase):
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
                                 cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                verbose=verbose)
+                                metric_worst=cfg.metric_worst, verbose=verbose)
         md = ev.accumulate()
 
         # Check outputs.
@@ -145,7 +177,7 @@ class TestAlgo(unittest.TestCase):
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
                                 cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                verbose=verbose)
+                                metric_worst=cfg.metric_worst, verbose=verbose)
         md = ev.accumulate()
 
         # Check outputs.
@@ -175,7 +207,7 @@ class TestAlgo(unittest.TestCase):
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
                                 cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                verbose=verbose)
+                                metric_worst=cfg.metric_worst, verbose=verbose)
         md = ev.accumulate()
 
         # Check outputs.
@@ -208,7 +240,7 @@ class TestAlgo(unittest.TestCase):
         # Accumulate metrics.
         ev = TrackingEvaluation(tracks_gt, tracks_pred, class_name, cfg.dist_fcn_callable,
                                 cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
-                                verbose=verbose)
+                                metric_worst=cfg.metric_worst, verbose=verbose)
         md = ev.accumulate()
 
         # Check outputs.

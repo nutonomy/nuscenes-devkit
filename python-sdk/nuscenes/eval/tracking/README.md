@@ -261,7 +261,7 @@ Note that these numbers are measured on the val split and therefore not identica
 |   Method             | NDS  | mAP  | AMOTA | AMOTP | Modality | Detections download                                              | Tracking download                                               |
 |   ---                | ---  | ---  | ---   | ---   | ---      | ---                                                              | ---                                                             |
 |   Megvii \[6\]       | 62.8 | 51.9 | 16.6  | 1.49  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
-|   PointPillars \[5\] | 44.8 | 29.5 | TBD   | TBD   | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
+|   PointPillars \[5\] | 44.8 | 29.5 | 0.05  | 1.64  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
 |   Mapillary \[7\]    | 36.9 | 29.8 | 0.02  | 1.77  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
 
 #### Overfitting

@@ -32,6 +32,7 @@ class TrackingEvaluation(object):
                  dist_th_tp: float,
                  min_recall: float,
                  num_thresholds: int,
+                 metric_worst: Dict[str, float],
                  verbose: bool = True):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
@@ -42,6 +43,8 @@ class TrackingEvaluation(object):
         :param dist_th_tp: The distance threshold used to determine matches.
         :param min_recall: The minimum recall value below which we drop thresholds due to too much noise.
         :param num_thresholds: The number of recall thresholds from 0 to 1. Note that some of these may be dropped.
+        :param metric_worst: Mapping from metric name to the fallback value assigned if a recall threshold
+            is not achieved.
         :param verbose: Whether to print to stdout.
 
         Computes the metrics defined in:
@@ -59,6 +62,7 @@ class TrackingEvaluation(object):
         self.dist_th_tp = dist_th_tp
         self.min_recall = min_recall
         self.num_thresholds = num_thresholds
+        self.metric_worst = metric_worst
         self.verbose = verbose
 
         self.n_scenes = len(self.tracks_gt)
@@ -85,13 +89,15 @@ class TrackingEvaluation(object):
         md = TrackingMetricData()
 
         # Skip missing classes.
-        gt_count = 0
+        gt_box_count = 0
+        gt_track_ids = set()
         for scene_tracks_gt in self.tracks_gt.values():
             for frame_gt in scene_tracks_gt.values():
                 for box in frame_gt:
                     if box.tracking_name == self.class_name:
-                        gt_count += 1
-        if gt_count == 0:
+                        gt_box_count += 1
+                        gt_track_ids.add(box.tracking_id)
+        if gt_box_count == 0:
             # Do not add any metric. The average metrics will then be nan.
             return md
 
@@ -101,7 +107,7 @@ class TrackingEvaluation(object):
         # Get thresholds.
         # Note: The recall values are the hypothetical recall (10%, 20%, ..).
         # The actual recall may vary as there is no way to compute it without trying all thresholds.
-        thresholds, recalls = self.compute_thresholds(gt_count)
+        thresholds, recalls = self.compute_thresholds(gt_box_count)
         md.confidence = thresholds
         md.recall_hypo = recalls
         if self.verbose:
@@ -132,8 +138,7 @@ class TrackingEvaluation(object):
 
         # Concatenate all metrics. We only do this for more convenient access.
         if len(thresh_metrics) == 0:
-            # No achieved recall threshold. Abort and set worst possible result.
-            return md  # TODO: Set the worst possible result.
+            summary = []
         else:
             summary = pandas.concat(thresh_metrics)
 
@@ -154,15 +159,32 @@ class TrackingEvaluation(object):
                 continue
 
             # Retrieve and store values for current metric.
-            values = summary.get(mot_name).values
-            assert np.all(values[np.logical_not(np.isnan(values))] >= 0)
+            if len(thresh_metrics) == 0:
+                # Set all the worst possible value if no recall threshold is achieved.
+                worst = self.metric_worst[metric_name]
+                if worst == -1:
+                    if metric_name == 'ml':
+                        worst = len(gt_track_ids)
+                    elif metric_name in ['gt', 'fn']:
+                        worst = gt_box_count
+                    elif metric_name in ['fp', 'ids', 'frag']:
+                        worst = np.nan  # We can't know how these error types are distributed.
+                    else:
+                        raise NotImplementedError
 
-            # If a threshold occurred more than once, duplicate the metric values.
-            assert len(rep_counts) == len(values)
-            values = np.concatenate([([v] * r) for (v, r) in zip(values, rep_counts)])
+                all_values = [worst] * TrackingMetricData.nelem
+            else:
+                values = summary.get(mot_name).values
+                assert np.all(values[np.logical_not(np.isnan(values))] >= 0)
 
-            all_values = [np.nan] * unachieved_thresholds  # Pad values with nans for unachieved recall thresholds.
-            all_values.extend(values)
+                # If a threshold occurred more than once, duplicate the metric values.
+                assert len(rep_counts) == len(values)
+                values = np.concatenate([([v] * r) for (v, r) in zip(values, rep_counts)])
+
+                # Pad values with nans for unachieved recall thresholds.
+                all_values = [np.nan] * unachieved_thresholds
+                all_values.extend(values)
+
             assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
 
@@ -242,16 +264,19 @@ class TrackingEvaluation(object):
 
         return acc_merged, scores
 
-    def compute_thresholds(self, gt_count: int) -> Tuple[List[float], List[float]]:
+    def compute_thresholds(self, gt_box_count: int) -> Tuple[List[float], List[float]]:
         """
         Compute the score thresholds for predefined recall values.
         AMOTA/AMOTP average over all thresholds, whereas MOTA/MOTP/.. pick the threshold with the highest MOTA.
-        :param gt_count: The number of GT boxes for this class.
+        :param gt_box_count: The number of GT boxes for this class.
         :return: The lists of thresholds and their recall values.
         """
         # Run accumulate to get the scores of TPs.
         _, scores = self.accumulate_threshold(threshold=None)
-        assert len(scores) > 0
+
+        # Abort if no predictions exist.
+        if len(scores) == 0:
+            return [np.nan] * self.num_thresholds, [np.nan] * self.num_thresholds
 
         # Sort scores.
         scores = np.array(scores)
@@ -260,8 +285,8 @@ class TrackingEvaluation(object):
 
         # Compute recall levels.
         tps = np.array(range(1, len(scores) + 1))
-        rec = tps / gt_count
-        assert len(rec) > 0 and np.max(rec) <= 1
+        rec = tps / gt_box_count
+        assert len(scores) / gt_box_count <= 1
 
         # Determine thresholds.
         max_recall_achieved = np.max(rec)
