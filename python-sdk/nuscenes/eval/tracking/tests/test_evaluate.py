@@ -163,8 +163,8 @@ class TestMain(unittest.TestCase):
             json.dump(mock, f, indent=2)
 
         cfg = config_factory('tracking_nips_2019')
-        nusc_eval = TrackingEval(nusc, cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
-                                 verbose=False)
+        nusc_eval = TrackingEval(cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
+                                 nusc_version=version, nusc_dataroot=os.environ['NUSCENES'], verbose=False)
         metrics = nusc_eval.main(render_curves=render_curves)
 
         return metrics

@@ -37,19 +37,21 @@ class TrackingEval:
     Please see https://www.nuscenes.org/tracking for more details.
     """
     def __init__(self,
-                 nusc: NuScenes,
                  config: TrackingConfig,
                  result_path: str,
                  eval_set: str,
-                 output_dir: str = None,
+                 output_dir: str,
+                 nusc_version: str,
+                 nusc_dataroot: str,
                  verbose: bool = True):
         """
         Initialize a TrackingEval object.
-        :param nusc: A NuScenes object.
         :param config: A TrackingConfig object.
         :param result_path: Path of the nuScenes JSON result file.
         :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
         :param output_dir: Folder to save plots and results to.
+        :param nusc_version: The version of the NuScenes dataset.
+        :param nusc_dataroot: Path of the nuScenes dataset on disk.
         :param verbose: Whether to print to stdout.
         """
         self.cfg = config
@@ -67,6 +69,10 @@ class TrackingEval:
             os.makedirs(self.output_dir)
         if not os.path.isdir(self.plot_dir):
             os.makedirs(self.plot_dir)
+
+        # Initialize NuScenes object.
+        # We do not store it in self to let garbage collection take care of it and save memory.
+        nusc = NuScenes(version=nusc_version, verbose=verbose, dataroot=nusc_dataroot)
 
         # Load data.
         if verbose:
@@ -252,7 +258,6 @@ if __name__ == "__main__":
         with open(config_path, 'r') as _f:
             cfg_ = TrackingConfig.deserialize(json.load(_f))
 
-    nusc_ = NuScenes(version=version_, verbose=verbose_, dataroot=dataroot_)
-    nusc_eval = TrackingEval(nusc_, config=cfg_, result_path=result_path_, eval_set=eval_set_,
-                             output_dir=output_dir_, verbose=verbose_)
+    nusc_eval = TrackingEval(config=cfg_, result_path=result_path_, eval_set=eval_set_, output_dir=output_dir_,
+                             nusc_version=version_, nusc_dataroot=dataroot_, verbose=verbose_)
     nusc_eval.main(render_curves=render_curves_)
