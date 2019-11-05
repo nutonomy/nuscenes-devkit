@@ -184,8 +184,11 @@ class TestMain(unittest.TestCase):
 
         # Compare metrics to known solution.
         if eval_set == 'mini_val':
-            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.24081829757545278)
-            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2974351821696868)
+            self.assertAlmostEqual(metrics.compute_metric('amota'), 0.5383961573989436)
+            self.assertAlmostEqual(metrics.compute_metric('amotp'), 1.5275400961369252)
+            self.assertAlmostEqual(metrics.compute_metric('motar'), 0.8261827096838301)
+            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.25003943918566174)
+            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2976508610883917)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
