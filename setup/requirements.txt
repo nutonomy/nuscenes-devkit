@@ -1,7 +1,6 @@
 cachetools
 descartes
 jupyter
-lap
 matplotlib
 motmetrics
 numpy

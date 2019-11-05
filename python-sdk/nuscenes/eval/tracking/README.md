@@ -198,8 +198,8 @@ The matching threshold (center distance) is 2m.
 
 ### AMOTA and AMOTP metrics
 Our main metrics are the AMOTA and AMOTP metrics developed in \[2\].
-These are integrals over the MOTA/MOTP curves using `n`-point interpolation (`n` to be determined).
-Similar to the detection challenge, we drop points with `recall < 0.1` (not shown in the equation), as these are typically noisy.
+These are integrals over the MOTA/MOTP curves using `n`-point interpolation (`n = 40`).
+Similar to the detection challenge, we do not include points with `recall < 0.1` (not shown in the equation), as these are typically noisy.
 
 - **AMOTA** (average multi object tracking accuracy):
 Average over the MOTA \[3\] metric (see below) at different recall thresholds.
@@ -261,9 +261,9 @@ Note that these numbers are measured on the val split and therefore not identica
 
 |   Method             | NDS  | mAP  | AMOTA | AMOTP | Modality | Detections download                                              | Tracking download                                               |
 |   ---                | ---  | ---  | ---   | ---   | ---      | ---                                                              | ---                                                             |
-|   Megvii \[6\]       | 62.8 | 51.9 | 28.2  | 1.49  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
-|   PointPillars \[5\] | 44.8 | 29.5 |  6.9  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
-|   Mapillary \[7\]    | 36.9 | 29.8 |  8.2  | 1.77  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
+|   Megvii \[6\]       | 62.8 | 51.9 | 27.9  | 1.50  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
+|   PointPillars \[5\] | 44.8 | 29.5 | 13.1  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
+|   Mapillary \[7\]    | 36.9 | 29.8 | 10.3  | 1.79  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.

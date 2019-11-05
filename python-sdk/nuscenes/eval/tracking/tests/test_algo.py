@@ -71,8 +71,8 @@ class TestAlgo(unittest.TestCase):
 
         # Remove all predictions.
         timestamp_boxes_pred = copy.deepcopy(tracks_gt['scene-1'])
-        for id, box in timestamp_boxes_pred.items():
-            timestamp_boxes_pred[id] = []
+        for timestamp, box in timestamp_boxes_pred.items():
+            timestamp_boxes_pred[timestamp] = []
         tracks_pred = {'scene-1': timestamp_boxes_pred}
 
         # Accumulate metrics.
@@ -116,14 +116,15 @@ class TestAlgo(unittest.TestCase):
 
         # Check outputs.
         # Recall values above 0.75 (3/4 correct) are not achieved and therefore nan.
-        assert np.all(np.isnan(md.confidence[md.recall_hypo > 0.75]))
-        assert md.tp[3] == 3
-        assert md.fp[3] == 0
-        assert md.fn[3] == 1
-        assert md.lgd[3] == 0.5
-        assert md.tid[3] == 0
-        assert md.frag[3] == 1
-        assert md.ids[3] == 0
+        first_achieved = np.where(md.recall_hypo <= 0.75)[0][0]
+        assert np.all(np.isnan(md.confidence[:first_achieved]))
+        assert md.tp[first_achieved] == 3
+        assert md.fp[first_achieved] == 0
+        assert md.fn[first_achieved] == 1
+        assert md.lgd[first_achieved] == 0.5
+        assert md.tid[first_achieved] == 0
+        assert md.frag[first_achieved] == 1
+        assert md.ids[first_achieved] == 0
 
     def test_drop_prediction_multiple(self):
         """  Drop the first three predictions from the GT submission. """
@@ -150,14 +151,15 @@ class TestAlgo(unittest.TestCase):
 
         # Check outputs.
         # Recall values above 0.75 (3/4 correct) are not achieved and therefore nan.
-        assert np.all(np.isnan(md.confidence[md.recall_hypo > 0.25]))
-        assert md.tp[8] == 1
-        assert md.fp[8] == 0
-        assert md.fn[8] == 3
-        assert md.lgd[8] == 3 * 0.5
-        assert md.tid[8] == 3 * 0.5
-        assert md.frag[8] == 0
-        assert md.ids[8] == 0
+        first_achieved = np.where(md.recall_hypo <= 0.25)[0][0]
+        assert np.all(np.isnan(md.confidence[:first_achieved]))
+        assert md.tp[first_achieved] == 1
+        assert md.fp[first_achieved] == 0
+        assert md.fn[first_achieved] == 3
+        assert md.lgd[first_achieved] == 3 * 0.5
+        assert md.tid[first_achieved] == 3 * 0.5
+        assert md.frag[first_achieved] == 0
+        assert md.ids[first_achieved] == 0
 
     def test_identity_switch(self):
         """ Change the tracking_id of one frame from the GT submission. """
@@ -181,13 +183,14 @@ class TestAlgo(unittest.TestCase):
         md = ev.accumulate()
 
         # Check outputs.
-        assert md.tp[5] == 2
-        assert md.fp[5] == 0
-        assert md.fn[5] == 0
-        assert md.lgd[5] == 0
-        assert md.tid[5] == 0
-        assert md.frag[5] == 0
-        assert md.ids[5] == 2  # One wrong id leads to 2 identity switches.
+        first_achieved = np.where(md.recall_hypo <= 0.5)[0][0]
+        assert md.tp[first_achieved] == 2
+        assert md.fp[first_achieved] == 0
+        assert md.fn[first_achieved] == 0
+        assert md.lgd[first_achieved] == 0
+        assert md.tid[first_achieved] == 0
+        assert md.frag[first_achieved] == 0
+        assert md.ids[first_achieved] == 2  # One wrong id leads to 2 identity switches.
 
     def test_drop_gt(self):
         """ Drop one box from the GT. """

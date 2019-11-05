@@ -16,23 +16,18 @@ class TrackingConfig:
     def __init__(self,
                  class_range: Dict[str, int],
                  dist_fcn: str,
-                 dist_ths: List[float],
                  dist_th_tp: float,
                  min_recall: float,
-                 min_precision: float,
                  max_boxes_per_sample: float,
                  metric_worst: Dict[str, float],
                  num_thresholds: int):
 
         assert set(class_range.keys()) == set(TRACKING_NAMES), "Class count mismatch."
-        assert dist_th_tp in dist_ths, "dist_th_tp must be in set of dist_ths."
 
         self.class_range = class_range
         self.dist_fcn = dist_fcn
-        self.dist_ths = dist_ths
         self.dist_th_tp = dist_th_tp
         self.min_recall = min_recall
-        self.min_precision = min_precision
         self.max_boxes_per_sample = max_boxes_per_sample
         self.metric_worst = metric_worst
         self.num_thresholds = num_thresholds
@@ -52,10 +47,8 @@ class TrackingConfig:
         return {
             'class_range': self.class_range,
             'dist_fcn': self.dist_fcn,
-            'dist_ths': self.dist_ths,
             'dist_th_tp': self.dist_th_tp,
             'min_recall': self.min_recall,
-            'min_precision': self.min_precision,
             'max_boxes_per_sample': self.max_boxes_per_sample,
             'metric_worst': self.metric_worst,
             'num_thresholds': self.num_thresholds
@@ -66,10 +59,8 @@ class TrackingConfig:
         """ Initialize from serialized dictionary. """
         return cls(content['class_range'],
                    content['dist_fcn'],
-                   content['dist_ths'],
                    content['dist_th_tp'],
                    content['min_recall'],
-                   content['min_precision'],
                    content['max_boxes_per_sample'],
                    content['metric_worst'],
                    content['num_thresholds'])
