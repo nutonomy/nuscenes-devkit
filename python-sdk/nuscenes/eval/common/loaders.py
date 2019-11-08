@@ -191,8 +191,9 @@ def add_center_dist(nusc: NuScenes,
 
         for box in eval_boxes[sample_token]:
             # Both boxes and ego pose are given in global coord system, so distance can be calculated directly.
-            diff = np.array(pose_record['translation'][:2]) - np.array(box.translation[:2])
-            box.ego_dist = np.sqrt(np.sum(diff ** 2))
+            box.ego_translation = (box.translation[0] - pose_record['translation'][0],
+                                   box.translation[1] - pose_record['translation'][1],
+                                   box.translation[2])
 
     return eval_boxes
 

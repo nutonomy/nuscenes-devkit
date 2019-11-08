@@ -254,13 +254,13 @@ class TrackingBox(EvalBox):
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
                  velocity: Tuple[float, float] = (0, 0),
-                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
+                 ego_translation: [float, float, float] = (0, 0, 0),  # Translation to ego vehicle in meters.
                  num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
                  tracking_id: str = '',  # Instance id of this object.
                  tracking_name: str = '',  # The class name used in the tracking challenge.
                  tracking_score: float = -1.0):  # Does not apply to GT.
 
-        super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
+        super().__init__(sample_token, translation, size, rotation, velocity, ego_translation, num_pts)
 
         assert tracking_name is not None, 'Error: tracking_name cannot be empty!'
         assert tracking_name in TRACKING_NAMES, 'Error: Unknown tracking_name %s' % tracking_name
@@ -279,7 +279,7 @@ class TrackingBox(EvalBox):
                 self.size == other.size and
                 self.rotation == other.rotation and
                 self.velocity == other.velocity and
-                self.ego_dist == other.ego_dist and
+                self.ego_translation == other.ego_translation and
                 self.num_pts == other.num_pts and
                 self.tracking_id == other.tracking_id and
                 self.tracking_name == other.tracking_name and
@@ -293,7 +293,7 @@ class TrackingBox(EvalBox):
             'size': self.size,
             'rotation': self.rotation,
             'velocity': self.velocity,
-            'ego_dist': self.ego_dist,
+            'ego_translation': self.ego_translation,
             'num_pts': self.num_pts,
             'tracking_id': self.tracking_id,
             'tracking_name': self.tracking_name,
@@ -308,7 +308,8 @@ class TrackingBox(EvalBox):
                    size=tuple(content['size']),
                    rotation=tuple(content['rotation']),
                    velocity=tuple(content['velocity']),
-                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   ego_translation=(0.0, 0.0, 0.0) if 'ego_translation' not in content
+                   else tuple(content['ego_translation']),
                    num_pts=-1 if 'num_pts' not in content else int(content['num_pts']),
                    tracking_id=content['tracking_id'],
                    tracking_name=content['tracking_name'],
