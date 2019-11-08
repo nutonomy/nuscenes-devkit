@@ -11,16 +11,21 @@ py-motmetrics at:
 https://github.com/cheind/py-motmetrics
 """
 from typing import List, Dict, Callable, Tuple
+import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas
+from pyquaternion import Quaternion
 import sklearn
 import tqdm
+
 
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
+from nuscenes.utils.data_classes import Box
 
 
 class TrackingEvaluation(object):
@@ -212,6 +217,14 @@ class TrackingEvaluation(object):
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred = self.tracks_pred[scene_id]
 
+            # Visualize the frame
+            if self.class_name == 'car' and threshold is None:
+                save_path = os.path.join('/data/visualize', str(scene_id), self.class_name, str(threshold))
+                os.makedirs(save_path, exist_ok=True)
+            # plt.figure(1)
+            # plt.ion()
+            # plt.show()
+
             for timestamp in scene_tracks_gt.keys():
                 # Select only the current class.
                 frame_gt = scene_tracks_gt[timestamp]
@@ -257,6 +270,29 @@ class TrackingEvaluation(object):
 
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1
+
+                if self.class_name == 'car' and threshold is None:
+                    print(timestamp)
+                    fig, ax = plt.subplots()
+                    for b in frame_gt:
+                        box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
+                                  name=b.tracking_name, token=b.tracking_id)
+                        box.render(ax, view=np.eye(4), colors=('r', 'r', 'r'))
+                    for b in frame_pred:
+                        box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
+                                  name=b.tracking_name, token=b.tracking_id)
+                        box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'))
+                    plt.scatter(0, 0, s=96, facecolors='none', edgecolors='k', marker='o')
+                    plt.xlim(-50, 50)
+                    plt.ylim(-50, 50)
+                    fig.savefig(os.path.join(save_path, '{}.png'.format(timestamp)))
+                    # plt.show()
+                    plt.close(fig)
+
+                # plt.pause(0.001)
+                # input("Press [enter] to continue.")
+                # plt.clf()
+
             accs.append(acc)
 
         # Merge accumulators
