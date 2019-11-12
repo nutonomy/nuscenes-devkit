@@ -221,6 +221,9 @@ class TrackingEvaluation(object):
             if self.class_name == 'car' and threshold is None:
                 save_path = os.path.join('/data/visualize', str(scene_id), self.class_name, str(threshold))
                 os.makedirs(save_path, exist_ok=True)
+                # color_palette = ('#ee4035', '#f37736', '#fdf498', '#7bc043', '#0392cf')
+                id2color = {}
+
             # plt.figure(1)
             # plt.ion()
             # plt.show()
@@ -273,15 +276,29 @@ class TrackingEvaluation(object):
 
                 if self.class_name == 'car' and threshold is None:
                     print(timestamp)
+                    switches = events[events.Type == 'SWITCH']
+                    switch_ids = switches.HId.values
                     fig, ax = plt.subplots()
                     for b in frame_gt:
+                        color = 'k'
                         box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
                                   name=b.tracking_name, token=b.tracking_id)
-                        box.render(ax, view=np.eye(4), colors=('r', 'r', 'r'))
+                        box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=1)
                     for b in frame_pred:
                         box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
                                   name=b.tracking_name, token=b.tracking_id)
-                        box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'))
+
+                        if b.tracking_id not in id2color.keys():
+                            # id2color[b.tracking_id] = color_palette[hash(b.tracking_id) % len(color_palette)]
+                            id2color[b.tracking_id] = (float(hash(b.tracking_id+'r') % 256)/256,
+                                                       float(hash(b.tracking_id+'g') % 256)/256,
+                                                       float(hash(b.tracking_id+'b') % 256)/256)
+                        if b.tracking_id in switch_ids:
+                            color = id2color[b.tracking_id]
+                            box.render(ax, view=np.eye(4), colors=(color, color, color))
+                        else:
+                            color = id2color[b.tracking_id]
+                            box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=3)
                     plt.scatter(0, 0, s=96, facecolors='none', edgecolors='k', marker='o')
                     plt.xlim(-50, 50)
                     plt.ylim(-50, 50)
