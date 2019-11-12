@@ -145,10 +145,10 @@ class TrackingRenderer:
                                                 float(hash(b.tracking_id + 'b') % 256) / 256)
             if b.tracking_id in switch_ids:
                 color = self.id2color[b.tracking_id]
-                box.render(ax, view=np.eye(4), colors=(color, color, color))
+                box.render(ax, view=np.eye(4), colors=('r', 'r', color))
             else:
                 color = self.id2color[b.tracking_id]
-                box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=3)
+                box.render(ax, view=np.eye(4), colors=(color, color, color))
         plt.scatter(0, 0, s=96, facecolors='none', edgecolors='k', marker='o')
         plt.xlim(-50, 50)
         plt.ylim(-50, 50)
