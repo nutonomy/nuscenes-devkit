@@ -37,6 +37,7 @@ class TrackingEvaluation(object):
                  num_thresholds: int,
                  metric_worst: Dict[str, float],
                  verbose: bool = True,
+                 output_dir: str = None,
                  render_classes: List[str] = []):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
@@ -50,6 +51,7 @@ class TrackingEvaluation(object):
         :param metric_worst: Mapping from metric name to the fallback value assigned if a recall threshold
             is not achieved.
         :param verbose: Whether to print to stdout.
+        :param output_dir: Output directory to save renders.
         :param render_classes: Classes to render
 
         Computes the metrics defined in:
@@ -69,6 +71,7 @@ class TrackingEvaluation(object):
         self.num_thresholds = num_thresholds
         self.metric_worst = metric_worst
         self.verbose = verbose
+        self.output_dir = output_dir
         self.render_classes = render_classes
 
         self.n_scenes = len(self.tracks_gt)
@@ -220,7 +223,7 @@ class TrackingEvaluation(object):
 
             # Visualize the frame
             if self.class_name in self.render_classes and threshold is None:
-                save_path = os.path.join('/data/visualize', str(scene_id), self.class_name, str(threshold))
+                save_path = os.path.join(self.output_dir, 'render', str(scene_id), self.class_name, str(threshold))
                 os.makedirs(save_path, exist_ok=True)
                 renderer = TrackingRenderer(save_path)
 

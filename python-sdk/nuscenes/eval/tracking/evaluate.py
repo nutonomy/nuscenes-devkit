@@ -125,6 +125,7 @@ class TrackingEval:
                                          num_thresholds=TrackingMetricData.nelem,
                                          metric_worst=self.cfg.metric_worst,
                                          verbose=self.verbose,
+                                         output_dir=self.output_dir,
                                          render_classes=self.render_classes)
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
