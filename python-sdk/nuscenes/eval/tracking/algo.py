@@ -13,10 +13,8 @@ https://github.com/cheind/py-motmetrics
 from typing import List, Dict, Callable, Tuple
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas
-from pyquaternion import Quaternion
 import sklearn
 import tqdm
 
@@ -25,7 +23,7 @@ from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
-from nuscenes.utils.data_classes import Box
+from nuscenes.eval.tracking.render import TrackingRenderer
 
 
 class TrackingEvaluation(object):
@@ -38,7 +36,8 @@ class TrackingEvaluation(object):
                  min_recall: float,
                  num_thresholds: int,
                  metric_worst: Dict[str, float],
-                 verbose: bool = True):
+                 verbose: bool = True,
+                 render_classes: List[str] = []):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
         :param tracks_gt: The ground-truth tracks.
@@ -51,6 +50,7 @@ class TrackingEvaluation(object):
         :param metric_worst: Mapping from metric name to the fallback value assigned if a recall threshold
             is not achieved.
         :param verbose: Whether to print to stdout.
+        :param render_classes: Classes to render
 
         Computes the metrics defined in:
         - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
@@ -69,6 +69,7 @@ class TrackingEvaluation(object):
         self.num_thresholds = num_thresholds
         self.metric_worst = metric_worst
         self.verbose = verbose
+        self.render_classes = render_classes
 
         self.n_scenes = len(self.tracks_gt)
 
@@ -218,15 +219,10 @@ class TrackingEvaluation(object):
             scene_tracks_pred = self.tracks_pred[scene_id]
 
             # Visualize the frame
-            if self.class_name == 'car' and threshold is None:
+            if self.class_name in self.render_classes and threshold is None:
                 save_path = os.path.join('/data/visualize', str(scene_id), self.class_name, str(threshold))
                 os.makedirs(save_path, exist_ok=True)
-                # color_palette = ('#ee4035', '#f37736', '#fdf498', '#7bc043', '#0392cf')
-                id2color = {}
-
-            # plt.figure(1)
-            # plt.ion()
-            # plt.show()
+                renderer = TrackingRenderer(save_path)
 
             for timestamp in scene_tracks_gt.keys():
                 # Select only the current class.
@@ -274,41 +270,8 @@ class TrackingEvaluation(object):
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1
 
-                if self.class_name == 'car' and threshold is None:
-                    print(timestamp)
-                    switches = events[events.Type == 'SWITCH']
-                    switch_ids = switches.HId.values
-                    fig, ax = plt.subplots()
-                    for b in frame_gt:
-                        color = 'k'
-                        box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
-                                  name=b.tracking_name, token=b.tracking_id)
-                        box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=1)
-                    for b in frame_pred:
-                        box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
-                                  name=b.tracking_name, token=b.tracking_id)
-
-                        if b.tracking_id not in id2color.keys():
-                            # id2color[b.tracking_id] = color_palette[hash(b.tracking_id) % len(color_palette)]
-                            id2color[b.tracking_id] = (float(hash(b.tracking_id+'r') % 256)/256,
-                                                       float(hash(b.tracking_id+'g') % 256)/256,
-                                                       float(hash(b.tracking_id+'b') % 256)/256)
-                        if b.tracking_id in switch_ids:
-                            color = id2color[b.tracking_id]
-                            box.render(ax, view=np.eye(4), colors=(color, color, color))
-                        else:
-                            color = id2color[b.tracking_id]
-                            box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=3)
-                    plt.scatter(0, 0, s=96, facecolors='none', edgecolors='k', marker='o')
-                    plt.xlim(-50, 50)
-                    plt.ylim(-50, 50)
-                    fig.savefig(os.path.join(save_path, '{}.png'.format(timestamp)))
-                    # plt.show()
-                    plt.close(fig)
-
-                # plt.pause(0.001)
-                # input("Press [enter] to continue.")
-                # plt.clf()
+                if self.class_name in self.render_classes and threshold is None:
+                    renderer.render(events, timestamp, frame_gt, frame_pred)
 
             accs.append(acc)
 

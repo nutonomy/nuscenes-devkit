@@ -1,14 +1,18 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
 
-from typing import Any
+import os
+from typing import Any, List
+from pandas import DataFrame
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from pyquaternion import Quaternion
 from nuscenes.eval.common.render import setup_axis
-from nuscenes.eval.tracking.data_classes import TrackingMetricDataList
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricDataList
 from nuscenes.eval.tracking.constants import TRACKING_COLORS, PRETTY_TRACKING_NAMES, LEGACY_METRICS
+
+from nuscenes.utils.data_classes import Box
 
 Axis = Any
 
@@ -99,3 +103,55 @@ def recall_metric_curve(md_list: TrackingMetricDataList,
     if savepath is not None:
         plt.savefig(savepath)
         plt.close()
+
+
+class TrackingRenderer:
+    """
+    Class that renders the tracking results in BEV and saves to a folder
+    """
+    def __init__(self, save_path):
+        """
+        :param save_path:  Output path to save the renderings
+        """
+        self.save_path = save_path
+        self.id2color = {}
+
+    def render(self, events: DataFrame, timestamp: int, frame_gt: List[TrackingBox], frame_pred: List[TrackingBox]):
+        """
+        Render function for a given scene timestamp
+        :param events: motmetrics events for that particular
+        :param timestamp: timestamp for the rendering
+        :param frame_gt: list of ground truth boxes
+        :param frame_pred: list of prediction boxes
+        :return:
+        """
+
+        print('rendering {}'.format(timestamp))
+        switches = events[events.Type == 'SWITCH']
+        switch_ids = switches.HId.values
+        fig, ax = plt.subplots()
+        for b in frame_gt:
+            color = 'k'
+            box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
+                      name=b.tracking_name, token=b.tracking_id)
+            box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=1)
+        for b in frame_pred:
+            box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
+                      name=b.tracking_name, token=b.tracking_id)
+
+            if b.tracking_id not in self.id2color.keys():
+                self.id2color[b.tracking_id] = (float(hash(b.tracking_id + 'r') % 256) / 256,
+                                                float(hash(b.tracking_id + 'g') % 256) / 256,
+                                                float(hash(b.tracking_id + 'b') % 256) / 256)
+            if b.tracking_id in switch_ids:
+                color = self.id2color[b.tracking_id]
+                box.render(ax, view=np.eye(4), colors=(color, color, color))
+            else:
+                color = self.id2color[b.tracking_id]
+                box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=3)
+        plt.scatter(0, 0, s=96, facecolors='none', edgecolors='k', marker='o')
+        plt.xlim(-50, 50)
+        plt.ylim(-50, 50)
+        fig.savefig(os.path.join(self.save_path, '{}.png'.format(timestamp)))
+        # plt.show()
+        plt.close(fig)
