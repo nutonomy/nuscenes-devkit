@@ -222,7 +222,7 @@ class TrackingEvaluation(object):
 
             # Visualize the boxes in this frame.
             if self.class_name in self.render_classes and threshold is None:
-                save_path = os.path.join(self.output_dir, 'render', str(scene_id), self.class_name, str(threshold))
+                save_path = os.path.join(self.output_dir, 'render', str(scene_id), self.class_name)
                 os.makedirs(save_path, exist_ok=True)
                 renderer = TrackingRenderer(save_path)
             else:
@@ -273,12 +273,12 @@ class TrackingEvaluation(object):
                 else:
                     events = None
 
-                # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
-                frame_id += 1
-
                 # Render the boxes in this frame.
                 if self.class_name in self.render_classes and threshold is None:
                     renderer.render(events, timestamp, frame_gt, frame_pred)
+
+                # Increment the frame_id, unless there are no boxes (equivalent to what motmetrics does).
+                frame_id += 1
 
             accs.append(acc)
 
