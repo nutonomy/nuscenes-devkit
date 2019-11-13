@@ -260,7 +260,10 @@ class TrackingBox(EvalBox):
                  tracking_name: str = '',  # The class name used in the tracking challenge.
                  tracking_score: float = -1.0):  # Does not apply to GT.
 
-        super().__init__(sample_token, translation, size, rotation, velocity, ego_translation, num_pts)
+        super().__init__(sample_token, translation, size, rotation, velocity, num_pts)
+
+        assert len(ego_translation) == 3, 'Error: Translation must have 3 elements!'
+        assert not np.any(np.isnan(ego_translation)), 'Error: Translation may not be NaN!'
 
         assert tracking_name is not None, 'Error: tracking_name cannot be empty!'
         assert tracking_name in TRACKING_NAMES, 'Error: Unknown tracking_name %s' % tracking_name
@@ -269,9 +272,15 @@ class TrackingBox(EvalBox):
         assert not np.any(np.isnan(tracking_score)), 'Error: tracking_score may not be NaN!'
 
         # Assign.
+        self.ego_translation = ego_translation
         self.tracking_id = tracking_id
         self.tracking_name = tracking_name
         self.tracking_score = tracking_score
+
+    @ property
+    def ego_dist(self) -> float:
+        """ Compute the distance from this box to the ego vehicle in 2D. """
+        return np.sqrt(np.sum(np.array(self.ego_translation[:2]) ** 2))
 
     def __eq__(self, other):
         return (self.sample_token == other.sample_token and

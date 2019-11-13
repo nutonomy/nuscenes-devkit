@@ -327,7 +327,7 @@ class DetectionBox(EvalBox):
                  detection_score: float = -1.0,  # GT samples do not have a score.
                  attribute_name: str = ''):  # Box attribute. Each box can have at most 1 attribute.
 
-        super().__init__(sample_token, translation, size, rotation, velocity, ego_dist, num_pts)
+        super().__init__(sample_token, translation, size, rotation, velocity, num_pts)
 
         assert detection_name is not None, 'Error: detection_name cannot be empty!'
         assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
@@ -339,9 +339,10 @@ class DetectionBox(EvalBox):
         assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
 
         # Assign.
+        self.ego_dist = ego_dist
         self.detection_name = detection_name
-        self.attribute_name = attribute_name
         self.detection_score = detection_score
+        self.attribute_name = attribute_name
 
     def __eq__(self, other):
         return (self.sample_token == other.sample_token and
@@ -349,11 +350,11 @@ class DetectionBox(EvalBox):
                 self.size == other.size and
                 self.rotation == other.rotation and
                 self.velocity == other.velocity and
-                self.detection_name == other.detection_name and
-                self.attribute_name == other.attribute_name and
                 self.ego_dist == other.ego_dist and
+                self.num_pts == other.num_pts and
+                self.detection_name == other.detection_name and
                 self.detection_score == other.detection_score and
-                self.num_pts == other.num_pts)
+                self.attribute_name == other.attribute_name)
 
     def serialize(self) -> dict:
         """ Serialize instance into json-friendly format. """
@@ -363,11 +364,11 @@ class DetectionBox(EvalBox):
             'size': self.size,
             'rotation': self.rotation,
             'velocity': self.velocity,
-            'detection_name': self.detection_name,
-            'attribute_name': self.attribute_name,
             'ego_dist': self.ego_dist,
+            'num_pts': self.num_pts,
+            'detection_name': self.detection_name,
             'detection_score': self.detection_score,
-            'num_pts': self.num_pts
+            'attribute_name': self.attribute_name
         }
 
     @classmethod
@@ -378,11 +379,11 @@ class DetectionBox(EvalBox):
                    size=tuple(content['size']),
                    rotation=tuple(content['rotation']),
                    velocity=tuple(content['velocity']),
-                   detection_name=content['detection_name'],
-                   attribute_name=content['attribute_name'],
                    ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']),
+                   detection_name=content['detection_name'],
                    detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),
-                   num_pts=-1 if 'num_pts' not in content else int(content['num_pts']))
+                   attribute_name=content['attribute_name'])
 
 
 class DetectionMetricDataList:
