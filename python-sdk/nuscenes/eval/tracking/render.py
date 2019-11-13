@@ -107,51 +107,59 @@ def recall_metric_curve(md_list: TrackingMetricDataList,
 
 class TrackingRenderer:
     """
-    Class that renders the tracking results in BEV and saves to a folder
+    Class that renders the tracking results in BEV and saves them to a folder.
     """
     def __init__(self, save_path):
         """
-        :param save_path:  Output path to save the renderings
+        :param save_path:  Output path to save the renderings.
         """
         self.save_path = save_path
-        self.id2color = {}
+        self.id2color = {} # The color of each track.
 
-    def render(self, events: DataFrame, timestamp: int, frame_gt: List[TrackingBox], frame_pred: List[TrackingBox]):
+    def render(self, events: DataFrame, timestamp: int, frame_gt: List[TrackingBox], frame_pred: List[TrackingBox]) \
+            -> None:
         """
         Render function for a given scene timestamp
         :param events: motmetrics events for that particular
         :param timestamp: timestamp for the rendering
         :param frame_gt: list of ground truth boxes
         :param frame_pred: list of prediction boxes
-        :return:
         """
-
-        print('rendering {}'.format(timestamp))
+        # Init.
+        print('Rendering {}'.format(timestamp))
         switches = events[events.Type == 'SWITCH']
         switch_ids = switches.HId.values
         fig, ax = plt.subplots()
+
+        # Plot GT boxes.
         for b in frame_gt:
             color = 'k'
-            box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
-                      name=b.tracking_name, token=b.tracking_id)
+            box = Box(b.ego_translation, b.size, Quaternion(b.rotation), name=b.tracking_name, token=b.tracking_id)
             box.render(ax, view=np.eye(4), colors=(color, color, color), linewidth=1)
-        for b in frame_pred:
-            box = Box(b.ego_translation, b.size, Quaternion(b.rotation),
-                      name=b.tracking_name, token=b.tracking_id)
 
+        # Plot predicted boxes.
+        for b in frame_pred:
+            box = Box(b.ego_translation, b.size, Quaternion(b.rotation), name=b.tracking_name, token=b.tracking_id)
+
+            # Determine color for this tracking id.
             if b.tracking_id not in self.id2color.keys():
-                self.id2color[b.tracking_id] = (float(hash(b.tracking_id + 'r') % 256) / 256,
-                                                float(hash(b.tracking_id + 'g') % 256) / 256,
-                                                float(hash(b.tracking_id + 'b') % 256) / 256)
+                self.id2color[b.tracking_id] = (float(hash(b.tracking_id + 'r') % 256) / 255,
+                                                float(hash(b.tracking_id + 'g') % 256) / 255,
+                                                float(hash(b.tracking_id + 'b') % 256) / 255)
+
+            # Render box. Highlight identity switches in red.
             if b.tracking_id in switch_ids:
                 color = self.id2color[b.tracking_id]
                 box.render(ax, view=np.eye(4), colors=('r', 'r', color))
             else:
                 color = self.id2color[b.tracking_id]
                 box.render(ax, view=np.eye(4), colors=(color, color, color))
+
+        # Plot ego pose.
         plt.scatter(0, 0, s=96, facecolors='none', edgecolors='k', marker='o')
         plt.xlim(-50, 50)
         plt.ylim(-50, 50)
+
+        # Save to disk and close figure.
         fig.savefig(os.path.join(self.save_path, '{}.png'.format(timestamp)))
-        # plt.show()
         plt.close(fig)

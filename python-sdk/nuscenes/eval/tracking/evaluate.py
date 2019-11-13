@@ -44,7 +44,7 @@ class TrackingEval:
                  nusc_version: str,
                  nusc_dataroot: str,
                  verbose: bool = True,
-                 render_classes: List[str] = []):
+                 render_classes: List[str] = None):
         """
         Initialize a TrackingEval object.
         :param config: A TrackingConfig object.
@@ -54,6 +54,7 @@ class TrackingEval:
         :param nusc_version: The version of the NuScenes dataset.
         :param nusc_dataroot: Path of the nuScenes dataset on disk.
         :param verbose: Whether to print to stdout.
+        :param render_classes: Classes to render to disk or None.
         """
         self.cfg = config
         self.result_path = result_path
@@ -246,7 +247,7 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
     parser.add_argument('--render_classes', type=str, default='', nargs='+',
-                        help='Whether to print to stdout.')
+                        help='For which classes we render tracking results to disk.')
     args = parser.parse_args()
 
     result_path_ = os.path.expanduser(args.result_path)

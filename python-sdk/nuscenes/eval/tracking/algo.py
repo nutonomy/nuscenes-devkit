@@ -10,20 +10,19 @@ https://github.com/xinshuoweng/AB3DMOT/blob/master/evaluation/evaluate_kitti3dmo
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
 """
-from typing import List, Dict, Callable, Tuple
 import os
+from typing import List, Dict, Callable, Tuple
 
 import numpy as np
 import pandas
 import sklearn
 import tqdm
 
-
-from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
-from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
-from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
+from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 from nuscenes.eval.tracking.render import TrackingRenderer
+from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 
 
 class TrackingEvaluation(object):
@@ -38,7 +37,7 @@ class TrackingEvaluation(object):
                  metric_worst: Dict[str, float],
                  verbose: bool = True,
                  output_dir: str = None,
-                 render_classes: List[str] = []):
+                 render_classes: List[str] = None):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
         :param tracks_gt: The ground-truth tracks.
@@ -52,7 +51,7 @@ class TrackingEvaluation(object):
             is not achieved.
         :param verbose: Whether to print to stdout.
         :param output_dir: Output directory to save renders.
-        :param render_classes: Classes to render
+        :param render_classes: Classes to render to disk or None.
 
         Computes the metrics defined in:
         - Stiefelhagen 2008: Evaluating Multiple Object Tracking Performance: The CLEAR MOT Metrics.
@@ -72,7 +71,7 @@ class TrackingEvaluation(object):
         self.metric_worst = metric_worst
         self.verbose = verbose
         self.output_dir = output_dir
-        self.render_classes = render_classes
+        self.render_classes = [] if render_classes is None else render_classes
 
         self.n_scenes = len(self.tracks_gt)
 
@@ -221,7 +220,7 @@ class TrackingEvaluation(object):
             scene_tracks_gt = self.tracks_gt[scene_id]
             scene_tracks_pred = self.tracks_pred[scene_id]
 
-            # Visualize the frame
+            # Visualize the boxes in this frame.
             if self.class_name in self.render_classes and threshold is None:
                 save_path = os.path.join(self.output_dir, 'render', str(scene_id), self.class_name, str(threshold))
                 os.makedirs(save_path, exist_ok=True)
@@ -273,6 +272,7 @@ class TrackingEvaluation(object):
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1
 
+                # Render the boxes in this frame.
                 if self.class_name in self.render_classes and threshold is None:
                     renderer.render(events, timestamp, frame_gt, frame_pred)
 
