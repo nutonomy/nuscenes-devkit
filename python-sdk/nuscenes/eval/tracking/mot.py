@@ -19,7 +19,6 @@ class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
     def __init__(self):
         super().__init__()
 
-
     @staticmethod
     def new_event_dataframe_with_data(indices, events):
         """

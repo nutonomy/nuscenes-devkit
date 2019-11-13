@@ -46,7 +46,8 @@ def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, ri
                        size=interp_list(left_box.size, right_box.size, right_ratio),
                        rotation=rotation,
                        velocity=interp_list(left_box.velocity, right_box.velocity, right_ratio),
-                       ego_translation=interp_list(left_box.ego_translation, right_box.ego_translation, right_ratio),  # May be inaccurate.
+                       ego_translation=interp_list(left_box.ego_translation, right_box.ego_translation,
+                                                   right_ratio),  # May be inaccurate.
                        tracking_id=right_box.tracking_id,
                        tracking_name=right_box.tracking_name,
                        tracking_score=tracking_score)

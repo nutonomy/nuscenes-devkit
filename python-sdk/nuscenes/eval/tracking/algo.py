@@ -225,6 +225,8 @@ class TrackingEvaluation(object):
                 save_path = os.path.join(self.output_dir, 'render', str(scene_id), self.class_name, str(threshold))
                 os.makedirs(save_path, exist_ok=True)
                 renderer = TrackingRenderer(save_path)
+            else:
+                renderer = None
 
             for timestamp in scene_tracks_gt.keys():
                 # Select only the current class.
@@ -268,6 +270,8 @@ class TrackingEvaluation(object):
                     match_ids = matches.HId.values
                     match_scores = [tt.tracking_score for tt in frame_pred if tt.tracking_id in match_ids]
                     scores.extend(match_scores)
+                else:
+                    events = None
 
                 # Increment the frame_id, unless there were no boxes (equivalent to what motmetrics does).
                 frame_id += 1

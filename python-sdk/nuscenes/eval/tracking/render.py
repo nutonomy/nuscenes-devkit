@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Holger Caesar, Varun Bankiti, and Alex Lang, 2019.
+# Code written by Holger Caesar, Caglayan Dicle, Varun Bankiti, and Alex Lang, 2019.
 
 import os
 from typing import Any, List
@@ -10,7 +10,7 @@ import numpy as np
 from pyquaternion import Quaternion
 from nuscenes.eval.common.render import setup_axis
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricDataList
-from nuscenes.eval.tracking.constants import TRACKING_COLORS, PRETTY_TRACKING_NAMES, LEGACY_METRICS
+from nuscenes.eval.tracking.constants import TRACKING_COLORS, PRETTY_TRACKING_NAMES
 
 from nuscenes.utils.data_classes import Box
 
@@ -114,7 +114,7 @@ class TrackingRenderer:
         :param save_path:  Output path to save the renderings.
         """
         self.save_path = save_path
-        self.id2color = {} # The color of each track.
+        self.id2color = {}  # The color of each track.
 
     def render(self, events: DataFrame, timestamp: int, frame_gt: List[TrackingBox], frame_pred: List[TrackingBox]) \
             -> None:

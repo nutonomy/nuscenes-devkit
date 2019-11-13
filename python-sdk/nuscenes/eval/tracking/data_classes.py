@@ -1,7 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
 
-from typing import List, Dict, Tuple, Any
+from typing import Dict, Tuple, Any
 
 import numpy as np
 
