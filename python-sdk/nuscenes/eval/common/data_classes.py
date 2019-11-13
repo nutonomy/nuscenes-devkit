@@ -17,7 +17,6 @@ class EvalBox(abc.ABC):
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
                  velocity: Tuple[float, float] = (0, 0),
-                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
                  num_pts: int = -1):  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
 
         # Assert data for shape and NaNs.
@@ -35,9 +34,6 @@ class EvalBox(abc.ABC):
         # Velocity can be NaN from our database for certain annotations.
         assert len(velocity) == 2, 'Error: Velocity must have 2 elements!'
 
-        assert type(ego_dist) == float, 'Error: ego_dist must be a float!'
-        assert not np.any(np.isnan(ego_dist)), 'Error: ego_dist may not be NaN!'
-
         assert type(num_pts) == int, 'Error: num_pts must be int!'
         assert not np.any(np.isnan(num_pts)), 'Error: num_pts may not be NaN!'
 
@@ -47,7 +43,6 @@ class EvalBox(abc.ABC):
         self.size = size
         self.rotation = rotation
         self.velocity = velocity
-        self.ego_dist = ego_dist
         self.num_pts = num_pts
 
     def __repr__(self):

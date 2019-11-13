@@ -5,7 +5,7 @@ import argparse
 import json
 import os
 import time
-from typing import Tuple
+from typing import Tuple, List
 
 import numpy as np
 
@@ -43,7 +43,8 @@ class TrackingEval:
                  output_dir: str,
                  nusc_version: str,
                  nusc_dataroot: str,
-                 verbose: bool = True):
+                 verbose: bool = True,
+                 render_classes: List[str] = None):
         """
         Initialize a TrackingEval object.
         :param config: A TrackingConfig object.
@@ -53,12 +54,14 @@ class TrackingEval:
         :param nusc_version: The version of the NuScenes dataset.
         :param nusc_dataroot: Path of the nuScenes dataset on disk.
         :param verbose: Whether to print to stdout.
+        :param render_classes: Classes to render to disk or None.
         """
         self.cfg = config
         self.result_path = result_path
         self.eval_set = eval_set
         self.output_dir = output_dir
         self.verbose = verbose
+        self.render_classes = render_classes
 
         # Check result file exists.
         assert os.path.exists(result_path), 'Error: The result file does not exist!'
@@ -122,7 +125,9 @@ class TrackingEval:
                                          self.cfg.dist_th_tp, self.cfg.min_recall,
                                          num_thresholds=TrackingMetricData.nelem,
                                          metric_worst=self.cfg.metric_worst,
-                                         verbose=self.verbose)
+                                         verbose=self.verbose,
+                                         output_dir=self.output_dir,
+                                         render_classes=self.render_classes)
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
 
@@ -241,6 +246,8 @@ if __name__ == "__main__":
                         help='Whether to render statistic curves to disk.')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print to stdout.')
+    parser.add_argument('--render_classes', type=str, default='', nargs='+',
+                        help='For which classes we render tracking results to disk.')
     args = parser.parse_args()
 
     result_path_ = os.path.expanduser(args.result_path)
@@ -251,6 +258,7 @@ if __name__ == "__main__":
     config_path = args.config_path
     render_curves_ = bool(args.render_curves)
     verbose_ = bool(args.verbose)
+    render_classes_ = args.render_classes
 
     if config_path == '':
         cfg_ = config_factory('tracking_nips_2019')
@@ -259,5 +267,6 @@ if __name__ == "__main__":
             cfg_ = TrackingConfig.deserialize(json.load(_f))
 
     nusc_eval = TrackingEval(config=cfg_, result_path=result_path_, eval_set=eval_set_, output_dir=output_dir_,
-                             nusc_version=version_, nusc_dataroot=dataroot_, verbose=verbose_)
+                             nusc_version=version_, nusc_dataroot=dataroot_, verbose=verbose_,
+                             render_classes=render_classes_)
     nusc_eval.main(render_curves=render_curves_)
