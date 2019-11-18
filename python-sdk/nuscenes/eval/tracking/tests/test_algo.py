@@ -261,9 +261,9 @@ class TestAlgo(unittest.TestCase):
     def test_scenarios(self):
         """ More flexible scenario test structure. """
 
-        def create_tracks(scenario, tag=None):
+        def create_tracks(_scenario, tag=None):
             tracks = {}
-            for entry_id, entry in enumerate(scenario['input']['pos_'+tag]):
+            for entry_id, entry in enumerate(_scenario['input']['pos_'+tag]):
                 tracking_id = 'tag_{}'.format(entry_id)
                 for timestamp, pos in enumerate(entry):
                     if timestamp not in tracks.keys():
@@ -288,7 +288,9 @@ class TestAlgo(unittest.TestCase):
             md = ev.accumulate()
 
             for key, value in scenario['output'].items():
-                assert np.all(getattr(md, key) == value)
+                metric_values = getattr(md, key)
+                metric_values = metric_values[np.logical_not(np.isnan(metric_values))]
+                assert np.all(metric_values == value)
 
 
 if __name__ == '__main__':

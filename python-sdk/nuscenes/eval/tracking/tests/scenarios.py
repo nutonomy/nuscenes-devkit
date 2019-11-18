@@ -72,4 +72,22 @@ def get_scenarios() -> List[Dict[str, dict]]:
 
     scenarios.append({'input': input_data, 'output': output_data})
 
+    # Scenario 5.
+    # Identity switch due to a single misdetection (3rd timestamp).
+    pos_pred = np.array([
+        [(0, -2), (0, -1), (0, 0), (0, 1), (0, 2)],
+        [(-2, 0), (-1, 0), (3, 0), (1, 0), (2, 0)],
+    ]).astype(float)
+    pos_gt = np.array([
+        [(-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0)],
+    ]).astype(float)
+    sigma = 0.1
+    pos_pred += sigma * np.random.randn(*pos_pred.shape)
+
+    input_data = {'pos_gt':  pos_gt,
+                  'pos_pred': pos_pred}
+    output_data = {'ids': 2}
+
+    scenarios.append({'input': input_data, 'output': output_data})
+
     return scenarios
