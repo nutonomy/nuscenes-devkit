@@ -88,10 +88,12 @@ ego_pose
 ---------
 
 Ego vehicle pose at a particular timestamp. Given with respect to global coordinate system of the log's map.
+The ego_pose is the output of a lidar map-based localization algorithm described in our paper.
+The localization is 2-dimensional in the x-y plane.
 ```
 ego_pose {
    "token":                   <str> -- Unique record identifier.
-   "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z.
+   "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z. Note that z is always 0.
    "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
    "timestamp":               <int> -- Unix time stamp.
 }

@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom, 2019.
-# Licensed under the Creative Commons [see licence.txt]
 
 import json
 import os
@@ -13,14 +12,15 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.detection import NuScenesEval
-from nuscenes.eval.detection.data_classes import DetectionConfig
+from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.detection.evaluate import DetectionEval
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
+from nuscenes.eval.detection.constants import DETECTION_NAMES
 from nuscenes.utils.splits import create_splits_scenes
 
 
 class TestMain(unittest.TestCase):
-    res_mockup = 'nsc_eval.json'
+    res_mockup = 'nusc_eval.json'
     res_eval_folder = 'tmp'
 
     def tearDown(self):
@@ -30,22 +30,22 @@ class TestMain(unittest.TestCase):
             shutil.rmtree(self.res_eval_folder)
 
     @staticmethod
-    def _mock_submission(nusc, split) -> Dict[str, dict]:
+    def _mock_submission(nusc: NuScenes, split: str) -> Dict[str, dict]:
         """
-        Creates "reasonable" submission (results and metadata) by looping through the full val-set, and adding 1
-        prediction per GT. Predictions will be permuted randomly along all axes.
+        Creates "reasonable" submission (results and metadata) by looping through the mini-val set, adding 1 GT
+        prediction per sample. Predictions will be permuted randomly along all axes.
         """
 
-        def random_class(category_name):
-            class_names = ['barrier', 'bicycle', 'bus', 'car', 'construction_vehicle', 'motorcycle', 'pedestrian',
-                           'traffic_cone', 'trailer', 'truck']
+        def random_class(category_name: str) -> str:
+            # Alter 10% of the valid labels.
+            class_names = sorted(DETECTION_NAMES)
             tmp = category_to_detection_name(category_name)
             if tmp is not None and np.random.rand() < .9:
                 return tmp
             else:
-                return class_names[np.random.randint(0, 9)]
+                return class_names[np.random.randint(0, len(class_names) - 1)]
 
-        def random_attr(name):
+        def random_attr(name: str) -> str:
             """
             This is the most straight-forward way to generate a random attribute.
             Not currently used b/c we want the test fixture to be back-wards compatible.
@@ -112,14 +112,9 @@ class TestMain(unittest.TestCase):
         with open(self.res_mockup, 'w') as f:
             json.dump(self._mock_submission(nusc, 'mini_val'), f, indent=2)
 
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        cfg_name = 'cvpr_2019.json'
-        cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
-        with open(cfg_path, 'r') as f:
-            cfg = DetectionConfig.deserialize(json.load(f))
-
-        nusc_eval = NuScenesEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
-                                 verbose=False)
+        cfg = config_factory('detection_cvpr_2019')
+        nusc_eval = DetectionEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
+                                  verbose=False)
         metrics, md_list = nusc_eval.evaluate()
 
         # 1. Score = 0.22082865720221012. Measured on the branch "release_v0.2" on March 7 2019.

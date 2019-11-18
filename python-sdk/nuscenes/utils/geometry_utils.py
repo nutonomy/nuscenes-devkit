@@ -1,6 +1,5 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom and Alex Lang, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 from enum import IntEnum
 from typing import Tuple
@@ -44,7 +43,7 @@ def view_points(points: np.ndarray, view: np.ndarray, normalize: bool) -> np.nda
 
     nbr_points = points.shape[1]
 
-    # Do operation in homogenous coordinates
+    # Do operation in homogenous coordinates.
     points = np.concatenate((points, np.ones((1, nbr_points))))
     points = np.dot(viewpad, points)
     points = points[:3, :]

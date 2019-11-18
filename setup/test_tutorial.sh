@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux
+set -ex
 
 # This script is to be executed inside a Docker container
 source activate nuscenes

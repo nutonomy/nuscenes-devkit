@@ -1,9 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom and Varun Bankiti, 2019.
-# Licensed under the Creative Commons [see licence.txt]
 
-import json
-import os
 import random
 import unittest
 from typing import Dict, List
@@ -13,18 +10,17 @@ from pyquaternion import Quaternion
 
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.eval.detection.data_classes import EvalBoxes, EvalBox, MetricDataList, DetectionMetrics, MetricData
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionBox, \
+    DetectionMetricDataList
 from nuscenes.eval.detection.utils import detection_name_to_rel_attributes
+from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.common.utils import center_distance
+from nuscenes.eval.common.data_classes import EvalBoxes
 
 
 class TestAlgo(unittest.TestCase):
 
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    cfg_name = 'cvpr_2019.json'
-    cfg_path = os.path.join(this_dir, '..', 'configs', cfg_name)
-    with open(cfg_path, 'r') as f:
-        cfg = DetectionConfig.deserialize(json.load(f))
+    cfg = config_factory('detection_cvpr_2019')
 
     @staticmethod
     def _mock_results(nsamples, ngt, npred, detection_name):
@@ -52,10 +48,10 @@ class TestAlgo(unittest.TestCase):
             this_gt = []
 
             for box_itt in range(ngt):
-
-                this_gt.append(EvalBox(
+                translation_xy = tuple(np.random.rand(2) * 15)
+                this_gt.append(DetectionBox(
                     sample_token=str(sample_itt),
-                    translation=tuple(list(np.random.rand(2)*15) + [0.0]),
+                    translation=(translation_xy[0], translation_xy[1], 0.0),
                     size=tuple(np.random.rand(3)*4),
                     rotation=tuple(np.random.rand(4)),
                     velocity=tuple(np.random.rand(3)[:2]*4),
@@ -70,10 +66,10 @@ class TestAlgo(unittest.TestCase):
             this_pred = []
 
             for box_itt in range(npred):
-
-                this_pred.append(EvalBox(
+                translation_xy = tuple(np.random.rand(2) * 10)
+                this_pred.append(DetectionBox(
                     sample_token=str(sample_itt),
-                    translation=tuple(list(np.random.rand(2) * 10) + [0.0]),
+                    translation=(translation_xy[0], translation_xy[1], 0.0),
                     size=tuple(np.random.rand(3) * 4),
                     rotation=tuple(np.random.rand(4)),
                     velocity=tuple(np.random.rand(3)[:2] * 4),
@@ -95,11 +91,11 @@ class TestAlgo(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
 
-        mdl = MetricDataList()
+        mdl = DetectionMetricDataList()
         for class_name in self.cfg.class_names:
             gt, pred = self._mock_results(30, 3, 25, class_name)
             for dist_th in self.cfg.dist_ths:
-                mdl.set(class_name, dist_th, accumulate(gt, pred, class_name, 'center_distance', 2))
+                mdl.set(class_name, dist_th, accumulate(gt, pred, class_name, center_distance, 2))
 
         metrics = DetectionMetrics(self.cfg)
         for class_name in self.cfg.class_names:
@@ -125,7 +121,7 @@ class TestAlgo(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
 
-        md = MetricData.random_md()
+        md = DetectionMetricData.random_md()
 
         # min_recall greater than 1.
         self.assertEqual(1.0, calc_tp(md, min_recall=1, metric_name='trans_err'))
@@ -136,7 +132,7 @@ class TestAlgo(unittest.TestCase):
         random.seed(42)
         np.random.seed(42)
 
-        md = MetricData.random_md()
+        md = DetectionMetricData.random_md()
 
         # Negative min_recall and min_precision
         self.assertRaises(AssertionError, calc_ap, md, -0.5, 0.4)
@@ -150,7 +146,7 @@ class TestAlgo(unittest.TestCase):
 def get_metric_data(gts: Dict[str, List[Dict]],
                     preds: Dict[str, List[Dict]],
                     detection_name: str,
-                    dist_th: float) -> MetricData:
+                    dist_th: float) -> DetectionMetricData:
         """
         Calculate and check the AP value.
         :param gts: Ground truth data.
@@ -168,8 +164,9 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             gt_boxes = []
             for gt in data:
                 gt = {**defaults, **gt}  # The defaults will be replaced by gt if given.
-                eb = EvalBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'], rotation=gt['rot'],
-                             detection_name=gt['name'], attribute_name=gt['attr'], velocity=gt['vel'])
+                eb = DetectionBox(sample_token=sample_token, translation=gt['trans'], size=gt['size'],
+                                  rotation=gt['rot'], detection_name=gt['name'], attribute_name=gt['attr'],
+                                  velocity=gt['vel'])
                 gt_boxes.append(eb)
 
             gt_eval_boxes.add_boxes(sample_token, gt_boxes)
@@ -180,14 +177,14 @@ def get_metric_data(gts: Dict[str, List[Dict]],
             pred_boxes = []
             for pred in data:
                 pred = {**defaults, **pred}
-                eb = EvalBox(sample_token=sample_token, translation=pred['trans'], size=pred['size'],
-                             rotation=pred['rot'], detection_name=pred['name'], detection_score=pred['score'],
-                             velocity=pred['vel'], attribute_name=pred['attr'])
+                eb = DetectionBox(sample_token=sample_token, translation=pred['trans'], size=pred['size'],
+                                  rotation=pred['rot'], detection_name=pred['name'], detection_score=pred['score'],
+                                  velocity=pred['vel'], attribute_name=pred['attr'])
                 pred_boxes.append(eb)
             pred_eval_boxes.add_boxes(sample_token, pred_boxes)
 
         metric_data = accumulate(gt_eval_boxes, pred_eval_boxes, class_name=detection_name,
-                                 dist_fcn_name='center_distance', dist_th=dist_th)
+                                 dist_fcn=center_distance, dist_th=dist_th)
 
         return metric_data
 

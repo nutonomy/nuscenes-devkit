@@ -1,12 +1,12 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom, 2018.
-# Licensed under the Creative Commons [see licence.txt]
 
 import os.path as osp
 import struct
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Tuple, List, Dict
+import copy
 
 import cv2
 import numpy as np
@@ -20,7 +20,8 @@ class PointCloud(ABC):
     """
     Abstract class for manipulating and viewing point clouds.
     Every point cloud (lidar and radar) consists of points where:
-    - Dimensions 0, 1, 2 represent x, y, z coordinates. These are modified when the point cloud is rotated or translated.
+    - Dimensions 0, 1, 2 represent x, y, z coordinates.
+        These are modified when the point cloud is rotated or translated.
     - All other dimensions are optional. Hence these have to be manually modified if the reference frame changes.
     """
 
@@ -57,7 +58,7 @@ class PointCloud(ABC):
                              sample_rec: Dict,
                              chan: str,
                              ref_chan: str,
-                             nsweeps: int = 26,
+                             nsweeps: int = 5,
                              min_distance: float = 1.0) -> Tuple['PointCloud', np.ndarray]:
         """
         Return a point cloud that aggregates multiple sweeps.
@@ -65,29 +66,28 @@ class PointCloud(ABC):
         As every sweep has a different timestamp, we need to account for that in the transformations and timestamps.
         :param nusc: A NuScenes instance.
         :param sample_rec: The current sample.
-        :param chan: The radar channel from which we track back n sweeps to aggregate the point cloud.
+        :param chan: The lidar/radar channel from which we track back n sweeps to aggregate the point cloud.
         :param ref_chan: The reference channel of the current sample_rec that the point clouds are mapped to.
         :param nsweeps: Number of sweeps to aggregated.
         :param min_distance: Distance below which points are discarded.
         :return: (all_pc, all_times). The aggregated point cloud and timestamps.
         """
-
-        # Init
+        # Init.
         points = np.zeros((cls.nbr_dims(), 0))
         all_pc = cls(points)
         all_times = np.zeros((1, 0))
 
-        # Get reference pose and timestamp
+        # Get reference pose and timestamp.
         ref_sd_token = sample_rec['data'][ref_chan]
         ref_sd_rec = nusc.get('sample_data', ref_sd_token)
         ref_pose_rec = nusc.get('ego_pose', ref_sd_rec['ego_pose_token'])
         ref_cs_rec = nusc.get('calibrated_sensor', ref_sd_rec['calibrated_sensor_token'])
         ref_time = 1e-6 * ref_sd_rec['timestamp']
 
-        # Homogeneous transform from ego car frame to reference frame
+        # Homogeneous transform from ego car frame to reference frame.
         ref_from_car = transform_matrix(ref_cs_rec['translation'], Quaternion(ref_cs_rec['rotation']), inverse=True)
 
-        # Homogeneous transformation matrix from global to _current_ ego car frame
+        # Homogeneous transformation matrix from global to _current_ ego car frame.
         car_from_global = transform_matrix(ref_pose_rec['translation'], Quaternion(ref_pose_rec['rotation']),
                                            inverse=True)
 
@@ -114,7 +114,7 @@ class PointCloud(ABC):
 
             # Remove close points and add timevector.
             current_pc.remove_close(min_distance)
-            time_lag = ref_time - 1e-6 * current_sd_rec['timestamp']  # positive difference
+            time_lag = ref_time - 1e-6 * current_sd_rec['timestamp']  # Positive difference.
             times = time_lag * np.ones((1, current_pc.nbr_points()))
             all_times = np.hstack((all_times, times))
 
@@ -180,15 +180,15 @@ class PointCloud(ABC):
     def render_height(self,
                       ax: Axes,
                       view: np.ndarray = np.eye(4),
-                      x_lim: Tuple = (-20, 20),
-                      y_lim: Tuple = (-20, 20),
+                      x_lim: Tuple[float, float] = (-20, 20),
+                      y_lim: Tuple[float, float] = (-20, 20),
                       marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by height (z-value).
         :param ax: Axes on which to render the points.
         :param view: <np.float: n, n>. Defines an arbitrary projection (n <= 4).
-        :param x_lim: (min <float>, max <float>). x range for plotting.
-        :param y_lim: (min <float>, max <float>). y range for plotting.
+        :param x_lim: (min, max). x range for plotting.
+        :param y_lim: (min, max). y range for plotting.
         :param marker_size: Marker size.
         """
         self._render_helper(2, ax, view, x_lim, y_lim, marker_size)
@@ -196,15 +196,15 @@ class PointCloud(ABC):
     def render_intensity(self,
                          ax: Axes,
                          view: np.ndarray = np.eye(4),
-                         x_lim: Tuple = (-20, 20),
-                         y_lim: Tuple = (-20, 20),
+                         x_lim: Tuple[float, float] = (-20, 20),
+                         y_lim: Tuple[float, float] = (-20, 20),
                          marker_size: float = 1) -> None:
         """
         Very simple method that applies a transformation and then scatter plots the points colored by intensity.
         :param ax: Axes on which to render the points.
         :param view: <np.float: n, n>. Defines an arbitrary projection (n <= 4).
-        :param x_lim: (min <float>, max <float>).
-        :param y_lim: (min <float>, max <float>).
+        :param x_lim: (min, max).
+        :param y_lim: (min, max).
         :param marker_size: Marker size.
         """
         self._render_helper(3, ax, view, x_lim, y_lim, marker_size)
@@ -213,16 +213,16 @@ class PointCloud(ABC):
                        color_channel: int,
                        ax: Axes,
                        view: np.ndarray,
-                       x_lim: Tuple,
-                       y_lim: Tuple,
+                       x_lim: Tuple[float, float],
+                       y_lim: Tuple[float, float],
                        marker_size: float) -> None:
         """
         Helper function for rendering.
         :param color_channel: Point channel to use as color.
         :param ax: Axes on which to render the points.
         :param view: <np.float: n, n>. Defines an arbitrary projection (n <= 4).
-        :param x_lim: (min <float>, max <float>).
-        :param y_lim: (min <float>, max <float>).
+        :param x_lim: (min, max).
+        :param y_lim: (min, max).
         :param marker_size: Marker size.
         """
         points = view_points(self.points[:3, :], view, normalize=False)
@@ -553,7 +553,7 @@ class Box:
                view: np.ndarray = np.eye(3),
                normalize: bool = False,
                colors: Tuple = ('b', 'r', 'k'),
-               linewidth: float = 2):
+               linewidth: float = 2) -> None:
         """
         Renders the box in the provided Matplotlib axis.
         :param axis: Axis onto which the box should be drawn.
@@ -631,3 +631,10 @@ class Box:
                  (int(center_bottom[0]), int(center_bottom[1])),
                  (int(center_bottom_forward[0]), int(center_bottom_forward[1])),
                  colors[0][::-1], linewidth)
+
+    def copy(self) -> 'Box':
+        """
+        Create a copy of self.
+        :return: A copy.
+        """
+        return copy.deepcopy(self)

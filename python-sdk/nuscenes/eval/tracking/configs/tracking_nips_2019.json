@@ -1,0 +1,35 @@
+{
+  "class_range": {
+    "car": 50,
+    "truck": 50,
+    "bus": 50,
+    "trailer": 50,
+    "pedestrian": 40,
+    "motorcycle": 40,
+    "bicycle": 40
+  },
+  "dist_fcn": "center_distance",
+  "dist_th_tp": 2.0,
+  "min_recall": 0.1,
+  "max_boxes_per_sample": 500,
+  "metric_worst": {
+    "amota": 0.0,
+    "amotp": 2.0,
+    "recall": 0.0,
+    "motar": 0.0,
+    "mota": 0.0,
+    "motp": 2.0,
+    "mt": 0.0,
+    "ml": -1.0,
+    "faf": 500,
+    "gt": -1,
+    "tp": 0.0,
+    "fp": -1.0,
+    "fn": -1.0,
+    "ids": -1.0,
+    "frag": -1.0,
+    "tid": 20,
+    "lgd": 20
+  },
+  "num_thresholds": 40
+}

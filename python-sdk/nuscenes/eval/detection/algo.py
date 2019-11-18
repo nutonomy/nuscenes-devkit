@@ -1,38 +1,34 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom, 2019.
-# Licensed under the Creative Commons [see licence.txt]
+
+from typing import Callable
 
 import numpy as np
 
-from nuscenes.eval.detection.data_classes import EvalBoxes, MetricData
-from nuscenes.eval.detection.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc, cummean
+from nuscenes.eval.common.data_classes import EvalBoxes
+from nuscenes.eval.detection.data_classes import DetectionMetricData
+from nuscenes.eval.common.utils import center_distance, scale_iou, yaw_diff, velocity_l2, attr_acc, cummean
 
 
 def accumulate(gt_boxes: EvalBoxes,
                pred_boxes: EvalBoxes,
                class_name: str,
-               dist_fcn_name: str,
+               dist_fcn: Callable,
                dist_th: float,
-               verbose: bool = False):
+               verbose: bool = False) -> DetectionMetricData:
     """
     Average Precision over predefined different recall thresholds for a single distance threshold.
     The recall/conf thresholds and other raw metrics will be used in secondary metrics.
     :param gt_boxes: Maps every sample_token to a list of its sample_annotations.
     :param pred_boxes: Maps every sample_token to a list of its sample_results.
     :param class_name: Class to compute AP on.
-    :param dist_fcn_name: Name of distance function used to match detections and ground truths.
+    :param dist_fcn: Distance function used to match detections and ground truths.
     :param dist_th: Distance threshold for a match.
     :param verbose: If true, print debug messages.
     :return: (average_prec, metrics). The average precision value and raw data for a number of metrics.
     """
-
-    dist_fcn_map = {
-        'center_distance': center_distance
-    }
-    dist_fcn = dist_fcn_map[dist_fcn_name]
-
     # ---------------------------------------------
-    # Organize input and initialize accumulators
+    # Organize input and initialize accumulators.
     # ---------------------------------------------
 
     # Count the positives.
@@ -43,7 +39,7 @@ def accumulate(gt_boxes: EvalBoxes,
 
     # For missing classes in the GT, return a data structure corresponding to no predictions.
     if npos == 0:
-        return MetricData.no_predictions()
+        return DetectionMetricData.no_predictions()
 
     # Organize the predictions in a single list.
     pred_boxes_list = [box for box in pred_boxes.all if box.detection_name == class_name]
@@ -57,9 +53,9 @@ def accumulate(gt_boxes: EvalBoxes,
     sortind = [i for (v, i) in sorted((v, i) for (i, v) in enumerate(pred_confs))][::-1]
 
     # Do the actual matching.
-    tp = []  # Accumulator of true positives
-    fp = []  # Accumulator of false positives
-    conf = []  # Accumulator of confidences
+    tp = []  # Accumulator of true positives.
+    fp = []  # Accumulator of false positives.
+    conf = []  # Accumulator of confidences.
 
     # match_data holds the extra metrics we calculate for each match.
     match_data = {'trans_err': [],
@@ -72,7 +68,7 @@ def accumulate(gt_boxes: EvalBoxes,
                   'vel_magn': []}
 
     # ---------------------------------------------
-    # Match and accumulate match data
+    # Match and accumulate match data.
     # ---------------------------------------------
 
     taken = set()  # Initially no gt bounding box is matched.
@@ -96,7 +92,7 @@ def accumulate(gt_boxes: EvalBoxes,
         if is_match:
             taken.add((pred_box.sample_token, match_gt_idx))
 
-            #  Update tp, fp and confs
+            #  Update tp, fp and confs.
             tp.append(1)
             fp.append(0)
             conf.append(pred_box.detection_score)
@@ -127,7 +123,7 @@ def accumulate(gt_boxes: EvalBoxes,
 
     # Check if we have any matches. If not, just return a "no predictions" array.
     if len(match_data['trans_err']) == 0:
-        return MetricData.no_predictions()
+        return DetectionMetricData.no_predictions()
 
     # ---------------------------------------------
     # Calculate and interpolate precision and recall
@@ -142,7 +138,7 @@ def accumulate(gt_boxes: EvalBoxes,
     prec = tp / (fp + tp)
     rec = tp / float(npos)
 
-    rec_interp = np.linspace(0, 1, MetricData.nelem)  # 101 steps, from 0% to 100% recall.
+    rec_interp = np.linspace(0, 1, DetectionMetricData.nelem)  # 101 steps, from 0% to 100% recall.
     prec = np.interp(rec_interp, rec, prec, right=0)
     conf = np.interp(rec_interp, rec, conf, right=0)
     rec = rec_interp
@@ -165,17 +161,17 @@ def accumulate(gt_boxes: EvalBoxes,
     # ---------------------------------------------
     # Done. Instantiate MetricData and return
     # ---------------------------------------------
-    return MetricData(recall=rec,
-                      precision=prec,
-                      confidence=conf,
-                      trans_err=match_data['trans_err'],
-                      vel_err=match_data['vel_err'],
-                      scale_err=match_data['scale_err'],
-                      orient_err=match_data['orient_err'],
-                      attr_err=match_data['attr_err'])
+    return DetectionMetricData(recall=rec,
+                               precision=prec,
+                               confidence=conf,
+                               trans_err=match_data['trans_err'],
+                               vel_err=match_data['vel_err'],
+                               scale_err=match_data['scale_err'],
+                               orient_err=match_data['orient_err'],
+                               attr_err=match_data['attr_err'])
 
 
-def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
+def calc_ap(md: DetectionMetricData, min_recall: float, min_precision: float) -> float:
     """ Calculated average precision. """
 
     assert 0 <= min_precision < 1
@@ -188,7 +184,7 @@ def calc_ap(md: MetricData, min_recall: float, min_precision: float) -> float:
     return float(np.mean(prec)) / (1.0 - min_precision)
 
 
-def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
+def calc_tp(md: DetectionMetricData, min_recall: float, metric_name: str) -> float:
     """ Calculates true positive errors. """
 
     first_ind = round(100 * min_recall) + 1  # +1 to exclude the error at min recall.
@@ -196,4 +192,4 @@ def calc_tp(md: MetricData, min_recall: float, metric_name: str) -> float:
     if last_ind < first_ind:
         return 1.0  # Assign 1 here. If this happens for all classes, the score for that TP metric will be 0.
     else:
-        return float(np.mean(getattr(md, metric_name)[first_ind: last_ind + 1]))  # +1 to include error at max recall
+        return float(np.mean(getattr(md, metric_name)[first_ind: last_ind + 1]))  # +1 to include error at max recall.

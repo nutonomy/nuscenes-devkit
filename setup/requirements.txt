@@ -1,6 +1,8 @@
 cachetools
+descartes
 jupyter
 matplotlib
+motmetrics
 numpy
 opencv-python
 Pillow

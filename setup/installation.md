@@ -71,6 +71,9 @@ source [VIRTUAL_ENV_LOCATION]
 Replace `[VIRTUAL_ENV_LOCATION]` with either `/usr/local/bin/virtualenvwrapper.sh` or `~/.local/bin/virtualenvwrapper.sh` depending on where it is installed on your system.
 After editing it, reload the shell startup file by running e.g. `source ~/.bashrc`.
 
+Note: If you are facing dependency issues with the PIP package, you can also install the devkit as a Conda package.
+For more details, see [this issue](https://github.com/nutonomy/nuscenes-devkit/issues/155). 
+
 #### Create the virtual environment
 We create a new virtual environment named `nuscenes`.
 ```
