@@ -9,6 +9,7 @@ from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.data_classes import TrackingMetricData, TrackingBox
 from nuscenes.eval.tracking.loaders import interpolate_tracks
+from nuscenes.eval.tracking.tests.scenarios import get_scenarios
 
 
 class TestAlgo(unittest.TestCase):
@@ -62,6 +63,8 @@ class TestAlgo(unittest.TestCase):
         assert np.all(md.ids == 0)
 
     def test_empty_submission(self):
+        """ Test a submission with no predictions. """
+
         # Get config.
         cfg = config_factory('tracking_nips_2019')
 
@@ -254,6 +257,40 @@ class TestAlgo(unittest.TestCase):
         assert np.all(md.tid == 0)
         assert np.all(md.frag == 0)
         assert np.all(md.ids == 0)
+
+    def test_scenarios(self):
+        """ More flexible scenario test structure. """
+
+        def create_tracks(_scenario, tag=None):
+            tracks = {}
+            for entry_id, entry in enumerate(_scenario['input']['pos_'+tag]):
+                tracking_id = 'tag_{}'.format(entry_id)
+                for timestamp, pos in enumerate(entry):
+                    if timestamp not in tracks.keys():
+                        tracks[timestamp] = []
+                    box = TrackingBox(translation=(pos[0], pos[1], 0.0), tracking_id=tracking_id, tracking_name='car',
+                                      tracking_score=0.5)
+                    tracks[timestamp].append(box)
+
+            return tracks
+
+        # Get config.
+        cfg = config_factory('tracking_nips_2019')
+
+        for scenario in get_scenarios():
+            tracks_gt = {'scene-1': create_tracks(scenario, tag='gt')}
+            tracks_pred = {'scene-1': create_tracks(scenario, tag='pred')}
+
+            # Accumulate metrics.
+            ev = TrackingEvaluation(tracks_gt, tracks_pred, 'car', cfg.dist_fcn_callable,
+                                    cfg.dist_th_tp, cfg.min_recall, num_thresholds=TrackingMetricData.nelem,
+                                    metric_worst=cfg.metric_worst, verbose=False)
+            md = ev.accumulate()
+
+            for key, value in scenario['output'].items():
+                metric_values = getattr(md, key)
+                metric_values = metric_values[np.logical_not(np.isnan(metric_values))]
+                assert np.all(metric_values == value)
 
 
 if __name__ == '__main__':
