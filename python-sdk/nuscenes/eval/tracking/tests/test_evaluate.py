@@ -7,7 +7,7 @@ import sys
 import random
 import shutil
 import unittest
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 import numpy as np
 from tqdm import tqdm
@@ -18,7 +18,6 @@ from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.evaluate import TrackingEval
 from nuscenes.eval.tracking.utils import category_to_tracking_name
 from nuscenes.eval.tracking.constants import TRACKING_NAMES
-from nuscenes.eval.tracking.data_classes import TrackingMetrics
 
 
 class TestMain(unittest.TestCase):
@@ -137,7 +136,7 @@ class TestMain(unittest.TestCase):
     def basic_test(self,
                    eval_set: str = 'mini_val',
                    add_errors: bool = False,
-                   render_curves: bool = False) -> TrackingMetrics:
+                   render_curves: bool = False) -> Dict[str, Any]:
         """
         Run the evaluation with fixed randomness on the specified subset, with or without introducing errors in the
         submission.
@@ -184,11 +183,11 @@ class TestMain(unittest.TestCase):
 
         # Compare metrics to known solution.
         if eval_set == 'mini_val':
-            self.assertAlmostEqual(metrics.compute_metric('amota'), 0.5383961573989436)
-            self.assertAlmostEqual(metrics.compute_metric('amotp'), 1.5275400961369252)
-            self.assertAlmostEqual(metrics.compute_metric('motar'), 0.8261827096838301)
-            self.assertAlmostEqual(metrics.compute_metric('mota'), 0.25003943918566174)
-            self.assertAlmostEqual(metrics.compute_metric('motp'), 1.2976508610883917)
+            self.assertAlmostEqual(metrics['amota'], 0.5383961573989436)
+            self.assertAlmostEqual(metrics['amotp'], 1.5275400961369252)
+            self.assertAlmostEqual(metrics['motar'], 0.8261827096838301)
+            self.assertAlmostEqual(metrics['mota'], 0.25003943918566174)
+            self.assertAlmostEqual(metrics['motp'], 1.2976508610883917)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
@@ -210,20 +209,20 @@ class TestMain(unittest.TestCase):
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
         if eval_set == 'mini_val':
-            self.assertAlmostEqual(metrics.compute_metric('amota'), 1.0)
-            self.assertAlmostEqual(metrics.compute_metric('amotp'), 0.0, delta=1e-5)
-            self.assertAlmostEqual(metrics.compute_metric('motar'), 1.0)
-            self.assertAlmostEqual(metrics.compute_metric('recall'), 1.0)
-            self.assertAlmostEqual(metrics.compute_metric('mota'), 1.0)
-            self.assertAlmostEqual(metrics.compute_metric('motp'), 0.0, delta=1e-5)
-            self.assertAlmostEqual(metrics.compute_metric('faf'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('ml'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('fp'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('fn'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('ids'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('frag'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('tid'), 0.0)
-            self.assertAlmostEqual(metrics.compute_metric('lgd'), 0.0)
+            self.assertAlmostEqual(metrics['amota'], 1.0)
+            self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics['motar'], 1.0)
+            self.assertAlmostEqual(metrics['recall'], 1.0)
+            self.assertAlmostEqual(metrics['mota'], 1.0)
+            self.assertAlmostEqual(metrics['motp'], 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics['faf'], 0.0)
+            self.assertAlmostEqual(metrics['ml'], 0.0)
+            self.assertAlmostEqual(metrics['fp'], 0.0)
+            self.assertAlmostEqual(metrics['fn'], 0.0)
+            self.assertAlmostEqual(metrics['ids'], 0.0)
+            self.assertAlmostEqual(metrics['frag'], 0.0)
+            self.assertAlmostEqual(metrics['tid'], 0.0)
+            self.assertAlmostEqual(metrics['lgd'], 0.0)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 

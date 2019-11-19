@@ -68,7 +68,7 @@ class TestDetectionMetricDataList(unittest.TestCase):
         mdl = DetectionMetricDataList()
         for i in range(10):
             mdl.set('name', 0.1, DetectionMetricData.random_md())
-        recovered = DetectionMetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())), DetectionMetricData)
+        recovered = DetectionMetricDataList.deserialize(json.loads(json.dumps(mdl.serialize())))
         self.assertEqual(mdl, recovered)
 
 

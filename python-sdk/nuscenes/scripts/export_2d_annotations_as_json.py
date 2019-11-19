@@ -98,7 +98,7 @@ def generate_record(ann_rec: dict,
 def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[OrderedDict]:
     """
     Get the 2D annotation records for a given `sample_data_token`.
-    :param sample_data_token: Sample data token belonging to a keyframe.
+    :param sample_data_token: Sample data token belonging to a camera keyframe.
     :param visibilities: Visibility filter.
     :return: List of 2D annotation record that belongs to the input `sample_data_token`
     """
@@ -106,6 +106,7 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
     # Get the sample data and the sample corresponding to that sample data.
     sd_rec = nusc.get('sample_data', sample_data_token)
 
+    assert sd_rec['sensor_modality'] == 'camera', 'Error: get_2d_boxes only works for camera sample_data!'
     if not sd_rec['is_key_frame']:
         raise ValueError('The 2D re-projections are available only for keyframes.')
 
@@ -123,10 +124,11 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str]) -> List[Ordere
     repro_recs = []
 
     for ann_rec in ann_recs:
-
+        # Augment sample_annotation with token information.
         ann_rec['sample_annotation_token'] = ann_rec['token']
         ann_rec['sample_data_token'] = sample_data_token
 
+        # Get the box in global coordinates.
         box = nusc.get_box(ann_rec['token'])
 
         # Move them to the ego-pose frame.

@@ -1,5 +1,6 @@
 cachetools
 descartes
+fire
 jupyter
 matplotlib
 motmetrics
