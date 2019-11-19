@@ -5,7 +5,7 @@ import argparse
 import json
 import os
 import time
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Any
 
 import numpy as np
 
@@ -195,7 +195,7 @@ class TrackingEval:
             recall_metric_curve(md_list, metric_name,
                                 self.cfg.min_recall, savepath=savepath('%s' % metric_name))
 
-    def main(self, render_curves: bool = True) -> TrackingMetrics:
+    def main(self, render_curves: bool = True) -> Dict[str, Any]:
         """
         Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
         :param render_curves: Whether to render PR and TP curves to disk.
@@ -222,7 +222,7 @@ class TrackingEval:
         if render_curves:
             self.render(metric_data_list)
 
-        return metrics
+        return metrics_summary
 
 
 if __name__ == "__main__":

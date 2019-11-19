@@ -225,6 +225,9 @@ class TrackingMetrics:
         metrics['label_metrics'] = self.label_metrics
         metrics['eval_time'] = self.eval_time
         metrics['cfg'] = self.cfg.serialize()
+        for metric_name in self.label_metrics.keys():
+            metrics[metric_name] = self.compute_metric(metric_name)
+
         return metrics
 
     @classmethod
@@ -239,6 +242,7 @@ class TrackingMetrics:
 
     def __eq__(self, other):
         eq = True
+        eq = eq and self.label_metrics == other.label_metrics
         eq = eq and self.eval_time == other.eval_time
         eq = eq and self.cfg == other.cfg
 
