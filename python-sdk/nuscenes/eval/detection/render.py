@@ -322,7 +322,7 @@ def detailed_results_table_tex(metrics_path: str, output_path: str) -> None:
     tex += '\\end{tabular}\n'
 
     # All one line
-    tex += '\\caption{Detailed detection performance for best lidar network on the val set. \n'
+    tex += '\\caption{Detailed detection performance on the val set. \n'
     tex += 'AP: average precision averaged over distance thresholds (\%), \n'
     tex += 'ATE: average translation error (${}$), \n'.format(TP_METRICS_UNITS['trans_err'])
     tex += 'ASE: average scale error (${}$), \n'.format(TP_METRICS_UNITS['scale_err'])
