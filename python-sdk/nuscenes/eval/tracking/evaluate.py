@@ -199,7 +199,7 @@ class TrackingEval:
         """
         Main function that loads the evaluation code, visualizes samples, runs the evaluation and renders stat plots.
         :param render_curves: Whether to render PR and TP curves to disk.
-        :return: The TrackingMetrics computed during evaluation.
+        :return: The serialized TrackingMetrics computed during evaluation.
         """
         # Run evaluation.
         metrics, metric_data_list = self.evaluate()
