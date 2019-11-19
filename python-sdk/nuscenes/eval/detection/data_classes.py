@@ -417,9 +417,9 @@ class DetectionMetricDataList:
         return {key[0] + ':' + str(key[1]): value.serialize() for key, value in self.md.items()}
 
     @classmethod
-    def deserialize(cls, content: dict, metric_data_cls):
+    def deserialize(cls, content: dict):
         mdl = cls()
         for key, md in content.items():
             name, distance = key.split(':')
-            mdl.set(name, float(distance), metric_data_cls.deserialize(md))
+            mdl.set(name, float(distance), DetectionMetricData.deserialize(md))
         return mdl

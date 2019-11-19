@@ -46,8 +46,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.geometry_utils import transform_matrix
-from nuscenes.utils.geometry_utils import BoxVisibility
+from nuscenes.utils.geometry_utils import BoxVisibility, transform_matrix
 from nuscenes.utils.data_classes import LidarPointCloud, Box
 from nuscenes.utils.splits import create_splits_logs
 from nuscenes.utils.kitti import KittiDB
