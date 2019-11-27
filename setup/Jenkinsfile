@@ -3,6 +3,7 @@ pipeline {
   agent {
     kubernetes {
       label 'nuscenes-builder-' + UUID.randomUUID().toString()
+      cloud 'boston'
       yamlFile 'setup/docker.yaml'
     }// kubernetes
   } // agent
@@ -39,7 +40,7 @@ pipeline {
           agent {
             kubernetes {
               label 'nuscenes-test3.6-' + UUID.randomUUID().toString()
-              defaultContainer 'jnlp'
+              cloud 'boston'
               yaml """
                 apiVersion: v1
                 kind: Pod
@@ -93,7 +94,7 @@ pipeline {
           agent {
             kubernetes {
               label 'nuscenes-test3.7-' + UUID.randomUUID().toString()
-              defaultContainer 'jnlp'
+              cloud 'boston'
               yaml """
                 apiVersion: v1
                 kind: Pod
