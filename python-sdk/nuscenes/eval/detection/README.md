@@ -1,5 +1,6 @@
 # nuScenes detection task
 In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes detection task.
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/356) for the **EvalAI detection evaluation server**.
 ![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
 
 ## Overview
