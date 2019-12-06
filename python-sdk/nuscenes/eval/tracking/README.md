@@ -1,7 +1,7 @@
 # nuScenes tracking task
 In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes tracking task.
-
-*Note: This page is work in progress and therefore subject to change.*
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/475) for the **EvalAI tracking evaluation server**. 
+![nuScenes Tracking logo](https://www.nuscenes.org/public/images/tracking_challenge.png)
 
 ## Overview
 - [Introduction](#introduction)
@@ -38,12 +38,10 @@ To evaluate the tracking results, use `evaluate.py` in the [eval folder](https:/
 In `loaders.py` we provide some methods to organize the raw box data into tracks that may be helpful.
  
 ## Participation
-*Note: The tracking server will open soon.*
- 
 The nuScenes tracking evaluation server is open all year round for submission.
-To participate in the challenge, please create an account at EvalAI.
+To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/475).
 Then upload your zipped result file including all of the required [meta data](#results-format).
-The results will be exported to the nuScenes leaderboard.
+The results will be exported to the nuScenes leaderboard shown above (coming soon).
 This is the only way to benchmark your method against the test dataset.
 
 ## Challenges
@@ -54,7 +52,7 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
-Submission will open October 1 and close December 2.
+Submission will open October 1 and close December 9.
 The leaderboard will remain private until the end of the challenge.
 Results and winners will be announced at the [AI Driving Olympics](http://www.driving-olympics.ai/) Workshop (AIDO) at NIPS 2019.
 
