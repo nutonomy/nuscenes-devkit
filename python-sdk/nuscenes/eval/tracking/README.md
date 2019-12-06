@@ -1,7 +1,7 @@
 # nuScenes tracking task
 In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes tracking task.
 Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/475) for the **EvalAI tracking evaluation server**. 
-![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
+![nuScenes Tracking logo](https://www.nuscenes.org/public/images/tracking_challenge.png)
 
 ## Overview
 - [Introduction](#introduction)
