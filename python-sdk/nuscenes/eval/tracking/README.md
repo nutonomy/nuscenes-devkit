@@ -254,13 +254,14 @@ The use of these detections is entirely optional.
 The detections on the train, val and test splits can be downloaded from the table below.
 Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* \[2\] and uses each of the provided detections.
 The results for object detection and tracking can be seen below.
-Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
+These numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
+Note that we no longer use the weighted version of AMOTA (*Updated 10 December 2019*). 
 
 |   Method             | NDS  | mAP  | AMOTA | AMOTP | Modality | Detections download                                              | Tracking download                                               |
 |   ---                | ---  | ---  | ---   | ---   | ---      | ---                                                              | ---                                                             |
-|   Megvii \[6\]       | 62.8 | 51.9 | 27.9  | 1.50  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
-|   PointPillars \[5\] | 44.8 | 29.5 | 13.1  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
-|   Mapillary \[7\]    | 36.9 | 29.8 | 10.3  | 1.79  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
+|   Megvii \[6\]       | 62.8 | 51.9 | 17.9  | 1.50  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
+|   PointPillars \[5\] | 44.8 | 29.5 |  3.5  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
+|   Mapillary \[7\]    | 36.9 | 29.8 |  4.5  | 1.79  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.
