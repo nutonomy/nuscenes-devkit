@@ -108,7 +108,7 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
 
 
 def motar(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int,
-          num_objects: int) -> float:
+          num_objects: int, alpha: float = 1.0) -> float:
     """
     Initializes a MOTAR class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
     Note that we use the measured recall, which is not identical to the hypothetical recall of the
@@ -119,10 +119,10 @@ def motar(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, n
     :param num_switches: The number of identity switches.
     :param num_false_positives: The number of false positives.
     :param num_objects: The total number of objects of this class in the GT.
+    :param alpha: MOTAR weighting factor (previously 0.2).
     :return: The MOTAR or nan if there are no GT objects.
     """
     recall = num_matches / num_objects
-    alpha = 0.2  # Weighting factor.
     nominator = (num_misses + num_switches + num_false_positives) - (1 - recall) * num_objects
     denominator = recall * num_objects
     if denominator == 0:

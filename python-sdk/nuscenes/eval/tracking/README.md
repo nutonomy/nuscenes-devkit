@@ -205,14 +205,13 @@ For the traditional MOTA formulation at recall 10% there are at least 90% false 
 Therefore the contribution of identity switches and false positives becomes negligible at low recall values.
 In `MOTAR` we include recall-normalization term `- (1-r) * P` in the nominator, the factor `r` in the denominator and the maximum.
 These guarantee that the values span the entire `[0, 1]` range and brings the three error types into a similar value range.
-`P` refers to the number of ground-truth positives for the current class.
-The weighting factor `⍺ = 0.2` is to avoid that MOTAR is 0 on difficult classes. 
+`P` refers to the number of ground-truth positives for the current class. 
 <br />
 <a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTAR}" target="_blank">
 <img width="400" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\dpi{400}&space;\tiny&space;\mathit{AMOTA}&space;=&space;\small&space;\frac{1}{n-1}&space;\sum_{r&space;\in&space;\{\frac{1}{n-1},&space;\frac{2}{n-1}&space;\,&space;...&space;\,&space;\,&space;1\}}&space;\mathit{MOTAR}" title="\dpi{400} \tiny \mathit{AMOTA} = \small \frac{1}{n-1} \sum_{r \in \{\frac{1}{n-1}, \frac{2}{n-1} \, ... \, \, 1\}} \mathit{MOTAR}" /></a>
 <br />
-<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{MOTAR}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\alpha*\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" target="_blank">
-<img width="450" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\mathit{MOTAR}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\alpha*\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" title="\mathit{MOTAR} = \max (0,\; 1 \, - \, \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r + (1-r) * \mathit{P}}{r * \mathit{P}})" /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{300}&space;\mathit{MOTAR}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" target="_blank">
+<img width="450" src="https://latex.codecogs.com/gif.latex?\dpi{300}&space;\mathit{MOTAR}&space;=&space;\max&space;(0,\;&space;1&space;\,&space;-&space;\,&space;\frac{\mathit{IDS}_r&space;&plus;&space;\mathit{FP}_r&space;&plus;&space;\mathit{FN}_r&space;-&space;(1-r)&space;*&space;\mathit{P}}{r&space;*&space;\mathit{P}})" title="\mathit{MOTAR} = \max (0,\; 1 \, - \, \frac{\mathit{IDS}_r + \mathit{FP}_r + \mathit{FN}_r + (1-r) * \mathit{P}}{r * \mathit{P}})" /></a>
 
 - **AMOTP** (average multi object tracking precision):
 Average over the MOTP metric defined below.
@@ -255,13 +254,14 @@ The use of these detections is entirely optional.
 The detections on the train, val and test splits can be downloaded from the table below.
 Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* \[2\] and uses each of the provided detections.
 The results for object detection and tracking can be seen below.
-Note that these numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
+These numbers are measured on the val split and therefore not identical to the test set numbers on the leaderboard.
+Note that we no longer use the weighted version of AMOTA (*Updated 10 December 2019*). 
 
 |   Method             | NDS  | mAP  | AMOTA | AMOTP | Modality | Detections download                                              | Tracking download                                               |
 |   ---                | ---  | ---  | ---   | ---   | ---      | ---                                                              | ---                                                             |
-|   Megvii \[6\]       | 62.8 | 51.9 | 27.9  | 1.50  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
-|   PointPillars \[5\] | 44.8 | 29.5 | 13.1  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
-|   Mapillary \[7\]    | 36.9 | 29.8 | 10.3  | 1.79  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
+|   Megvii \[6\]       | 62.8 | 51.9 | 17.9  | 1.50  | Lidar    | [link](https://www.nuscenes.org/data/detection-megvii.zip)       | [link](https://www.nuscenes.org/data/tracking-megvii.zip)       |
+|   PointPillars \[5\] | 44.8 | 29.5 |  3.5  | 1.69  | Lidar    | [link](https://www.nuscenes.org/data/detection-pointpillars.zip) | [link](https://www.nuscenes.org/data/tracking-pointpillars.zip) |
+|   Mapillary \[7\]    | 36.9 | 29.8 |  4.5  | 1.79  | Camera   | [link](https://www.nuscenes.org/data/detection-mapillary.zip)    | [link](https://www.nuscenes.org/data/tracking-mapillary.zip)    |
 
 #### Overfitting
 Some object detection methods overfit to the training data.
