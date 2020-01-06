@@ -321,13 +321,13 @@ class DetectionBox(EvalBox):
                  size: Tuple[float, float, float] = (0, 0, 0),
                  rotation: Tuple[float, float, float, float] = (0, 0, 0, 0),
                  velocity: Tuple[float, float] = (0, 0),
-                 ego_dist: float = 0.0,  # Distance to ego vehicle in meters.
+                 ego_translation: [float, float, float] = (0, 0, 0),  # Translation to ego vehicle in meters.
                  num_pts: int = -1,  # Nbr. LIDAR or RADAR inside the box. Only for gt boxes.
                  detection_name: str = 'car',  # The class name used in the detection challenge.
                  detection_score: float = -1.0,  # GT samples do not have a score.
                  attribute_name: str = ''):  # Box attribute. Each box can have at most 1 attribute.
 
-        super().__init__(sample_token, translation, size, rotation, velocity, num_pts)
+        super().__init__(sample_token, translation, size, rotation, velocity, ego_translation, num_pts)
 
         assert detection_name is not None, 'Error: detection_name cannot be empty!'
         assert detection_name in DETECTION_NAMES, 'Error: Unknown detection_name %s' % detection_name
@@ -339,7 +339,6 @@ class DetectionBox(EvalBox):
         assert not np.any(np.isnan(detection_score)), 'Error: detection_score may not be NaN!'
 
         # Assign.
-        self.ego_dist = ego_dist
         self.detection_name = detection_name
         self.detection_score = detection_score
         self.attribute_name = attribute_name
@@ -350,7 +349,7 @@ class DetectionBox(EvalBox):
                 self.size == other.size and
                 self.rotation == other.rotation and
                 self.velocity == other.velocity and
-                self.ego_dist == other.ego_dist and
+                self.ego_translation == other.ego_translation and
                 self.num_pts == other.num_pts and
                 self.detection_name == other.detection_name and
                 self.detection_score == other.detection_score and
@@ -364,7 +363,7 @@ class DetectionBox(EvalBox):
             'size': self.size,
             'rotation': self.rotation,
             'velocity': self.velocity,
-            'ego_dist': self.ego_dist,
+            'ego_translation': self.ego_translation,
             'num_pts': self.num_pts,
             'detection_name': self.detection_name,
             'detection_score': self.detection_score,
@@ -379,7 +378,8 @@ class DetectionBox(EvalBox):
                    size=tuple(content['size']),
                    rotation=tuple(content['rotation']),
                    velocity=tuple(content['velocity']),
-                   ego_dist=0.0 if 'ego_dist' not in content else float(content['ego_dist']),
+                   ego_translation=(0.0, 0.0, 0.0) if 'ego_translation' not in content
+                   else tuple(content['ego_translation']),
                    num_pts=-1 if 'num_pts' not in content else int(content['num_pts']),
                    detection_name=content['detection_name'],
                    detection_score=-1.0 if 'detection_score' not in content else float(content['detection_score']),

@@ -63,9 +63,7 @@ def accumulate(gt_boxes: EvalBoxes,
                   'scale_err': [],
                   'orient_err': [],
                   'attr_err': [],
-                  'conf': [],
-                  'ego_dist': [],
-                  'vel_magn': []}
+                  'conf': []}
 
     # ---------------------------------------------
     # Match and accumulate match data.
@@ -110,10 +108,6 @@ def accumulate(gt_boxes: EvalBoxes,
 
             match_data['attr_err'].append(1 - attr_acc(gt_box_match, pred_box))
             match_data['conf'].append(pred_box.detection_score)
-
-            # For debugging only.
-            match_data['ego_dist'].append(gt_box_match.ego_dist)
-            match_data['vel_magn'].append(np.sqrt(np.sum(np.array(gt_box_match.velocity) ** 2)))
 
         else:
             # No match. Mark this as a false positive.

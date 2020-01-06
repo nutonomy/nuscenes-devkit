@@ -195,9 +195,7 @@ def add_center_dist(nusc: NuScenes,
             ego_translation = (box.translation[0] - pose_record['translation'][0],
                                box.translation[1] - pose_record['translation'][1],
                                box.translation[2] - pose_record['translation'][2])
-            if isinstance(box, DetectionBox):
-                box.ego_dist = np.sqrt(np.sum(np.array(ego_translation[:2]) ** 2))
-            elif isinstance(box, TrackingBox):
+            if isinstance(box, DetectionBox) or isinstance(box, TrackingBox):
                 box.ego_translation = ego_translation
             else:
                 raise NotImplementedError
