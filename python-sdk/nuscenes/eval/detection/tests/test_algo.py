@@ -58,7 +58,7 @@ class TestAlgo(unittest.TestCase):
                     detection_name=detection_name,
                     detection_score=random.random(),
                     attribute_name=random_attr(),
-                    ego_dist=random.random()*10,
+                    ego_translation=(random.random() * 10, 0, 0),
                 ))
             gt.add_boxes(str(sample_itt), this_gt)
 
@@ -76,7 +76,7 @@ class TestAlgo(unittest.TestCase):
                     detection_name=detection_name,
                     detection_score=random.random(),
                     attribute_name=random_attr(),
-                    ego_dist=random.random() * 10,
+                    ego_translation=(random.random() * 10, 0, 0),
                 ))
 
             pred.add_boxes(str(sample_itt), this_pred)

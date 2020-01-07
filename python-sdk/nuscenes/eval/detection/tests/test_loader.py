@@ -88,12 +88,13 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(filtered_boxes.boxes[sample_token][1].detection_name, 'bicycle')
         self.assertEqual(filtered_boxes.boxes[sample_token][1].translation[0], 68.681)
 
-        # Add another bike on the bike rack center but set the ego_dist higher than what's defined in max_dist
+        # Add another bike on the bike rack center,
+        # but set the ego_dist (derived from ego_translation) higher than what's defined in max_dist
         box5 = DetectionBox(sample_token=sample_token,
                             translation=(683.681, 1592.002, 0.809),
                             size=(1, 1, 1),
                             detection_name='bicycle',
-                            ego_dist=100.0)
+                            ego_translation=(100.0, 0.0, 0.0))
 
         eval_boxes = EvalBoxes()
         eval_boxes.add_boxes(sample_token, [box1, box2, box3, box4, box5])
@@ -127,25 +128,25 @@ class TestLoader(unittest.TestCase):
                             translation=(683.681, 1592.002, 0.809),
                             size=(1, 1, 1),
                             detection_name='bicycle',
-                            ego_dist=25.0)
+                            ego_translation=(25.0, 0.0, 0.0))
 
         box2 = DetectionBox(sample_token=sample_token,
                             translation=(683.681, 1592.002, 0.809),
                             size=(1, 1, 1),
                             detection_name='motorcycle',
-                            ego_dist=45.0)
+                            ego_translation=(45.0, 0.0, 0.0))
 
         box3 = DetectionBox(sample_token=sample_token,
                             translation=(683.681, 1592.002, 0.809),
                             size=(1, 1, 1),
                             detection_name='car',
-                            ego_dist=45.0)
+                            ego_translation=(45.0, 0.0, 0.0))
 
         box4 = DetectionBox(sample_token=sample_token,
                             translation=(683.681, 1592.002, 0.809),
                             size=(1, 1, 1),
                             detection_name='car',
-                            ego_dist=55.0)
+                            ego_translation=(55.0, 0.0, 0.0))
 
         box5 = DetectionBox(sample_token=sample_token,
                             translation=(683.681, 1592.002, 0.809),
