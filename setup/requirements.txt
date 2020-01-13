@@ -6,6 +6,7 @@ matplotlib
 motmetrics
 numpy
 opencv-python
+pandas>=0.24
 Pillow
 pyquaternion>=0.9.5
 scikit-learn
