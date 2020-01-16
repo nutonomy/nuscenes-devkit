@@ -91,6 +91,15 @@ class NuScenesMap:
 
         self.explorer = NuScenesMapExplorer(self)
 
+        # Parse the map version and print a warning for deprecated maps.
+        if 'version' in self.json_obj:
+            self.version = self.json_obj['version']
+        else:
+            self.version = '1.0'
+        if self.version < '1.1':
+            print('Warning: You are using an outdated map version! Please go to https://www.nuscenes.org/download to '
+                  'download the latest map!')
+
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
         Returns a list of records corresponding to the layer name.
@@ -941,9 +950,7 @@ class NuScenesMapExplorer:
         min_diff_patch = 30
 
         # Ids of scenes with a bad match between localization and map.
-        scene_blacklist = [3, 12, 18, 19, 33, 35, 36, 41, 45, 50, 54, 55, 61, 120, 121, 123, 126, 132, 133, 134, 149,
-                           154, 159, 196, 268, 278, 351, 365, 367, 368, 369, 372, 376, 377, 382, 385, 499, 515, 517,
-                           945, 947, 952, 955, 962, 963, 968]
+        scene_blacklist = [499, 515, 517]
 
         # Get logs by location.
         log_location = self.map_api.map_name
