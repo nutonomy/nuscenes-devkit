@@ -15,6 +15,11 @@ def angle_of_rotation(yaw: float) -> float:
 def convert_global_coords_to_local(coordinates: np.ndarray,
                                    translation: Tuple[float, float, float],
                                    rotation: Tuple[float, float, float, float]) -> np.ndarray:
+    """Converts global coordinates to coordinates in the frame given by the rotation quaternion and
+    centered at the translation vector.
+    :param coordinates: x,y locations. array of shape [n_steps, 2]
+    :param translation: Tuple of (x, y, z) location that is the center of the new frame
+    :param rotation: Tuple representation of quaternion of new frame."""
 
     yaw = angle_of_rotation(quaternion_yaw(Quaternion(rotation)))
 
