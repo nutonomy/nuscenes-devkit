@@ -2,6 +2,7 @@ import unittest
 from typing import Dict, List, Any
 from nuscenes.predict import PredictHelper, convert_global_coords_to_local
 import numpy as np
+import copy
 
 class MockNuScenes:
     """Mocks the NuScenes API needed to test PredictHelper"""
@@ -245,7 +246,8 @@ class TestPredictHelper(unittest.TestCase):
 
         self.mock_annotations = [{'token': '1', 'instance_token': '1', 'sample_token': '1', 'translation': [0, 0, 0], 'rotation': [1, 0, 0, 0],
                                   'prev': '', 'next': '2'},
-                                 {'token': '2', 'instance_token': '1', 'sample_token': '2', 'translation': [1, 1, 1], 'prev': '1', 'next': '3'},
+                                 {'token': '2', 'instance_token': '1', 'sample_token': '2', 'translation': [1, 1, 1], 'rotation': [np.sqrt(2) / 2, 0, 0, np.sqrt(2) / 2],
+                                  'prev': '1', 'next': '3'},
                                  {'token': '3', 'instance_token': '1', 'sample_token': '3', 'translation': [2, 2, 2], 'prev': '2', 'next': '4'},
                                  {'token': '4', 'instance_token': '1', 'sample_token': '4', 'translation': [3, 3, 3], 'prev': '3', 'next': '5'},
                                  {'token': '5', 'instance_token': '1', 'sample_token': '5', 'translation': [4, 4, 4], 'rotation': [1, 0, 0, 0],
@@ -471,5 +473,82 @@ class TestPredictHelper(unittest.TestCase):
 
         for k in answer:
             np.testing.assert_equal(answer[k], answer[k])
+
+    def test_velocity(self):
+
+        mock_samples = [{'token': '1', 'timestamp': 0},
+                        {'token': '2', 'timestamp': 0.5e6}]
+
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+
+        self.assertEqual(helper.get_velocity_for_agent("1", "2"), np.sqrt(8))
+
+    def test_velocity_return_nan_one_obs(self):
+
+        mock_samples = [{'token': '1', 'timestamp': 0}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+
+        self.assertTrue(np.isnan(helper.get_velocity_for_agent('1', '1')))
+
+    def test_velocity_return_nan_big_diff(self):
+        mock_samples = [{'token': '1', 'timestamp': 0},
+                        {'token': '2', 'timestamp': 2.5e6}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        self.assertTrue(np.isnan(helper.get_velocity_for_agent('1', '2')))
+
+    def test_heading_change_rate(self):
+        mock_samples = [{'token': '1', 'timestamp': 0}, {'token': '2', 'timestamp': 0.5e6}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        self.assertEqual(helper.get_heading_change_rate_for_agent('1', '2'), np.pi)
+
+    def test_heading_change_rate_near_pi(self):
+        mock_samples = [{'token': '1', 'timestamp': 0}, {'token': '2', 'timestamp': 0.5e6}]
+        mock_annotations = copy.copy(self.mock_annotations)
+        mock_annotations[0]['rotation'] = [np.cos((np.pi - 0.05)/2), 0, 0, np.sin((np.pi - 0.05) / 2)]
+        mock_annotations[1]['rotation'] = [np.cos((-np.pi + 0.05)/2), 0, 0, np.sin((-np.pi + 0.05) / 2)]
+        nusc = MockNuScenes(mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        self.assertAlmostEqual(helper.get_heading_change_rate_for_agent('1', '2'), 0.2)
+
+    def test_acceleration_zero(self):
+        mock_samples = [{'token': '1', 'timestamp': 0},
+                        {'token': '2', 'timestamp': 0.5e6},
+                        {'token': '3', 'timestamp': 1e6}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        self.assertEqual(helper.get_acceleration_for_agent('1', '3'), 0)
+
+    def test_acceleration_nonzero(self):
+        mock_samples = [{'token': '1', 'timestamp': 0},
+                        {'token': '2', 'timestamp': 0.5e6},
+                        {'token': '3', 'timestamp': 1e6}]
+        mock_annotations = copy.copy(self.mock_annotations)
+        mock_annotations[2]['translation'] = [3, 3, 3]
+        nusc = MockNuScenes(mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        self.assertAlmostEqual(helper.get_acceleration_for_agent('1', '3'), 2 * (np.sqrt(32) - np.sqrt(8)))
+
+    def test_acceleration_nan_not_enough_data(self):
+        mock_samples = [{'token': '1', 'timestamp': 0},
+                        {'token': '2', 'timestamp': 0.5e6},
+                        {'token': '3', 'timestamp': 1e6}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        self.assertTrue(np.isnan(helper.get_acceleration_for_agent('1', '2')))
+
+
+
+
+
+
+
+
+
+
+
 
 

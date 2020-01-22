@@ -2,8 +2,7 @@
 from typing import Dict, Tuple, Any, List
 from pyquaternion import Quaternion
 from nuscenes import NuScenes
-from nuscenes.utils.geometry_utils import transform_matrix
-from nuscenes.eval.common.utils import quaternion_yaw
+from nuscenes.eval.common.utils import quaternion_yaw, angle_diff
 import numpy as np
 
 MICROSECONDS_PER_SECOND = 1e6
@@ -177,5 +176,54 @@ class PredictHelper:
             pasts[annotation_record['instance_token']] = past
 
         return pasts
+
+    def _compute_diff_between_sample_annotations(self, instance: str, sample: str, max_time_diff: float,
+                                                 with_function, **kwargs) -> float:
+        annotation = self.get_sample_annotation(instance, sample)
+
+        if annotation['prev'] == '':
+            return np.nan
+
+        prev = self.data.get('sample_annotation', annotation['prev'])
+
+        current_time = 1e-6 * self.data.get('sample', sample)['timestamp']
+        prev_time = 1e-6 * self.data.get('sample', prev['sample_token'])['timestamp']
+        time_diff = current_time - prev_time
+
+        if time_diff <= max_time_diff:
+
+            return with_function(annotation, prev, time_diff, **kwargs)
+
+        else:
+            return np.nan
+
+    def get_velocity_for_agent(self, instance: str, sample: str, max_time_diff=1.5) -> float:
+        """Computes velocity based on the difference between the current and previous annotation."""
+        return self._compute_diff_between_sample_annotations(instance, sample, max_time_diff, with_function=velocity)
+
+    def get_heading_change_rate_for_agent(self, instance: str, sample: str, max_time_diff=1.5) -> float:
+        return self._compute_diff_between_sample_annotations(instance, sample, max_time_diff, with_function=heading_change_rate)
+
+    def get_acceleration_for_agent(self, instance: str, sample: str, max_time_diff=1.5) -> float:
+        return self._compute_diff_between_sample_annotations(instance, sample, max_time_diff, with_function=acceleration,
+                                                            instance_token=instance, helper=self)
+
+def velocity(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
+    diff = (np.array(current['translation']) - np.array(prev['translation'])) / time_diff
+    return np.linalg.norm(diff[:2])
+
+def heading_change_rate(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
+    current_yaw = quaternion_yaw(Quaternion(current['rotation']))
+    prev_yaw = quaternion_yaw(Quaternion(prev['rotation']))
+
+    return angle_diff(current_yaw, prev_yaw, period=2*np.pi) / time_diff
+
+def acceleration(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float, instance_token: str, helper: PredictHelper) -> float:
+    current_velocity = helper.get_velocity_for_agent(instance_token, current['sample_token'])
+    prev_velocity = helper.get_velocity_for_agent(instance_token, prev['sample_token'])
+
+    return (current_velocity - prev_velocity) / time_diff
+
+
 
 
