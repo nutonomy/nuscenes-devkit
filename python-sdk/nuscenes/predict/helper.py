@@ -64,6 +64,14 @@ class PredictHelper:
     def _iterate(self, starting_annotation: Dict[str, Any], seconds: float, direction: str) -> List[Dict[str, Any]]:
         """Iterates forwards or backwards in time through the annotations for a given amount of seconds."""
 
+        if seconds < 0:
+            raise ValueError(f"Parameter seconds must be non-negative. Recevied {seconds}.")
+
+        # Need to exit early because we technically _could_ return data in this case if
+        # the first observation is within the BUFFER.
+        if seconds == 0:
+            return []
+
         seconds_with_buffer = seconds + BUFFER
         starting_time = self._timestamp_for_sample(starting_annotation['sample_token'])
 
@@ -102,6 +110,9 @@ class PredictHelper:
         starting_annotation = self.get_sample_annotation(instance, sample)
         sequence = self._iterate(starting_annotation, seconds, direction)
         coords = np.array([r['translation'][:2] for r in sequence])
+
+        if coords.size == 0:
+            return coords
 
         if in_agent_frame:
             coords = convert_global_coords_to_local(coords,
