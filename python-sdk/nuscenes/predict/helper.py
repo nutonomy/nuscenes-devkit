@@ -1,5 +1,5 @@
 
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Callable
 from pyquaternion import Quaternion
 from nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import transform_matrix
@@ -10,16 +10,19 @@ MICROSECONDS_PER_SECOND = 1e6
 BUFFER = 0.15 # seconds
 
 def angle_of_rotation(yaw: float) -> float:
+    """Given a yaw (measured from x axis) find the angle needed to rotate by so that
+    the yaw points upwards (pi / 2)."""
     return (np.pi / 2) + np.sign(-yaw) * np.abs(yaw)
 
 def convert_global_coords_to_local(coordinates: np.ndarray,
                                    translation: Tuple[float, float, float],
                                    rotation: Tuple[float, float, float, float]) -> np.ndarray:
     """Converts global coordinates to coordinates in the frame given by the rotation quaternion and
-    centered at the translation vector.
+    centered at the translation vector. The rotation is meant to be a z-axis rotation.
     :param coordinates: x,y locations. array of shape [n_steps, 2]
     :param translation: Tuple of (x, y, z) location that is the center of the new frame
-    :param rotation: Tuple representation of quaternion of new frame."""
+    :param rotation: Tuple representation of quaternion of new frame.
+        Representation - cos(theta / 2) + (xi + yi + zi)sin(theta / 2)."""
 
     yaw = angle_of_rotation(quaternion_yaw(Quaternion(rotation)))
 
@@ -90,6 +93,21 @@ class PredictHelper:
         """
         return self.data.get('sample_annotation', self.inst_sample_to_ann[(sample, instance)])
 
+    def _get_past_or_future_for_agent(self, instance: str, sample: str,
+                                       seconds: float, in_agent_frame: bool,
+                                       direction: str) -> np.ndarray:
+        """Helper function to reduce code duplication between get_future and get_past for agent."""
+        starting_annotation = self.get_sample_annotation(instance, sample)
+        sequence = self._iterate(starting_annotation, seconds, direction)
+        coords = np.array([r['translation'][:2] for r in sequence])
+
+        if in_agent_frame:
+            coords = convert_global_coords_to_local(coords,
+                                                    starting_annotation['translation'],
+                                                    starting_annotation['rotation'])
+
+        return coords
+
     def get_future_for_agent(self, instance: str, sample: str,
                              seconds: float, in_agent_frame: bool) -> np.array:
         """Retrieves the agent's future x,y locations.
@@ -101,16 +119,8 @@ class PredictHelper:
             The rows increase with time, i.e the last row occurs the farthest from
             the current time.
         """
-        starting_annotation = self.get_sample_annotation(instance, sample)
-        future = self._iterate(starting_annotation, seconds, 'next')
-        coords = np.array([r['translation'][:2] for r in future])
-
-        if in_agent_frame:
-            coords = convert_global_coords_to_local(coords,
-                                                    starting_annotation['translation'],
-                                                    starting_annotation['rotation'])
-
-        return coords
+        return self._get_past_or_future_for_agent(instance, sample, seconds,
+                                                  in_agent_frame, direction='next')
 
     def get_past_for_agent(self, instance: str, sample: str,
                            seconds: float, in_agent_frame: bool) -> np.array:
@@ -123,16 +133,23 @@ class PredictHelper:
             The rows decreate with time, i.e the last row happened the farthest from
             the current time.
         """
-        starting_annotation = self.get_sample_annotation(instance, sample)
-        past = self._iterate(starting_annotation, seconds, 'prev')
-        coords = np.array([r['translation'][:2] for r in past])
+        return self._get_past_or_future_for_agent(instance, sample, seconds,
+                                                  in_agent_frame, direction='prev')
 
-        if in_agent_frame:
-            coords = convert_global_coords_to_local(coords,
-                                                    starting_annotation['translation'],
-                                                    starting_annotation['rotation'])
+    def _get_past_or_future_for_sample(self, sample: str, seconds: float, in_agent_frame: bool,
+                                      function: Callable[[str, str, float, bool], np.ndarray]):
+        sample_record = self.data.get('sample', sample)
+        sequences = {}
+        for annotation in sample_record['anns']:
+            annotation_record = self.data.get('sample_annotation', annotation)
+            sequence = function(annotation_record['instance_token'],
+                                annotation_record['sample_token'],
+                                seconds, in_agent_frame)
 
-        return coords
+            sequences[annotation_record['instance_token']] = sequence
+
+        return sequences
+
 
     def get_future_for_sample(self, sample: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
         """Retrieves the the future x,y locations of all agents in the sample.
@@ -144,17 +161,9 @@ class PredictHelper:
             The rows increase with time, i.e the last row occurs the farthest from
             the current time.
         """
-        sample_record = self.data.get('sample', sample)
-        futures = {}
-        for annotation in sample_record['anns']:
-            annotation_record = self.data.get('sample_annotation', annotation)
-            future = self.get_future_for_agent(annotation_record['instance_token'],
-                                               annotation_record['sample_token'],
-                                               seconds, in_agent_frame)
+        return self._get_past_or_future_for_sample(sample, seconds, in_agent_frame,
+                                                   function=self.get_future_for_agent)
 
-            futures[annotation_record['instance_token']] = future
-
-        return futures
 
     def get_past_for_sample(self, sample: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
         """Retrieves the the past x,y locations of all agents in the sample.
@@ -166,16 +175,7 @@ class PredictHelper:
             The rows increase with time, i.e the last row occurs the farthest from
             the current time.
         """
-        sample_record = self.data.get('sample', sample)
-        pasts = {}
-        for annotation in sample_record['anns']:
-            annotation_record = self.data.get('sample_annotation', annotation)
-            past = self.get_past_for_agent(annotation_record['instance_token'],
-                                               annotation_record['sample_token'],
-                                               seconds, in_agent_frame)
-
-            pasts[annotation_record['instance_token']] = past
-
-        return pasts
+        return self._get_past_or_future_for_sample(sample, seconds, in_agent_frame,
+                                                   function=self.get_past_for_agent)
 
 
