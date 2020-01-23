@@ -1,3 +1,5 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, 2020.
 
 from typing import Dict, Tuple, Any, List, Callable
 from pyquaternion import Quaternion
@@ -138,6 +140,7 @@ class PredictHelper:
 
     def _get_past_or_future_for_sample(self, sample: str, seconds: float, in_agent_frame: bool,
                                       function: Callable[[str, str, float, bool], np.ndarray]):
+        """Helper function to reduce code duplication between get_future and get_past for sample."""
         sample_record = self.data.get('sample', sample)
         sequences = {}
         for annotation in sample_record['anns']:

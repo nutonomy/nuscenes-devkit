@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, 2020.
+
 import unittest
 from typing import Dict, List, Any
 from nuscenes.predict import PredictHelper, convert_global_coords_to_local
