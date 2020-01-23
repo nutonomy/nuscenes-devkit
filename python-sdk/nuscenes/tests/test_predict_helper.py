@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, 2020.
+
 import unittest
 from typing import Dict, List, Any
 from nuscenes.predict import PredictHelper, convert_global_coords_to_local
@@ -283,6 +286,7 @@ class TestPredictHelper(unittest.TestCase):
         helper = PredictHelper(nusc)
         self.assertDictEqual(mock_annotation, helper.get_sample_annotation('instance_1', 'sample_1'))
 
+
     def test_get_future_for_agent_exact_amount(self,):
 
         mock_samples = [{'token': '1', 'timestamp': 0},
@@ -540,15 +544,28 @@ class TestPredictHelper(unittest.TestCase):
         helper = PredictHelper(nusc)
         self.assertTrue(np.isnan(helper.get_acceleration_for_agent('1', '2')))
 
+    def test_get_no_data_when_seconds_0(self):
+        mock_samples = [{'token': '1', 'timestamp': 0, 'anns': ['1']}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
 
+        np.testing.assert_equal(helper.get_future_for_agent('1', '1', 0, False), np.array([]))
+        np.testing.assert_equal(helper.get_past_for_agent('1', '1', 0, False), np.array([]))
+        np.testing.assert_equal(helper.get_future_for_sample('1', 0, False), np.array([]))
+        np.testing.assert_equal(helper.get_past_for_sample('1', 0, False), np.array([]))
 
+    def test_raises_error_when_seconds_negative(self):
+        mock_samples = [{'token': '1', 'timestamp': 0, 'anns': ['1', '1b']}]
+        nusc = MockNuScenes(self.mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        with self.assertRaises(ValueError):
+            helper.get_future_for_agent('1', '1', -1, False)
 
+        with self.assertRaises(ValueError):
+            helper.get_past_for_agent('1', '1', -1, False)
 
+        with self.assertRaises(ValueError):
+            helper.get_past_for_sample('1', -1, False)
 
-
-
-
-
-
-
-
+        with self.assertRaises(ValueError):
+            helper.get_future_for_sample('1', -1, False)
