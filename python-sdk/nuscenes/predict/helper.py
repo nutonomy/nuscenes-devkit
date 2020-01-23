@@ -8,8 +8,10 @@ import numpy as np
 MICROSECONDS_PER_SECOND = 1e6
 BUFFER = 0.15 # seconds
 
+
 def angle_of_rotation(yaw: float) -> float:
     return (np.pi / 2) + np.sign(-yaw) * np.abs(yaw)
+
 
 def convert_global_coords_to_local(coordinates: np.ndarray,
                                    translation: Tuple[float, float, float],
@@ -27,6 +29,7 @@ def convert_global_coords_to_local(coordinates: np.ndarray,
     coords = (coordinates - np.atleast_2d(np.array(translation)[:2])).T
 
     return np.dot(transform, coords).T[:, :2]
+
 
 class PredictHelper:
     """Wrapper class around NuScenes to help retrieve data for the prediction task."""
@@ -208,15 +211,18 @@ class PredictHelper:
         return self._compute_diff_between_sample_annotations(instance, sample, max_time_diff, with_function=acceleration,
                                                             instance_token=instance, helper=self)
 
+
 def velocity(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
     diff = (np.array(current['translation']) - np.array(prev['translation'])) / time_diff
     return np.linalg.norm(diff[:2])
+
 
 def heading_change_rate(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
     current_yaw = quaternion_yaw(Quaternion(current['rotation']))
     prev_yaw = quaternion_yaw(Quaternion(prev['rotation']))
 
     return angle_diff(current_yaw, prev_yaw, period=2*np.pi) / time_diff
+
 
 def acceleration(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float, instance_token: str, helper: PredictHelper) -> float:
     current_velocity = helper.get_velocity_for_agent(instance_token, current['sample_token'])
