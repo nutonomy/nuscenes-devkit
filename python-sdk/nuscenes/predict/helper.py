@@ -53,8 +53,8 @@ class PredictHelper:
 
         return mapping
 
-    def _timestamp_for_sample(self, sample: str):
-        """"""
+    def _timestamp_for_sample(self, sample: str) -> float:
+        """Gets timestamp from sample token."""
         return self.data.get('sample', sample)['timestamp']
 
     def _absolute_time_diff(self, time1: int, time2: int) -> int:
