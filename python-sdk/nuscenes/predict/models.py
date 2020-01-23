@@ -57,7 +57,6 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the acceleration and heading are constant.
     """
-    # From freshman physics, integrating x'' = a yields x = x_0 + v_0 * t + (1/2) a * t^2.
     x, y, vx, vy, ax, ay, _, _, _, _ = kinematics_data
 
     preds = []
