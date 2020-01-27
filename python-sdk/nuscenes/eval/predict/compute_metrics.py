@@ -43,14 +43,14 @@ def compute_metrics(predictions: List[Dict[str, Any]],
     return aggregations
 
 
-def main(version: str, submission_path: str, submission_name: str,
+def main(version: str, data_root: str, submission_path: str, submission_name: str,
          config_name: str = 'predict_2020_icra') -> None:
     """Computes metrics for a submission stored in submission_path with a given submission_name
     with the metrics specified by the config_name."""
 
     predictions = json.load(open(os.path.join(submission_path, f"{submission_name}_inference.json"), "r"))
     config = config_factory(config_name)
-    nusc = NuScenes(version=version)
+    nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
 
     results = compute_metrics(predictions, helper, config)
