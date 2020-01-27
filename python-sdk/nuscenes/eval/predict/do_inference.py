@@ -24,7 +24,7 @@ def do_inference_for_submission(helper: PredictHelper,
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
     :param dataset_tokens: Tokens of instance_sample pairs in the test set."""
 
-    cv_heading = ConstantVelocityHeading(config.seconds, helper)
+    cv_heading = ConstantVelocityHeading(pred_seconds, helper)
 
     cv_preds = []
     for token in dataset_tokens:
@@ -33,13 +33,13 @@ def do_inference_for_submission(helper: PredictHelper,
     return cv_preds
 
 
-def main(version: str, split_name: str, output_dir: str, submission_name: str, config_name: str) -> None:
+def main(version: str, data_root: str, split_name: str, output_dir: str, submission_name: str, config_name: str) -> None:
     """Makes predictions for a submission to the nuScenes prediction challenge.
     :param version: NuScenes version.
     :param split_name: Data split to run inference on.
     :param output_dir: Directory to store the output file.
     :param submission_name: Name of the submission to use for the results file."""
-    nusc = NuScenes(version=version)
+    nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
     dataset = get_prediction_challenge_split(split_name)
     config = config_factory(config_name)
@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Perform Inference with baseline models.')
     parser.add_argument('-version', help='NuScenes version number.')
+    parser.add_argument('-data_root', help='Root directory for NuScenes json files.')
     parser.add_argument('-split_name', help='Data split to run inference on.')
     parser.add_argument('-output_dir', help='Directory to store output file.')
     parser.add_argument('-submission_name', help='Name of the submission to use for the results file.')
@@ -61,4 +62,4 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args()
-    main(args.version, args.split_name, args.output_dir, args.submission_name, args.config_name)
+    main(args.version, args.data_root, args.split_name, args.output_dir, args.submission_name, args.config_name)
