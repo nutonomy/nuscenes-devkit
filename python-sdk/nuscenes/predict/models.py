@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, Robert Beaudoin 2020.
+
 import abc
 from typing import Tuple
 import numpy as np
@@ -112,15 +115,18 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
 
 class Baseline(abc.ABC):
 
-    def __init__(self, helper: PredictHelper):
+    def __init__(self, sec_from_now: float, helper: PredictHelper):
         self.helper = helper
-        self.sec_from_now = 6
+        self.sec_from_now = sec_from_now
         self.sampled_at = 2 # 2 Hz between annotations
 
     @abc.abstractmethod
-    def __call__(self, token: str):
+    def __call__(self, token: str) -> Prediction:
         pass
 
+def random_p():
+    a = np.random.random(25)
+    return np.exp(a) / np.exp(a).sum()
 
 class ConstantVelocityHeading(Baseline):
 
@@ -130,7 +136,9 @@ class ConstantVelocityHeading(Baseline):
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
         cv_heading = _constant_acceleration_and_heading(kinematics, self.sec_from_now, self.sampled_at)
         prediction = convert_global_coords_to_local(cv_heading, annotation['translation'], annotation['rotation'])
-        return Prediction(instance, sample, prediction, np.array([1]))
+
+        # Need the prediction to have 2d
+        return Prediction(instance, sample, np.expand_dims(prediction, 0), np.array([1]))
 
 
 class PhysicsOracle(Baseline):
@@ -156,4 +164,4 @@ class PhysicsOracle(Baseline):
 
         oracle = sorted(paths_ego,
                         key=lambda path: np.linalg.norm(np.array(path) - ground_truth, ord="fro"))[0]
-        return Prediction(instance, sample, oracle, np.array([1]))
+        return Prediction(instance, sample, np.expand_dims(oracle, 0), np.array([1]))
