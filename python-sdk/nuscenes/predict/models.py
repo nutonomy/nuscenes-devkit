@@ -40,7 +40,7 @@ def _kinematics_from_tokens(helper: PredictHelper, instance: str, sample: str) -
 
 
 def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
-                                               sec_from_now: int,
+                                               sec_from_now: float,
                                                sampled_at: int) -> np.ndarray:
     """
     Computes a constant velocity baseline for given kinematics data, time window
@@ -55,7 +55,7 @@ def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
 
 
 def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
-                                       sec_from_now: int, sampled_at: int) -> np.ndarray:
+                                       sec_from_now: float, sampled_at: int) -> np.ndarray:
     """
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the acceleration and heading are constant.
@@ -72,7 +72,7 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
 
 
 def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
-                                 sec_from_now: int, sampled_at: int) -> np.ndarray:
+                                 sec_from_now: float, sampled_at: int) -> np.ndarray:
     """
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the (scalar) speed and yaw rate are constant.
@@ -92,7 +92,7 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
 
 
 def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
-                                           sec_from_now: int, sampled_at: int) -> np.ndarray:
+                                           sec_from_now: float, sampled_at: int) -> np.ndarray:
     """
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the rates of change of speed and yaw are constant.
@@ -129,6 +129,7 @@ def random_p():
     return np.exp(a) / np.exp(a).sum()
 
 class ConstantVelocityHeading(Baseline):
+    """Makes predictions according to constant velocity and heading model."""
 
     def __call__(self, token: str):
         instance, sample = token.split("_")
@@ -142,6 +143,7 @@ class ConstantVelocityHeading(Baseline):
 
 
 class PhysicsOracle(Baseline):
+    """Makes several physics-based predictions and picks the one closest to the ground truth."""
 
     def __call__(self, token):
         instance, sample = token.split("_")
