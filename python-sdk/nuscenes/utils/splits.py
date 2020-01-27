@@ -222,7 +222,7 @@ def get_prediction_challenge_split(split: str) -> List[str]:
     prediction_scenes = json.load(open(path_to_file, "r"))
     scenes = create_splits_scenes()
     scenes_for_split = scenes[split]
-    return list(chain.from_iterable(map(lambda scene: prediction_scenes[scene], scenes_for_split)))
+    return list(chain.from_iterable(map(lambda scene: prediction_scenes.get(scene, []), scenes_for_split)))
 
 
 if __name__ == '__main__':
