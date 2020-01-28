@@ -214,16 +214,6 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
 
     return scene_splits
 
-def get_prediction_challenge_split(split: str) -> List[str]:
-    if split not in {'mini_train', 'mini_val', 'train', 'val'}:
-        raise ValueError("split must be one of (mini_train, mini_val, train, val)")
-
-    path_to_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "prediction_scenes.json")
-    prediction_scenes = json.load(open(path_to_file, "r"))
-    scenes = create_splits_scenes()
-    scenes_for_split = scenes[split]
-    return list(chain.from_iterable(map(lambda scene: prediction_scenes.get(scene, []), scenes_for_split)))
-
 
 if __name__ == '__main__':
     # Print the scene-level stats.
