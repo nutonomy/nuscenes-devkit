@@ -3,18 +3,21 @@
 
 import abc
 from typing import Tuple
+
 import numpy as np
 from pyquaternion import Quaternion
-from nuscenes.predict import PredictHelper, convert_global_coords_to_local
+
 from nuscenes.eval.common.utils import quaternion_yaw
 from nuscenes.eval.predict.data_classes import Prediction
+from nuscenes.predict import PredictHelper, convert_global_coords_to_local
 
 KinematicsData = Tuple[float, float, float, float, float, float, float, float, float, float]
 
+
 def _kinematics_from_tokens(helper: PredictHelper, instance: str, sample: str) -> KinematicsData:
     """
-    Returns the 2D position, velocity, and acceleration vectors from the given track
-    records, along with the speed, yaw rate, (scalar) acceleration (magnitude), and heading.
+    Returns the 2D position, velocity and acceleration vectors from the given track records,
+    along with the speed, yaw rate, (scalar) acceleration (magnitude), and heading.
     """
 
     annotation = helper.get_sample_annotation(instance, sample)
@@ -118,18 +121,20 @@ class Baseline(abc.ABC):
     def __init__(self, sec_from_now: float, helper: PredictHelper):
         self.helper = helper
         self.sec_from_now = sec_from_now
-        self.sampled_at = 2 # 2 Hz between annotations
+        self.sampled_at = 2  # 2 Hz between annotations.
 
     @abc.abstractmethod
     def __call__(self, token: str) -> Prediction:
         pass
 
+
 def random_p():
     a = np.random.random(25)
     return np.exp(a) / np.exp(a).sum()
 
+
 class ConstantVelocityHeading(Baseline):
-    """Makes predictions according to constant velocity and heading model."""
+    """ Makes predictions according to constant velocity and heading model. """
 
     def __call__(self, token: str):
         instance, sample = token.split("_")
@@ -138,12 +143,12 @@ class ConstantVelocityHeading(Baseline):
         cv_heading = _constant_acceleration_and_heading(kinematics, self.sec_from_now, self.sampled_at)
         prediction = convert_global_coords_to_local(cv_heading, annotation['translation'], annotation['rotation'])
 
-        # Need the prediction to have 2d
+        # Need the prediction to have 2d.
         return Prediction(instance, sample, np.expand_dims(prediction, 0), np.array([1]))
 
 
 class PhysicsOracle(Baseline):
-    """Makes several physics-based predictions and picks the one closest to the ground truth."""
+    """ Makes several physics-based predictions and picks the one closest to the ground truth. """
 
     def __call__(self, token):
         instance, sample = token.split("_")
@@ -152,13 +157,15 @@ class PhysicsOracle(Baseline):
         ground_truth = self.helper.get_future_for_agent(instance, sample, self.sec_from_now, in_agent_frame=True)
 
         path_funs = [
-        _constant_acceleration_and_heading,
-        _constant_magnitude_accel_and_yaw_rate,
-        _constant_speed_and_yaw_rate,
-        _constant_velocity_heading_from_kinematics]
+            _constant_acceleration_and_heading,
+            _constant_magnitude_accel_and_yaw_rate,
+            _constant_speed_and_yaw_rate,
+            _constant_velocity_heading_from_kinematics
+        ]
 
         paths = [path_fun(kinematics, self.sec_from_now, self.sampled_at) for path_fun in path_funs]
-        paths_ego = [convert_global_coords_to_local(path, annotation['translation'], annotation['rotation']) for path in paths]
+        paths_ego = [convert_global_coords_to_local(path, annotation['translation'], annotation['rotation'])
+                     for path in paths]
 
         # Select the one with the least l2 error, averaged (or equivalently, summed) over all
         # points of the path.  This is (proportional to) the Frobenius norm of the difference
