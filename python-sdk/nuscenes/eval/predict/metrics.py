@@ -1,9 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Eric Wolff 2020.
-"""Implementation of metrics used in the nuScenes prediction challenge."""
+""" Implementation of metrics used in the nuScenes prediction challenge. """
 import abc
-from typing import List, Callable, Dict, Any, Union
+from typing import List, Dict, Any
+
 import numpy as np
+
 from nuscenes.eval.predict.data_classes import Prediction
 
 
@@ -80,7 +82,7 @@ def rank_metric_over_top_k_modes(metric_results: np.ndarray,
     """Compute a metric over all trajectories ranked by probability of each trajectory.
     :param metric_results: 1-dimensional array of shape [batch_size, num_modes]
     :param mode_probabilities: 1-dimensional array of shape [batch_size, num_modes]
-    :param ranking_fcn: Either 'min' or 'max'. How you want to metrics ranked over the top
+    :param ranking_func: Either 'min' or 'max'. How you want to metrics ranked over the top
             k modes.
     :return: Array of shape [num_modes]
     """
@@ -158,7 +160,7 @@ class Aggregator(SerializableFunction):
 
 class RowMean(Aggregator):
 
-    def __call__(self, array: np.ndarray) -> np.ndarray:
+    def __call__(self, array: np.ndarray, **kwargs) -> np.ndarray:
         return array.mean(axis=0).tolist()
 
     def serialize(self) -> Dict[str, Any]:
@@ -191,7 +193,6 @@ def desired_number_of_modes(results: np.ndarray,
     """Ensures we return len(k_to_report) values even when results
     has less modes than what we want."""
     return results[:, [min(k, results.shape[1]) - 1 for k in k_to_report]]
-
 
 
 class MinADEK(Metric):
@@ -253,6 +254,7 @@ class MinFDEK(Metric):
     def shape(self):
         return len(self.k_to_report)
 
+
 class HitRateTopK(Metric):
 
     def __init__(self, k_to_report: List[int], aggregators: List[Aggregator],
@@ -285,31 +287,35 @@ class HitRateTopK(Metric):
     def shape(self):
         return len(self.k_to_report)
 
+
 class OffRoadRate(Metric):
 
     def __call__(self, predictions, stacked_ground_truth, probabilities):
         raise NotImplementedError("OffRoadRate not implemented!")
 
-class CollissionRate(Metric):
+
+class CollisionRate(Metric):
 
     def __call__(self, predictions, stacked_ground_truth, probabilities):
-        raise NotImplementedError("CollissionRate not implemented")
+        raise NotImplementedError("CollisionRate not implemented")
+
 
 def DeserializeAggregator(config: Dict[str, Any]) -> Aggregator:
-    """Helper for deserializing Aggregators."""
+    """ Helper for deserializing Aggregators. """
     if config['name'] == 'RowMean':
         return RowMean()
     else:
         raise ValueError(f"Cannot deserialize Aggregator {config['name']}.")
 
+
 def DeserializeMetric(config: Dict[str, Any]) -> Metric:
-    """Helper for deserializing Metrics."""
+    """ Helper for deserializing Metrics. """
     if config['name'] == 'MinADEK':
         return MinADEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'MinFDEK':
         return MinFDEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'HitRateTopK':
         return HitRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
-                            tolerance=config['tolerance'])
+                           tolerance=config['tolerance'])
     else:
         raise ValueError(f"Cannot deserialize function {config['name']}.")

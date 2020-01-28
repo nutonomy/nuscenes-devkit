@@ -1,27 +1,30 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-"""Script for computing metrics for a submission to the nuscenes prediction challenge."""
+""" Script for computing metrics for a submission to the nuscenes prediction challenge. """
 
-import os
 import json
+import os
 from collections import defaultdict
 from typing import List, Dict, Any
+
 import numpy as np
+
 from nuscenes import NuScenes
-from nuscenes.predict import PredictHelper
-from nuscenes.eval.predict import do_inference
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.predict.data_classes import Prediction
 from nuscenes.eval.predict.config import PredictionConfig
+from nuscenes.eval.predict.data_classes import Prediction
+from nuscenes.predict import PredictHelper
+
 
 def compute_metrics(predictions: List[Dict[str, Any]],
                     helper: PredictHelper, config: PredictionConfig) -> Dict[str, Any]:
-    """Computes metrics from a set of predictions.
+    """
+    Computes metrics from a set of predictions.
+    :param predictions: TODO.
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
-    :param dataset_tokens: Tokens of instance_sample pairs in the test set."""
-
-    # TODO: Add check that n_preds is same size as test set once that is
-    # finalized
+    :param config: TODO.
+    """
+    # TODO: Add check that n_preds is same size as test set once that is finalized
     n_preds = len(predictions)
 
     containers = {metric.name: np.zeros((n_preds, metric.shape)) for metric in config.metrics}
@@ -43,14 +46,17 @@ def compute_metrics(predictions: List[Dict[str, Any]],
     return aggregations
 
 
-def main(version: str, submission_path: str, submission_name: str,
+def main(version: str, data_root: str, submission_path: str, submission_name: str,
          config_name: str = 'predict_2020_icra') -> None:
-    """Computes metrics for a submission stored in submission_path with a given submission_name
-    with the metrics specified by the config_name."""
+    """
+    Computes metrics for a submission stored in submission_path with a given submission_name with the metrics
+    specified by the config_name.
+    TODO.
+    """
 
     predictions = json.load(open(os.path.join(submission_path, f"{submission_name}_inference.json"), "r"))
     config = config_factory(config_name)
-    nusc = NuScenes(version=version)
+    nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
 
     results = compute_metrics(predictions, helper, config)

@@ -1,6 +1,9 @@
 import unittest
-from nuscenes.eval.predict.data_classes import Prediction
+
 import numpy as np
+
+from nuscenes.eval.predict.data_classes import Prediction
+
 
 class TestPrediction(unittest.TestCase):
 
@@ -12,4 +15,4 @@ class TestPrediction(unittest.TestCase):
                                                       'sample': 'sample',
                                                       'prediction': [[[1, 1], [1, 1]],
                                                                      [[1, 1], [1, 1]]],
-                                                       'probabilities': [0, 0]})
+                                                      'probabilities': [0, 0]})

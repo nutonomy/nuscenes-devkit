@@ -1,18 +1,18 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Eric Wolff 2020.
 from typing import List, Dict, Any
+
 from nuscenes.eval.predict.metrics import Metric, DeserializeMetric
 
 
 class PredictionConfig:
-    """Data class that specifies the prediction evaluation settings."""
+    """ Data class that specifies the prediction evaluation settings. """
 
     def __init__(self,
                  metrics: List[Metric],
                  seconds: int = 6):
-
-       self.metrics = metrics
-       self.seconds = seconds
+        self.metrics = metrics
+        self.seconds = seconds
 
     def serialize(self) -> Dict[str, Any]:
         """ Serialize instance into json-friendly format. """
