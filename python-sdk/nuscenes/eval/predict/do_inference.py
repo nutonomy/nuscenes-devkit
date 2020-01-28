@@ -23,9 +23,9 @@ def do_inference_for_submission(helper: PredictHelper,
     about providing any of the parameters to this function since they are provided by the main function below.
     You can test if your script works by evaluating on the val set.
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
-    :param pred_seconds: TODO.
+    :param pred_seconds: NUmber of second to do the prediction for. Handled by config in parent scope.
     :param dataset_tokens: Tokens of instance_sample pairs in the test set.
-    :returns: TODO.
+    :returns: List of predictions.
     """
 
     cv_heading = ConstantVelocityHeading(pred_seconds, helper)
@@ -42,11 +42,11 @@ def main(version: str, data_root: str, split_name: str, output_dir: str, submiss
     """
     Makes predictions for a submission to the nuScenes prediction challenge.
     :param version: NuScenes version.
-    :param data_root: TODO.
+    :param data_root: Directory storing NuScenes data.
     :param split_name: Data split to run inference on.
     :param output_dir: Directory to store the output file.
     :param submission_name: Name of the submission to use for the results file.
-    :param config_name: TODO.
+    :param config_name: Name of config file to use.
     """
     nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
