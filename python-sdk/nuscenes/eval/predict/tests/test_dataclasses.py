@@ -15,4 +15,4 @@ class TestPrediction(unittest.TestCase):
                                                       'sample': 'sample',
                                                       'prediction': [[[1, 1], [1, 1]],
                                                                      [[1, 1], [1, 1]]],
-                                                       'probabilities': [0, 0]})
+                                                      'probabilities': [0, 0]})

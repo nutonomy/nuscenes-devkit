@@ -8,7 +8,8 @@ from nuscenes.eval.common.data_classes import MetricData
 
 @dataclasses.dataclass
 class Prediction(MetricData):
-    """Stores predictions of Models.
+    """
+    Stores predictions of Models.
     Metrics are calculated from Predictions.
     :param instance: Instance token for prediction.
     :param sample: Sample token for prediction.

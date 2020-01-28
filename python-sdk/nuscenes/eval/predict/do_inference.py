@@ -17,12 +17,16 @@ from nuscenes.utils.splits import get_prediction_challenge_split
 def do_inference_for_submission(helper: PredictHelper,
                                 pred_seconds: int,
                                 dataset_tokens: List[str]) -> List[Prediction]:
-    """Currently, this will make a submission with a constant velocity and heading model.
-    Fill in all he code needed to run your model on the test set here. You do not need to worry
+    """
+    Currently, this will make a submission with a constant velocity and heading model.
+    Fill in all the code needed to run your model on the test set here. You do not need to worry
     about providing any of the parameters to this function since they are provided by the main function below.
     You can test if your script works by evaluating on the val set.
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
-    :param dataset_tokens: Tokens of instance_sample pairs in the test set."""
+    :param pred_seconds: TODO.
+    :param dataset_tokens: Tokens of instance_sample pairs in the test set.
+    :returns: TODO.
+    """
 
     cv_heading = ConstantVelocityHeading(pred_seconds, helper)
 
@@ -33,17 +37,21 @@ def do_inference_for_submission(helper: PredictHelper,
     return cv_preds
 
 
-def main(version: str, data_root: str, split_name: str, output_dir: str, submission_name: str, config_name: str) -> None:
-    """Makes predictions for a submission to the nuScenes prediction challenge.
+def main(version: str, data_root: str, split_name: str, output_dir: str, submission_name: str, config_name: str) \
+        -> None:
+    """
+    Makes predictions for a submission to the nuScenes prediction challenge.
     :param version: NuScenes version.
+    :param data_root: TODO.
     :param split_name: Data split to run inference on.
     :param output_dir: Directory to store the output file.
-    :param submission_name: Name of the submission to use for the results file."""
+    :param submission_name: Name of the submission to use for the results file.
+    :param config_name: TODO.
+    """
     nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
     dataset = get_prediction_challenge_split(split_name)
     config = config_factory(config_name)
-
 
     predictions = do_inference_for_submission(helper, config.seconds, dataset)
     predictions = [prediction.serialize() for prediction in predictions]
@@ -59,7 +67,6 @@ if __name__ == "__main__":
     parser.add_argument('-output_dir', help='Directory to store output file.')
     parser.add_argument('-submission_name', help='Name of the submission to use for the results file.')
     parser.add_argument('-config_name', help='Name of the config file to use', default='predict_2020_icra')
-
 
     args = parser.parse_args()
     main(args.version, args.data_root, args.split_name, args.output_dir, args.submission_name, args.config_name)

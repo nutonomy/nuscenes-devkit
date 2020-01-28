@@ -39,7 +39,7 @@ class TestFunctions(unittest.TestCase):
 
     def test_returns_2d_array_one_dim(self):
 
-        func = lambda x: np.ones((10))
+        func = lambda x: np.ones(10)
         value = metrics.returns_2d_array(func)(1)
         np.testing.assert_equal(value, np.ones((1, 10)))
 
@@ -121,7 +121,8 @@ class TestFunctions(unittest.TestCase):
         np.testing.assert_allclose(value, np.array([[5.33529, 4.49286, 4.49286]]), atol=1e-4, rtol=1e-4)
 
     def test_min_ade_k_many_batches_and_modes(self):
-        value = metrics.min_ade_k(self.x_many_batches_and_modes, self.y_many_batches_and_modes, self.p_many_batches_and_modes)
+        value = metrics.min_ade_k(self.x_many_batches_and_modes, self.y_many_batches_and_modes,
+                                  self.p_many_batches_and_modes)
         np.testing.assert_allclose(value, np.array([[5.33529, 4.49286, 4.49286],
                                                     [6.45396, 5.33529, 4.49286],
                                                     [4.49286, 4.49286, 4.49286],
@@ -138,7 +139,8 @@ class TestFunctions(unittest.TestCase):
         np.testing.assert_allclose(value, np.array([[10.63014, 9.21954, 9.21954]]), atol=1e-4, rtol=1e-4)
 
     def test_min_fde_k_many_batches_and_modes(self):
-        value = metrics.min_fde_k(self.x_many_batches_and_modes, self.y_many_batches_and_modes, self.p_many_batches_and_modes)
+        value = metrics.min_fde_k(self.x_many_batches_and_modes, self.y_many_batches_and_modes,
+                                  self.p_many_batches_and_modes)
         np.testing.assert_allclose(value, np.array([[10.63014, 9.21954, 9.21954],
                                                     [12.04159, 10.63014, 9.21954],
                                                     [9.21954, 9.21954, 9.21954],
@@ -167,14 +169,16 @@ class TestFunctions(unittest.TestCase):
         np.testing.assert_equal(value, np.array([[0, 4, 14, 14],
                                                  [15, 19, 29, 29]]))
 
+
 class TestAggregators(unittest.TestCase):
 
     def test_RowMean(self):
         rm = metrics.RowMean()
-        value = rm(np.arange(20).reshape(2, 10))
+        value = list(np.arange(20).reshape(2, 10))
         self.assertListEqual(value, [5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
 
         self.assertDictEqual(rm.serialize(), {'name': 'RowMean'})
+
 
 class TestMetrics(unittest.TestCase):
 
@@ -182,13 +186,13 @@ class TestMetrics(unittest.TestCase):
         min_ade = metrics.MinADEK([1, 5, 10], [metrics.RowMean()])
         self.assertDictEqual(min_ade.serialize(), {'name': 'MinADEK',
                                                    'k_to_report': [1, 5, 10],
-                                                    'aggregators': [{'name': 'RowMean'}]})
+                                                   'aggregators': [{'name': 'RowMean'}]})
 
     def test_MinFDEK(self):
         min_fde = metrics.MinFDEK([1, 5, 10], [metrics.RowMean()])
         self.assertDictEqual(min_fde.serialize(), {'name': 'MinFDEK',
                                                    'k_to_report': [1, 5, 10],
-                                                    'aggregators': [{'name': 'RowMean'}]})
+                                                   'aggregators': [{'name': 'RowMean'}]})
 
     def test_HitRateTopK(self):
         hit_rate = metrics.HitRateTopK([1, 5, 10], [metrics.RowMean()], 2)

@@ -1,6 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-"""Script for generating and evaluating a submission to the nuscenes prediction challenge."""
+""" Script for generating and evaluating a submission to the nuscenes prediction challenge. """
 import argparse
 
 from nuscenes.eval.predict import do_inference, compute_metrics
@@ -15,5 +15,6 @@ if __name__ == "__main__":
     parser.add_argument('-config_name', help='Name of the config file to use', default='predict_2020_icra')
 
     args = parser.parse_args()
-    do_inference.main(args.version, args.data_root, args.split_name, args.output_dir, args.submission_name, args.config_name)
+    do_inference.main(args.version, args.data_root, args.split_name, args.output_dir, args.submission_name,
+                      args.config_name)
     compute_metrics.main(args.version, args.data_root, args.output_dir, args.submission_name, args.config_name)

@@ -1,6 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-"""Script for running baseline models on a given nuscenes-split."""
+""" Script for running baseline models on a given nuscenes-split. """
 import argparse
 import json
 import os
@@ -13,6 +13,14 @@ from nuscenes.utils.splits import get_prediction_challenge_split
 
 
 def main(version: str, split_name: str, output_dir: str, config_name: str) -> None:
+    """
+    TODO.
+    :param version: TODO.
+    :param split_name: TODO.
+    :param output_dir: TODO.
+    :param config_name: TODO.
+    :return: TODO.
+    """
 
     nusc = NuScenes(version=version)
     helper = PredictHelper(nusc)
