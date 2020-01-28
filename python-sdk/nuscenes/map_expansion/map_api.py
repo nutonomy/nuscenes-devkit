@@ -315,7 +315,7 @@ class NuScenesMap:
                         layer_names: List[str] = None,
                         canvas_size: Tuple[int, int] = (100, 100),
                         figsize: Tuple[int, int] = (15, 15),
-                        n_row: int = 2) -> Tuple[Figure, Axes]:
+                        n_row: int = 2) -> Tuple[Figure, List[Axes]]:
         """
         Render map mask of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
@@ -475,7 +475,7 @@ class NuScenesMapExplorer:
                         layer_names: List[str],
                         canvas_size: Tuple[int, int],
                         figsize: Tuple[int, int],
-                        n_row: int = 2) -> Tuple[Figure, Axes]:
+                        n_row: int = 2) -> Tuple[Figure, List[Axes]]:
         """
         Render map mask of the patch specified by patch_box, and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
@@ -506,12 +506,12 @@ class NuScenesMapExplorer:
         for i in range(len(map_mask)):
             r = i // n_col
             c = i - r * n_col
-            ax = plt.subplot(gs[r, c])
-            ax.imshow(map_mask[i], origin='lower')
-            ax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
-            ax.grid(False)
+            subax = plt.subplot(gs[r, c])
+            subax.imshow(map_mask[i], origin='lower')
+            subax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
+            subax.grid(False)
 
-        return fig, ax
+        return fig, fig.axes
 
     def get_map_geom(self,
                      patch_box: Tuple[float, float, float, float],
