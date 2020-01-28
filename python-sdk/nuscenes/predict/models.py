@@ -18,6 +18,10 @@ def _kinematics_from_tokens(helper: PredictHelper, instance: str, sample: str) -
     """
     Returns the 2D position, velocity and acceleration vectors from the given track records,
     along with the speed, yaw rate, (scalar) acceleration (magnitude), and heading.
+    :param helper: Instance of PredictHelper.
+    :instance: Token of instance.
+    :sample: Token of sample.
+    :return: KinematicsData.
     """
 
     annotation = helper.get_sample_annotation(instance, sample)
@@ -48,6 +52,9 @@ def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
     """
     Computes a constant velocity baseline for given kinematics data, time window
     and frequency.
+    :param kinematics_data: KinematicsData for agent.
+    :param sec_from_now: How many future seconds to use.
+    :param sampled_at: Timester between predictions (Hz).
     """
     x, y, vx, vy, _, _, _, _, _, _ = kinematics_data
     preds = []
@@ -62,6 +69,9 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
     """
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the acceleration and heading are constant.
+    :param kinematics_data: KinematicsData for agent.
+    :param sec_from_now: How many future seconds to use.
+    :param sampled_at: Timester between predictions (Hz).
     """
     x, y, vx, vy, ax, ay, _, _, _, _ = kinematics_data
 
@@ -79,6 +89,9 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
     """
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the (scalar) speed and yaw rate are constant.
+    :param kinematics_data: KinematicsData for agent.
+    :param sec_from_now: How many future seconds to use.
+    :param sampled_at: Timester between predictions (Hz).
     """
     x, y, vx, vy, _, _, speed, yaw_rate, _, yaw = kinematics_data
 
@@ -86,7 +99,7 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
     time_step = 1.0 / sampled_at
     distance_step = time_step * speed
     yaw_step = time_step * yaw_rate
-    for time in np.arange(time_step, sec_from_now + time_step, time_step):
+    for _ in np.arange(time_step, sec_from_now + time_step, time_step):
         x += distance_step * np.cos(yaw)
         y += distance_step * np.sin(yaw)
         preds.append((x, y))
@@ -99,6 +112,9 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
     """
     Computes a baseline prediction for the given time window and frequency, under
     the assumption that the rates of change of speed and yaw are constant.
+    :param kinematics_data: KinematicsData for agent.
+    :param sec_from_now: How many future seconds to use.
+    :param sampled_at: Timester between predictions (Hz).
     """
     x, y, vx, vy, _, _, speed, yaw_rate, accel, yaw = kinematics_data
 
@@ -119,6 +135,11 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
 class Baseline(abc.ABC):
 
     def __init__(self, sec_from_now: float, helper: PredictHelper):
+        """
+        Inits Baseline.
+        :param sec_from_now: How many seconds into the future to make the prediction.
+        :param helper: Instance of PredictHelper.
+        """
         self.helper = helper
         self.sec_from_now = sec_from_now
         self.sampled_at = 2  # 2 Hz between annotations.
@@ -136,7 +157,11 @@ def random_p():
 class ConstantVelocityHeading(Baseline):
     """ Makes predictions according to constant velocity and heading model. """
 
-    def __call__(self, token: str):
+    def __call__(self, token: str) -> Prediction:
+        """
+        Makes prediction.
+        :param token: string of format {instance_token}_{sample_token}.
+        """
         instance, sample = token.split("_")
         annotation = self.helper.get_sample_annotation(instance, sample)
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
@@ -150,7 +175,11 @@ class ConstantVelocityHeading(Baseline):
 class PhysicsOracle(Baseline):
     """ Makes several physics-based predictions and picks the one closest to the ground truth. """
 
-    def __call__(self, token):
+    def __call__(self, token) -> Prediction:
+        """
+        Makes prediction.
+        :param token: string of format {instance_token}_{sample_token}.
+        """
         instance, sample = token.split("_")
         annotation = self.helper.get_sample_annotation(instance, sample)
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
@@ -170,7 +199,8 @@ class PhysicsOracle(Baseline):
         # Select the one with the least l2 error, averaged (or equivalently, summed) over all
         # points of the path.  This is (proportional to) the Frobenius norm of the difference
         # between the path (as an n x 2 matrix) and the ground truth.
-
         oracle = sorted(paths_ego,
                         key=lambda path: np.linalg.norm(np.array(path) - ground_truth, ord="fro"))[0]
+
+        # Need the prediction to have 2d.
         return Prediction(instance, sample, np.expand_dims(oracle, 0), np.array([1]))
