@@ -189,7 +189,7 @@ class PredictHelper:
                                                   in_agent_frame, direction='prev')
 
     def _get_past_or_future_for_sample(self, sample_token: str, seconds: float, in_agent_frame: bool,
-                                       function: Callable[[str, str, float, bool], np.ndarray]):
+                                       function: Callable[[str, str, float, bool], np.ndarray]) -> Dict[str, np.ndarray]:
         """
         Helper function to reduce code duplication between get_future and get_past for sample.
         :param sample_token: Sample token.
