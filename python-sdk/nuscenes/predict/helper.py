@@ -16,9 +16,9 @@ BUFFER = 0.15  # seconds
 def angle_of_rotation(yaw: float) -> float:
     """
     Given a yaw angle (measured from x axis), find the angle needed to rotate by so that
-    the yaw points upwards (pi / 2).
-    :param yaw: TODO.
-    :return: TODO.
+    the yaw is aligned with the y axis (pi / 2).
+    :param yaw: Radians. Output of quaternion_yaw function.
+    :return: Angle in radians.
     """
     return (np.pi / 2) + np.sign(-yaw) * np.abs(yaw)
 
@@ -33,7 +33,7 @@ def convert_global_coords_to_local(coordinates: np.ndarray,
     :param translation: Tuple of (x, y, z) location that is the center of the new frame
     :param rotation: Tuple representation of quaternion of new frame.
         Representation - cos(theta / 2) + (xi + yi + zi)sin(theta / 2).
-    :return: TODO.
+    :return: x,y locations in frame stored in array of share [n_times, 2].
     """
     yaw = angle_of_rotation(quaternion_yaw(Quaternion(rotation)))
 
@@ -58,7 +58,7 @@ class PredictHelper:
     def _map_sample_and_instance_to_annotation(self) -> Dict[Tuple[str, str], str]:
         """
         Creates mapping to look up an annotation given a sample and instance in constant time.
-        :return: TODO.
+        :return: Mappig from (sample_token, instance_token) -> sample_annotation_token.
         """
         mapping = {}
 
@@ -70,27 +70,27 @@ class PredictHelper:
     def _timestamp_for_sample(self, sample_token: str) -> float:
         """
         Gets timestamp from sample token.
-        :param sample_token: TODO.
-        :return: TODO.
+        :param sample_token: Get the timestamp for this sample.
+        :return: Timestamp (microseconds).
         """
         return self.data.get('sample', sample_token)['timestamp']
 
     def _absolute_time_diff(self, time1: float, time2: float) -> float:
         """
         Helper to compute how much time has elapsed in _iterate method.
-        :param time1: TODO.
-        :param time2: TODO.
-        :return: TODO.
+        :param time1: First timestamp (microseconds since unix epoch).
+        :param time2: Second timestamp (microseconds since unix epoch).
+        :return: Absolute Time difference in floats.
         """
         return abs(time1 - time2) / MICROSECONDS_PER_SECOND
 
     def _iterate(self, starting_annotation: Dict[str, Any], seconds: float, direction: str) -> List[Dict[str, Any]]:
         """
         Iterates forwards or backwards in time through the annotations for a given amount of seconds.
-        :param starting_annotation: TODO.
-        :param seconds: TODO.
-        :param direction: TODO.
-        :return: TODO.
+        :param starting_annotation: Sample annotation record to start from.
+        :param seconds: Number of seconds to iterate.
+        :param direction: 'prev' for past and 'next' for future.
+        :return: List of annotations ordered by time.
         """
         if seconds < 0:
             raise ValueError(f"Parameter seconds must be non-negative. Recevied {seconds}.")
@@ -105,7 +105,7 @@ class PredictHelper:
 
         next_annotation = starting_annotation
 
-        time_elapsed = 0
+        time_elapsed = 0.
 
         annotations = []
 
@@ -127,9 +127,9 @@ class PredictHelper:
     def get_sample_annotation(self, instance_token: str, sample_token: str) -> Dict[str, Any]:
         """
         Retrieves an annotation given an instance token and its sample.
-        :param instance_token: Instance token
-        :param sample_token: Sample token
-        :return: TODO.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token for instance.
+        :return: Sample annotation record.
         """
         return self.data.get('sample_annotation', self.inst_sample_to_ann[(sample_token, instance_token)])
 
@@ -138,12 +138,13 @@ class PredictHelper:
                                       direction: str) -> np.ndarray:
         """
         Helper function to reduce code duplication between get_future and get_past for agent.
-        :param instance_token: TODO.
-        :param sample_token: TODO.
-        :param seconds: TODO.
-        :param in_agent_frame: TODO.
-        :param direction: TODO.
-        :return: TODO.
+        :param instance_token: Instance of token.
+        :param sample_token: Sample token for instance.
+        :param seconds: How many seconds of data to retrieve.
+        :param in_agent_frame: Whether to rotate the coordinates so the
+            heading is aligned with the y-axis.
+        :param direction: 'next' for future or 'prev' for past.
+        :return: array of shape [n_timesteps, 2].
         """
         starting_annotation = self.get_sample_annotation(instance_token, sample_token)
         sequence = self._iterate(starting_annotation, seconds, direction)
@@ -168,8 +169,7 @@ class PredictHelper:
         :param seconds: How much future data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
-            The rows increase with time, i.e the last row occurs the farthest from
-            the current time.
+            The rows increase with time, i.e the last row occurs the farthest in the future.
         """
         return self._get_past_or_future_for_agent(instance_token, sample_token, seconds,
                                                   in_agent_frame, direction='next')
@@ -183,8 +183,7 @@ class PredictHelper:
         :param seconds: How much past data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
-            The rows decreate with time, i.e the last row happened the farthest from
-            the current time.
+            The rows decrease with time, i.e the last row occurs the farthest in the past.
         """
         return self._get_past_or_future_for_agent(instance_token, sample_token, seconds,
                                                   in_agent_frame, direction='prev')
@@ -195,9 +194,9 @@ class PredictHelper:
         Helper function to reduce code duplication between get_future and get_past for sample.
         :param sample_token: Sample token.
         :param seconds: How much past or future data to retrieve.
-        :param in_agent_frame: TODO.
-        :param function: TODO.
-        :return: TODO.
+        :param in_agent_frame: Whether to rotate each agent future for .
+        :param function: Either get_past or get_future for agent.
+        :return: array of shapes [n_timesteps, 2].
         """
         sample_record = self.data.get('sample', sample_token)
         sequences = {}
@@ -217,8 +216,7 @@ class PredictHelper:
         :param seconds: How much future data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
-            The rows increase with time, i.e the last row occurs the farthest from
-            the current time.
+            The rows increase with time, i.e the last row occurs the farthest in the future.
         """
         return self._get_past_or_future_for_sample(sample_token, seconds, in_agent_frame,
                                                    function=self.get_future_for_agent)
@@ -229,8 +227,7 @@ class PredictHelper:
         :param seconds: How much past data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
-            The rows increase with time, i.e the last row occurs the farthest from
-            the current time.
+            The rows decrease with time, i.e the last row occurs the farthest in the past.
         """
         return self._get_past_or_future_for_sample(sample_token, seconds, in_agent_frame,
                                                    function=self.get_past_for_agent)
