@@ -1357,7 +1357,7 @@ class NuScenesMapExplorer:
         # Check that nodes fall inside the path.
         x_min, y_min, x_max, y_max = box_coords
         cond_x = np.logical_and(node_coords[:, 0] < x_max, node_coords[:, 0] > x_min)
-        cond_y = np.logical_and(node_coords[:, 1] < y_max, node_coords[:, 0] > y_min)
+        cond_y = np.logical_and(node_coords[:, 1] < y_max, node_coords[:, 1] > y_min)
         cond = np.logical_and(cond_x, cond_y)
         if mode == 'intersect':
             return np.any(cond)
