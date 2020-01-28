@@ -2,8 +2,9 @@
 # Code written by Freddy Boulton, 2020.
 
 from typing import Dict, Tuple, Any, List, Callable
-from pyquaternion import Quaternion
+
 import numpy as np
+from pyquaternion import Quaternion
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.utils import quaternion_yaw
@@ -33,7 +34,6 @@ def convert_global_coords_to_local(coordinates: np.ndarray,
         Representation - cos(theta / 2) + (xi + yi + zi)sin(theta / 2).
     :return: TODO.
     """
-
     yaw = angle_of_rotation(quaternion_yaw(Quaternion(rotation)))
 
     transform = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
@@ -91,7 +91,6 @@ class PredictHelper:
         :param direction: TODO.
         :return: TODO.
         """
-
         if seconds < 0:
             raise ValueError(f"Parameter seconds must be non-negative. Recevied {seconds}.")
 

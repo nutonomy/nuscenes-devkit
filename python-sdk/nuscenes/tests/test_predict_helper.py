@@ -3,13 +3,18 @@
 
 import unittest
 from typing import Dict, List, Any
-from nuscenes.predict import PredictHelper, convert_global_coords_to_local
+
 import numpy as np
 
-class MockNuScenes:
-    """Mocks the NuScenes API needed to test PredictHelper"""
+from nuscenes.nuscenes import NuScenes
+from nuscenes.predict import PredictHelper, convert_global_coords_to_local
 
-    def __init__(self, sample_annotations: List[Dict[str, Any]],
+
+class MockNuScenes(NuScenes):
+    """ Mocks the NuScenes API needed to test PredictHelper. """
+
+    def __init__(self,
+                 sample_annotations: List[Dict[str, Any]],
                  samples: List[Dict[str, Any]]):
 
         self._sample_annotation = {r['token']: r for r in sample_annotations}
@@ -23,7 +28,8 @@ class MockNuScenes:
         assert table_name in {'sample_annotation', 'sample'}
         return getattr(self, "_" + table_name)[token]
 
-class Test_convert_global_coords_to_local(unittest.TestCase):
+
+class TestConvertGlobalCoordsToLocal(unittest.TestCase):
 
     def setUp(self):
         along_pos_x = np.zeros((5, 2))
@@ -246,32 +252,47 @@ class TestPredictHelper(unittest.TestCase):
 
     def setUp(self):
 
-        self.mock_annotations = [{'token': '1', 'instance_token': '1', 'sample_token': '1', 'translation': [0, 0, 0], 'rotation': [1, 0, 0, 0],
-                                  'prev': '', 'next': '2'},
-                                 {'token': '2', 'instance_token': '1', 'sample_token': '2', 'translation': [1, 1, 1], 'prev': '1', 'next': '3'},
-                                 {'token': '3', 'instance_token': '1', 'sample_token': '3', 'translation': [2, 2, 2], 'prev': '2', 'next': '4'},
-                                 {'token': '4', 'instance_token': '1', 'sample_token': '4', 'translation': [3, 3, 3], 'prev': '3', 'next': '5'},
-                                 {'token': '5', 'instance_token': '1', 'sample_token': '5', 'translation': [4, 4, 4], 'rotation': [1, 0, 0, 0],
-                                  'prev': '4', 'next': '6'},
-                                 {'token': '6', 'instance_token': '1', 'sample_token': '6', 'translation': [5, 5, 5], 'prev': '5', 'next': ''}]
+        self.mock_annotations = [
+            {'token': '1', 'instance_token': '1', 'sample_token': '1', 'translation': [0, 0, 0],
+             'rotation': [1, 0, 0, 0], 'prev': '', 'next': '2'},
+            {'token': '2', 'instance_token': '1', 'sample_token': '2', 'translation': [1, 1, 1],
+             'prev': '1', 'next': '3'},
+            {'token': '3', 'instance_token': '1', 'sample_token': '3', 'translation': [2, 2, 2],
+             'prev': '2', 'next': '4'},
+            {'token': '4', 'instance_token': '1', 'sample_token': '4', 'translation': [3, 3, 3],
+             'prev': '3', 'next': '5'},
+            {'token': '5', 'instance_token': '1', 'sample_token': '5', 'translation': [4, 4, 4],
+             'rotation': [1, 0, 0, 0], 'prev': '4', 'next': '6'},
+            {'token': '6', 'instance_token': '1', 'sample_token': '6', 'translation': [5, 5, 5],
+             'prev': '5', 'next': ''}
+            ]
 
-        self.multiagent_mock_annotations = [{'token': '1', 'instance_token': '1', 'sample_token': '1', 'translation': [0, 0, 0], 'rotation': [1, 0, 0, 0],
-                                             'prev': '', 'next': '2'},
-                                            {'token': '2', 'instance_token': '1', 'sample_token': '2', 'translation': [1, 1, 1], 'prev': '1', 'next': '3'},
-                                            {'token': '3', 'instance_token': '1', 'sample_token': '3', 'translation': [2, 2, 2], 'prev': '2', 'next': '4'},
-                                            {'token': '4', 'instance_token': '1', 'sample_token': '4', 'translation': [3, 3, 3], 'prev': '3', 'next': '5'},
-                                            {'token': '5', 'instance_token': '1', 'sample_token': '5', 'translation': [4, 4, 4], 'rotation': [1, 0, 0, 0],
-                                             'prev': '4', 'next': '6'},
-                                            {'token': '6', 'instance_token': '1', 'sample_token': '6', 'translation': [5, 5, 5], 'prev': '5', 'next': ''},
-                                            {'token': '1b', 'instance_token': '2', 'sample_token': '1', 'translation': [6, 6, 6], 'rotation': [1, 0, 0, 0],
-                                             'prev': '', 'next': '2b'},
-                                            {'token': '2b', 'instance_token': '2', 'sample_token': '2', 'translation': [7, 7, 7], 'prev': '1b', 'next': '3b'},
-                                            {'token': '3b', 'instance_token': '2', 'sample_token': '3', 'translation': [8, 8, 8], 'prev': '2b', 'next': '4b'},
-                                            {'token': '4b', 'instance_token': '2', 'sample_token': '4', 'translation': [9, 9, 9], 'prev': '3b', 'next': '5b'},
-                                            {'token': '5b', 'instance_token': '2', 'sample_token': '5', 'translation': [10, 10, 10], 'rotation': [1, 0, 0, 0],
-                                            'prev': '4b', 'next': '6b'},
-                                            {'token': '6b', 'instance_token': '2', 'sample_token': '6', 'translation': [11, 11, 11], 'prev': '5b', 'next': ''}]
-
+        self.multiagent_mock_annotations = [
+            {'token': '1', 'instance_token': '1', 'sample_token': '1', 'translation': [0, 0, 0],
+             'rotation': [1, 0, 0, 0], 'prev': '', 'next': '2'},
+            {'token': '2', 'instance_token': '1', 'sample_token': '2', 'translation': [1, 1, 1],
+             'prev': '1', 'next': '3'},
+            {'token': '3', 'instance_token': '1', 'sample_token': '3', 'translation': [2, 2, 2],
+             'prev': '2', 'next': '4'},
+            {'token': '4', 'instance_token': '1', 'sample_token': '4', 'translation': [3, 3, 3],
+             'prev': '3', 'next': '5'},
+            {'token': '5', 'instance_token': '1', 'sample_token': '5', 'translation': [4, 4, 4],
+             'rotation': [1, 0, 0, 0], 'prev': '4', 'next': '6'},
+            {'token': '6', 'instance_token': '1', 'sample_token': '6', 'translation': [5, 5, 5],
+             'prev': '5', 'next': ''},
+            {'token': '1b', 'instance_token': '2', 'sample_token': '1', 'translation': [6, 6, 6],
+             'rotation': [1, 0, 0, 0], 'prev': '', 'next': '2b'},
+            {'token': '2b', 'instance_token': '2', 'sample_token': '2', 'translation': [7, 7, 7],
+             'prev': '1b', 'next': '3b'},
+            {'token': '3b', 'instance_token': '2', 'sample_token': '3', 'translation': [8, 8, 8],
+             'prev': '2b', 'next': '4b'},
+            {'token': '4b', 'instance_token': '2', 'sample_token': '4', 'translation': [9, 9, 9],
+             'prev': '3b', 'next': '5b'},
+            {'token': '5b', 'instance_token': '2', 'sample_token': '5', 'translation': [10, 10, 10],
+             'rotation': [1, 0, 0, 0], 'prev': '4b', 'next': '6b'},
+            {'token': '6b', 'instance_token': '2', 'sample_token': '6', 'translation': [11, 11, 11],
+             'prev': '5b', 'next': ''}
+        ]
 
     def test_get_sample_annotation(self,):
 
@@ -283,7 +304,6 @@ class TestPredictHelper(unittest.TestCase):
 
         helper = PredictHelper(nusc)
         self.assertDictEqual(mock_annotation, helper.get_sample_annotation('instance_1', 'sample_1'))
-
 
     def test_get_future_for_agent_exact_amount(self,):
 
@@ -468,7 +488,7 @@ class TestPredictHelper(unittest.TestCase):
 
         nusc = MockNuScenes(self.multiagent_mock_annotations, mock_samples)
         helper = PredictHelper(nusc)
-        past = helper.get_past_for_sample('5', 3, True)
+        past = helper.get_past_for_sample('5', 3, True)  # TODO: Past not used.
 
         answer = {'1': np.array([[-1, -1], [-2, -2], [-3, -3]]),
                   '2': np.array([[-1, -1], [-2, -2], [-3, -3]])}
