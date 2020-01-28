@@ -2,8 +2,10 @@
 # Code written by Freddy Boulton, Eric Wolff 2020.
 """Implementation of metrics used in the nuScenes prediction challenge."""
 import abc
-from typing import List, Callable, Dict, Any, Union
+from typing import List, Dict, Any
+
 import numpy as np
+
 from nuscenes.eval.predict.data_classes import Prediction
 
 

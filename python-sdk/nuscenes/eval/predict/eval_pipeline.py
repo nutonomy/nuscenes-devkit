@@ -2,8 +2,8 @@
 # Code written by Freddy Boulton, 2020.
 """Script for generating and evaluating a submission to the nuscenes prediction challenge."""
 import argparse
-from nuscenes.eval.predict import do_inference, compute_metrics
 
+from nuscenes.eval.predict import do_inference, compute_metrics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Perform Inference with baseline models.')

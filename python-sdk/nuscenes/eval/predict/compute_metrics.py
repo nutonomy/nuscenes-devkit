@@ -2,17 +2,19 @@
 # Code written by Freddy Boulton, 2020.
 """Script for computing metrics for a submission to the nuscenes prediction challenge."""
 
-import os
 import json
+import os
 from collections import defaultdict
 from typing import List, Dict, Any
+
 import numpy as np
+
 from nuscenes import NuScenes
-from nuscenes.predict import PredictHelper
-from nuscenes.eval.predict import do_inference
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.predict.data_classes import Prediction
 from nuscenes.eval.predict.config import PredictionConfig
+from nuscenes.eval.predict.data_classes import Prediction
+from nuscenes.predict import PredictHelper
+
 
 def compute_metrics(predictions: List[Dict[str, Any]],
                     helper: PredictHelper, config: PredictionConfig) -> Dict[str, Any]:

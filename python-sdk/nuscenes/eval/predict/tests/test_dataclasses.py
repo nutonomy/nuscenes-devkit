@@ -1,6 +1,9 @@
 import unittest
-from nuscenes.eval.predict.data_classes import Prediction
+
 import numpy as np
+
+from nuscenes.eval.predict.data_classes import Prediction
+
 
 class TestPrediction(unittest.TestCase):
 

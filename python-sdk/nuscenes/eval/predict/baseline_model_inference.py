@@ -6,8 +6,8 @@ import json
 import os
 
 from nuscenes import NuScenes
-from nuscenes.predict import PredictHelper
 from nuscenes.eval.common.config import config_factory
+from nuscenes.predict import PredictHelper
 from nuscenes.predict.models import ConstantVelocityHeading, PhysicsOracle
 from nuscenes.utils.splits import get_prediction_challenge_split
 

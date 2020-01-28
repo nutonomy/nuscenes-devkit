@@ -1,7 +1,10 @@
-from typing import List, Callable, Dict, Any
 import dataclasses
+from typing import Dict, Any
+
 import numpy as np
+
 from nuscenes.eval.common.data_classes import MetricData
+
 
 @dataclasses.dataclass
 class Prediction(MetricData):

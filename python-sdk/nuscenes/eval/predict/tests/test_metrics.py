@@ -1,6 +1,9 @@
 import unittest
+
 import numpy as np
+
 from nuscenes.eval.predict import metrics
+
 
 class TestFunctions(unittest.TestCase):
 
