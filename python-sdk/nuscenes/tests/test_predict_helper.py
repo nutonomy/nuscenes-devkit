@@ -21,7 +21,7 @@ class MockNuScenes(NuScenes):
         self._sample = {r['token']: r for r in samples}
 
     @property
-    def sample_annotation(self,) -> List[Dict[str, Any]]:
+    def sample_annotation(self) -> List[Dict[str, Any]]:
         return list(self._sample_annotation.values())
 
     def get(self, table_name: str, token: str) -> Dict[str, Any]:
@@ -294,10 +294,9 @@ class TestPredictHelper(unittest.TestCase):
              'prev': '5b', 'next': ''}
         ]
 
-    def test_get_sample_annotation(self,):
+    def test_get_sample_annotation(self):
 
-        mock_annotation = {'token': '1', 'instance_token': 'instance_1',
-                           'sample_token': 'sample_1'}
+        mock_annotation = {'token': '1', 'instance_token': 'instance_1', 'sample_token': 'sample_1'}
         mock_sample = {'token': 'sample_1', 'timestamp': 0}
 
         nusc = MockNuScenes([mock_annotation], [mock_sample])
@@ -305,7 +304,7 @@ class TestPredictHelper(unittest.TestCase):
         helper = PredictHelper(nusc)
         self.assertDictEqual(mock_annotation, helper.get_sample_annotation('instance_1', 'sample_1'))
 
-    def test_get_future_for_agent_exact_amount(self,):
+    def test_get_future_for_agent_exact_amount(self):
 
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
@@ -331,7 +330,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, True)
         np.testing.assert_allclose(future, np.array([[-1, 1], [-2, 2], [-3, 3]]))
 
-    def test_get_future_for_agent_less_amount(self,):
+    def test_get_future_for_agent_less_amount(self):
 
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
@@ -345,7 +344,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, False)
         np.testing.assert_equal(future, np.array([[1, 1], [2, 2]]))
 
-    def test_get_future_for_agent_within_buffer(self,):
+    def test_get_future_for_agent_within_buffer(self):
 
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
@@ -359,7 +358,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, False)
         np.testing.assert_equal(future, np.array([[1, 1], [2, 2], [3, 3]]))
 
-    def test_get_future_for_agent_no_data_to_get(self,):
+    def test_get_future_for_agent_no_data_to_get(self):
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 3.5e6}]
 
@@ -378,7 +377,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '6', 3, False)
         np.testing.assert_equal(future, np.array([]))
 
-    def test_get_past_for_agent_exact_amount(self,):
+    def test_get_past_for_agent_exact_amount(self):
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -392,7 +391,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([[3, 3], [2, 2], [1, 1]]))
 
-    def test_get_past_for_agent_in_frame(self,):
+    def test_get_past_for_agent_in_frame(self):
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -406,7 +405,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, True)
         np.testing.assert_allclose(past, np.array([[1., -1.], [2., -2.], [3., -3.]]))
 
-    def test_get_past_for_agent_less_amount(self,):
+    def test_get_past_for_agent_less_amount(self):
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -420,7 +419,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([[3, 3], [2, 2]]))
 
-    def test_get_past_for_agent_within_buffer(self,):
+    def test_get_past_for_agent_within_buffer(self):
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -433,7 +432,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([[3, 3], [2, 2]]))
 
-    def test_get_past_for_agent_no_data_to_get(self,):
+    def test_get_past_for_agent_no_data_to_get(self):
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -3.5e6}]
 
