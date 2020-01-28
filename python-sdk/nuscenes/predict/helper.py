@@ -296,7 +296,8 @@ class PredictHelper:
         return self._compute_diff_between_sample_annotations(instance_token, sample_token,
                                                              max_time_diff,
                                                              with_function=acceleration,
-                                                             instance_token=instance_token, helper=self)
+                                                             instance_token_for_velocity=instance_token,
+                                                             helper=self)
 
 
 def velocity(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
@@ -324,14 +325,16 @@ def heading_change_rate(current: Dict[str, Any], prev: Dict[str, Any], time_diff
 
 
 def acceleration(current: Dict[str, Any], prev: Dict[str, Any],
-                 time_diff: float, instance_token: str, helper: PredictHelper) -> float:
+                 time_diff: float, instance_token_for_velocity: str, helper: PredictHelper) -> float:
     """
     Helper function to compute acceleration between sample annotations.
     :param current: Sample annotation record for the current timestamp.
     :param prev: Sample annotation record for the previous time stamp.
     :time_diff: How much time has elapsed between the records.
+    :instance_token_for_velocity: Instance token to compute velocity.
+    :helper: Instance of PredictHelper.
     """
-    current_velocity = helper.get_velocity_for_agent(instance_token, current['sample_token'])
-    prev_velocity = helper.get_velocity_for_agent(instance_token, prev['sample_token'])
+    current_velocity = helper.get_velocity_for_agent(instance_token_for_velocity, current['sample_token'])
+    prev_velocity = helper.get_velocity_for_agent(instance_token_for_velocity, prev['sample_token'])
 
     return (current_velocity - prev_velocity) / time_diff
