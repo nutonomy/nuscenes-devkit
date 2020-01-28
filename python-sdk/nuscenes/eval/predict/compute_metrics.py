@@ -20,9 +20,9 @@ def compute_metrics(predictions: List[Dict[str, Any]],
                     helper: PredictHelper, config: PredictionConfig) -> Dict[str, Any]:
     """
     Computes metrics from a set of predictions.
-    :param predictions: TODO.
+    :param predictions: Unserialized predictions in json file.
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
-    :param config: TODO.
+    :param config: Config file.
     """
     # TODO: Add check that n_preds is same size as test set once that is finalized
     n_preds = len(predictions)
@@ -51,7 +51,12 @@ def main(version: str, data_root: str, submission_path: str, submission_name: st
     """
     Computes metrics for a submission stored in submission_path with a given submission_name with the metrics
     specified by the config_name.
-    TODO.
+    :param version: NuScenes dataset version.
+    :param data_root: Directory storing NuScenes data.
+    :param submission_path: Directory storing submission.
+    :param submission_name: Name of json file in submission_path directory that stores
+        predictions.
+    :param config_name: Name of config file.
     """
 
     predictions = json.load(open(os.path.join(submission_path, f"{submission_name}_inference.json"), "r"))
