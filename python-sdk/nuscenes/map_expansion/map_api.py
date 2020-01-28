@@ -324,7 +324,7 @@ class NuScenesMap:
         :param canvas_size: Size of the output mask (h, w).
         :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
-        :return: The matplotlib figure and axes of the rendered layers.
+        :return: The matplotlib figure and a list of axes of the rendered layers.
         """
         return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, canvas_size,
                                              figsize=figsize, n_row=n_row)
@@ -477,14 +477,14 @@ class NuScenesMapExplorer:
                         figsize: Tuple[int, int],
                         n_row: int = 2) -> Tuple[Figure, List[Axes]]:
         """
-        Render map mask of the patch specified by patch_box, and patch_angle.
+        Render map mask of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be extracted.
         :param canvas_size: Size of the output mask (h, w).
         :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
-        :return: The matplotlib figure and axes of the rendered layers.
+        :return: The matplotlib figure and a list of axes of the rendered layers.
         """
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
