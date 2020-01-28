@@ -12,7 +12,8 @@ from nuscenes.predict.models import ConstantVelocityHeading, PhysicsOracle
 from nuscenes.eval.predict.splits import get_prediction_challenge_split
 
 
-def main(version: str, split_name: str, output_dir: str, config_name: str = 'predict_2020_icra') -> None:
+def main(version: str, data_root: str,
+         split_name: str, output_dir: str, config_name: str = 'predict_2020_icra') -> None:
     """
     Performs inference for all of the baseline models defined in models.py.
     :param version: Nuscenes dataset version.
@@ -22,7 +23,7 @@ def main(version: str, split_name: str, output_dir: str, config_name: str = 'pre
     :return: None.
     """
 
-    nusc = NuScenes(version=version)
+    nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
     dataset = get_prediction_challenge_split(split_name)
     config = config_factory(config_name)
@@ -43,6 +44,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Perform Inference with baseline models.')
     parser.add_argument('--version', help='NuScenes version number.')
+    parser.add_argument('--data_root', help='Directory storing NuScenes data.', default='/data/sets/nuscenes')
     parser.add_argument('--split_name', help='Data split to run inference on.')
     parser.add_argument('--output_dir', help='Directory to store output files.')
     parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra')
