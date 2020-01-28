@@ -12,14 +12,14 @@ from nuscenes.predict.models import ConstantVelocityHeading, PhysicsOracle
 from nuscenes.utils.splits import get_prediction_challenge_split
 
 
-def main(version: str, split_name: str, output_dir: str, config_name: str) -> None:
+def main(version: str, split_name: str, output_dir: str, config_name: str = 'predict_2020_icra') -> None:
     """
-    TODO.
-    :param version: TODO.
-    :param split_name: TODO.
-    :param output_dir: TODO.
-    :param config_name: TODO.
-    :return: TODO.
+    Performs inference for all of the baseline models defined in models.py.
+    :param version: Nuscenes dataset version.
+    :param split_name: Nuscenes data split name, e.g. train, val, mini_train, etc.
+    :param output_dir: Directory where predictions should be stored.
+    :param config_name: Name of config file.
+    :return: None.
     """
 
     nusc = NuScenes(version=version)
@@ -42,10 +42,10 @@ def main(version: str, split_name: str, output_dir: str, config_name: str) -> No
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Perform Inference with baseline models.')
-    parser.add_argument('-version', help='NuScenes version number.')
-    parser.add_argument('-split_name', help='Data split to run inference on.')
-    parser.add_argument('-output_dir', help='Directory to store output files.')
-    parser.add_argument('-config_name', help='Config file to use.', default='predict_2020_icra')
+    parser.add_argument('--version', help='NuScenes version number.')
+    parser.add_argument('--split_name', help='Data split to run inference on.')
+    parser.add_argument('--output_dir', help='Directory to store output files.')
+    parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra')
 
     args = parser.parse_args()
     main(args.version, args.split_name, args.output_dir, args.config_name)
