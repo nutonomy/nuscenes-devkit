@@ -2,7 +2,7 @@
 # Code written by Freddy Boulton, 2020.
 
 import unittest
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 import numpy as np
 
@@ -31,7 +31,11 @@ class MockNuScenes(NuScenes):
 
 class TestConvertGlobalCoordsToLocal(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
+        # Creating 5 different trajectories to be shared by
+        # coordinate frame rotation unit tests.
+        # These trajectories go along each of the axes in
+        # the x-y plane as well as the line y=x
         along_pos_x = np.zeros((5, 2))
         along_pos_y = np.zeros((5, 2))
         along_neg_x = np.zeros((5, 2))
@@ -49,208 +53,104 @@ class TestConvertGlobalCoordsToLocal(unittest.TestCase):
         y_equals_x[:, 1] = np.arange(1, 6)
         self.y_equals_x = y_equals_x
 
-    def test_heading_0(self):
-        rotation = (1, 0, 0, 0)
-        origin = (0, 0, 0)
-        offset = (50, 25, 0)
+    def _run(self,
+             rotation: Tuple[float, float, float, float],
+             origin: Tuple[float, float, float],
+             offset: Tuple[float, float, float],
+             along_pos_x_answer: np.ndarray,
+             along_pos_y_answer: np.ndarray,
+             along_neg_x_answer: np.ndarray,
+             along_neg_y_answer: np.ndarray,
+             ) -> None:
+
+        offset_as_list = [[offset[0], offset[1]]]
 
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(answer, along_pos_x_answer, atol=1e-4)
 
-        answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
-
-        # Testing path along pos y direction
-        answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
-
-        # Testing path along neg x direction
-        answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
-
-        # Testing path along neg y direction
-        answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
-
-    def test_heading_pi_over_4(self):
-        rotation = (np.cos(np.pi / 8), 0, 0, np.sin(np.pi / 8))
-        origin = (0, 0, 0)
-        offset = (50, 25, 0)
-
-        # Testing path along pos x direction
-        answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * np.sqrt(2) / 2, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * np.sqrt(2) / 2, atol=1e-4)
+        answer = convert_global_coords_to_local(self.along_pos_x + offset_as_list, offset, rotation)
+        np.testing.assert_allclose(answer, along_pos_x_answer, atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(answer, along_pos_y_answer, atol=1e-4)
 
-        answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
-
-        # Testing path along neg x direction
-        answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
-        np.testing.assert_allclose(answer,  self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer,  self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        # Testing path along neg y direction
-        answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
-        np.testing.assert_allclose(answer,  self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer,  self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-    def test_heading_pi_over_2(self):
-        rotation = (np.cos(np.pi / 4), 0, 0, np.sin(np.pi / 4))
-        origin = (0, 0, 0)
-        offset = (50, 25, 0)
-
-        # Testing path along pos x direction
-        answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_x,  atol=1e-4)
-
-        # Testing path along pos y direction
-        answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        answer = convert_global_coords_to_local(self.along_pos_y + offset_as_list, offset, rotation)
+        np.testing.assert_allclose(answer, along_pos_y_answer, atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(answer, along_neg_x_answer, atol=1e-4)
 
-        answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
-
-        # Testing path along neg y direction
-        answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
-
-    def test_heading_3pi_over_4(self):
-        rotation = (np.cos(3 * np.pi / 8), 0, 0, np.sin(3 * np.pi / 8))
-        origin = (0, 0, 0)
-        offset = (50, 25, 0)
-
-        # Testing path along pos x direction
-        answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]],  atol=1e-4)
-
-        # Testing path along pos y direction
-        answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
-
-        # Testing path along neg x direction
-        answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        answer = convert_global_coords_to_local(self.along_neg_x + offset_as_list, offset, rotation)
+        np.testing.assert_allclose(answer, along_neg_x_answer, atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(answer, along_neg_y_answer, atol=1e-4)
 
-        answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        answer = convert_global_coords_to_local(self.along_neg_y + offset_as_list, offset, rotation)
+        np.testing.assert_allclose(answer, along_neg_y_answer, atol=1e-4)
 
-    def test_heading_pi(self):
-        rotation = (np.cos(np.pi / 2), 0, 0, np.sin(np.pi / 2))
-        origin = (0, 0, 0)
-        offset = (50, 25, 0)
+    def test_heading_0(self) -> None:
+        self._run(rotation=(1, 0, 0, 0),
+                  origin=(0, 0, 0),
+                  offset=(50, 25, 0),
+                  along_pos_x_answer=self.along_pos_y,
+                  along_pos_y_answer=self.along_neg_x,
+                  along_neg_x_answer=self.along_neg_y,
+                  along_neg_y_answer=self.along_pos_x)
 
-        # Testing path along pos x direction
-        answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
+    def test_heading_pi_over_4(self) -> None:
+        self._run(rotation=(np.cos(np.pi / 8), 0, 0, np.sin(np.pi / 8)),
+                  origin=(0, 0, 0),
+                  offset=(50, 25, 0),
+                  along_pos_x_answer=self.y_equals_x * np.sqrt(2) / 2,
+                  along_pos_y_answer=self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]],
+                  along_neg_x_answer=self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]],
+                  along_neg_y_answer=self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]])
 
-        answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_y,  atol=1e-4)
+    def test_heading_pi_over_2(self) -> None:
+        self._run(rotation=(np.cos(np.pi / 4), 0, 0, np.sin(np.pi / 4)),
+                  origin=(0, 0, 0),
+                  offset=(50, 25, 0),
+                  along_pos_x_answer=self.along_pos_x,
+                  along_pos_y_answer=self.along_pos_y,
+                  along_neg_x_answer=self.along_neg_x,
+                  along_neg_y_answer=self.along_neg_y)
 
-        # Testing path along pos y direction
-        answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+    def test_heading_3pi_over_4(self) -> None:
+        self._run(rotation=(np.cos(3 * np.pi / 8), 0, 0, np.sin(3 * np.pi / 8)),
+                  origin=(0, 0, 0),
+                  offset=(50, 25, 0),
+                  along_pos_x_answer=self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]],
+                  along_pos_y_answer=self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]],
+                  along_neg_x_answer=self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]],
+                  along_neg_y_answer=self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]])
 
-        answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+    def test_heading_pi(self) -> None:
+        self._run(rotation=(np.cos(np.pi / 2), 0, 0, np.sin(np.pi / 2)),
+                  origin=(0, 0, 0),
+                  offset=(50, 25, 0),
+                  along_pos_x_answer=self.along_neg_y,
+                  along_pos_y_answer=self.along_pos_x,
+                  along_neg_x_answer=self.along_pos_y,
+                  along_neg_y_answer=self.along_neg_x)
 
-        # Testing path along neg x direction
-        answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
-
-        # Testing path along neg y direction
-        answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
-
-    def test_heading_neg_pi_over_4(self):
-        rotation = (np.cos(-np.pi / 8), 0, 0, np.sin(-np.pi / 8))
-        origin = (0, 0, 0)
-        offset = (50, 25, 0)
-
-        # Testing path along pos x direction
-        answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]],  atol=1e-4)
-
-        # Testing path along pos y direction
-        answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        # Testing path along neg x direction
-        answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
-
-        # Testing path along neg y direction
-        answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
-
-        answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
-        np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+    def test_heading_neg_pi_over_4(self) -> None:
+        self._run(rotation=(np.cos(-np.pi / 8), 0, 0, np.sin(-np.pi / 8)),
+                  origin=(0, 0, 0),
+                  offset=(50, 25, 0),
+                  along_pos_x_answer=self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]],
+                  along_pos_y_answer=self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]],
+                  along_neg_x_answer=self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]],
+                  along_neg_y_answer=self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]])
 
 
 class TestPredictHelper(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
 
         self.mock_annotations = [
             {'token': '1', 'instance_token': '1', 'sample_token': '1', 'translation': [0, 0, 0],
@@ -294,7 +194,7 @@ class TestPredictHelper(unittest.TestCase):
              'prev': '5b', 'next': ''}
         ]
 
-    def test_get_sample_annotation(self):
+    def test_get_sample_annotation(self) -> None:
 
         mock_annotation = {'token': '1', 'instance_token': 'instance_1', 'sample_token': 'sample_1'}
         mock_sample = {'token': 'sample_1', 'timestamp': 0}
@@ -304,7 +204,7 @@ class TestPredictHelper(unittest.TestCase):
         helper = PredictHelper(nusc)
         self.assertDictEqual(mock_annotation, helper.get_sample_annotation('instance_1', 'sample_1'))
 
-    def test_get_future_for_agent_exact_amount(self):
+    def test_get_future_for_agent_exact_amount(self) -> None:
 
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
@@ -318,7 +218,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, False)
         np.testing.assert_equal(future, np.array([[1, 1], [2, 2], [3, 3]]))
 
-    def test_get_future_for_agent_in_agent_frame(self):
+    def test_get_future_for_agent_in_agent_frame(self) -> None:
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
                         {'token': '3', 'timestamp': 2e6},
@@ -330,7 +230,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, True)
         np.testing.assert_allclose(future, np.array([[-1, 1], [-2, 2], [-3, 3]]))
 
-    def test_get_future_for_agent_less_amount(self):
+    def test_get_future_for_agent_less_amount(self) -> None:
 
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
@@ -344,7 +244,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, False)
         np.testing.assert_equal(future, np.array([[1, 1], [2, 2]]))
 
-    def test_get_future_for_agent_within_buffer(self):
+    def test_get_future_for_agent_within_buffer(self) -> None:
 
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 1e6},
@@ -358,7 +258,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, False)
         np.testing.assert_equal(future, np.array([[1, 1], [2, 2], [3, 3]]))
 
-    def test_get_future_for_agent_no_data_to_get(self):
+    def test_get_future_for_agent_no_data_to_get(self) -> None:
         mock_samples = [{'token': '1', 'timestamp': 0},
                         {'token': '2', 'timestamp': 3.5e6}]
 
@@ -368,7 +268,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '1', 3, False)
         np.testing.assert_equal(future, np.array([]))
 
-    def test_get_future_for_last_returns_nothing(self):
+    def test_get_future_for_last_returns_nothing(self) -> None:
         mock_samples = [{'token': '6', 'timestamp': 0}]
 
         # Testing we get nothing if we're at the last annotation
@@ -377,7 +277,7 @@ class TestPredictHelper(unittest.TestCase):
         future = helper.get_future_for_agent('1', '6', 3, False)
         np.testing.assert_equal(future, np.array([]))
 
-    def test_get_past_for_agent_exact_amount(self):
+    def test_get_past_for_agent_exact_amount(self) -> None:
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -391,7 +291,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([[3, 3], [2, 2], [1, 1]]))
 
-    def test_get_past_for_agent_in_frame(self):
+    def test_get_past_for_agent_in_frame(self) -> None:
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -405,7 +305,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, True)
         np.testing.assert_allclose(past, np.array([[1., -1.], [2., -2.], [3., -3.]]))
 
-    def test_get_past_for_agent_less_amount(self):
+    def test_get_past_for_agent_less_amount(self) -> None:
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -419,7 +319,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([[3, 3], [2, 2]]))
 
-    def test_get_past_for_agent_within_buffer(self):
+    def test_get_past_for_agent_within_buffer(self) -> None:
 
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -1e6},
@@ -432,7 +332,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([[3, 3], [2, 2]]))
 
-    def test_get_past_for_agent_no_data_to_get(self):
+    def test_get_past_for_agent_no_data_to_get(self) -> None:
         mock_samples = [{'token': '5', 'timestamp': 0},
                         {'token': '4', 'timestamp': -3.5e6}]
 
@@ -442,7 +342,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '5', 3, False)
         np.testing.assert_equal(past, np.array([]))
 
-    def test_get_past_for_last_returns_nothing(self):
+    def test_get_past_for_last_returns_nothing(self) -> None:
         mock_samples = [{'token': '1', 'timestamp': 0}]
 
         # Testing we get nothing if we're at the last annotation
@@ -451,7 +351,7 @@ class TestPredictHelper(unittest.TestCase):
         past = helper.get_past_for_agent('1', '1', 3, False)
         np.testing.assert_equal(past, np.array([]))
 
-    def test_get_future_for_sample(self):
+    def test_get_future_for_sample(self) -> None:
 
         mock_samples = [{'token': '1', 'timestamp': 0, 'anns': ['1', '1b']},
                         {'token': '2', 'timestamp': 1e6},
@@ -477,7 +377,7 @@ class TestPredictHelper(unittest.TestCase):
         for k in answer_in_sample:
             np.testing.assert_allclose(answer_in_sample[k], future_in_sample[k])
 
-    def test_get_past_for_sample(self):
+    def test_get_past_for_sample(self) -> None:
 
         mock_samples = [{'token': '5', 'timestamp': 0, 'anns': ['5', '5b']},
                         {'token': '4', 'timestamp': -1e6},
@@ -487,15 +387,15 @@ class TestPredictHelper(unittest.TestCase):
 
         nusc = MockNuScenes(self.multiagent_mock_annotations, mock_samples)
         helper = PredictHelper(nusc)
-        past = helper.get_past_for_sample('5', 3, True)  # TODO: Past not used.
+        past = helper.get_past_for_sample('5', 3, True)
 
-        answer = {'1': np.array([[-1, -1], [-2, -2], [-3, -3]]),
-                  '2': np.array([[-1, -1], [-2, -2], [-3, -3]])}
+        answer = {'1': np.array([[1, -1], [2, -2], [3, -3]]),
+                  '2': np.array([[1, -1], [2, -2], [3, -3]])}
 
         for k in answer:
-            np.testing.assert_equal(answer[k], answer[k])
+            np.testing.assert_allclose(past[k], answer[k])
 
-    def test_get_no_data_when_seconds_0(self):
+    def test_get_no_data_when_seconds_0(self) -> None:
         mock_samples = [{'token': '1', 'timestamp': 0, 'anns': ['1']}]
         nusc = MockNuScenes(self.mock_annotations, mock_samples)
         helper = PredictHelper(nusc)
@@ -505,7 +405,7 @@ class TestPredictHelper(unittest.TestCase):
         np.testing.assert_equal(helper.get_future_for_sample('1', 0, False), np.array([]))
         np.testing.assert_equal(helper.get_past_for_sample('1', 0, False), np.array([]))
 
-    def test_raises_error_when_seconds_negative(self):
+    def test_raises_error_when_seconds_negative(self) -> None:
         mock_samples = [{'token': '1', 'timestamp': 0, 'anns': ['1', '1b']}]
         nusc = MockNuScenes(self.mock_annotations, mock_samples)
         helper = PredictHelper(nusc)
