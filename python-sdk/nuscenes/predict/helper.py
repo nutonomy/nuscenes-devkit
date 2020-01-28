@@ -17,6 +17,7 @@ def angle_of_rotation(yaw: float) -> float:
     """
     Given a yaw angle (measured from x axis), find the angle needed to rotate by so that
     the yaw points upwards (pi / 2).
+    :param yaw: TODO.
     :return: TODO.
     """
     return (np.pi / 2) + np.sign(-yaw) * np.abs(yaw)
@@ -49,7 +50,7 @@ class PredictHelper:
     def __init__(self, nusc: NuScenes):
         """
         Inits PredictHelper
-        :param nusc: Instance of NuScenes class
+        :param nusc: Instance of NuScenes class.
         """
         self.data = nusc
         self.inst_sample_to_ann = self._map_sample_and_instance_to_annotation()
@@ -66,13 +67,13 @@ class PredictHelper:
 
         return mapping
 
-    def _timestamp_for_sample(self, sample: str) -> float:
+    def _timestamp_for_sample(self, sample_token: str) -> float:
         """
         Gets timestamp from sample token.
-        :param sample: TODO.
+        :param sample_token: TODO.
         :return: TODO.
         """
-        return self.data.get('sample', sample)['timestamp']
+        return self.data.get('sample', sample_token)['timestamp']
 
     def _absolute_time_diff(self, time1: float, time2: float) -> float:
         """
@@ -123,28 +124,28 @@ class PredictHelper:
 
         return annotations
 
-    def get_sample_annotation(self, instance: str, sample: str) -> Dict[str, Any]:
+    def get_sample_annotation(self, instance_token: str, sample_token: str) -> Dict[str, Any]:
         """
-        Retrives an annotation given an instance token and its sample.
-        :param instance: Instance token
-        :param sample: Sample token
+        Retrieves an annotation given an instance token and its sample.
+        :param instance_token: Instance token
+        :param sample_token: Sample token
         :return: TODO.
         """
-        return self.data.get('sample_annotation', self.inst_sample_to_ann[(sample, instance)])
+        return self.data.get('sample_annotation', self.inst_sample_to_ann[(sample_token, instance_token)])
 
-    def _get_past_or_future_for_agent(self, instance: str, sample: str,
+    def _get_past_or_future_for_agent(self, instance_token: str, sample_token: str,
                                       seconds: float, in_agent_frame: bool,
                                       direction: str) -> np.ndarray:
         """
         Helper function to reduce code duplication between get_future and get_past for agent.
-        :param instance: TODO.
-        :param sample: TODO.
+        :param instance_token: TODO.
+        :param sample_token: TODO.
         :param seconds: TODO.
         :param in_agent_frame: TODO.
         :param direction: TODO.
         :return: TODO.
         """
-        starting_annotation = self.get_sample_annotation(instance, sample)
+        starting_annotation = self.get_sample_annotation(instance_token, sample_token)
         sequence = self._iterate(starting_annotation, seconds, direction)
         coords = np.array([r['translation'][:2] for r in sequence])
 
@@ -158,47 +159,47 @@ class PredictHelper:
 
         return coords
 
-    def get_future_for_agent(self, instance: str, sample: str,
+    def get_future_for_agent(self, instance_token: str, sample_token: str,
                              seconds: float, in_agent_frame: bool) -> np.ndarray:
         """
         Retrieves the agent's future x,y locations.
-        :param instance: Instance token.
-        :param sample: Sample token.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token.
         :param seconds: How much future data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
             The rows increase with time, i.e the last row occurs the farthest from
             the current time.
         """
-        return self._get_past_or_future_for_agent(instance, sample, seconds,
+        return self._get_past_or_future_for_agent(instance_token, sample_token, seconds,
                                                   in_agent_frame, direction='next')
 
-    def get_past_for_agent(self, instance: str, sample: str,
+    def get_past_for_agent(self, instance_token: str, sample_token: str,
                            seconds: float, in_agent_frame: bool) -> np.ndarray:
         """
         Retrieves the agent's past x,y locations.
-        :param instance: Instance token.
-        :param sample: Sample token.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token.
         :param seconds: How much past data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
             The rows decreate with time, i.e the last row happened the farthest from
             the current time.
         """
-        return self._get_past_or_future_for_agent(instance, sample, seconds,
+        return self._get_past_or_future_for_agent(instance_token, sample_token, seconds,
                                                   in_agent_frame, direction='prev')
 
-    def _get_past_or_future_for_sample(self, sample: str, seconds: float, in_agent_frame: bool,
+    def _get_past_or_future_for_sample(self, sample_token: str, seconds: float, in_agent_frame: bool,
                                        function: Callable[[str, str, float, bool], np.ndarray]):
         """
         Helper function to reduce code duplication between get_future and get_past for sample.
-        :param sample: Sample token.
+        :param sample_token: Sample token.
         :param seconds: How much past or future data to retrieve.
         :param in_agent_frame: TODO.
         :param function: TODO.
         :return: TODO.
         """
-        sample_record = self.data.get('sample', sample)
+        sample_record = self.data.get('sample', sample_token)
         sequences = {}
         for annotation in sample_record['anns']:
             annotation_record = self.data.get('sample_annotation', annotation)
@@ -210,26 +211,26 @@ class PredictHelper:
 
         return sequences
 
-    def get_future_for_sample(self, sample: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
+    def get_future_for_sample(self, sample_token: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
         """Retrieves the the future x,y locations of all agents in the sample.
-        :param sample: Sample token
-        :param seconds: How much future data to retrieve
+        :param sample_token: Sample token.
+        :param seconds: How much future data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
             The rows increase with time, i.e the last row occurs the farthest from
             the current time.
         """
-        return self._get_past_or_future_for_sample(sample, seconds, in_agent_frame,
+        return self._get_past_or_future_for_sample(sample_token, seconds, in_agent_frame,
                                                    function=self.get_future_for_agent)
 
-    def get_past_for_sample(self, sample: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
+    def get_past_for_sample(self, sample_token: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
         """Retrieves the the past x,y locations of all agents in the sample.
-        :param sample: Sample token
-        :param seconds: How much past data to retrieve
+        :param sample_token: Sample token.
+        :param seconds: How much past data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
         :return: np.ndarray. First column is the x coordinate, second is the y.
             The rows increase with time, i.e the last row occurs the farthest from
             the current time.
         """
-        return self._get_past_or_future_for_sample(sample, seconds, in_agent_frame,
+        return self._get_past_or_future_for_sample(sample_token, seconds, in_agent_frame,
                                                    function=self.get_past_for_agent)

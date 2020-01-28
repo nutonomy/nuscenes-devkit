@@ -461,7 +461,7 @@ class TestPredictHelper(unittest.TestCase):
 
         nusc = MockNuScenes(self.multiagent_mock_annotations, mock_samples)
         helper = PredictHelper(nusc)
-        future = helper.get_future_for_sample("1", 3, False)
+        future = helper.get_future_for_sample('1', 3, False)
 
         answer = {'1': np.array([[1, 1], [2, 2], [3, 3]]),
                   '2': np.array([[7, 7], [8, 8], [9, 9]])}
@@ -469,7 +469,7 @@ class TestPredictHelper(unittest.TestCase):
         for k in answer:
             np.testing.assert_equal(answer[k], future[k])
 
-        future_in_sample = helper.get_future_for_sample("1", 3, True)
+        future_in_sample = helper.get_future_for_sample('1', 3, True)
 
         answer_in_sample = {'1': np.array([[-1, 1], [-2, 2], [-3, 3]]),
                             '2': np.array([[-1, 1], [-2, 2], [-3, 3]])}
