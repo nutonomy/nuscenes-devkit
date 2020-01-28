@@ -11,10 +11,12 @@ class Prediction(MetricData):
     """
     Stores predictions of Models.
     Metrics are calculated from Predictions.
-    :param instance: Instance token for prediction.
-    :param sample: Sample token for prediction.
-    :param prediction: Predicion of model [num_modes, n_timesteps, state_dim]
-    :param probabilities: Probabilities of each mode [num_modes]
+
+    Attributes:
+        instance: Instance token for prediction.
+        sample: Sample token for prediction.
+        prediction: Predicion of model [num_modes, n_timesteps, state_dim]
+        probabilities: Probabilities of each mode [num_modes]
     """
     instance: str
     sample: str
