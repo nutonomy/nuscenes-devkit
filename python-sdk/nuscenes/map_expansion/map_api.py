@@ -3,25 +3,25 @@
 # + Map mask by Kiwoo Shin, 2019.
 # + Methods operating on NuScenesMap and NuScenes by Holger Caesar, 2019.
 
-import os
 import json
+import os
 import random
 from typing import Dict, List, Tuple, Optional, Union
 
+import cv2
 import descartes
-from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from matplotlib.patches import Rectangle, Arrow
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle, Arrow
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-from PIL import Image
-from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
-from shapely import affinity
-import cv2
 from pyquaternion import Quaternion
+from shapely import affinity
+from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
+from tqdm import tqdm
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points

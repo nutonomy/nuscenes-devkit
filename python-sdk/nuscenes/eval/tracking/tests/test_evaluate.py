@@ -3,9 +3,9 @@
 
 import json
 import os
-import sys
 import random
 import shutil
+import sys
 import unittest
 from typing import Dict, Optional, Any
 
@@ -13,11 +13,11 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.utils.splits import create_splits_scenes
 from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.tracking.constants import TRACKING_NAMES
 from nuscenes.eval.tracking.evaluate import TrackingEval
 from nuscenes.eval.tracking.utils import category_to_tracking_name
-from nuscenes.eval.tracking.constants import TRACKING_NAMES
+from nuscenes.utils.splits import create_splits_scenes
 
 
 class TestMain(unittest.TestCase):

@@ -1,7 +1,7 @@
-import unittest
-from typing import Tuple, Dict, List
 import copy
+import unittest
 from collections import defaultdict
+from typing import Tuple, Dict, List
 
 import numpy as np
 

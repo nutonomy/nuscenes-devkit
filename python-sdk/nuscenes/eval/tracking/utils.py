@@ -1,11 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2019.
 
-from typing import Optional, Dict
 import warnings
+from typing import Optional, Dict
 
-import numpy as np
 import motmetrics
+import numpy as np
 from motmetrics.metrics import MetricsHost
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
