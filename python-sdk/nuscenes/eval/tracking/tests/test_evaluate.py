@@ -133,6 +133,7 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
+    @unittest.skip
     def basic_test(self,
                    eval_set: str = 'mini_val',
                    add_errors: bool = False,
@@ -168,6 +169,7 @@ class TestMain(unittest.TestCase):
 
         return metrics
 
+    @unittest.skip
     def test_delta_mock(self,
                         eval_set: str = 'mini_val',
                         render_curves: bool = False):
@@ -191,6 +193,7 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
+    @unittest.skip
     def test_delta_gt(self,
                       eval_set: str = 'mini_val',
                       render_curves: bool = False):
