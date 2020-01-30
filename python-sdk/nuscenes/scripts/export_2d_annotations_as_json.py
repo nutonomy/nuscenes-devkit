@@ -10,19 +10,19 @@ Note: Projecting tight 3d boxes to 2d generally leads to non-tight boxes.
       cameras cannot.
 """
 
-from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.geometry_utils import view_points
+import argparse
+import json
+import os
+from collections import OrderedDict
+from typing import List, Tuple, Union
 
 import numpy as np
-import json
-import argparse
-import os
-
-from typing import List, Tuple, Union
 from pyquaternion.quaternion import Quaternion
-from collections import OrderedDict
-from tqdm import tqdm
 from shapely.geometry import MultiPoint, box
+from tqdm import tqdm
+
+from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.geometry_utils import view_points
 
 
 def post_process_coords(corner_coords: List,

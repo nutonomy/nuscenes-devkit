@@ -2,16 +2,16 @@
 # Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
 
 from bisect import bisect
-from typing import List, Dict, DefaultDict
 from collections import defaultdict
+from typing import List, Dict, DefaultDict
 
 import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.utils.splits import create_splits_scenes
 from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.nuscenes import NuScenes
+from nuscenes.utils.splits import create_splits_scenes
 
 
 def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, right_ratio: float) -> TrackingBox:

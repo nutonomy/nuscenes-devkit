@@ -3,15 +3,15 @@
 
 import os
 from typing import Any, List
-from pandas import DataFrame
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pandas import DataFrame
 from pyquaternion import Quaternion
-from nuscenes.eval.common.render import setup_axis
-from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricDataList
-from nuscenes.eval.tracking.constants import TRACKING_COLORS, PRETTY_TRACKING_NAMES
 
+from nuscenes.eval.common.render import setup_axis
+from nuscenes.eval.tracking.constants import TRACKING_COLORS, PRETTY_TRACKING_NAMES
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricDataList
 from nuscenes.utils.data_classes import Box
 
 Axis = Any

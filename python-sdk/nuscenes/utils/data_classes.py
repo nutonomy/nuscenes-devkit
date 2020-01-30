@@ -1,12 +1,12 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom, 2018.
 
+import copy
 import os.path as osp
 import struct
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Tuple, List, Dict
-import copy
 
 import cv2
 import numpy as np

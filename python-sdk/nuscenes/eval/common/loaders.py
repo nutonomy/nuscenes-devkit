@@ -5,15 +5,15 @@ import json
 from typing import Dict, Tuple
 
 import numpy as np
-from pyquaternion import Quaternion
 import tqdm
+from pyquaternion import Quaternion
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.eval.detection.data_classes import DetectionBox
-from nuscenes.eval.tracking.utils import category_to_tracking_name
+from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.eval.tracking.data_classes import TrackingBox
+from nuscenes.eval.tracking.utils import category_to_tracking_name
 from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import points_in_box
 from nuscenes.utils.splits import create_splits_scenes
