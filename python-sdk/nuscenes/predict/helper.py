@@ -7,7 +7,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes import NuScenes
-from nuscenes.eval.common.utils import quaternion_yaw
+from nuscenes.eval.common.utils import quaternion_yaw, angle_diff
 
 MICROSECONDS_PER_SECOND = 1e6
 BUFFER = 0.15  # seconds
@@ -211,7 +211,8 @@ class PredictHelper:
         return sequences
 
     def get_future_for_sample(self, sample_token: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
-        """Retrieves the the future x,y locations of all agents in the sample.
+        """
+        Retrieves the the future x,y locations of all agents in the sample.
         :param sample_token: Sample token.
         :param seconds: How much future data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
@@ -222,7 +223,8 @@ class PredictHelper:
                                                    function=self.get_future_for_agent)
 
     def get_past_for_sample(self, sample_token: str, seconds: float, in_agent_frame: bool) -> Dict[str, np.ndarray]:
-        """Retrieves the the past x,y locations of all agents in the sample.
+        """
+        Retrieves the the past x,y locations of all agents in the sample.
         :param sample_token: Sample token.
         :param seconds: How much past data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
@@ -231,3 +233,108 @@ class PredictHelper:
         """
         return self._get_past_or_future_for_sample(sample_token, seconds, in_agent_frame,
                                                    function=self.get_past_for_agent)
+
+    def _compute_diff_between_sample_annotations(self, instance_token: str,
+                                                 sample_token: str, max_time_diff: float,
+                                                 with_function, **kwargs) -> float:
+        """
+        Grabs current and previous annotation and computes a float from them.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token.
+        :param max_time_diff: If the time difference between now and the most recent annotation is larger
+            than this param, function will return np.nan.
+        :param with_function: Function to apply to the annotations
+        :param **kwargs: Keyword arguments to give to with_function
+
+        """
+        annotation = self.get_sample_annotation(instance_token, sample_token)
+
+        if annotation['prev'] == '':
+            return np.nan
+
+        prev = self.data.get('sample_annotation', annotation['prev'])
+
+        current_time = 1e-6 * self.data.get('sample', sample_token)['timestamp']
+        prev_time = 1e-6 * self.data.get('sample', prev['sample_token'])['timestamp']
+        time_diff = current_time - prev_time
+
+        if time_diff <= max_time_diff:
+
+            return with_function(annotation, prev, time_diff, **kwargs)
+
+        else:
+            return np.nan
+
+    def get_velocity_for_agent(self, instance_token: str, sample_token: str, max_time_diff: float = 1.5) -> float:
+        """
+        Computes velocity based on the difference between the current and previous annotation.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token.
+        :max_time_diff: If the time difference between now and the most recent annotation is larger
+            than this param, function will return np.nan.
+        """
+        return self._compute_diff_between_sample_annotations(instance_token, sample_token, max_time_diff, with_function=velocity)
+
+    def get_heading_change_rate_for_agent(self, instance: str, sample: str, max_time_diff: float = 1.5) -> float:
+        """
+        Computes heading change rate based on the difference between the current and previous annotation.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token.
+        :max_time_diff: If the time difference between now and the most recent annotation is larger
+            than this param, function will return np.nan.
+        """
+        return self._compute_diff_between_sample_annotations(instance, sample, max_time_diff, with_function=heading_change_rate)
+
+    def get_acceleration_for_agent(self, instance_token: str, sample_token: str, max_time_diff: float = 1.5) -> float:
+        """
+        Computes heading change rate based on the difference between the current and previous annotation.
+        :param instance_token: Instance token.
+        :param sample_token: Sample token.
+        :max_time_diff: If the time difference between now and the most recent annotation is larger
+            than this param, function will return np.nan.
+        """
+        return self._compute_diff_between_sample_annotations(instance_token, sample_token,
+                                                             max_time_diff,
+                                                             with_function=acceleration,
+                                                             instance_token_for_velocity=instance_token,
+                                                             helper=self)
+
+
+def velocity(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
+    """
+    Helper function to compute velocity between sample annotations.
+    :param current: Sample annotation record for the current timestamp.
+    :param prev: Sample annotation record for the previous time stamp.
+    :time_diff: How much time has elapsed between the records.
+    """
+    diff = (np.array(current['translation']) - np.array(prev['translation'])) / time_diff
+    return np.linalg.norm(diff[:2])
+
+
+def heading_change_rate(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
+    """
+    Helper function to compute heading change rate between sample annotations.
+    :param current: Sample annotation record for the current timestamp.
+    :param prev: Sample annotation record for the previous time stamp.
+    :time_diff: How much time has elapsed between the records.
+    """
+    current_yaw = quaternion_yaw(Quaternion(current['rotation']))
+    prev_yaw = quaternion_yaw(Quaternion(prev['rotation']))
+
+    return angle_diff(current_yaw, prev_yaw, period=2*np.pi) / time_diff
+
+
+def acceleration(current: Dict[str, Any], prev: Dict[str, Any],
+                 time_diff: float, instance_token_for_velocity: str, helper: PredictHelper) -> float:
+    """
+    Helper function to compute acceleration between sample annotations.
+    :param current: Sample annotation record for the current timestamp.
+    :param prev: Sample annotation record for the previous time stamp.
+    :time_diff: How much time has elapsed between the records.
+    :instance_token_for_velocity: Instance token to compute velocity.
+    :helper: Instance of PredictHelper.
+    """
+    current_velocity = helper.get_velocity_for_agent(instance_token_for_velocity, current['sample_token'])
+    prev_velocity = helper.get_velocity_for_agent(instance_token_for_velocity, prev['sample_token'])
+
+    return (current_velocity - prev_velocity) / time_diff
