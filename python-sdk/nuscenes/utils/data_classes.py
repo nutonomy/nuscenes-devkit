@@ -263,6 +263,27 @@ class RadarPointCloud(PointCloud):
     dynprop_states = range(7)  # type: List[int] # Use [0, 2, 6] for moving objects only.
     ambig_states = [3]  # type: List[int]
 
+    @classmethod
+    def disable_filters(cls) -> None:
+        """
+        Disable all radar filter settings.
+        Use this method to plot all radar returns.
+        Note that this method affects the global settings.
+        """
+        cls.invalid_states = list(range(18))
+        cls.dynprop_states = list(range(8))
+        cls.ambig_states = list(range(5))
+
+    @classmethod
+    def default_filters(cls) -> None:
+        """
+        Set the defaults for all radar filter settings.
+        Note that this method affects the global settings.
+        """
+        cls.invalid_states = [0]
+        cls.dynprop_states = range(7)
+        cls.ambig_states = [3]
+
     @staticmethod
     def nbr_dims() -> int:
         """
