@@ -125,8 +125,33 @@ class TestMTPLoss(unittest.TestCase):
         trajectory[0] = 1
         self.assertEqual(loss._compute_best_mode(angles, target, trajectory), 0)
 
+    def test_loss_single_mode(self):
+        targets = torch.zeros((16, 1, 30, 2))
+        targets[:, :, :, 1] = torch.arange(start=0, end=3, step=0.1)
 
-    def test_call_method_perfect_regression(self):
+        predictions = torch.ones((16, 61))
+        predictions[:, :60] = targets[0, 0, :, :].reshape(-1, 60)
+        predictions[:, 60] = 1/10
+
+        loss = mtp.MTPLoss(1, 1, angle_threshold_degrees=20)
+
+        # Only regression loss in single mode case
+        self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
+                               0, places=4)
+
+        # Now the best mode differs by 1 from the ground truth
+        # Smooth l1 loss subtracts 0.5 from l1 norm if diff >= 1
+        predictions[:, :60] += 1
+        self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()), 0.5,
+                               places=4)
+
+        # In this case, one element has perfect regression, the others are off by 1
+        predictions[1, :60] -= 1
+        self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
+                               (15/16)*0.5,
+                               places=4)
+
+    def test_loss_many_modes(self):
         targets = torch.zeros((16, 1, 30, 2))
         targets[:, :, :, 1] = torch.arange(start=0, end=3, step=0.1)
 

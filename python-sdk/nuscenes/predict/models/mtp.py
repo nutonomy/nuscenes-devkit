@@ -304,9 +304,6 @@ class MTPLoss:
 
             regression_loss = f.smooth_l1_loss(best_mode_trajectory, targets[batch_idx].unsqueeze(0))
 
-            if batch_idx == 15:
-                import pdb; pdb.set_trace()
-
             mode_probabilities = modes[batch_idx].unsqueeze(0)
             best_mode_target = torch.tensor([best_mode], device=predictions.device)
             classification_loss = f.cross_entropy(mode_probabilities, best_mode_target)
