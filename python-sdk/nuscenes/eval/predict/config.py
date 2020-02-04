@@ -10,9 +10,11 @@ class PredictionConfig:
 
     def __init__(self,
                  metrics: List[Metric],
-                 seconds: int = 6):
+                 seconds: int = 6,
+                 frequency: int = 2):
         self.metrics = metrics
         self.seconds = seconds
+        self.frequency = 2
 
     def serialize(self) -> Dict[str, Any]:
         """ Serialize instance into json-friendly format. """
