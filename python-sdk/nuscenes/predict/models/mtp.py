@@ -288,7 +288,7 @@ class MTPLoss:
 
     def __call__(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
 
-        batch_losses = torch.Tensor(device=predictions.device).requires_grad_(True)
+        batch_losses = torch.Tensor().requires_grad_(True).to(predictions.device)
         trajectories, modes = self._get_trajectory_and_modes(predictions)
 
         for batch_idx in range(predictions.shape[0]):

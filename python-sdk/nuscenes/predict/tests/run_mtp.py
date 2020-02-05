@@ -48,6 +48,8 @@ if __name__ == "__main__":
 
     backbone = ResNetBackbone('resnet18')
     model = MTP(backbone, args.num_modes)
+    model = model.to(device)
+
     loss_function = MTPLoss(args.num_modes, 1, 5)
 
     current_loss = 10000
@@ -63,6 +65,10 @@ if __name__ == "__main__":
 
     for img, agent_state_vector, ground_truth in dataloader:
 
+        img = img.to(device)
+        agent_state_vector = agent_state_vector.to(device)
+        ground_truth = ground_truth.to(device)
+
         optimizer.zero_grad()
 
         prediction = model(img, agent_state_vector)
@@ -70,7 +76,7 @@ if __name__ == "__main__":
         loss.backward()
         optimizer.step()
 
-        current_loss = loss.detach().numpy()
+        current_loss = loss.cpu().detach().numpy()
 
         print(f"Current loss is {current_loss:.4f}")
         if np.allclose(current_loss, minimum_loss, atol=1e-4):
