@@ -288,7 +288,7 @@ class MTPLoss:
 
     def __call__(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
 
-        batch_losses = torch.ones(predictions.shape[0], device=predictions.device).requires_grad_(True)
+        batch_losses = torch.Tensor(device=predictions.device).requires_grad_(True)
         trajectories, modes = self._get_trajectory_and_modes(predictions)
 
         for batch_idx in range(predictions.shape[0]):
@@ -302,7 +302,7 @@ class MTPLoss:
 
             best_mode_trajectory = trajectories[batch_idx, best_mode, :].unsqueeze(0)
 
-            regression_loss = f.smooth_l1_loss(best_mode_trajectory, targets[batch_idx].unsqueeze(0))
+            regression_loss = f.smooth_l1_loss(best_mode_trajectory, targets[batch_idx])
 
             mode_probabilities = modes[batch_idx].unsqueeze(0)
             best_mode_target = torch.tensor([best_mode], device=predictions.device)
@@ -310,7 +310,7 @@ class MTPLoss:
 
             loss = classification_loss + self.regression_loss_weight * regression_loss
 
-            batch_losses[batch_idx] = loss
+            batch_losses = torch.cat((batch_losses, loss.unsqueeze(0)), 0)
 
         avg_loss = torch.mean(batch_losses)
 
