@@ -326,10 +326,11 @@ class NuScenesMap:
                      layer_names: List[str] = None,
                      canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
         """
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
-        :param patch_angle: Patch orientation in degrees.
-        :param layer_names: List of name of map layers to be extracted.
-        :param canvas_size: Size of the output mask (h, w).
+        Return list of map mask layers of the specified patch.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
+        :param patch_angle: Patch orientation in degrees. North-facing corresponds to 0.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
+        :param canvas_size: Size of the output mask (h, w). If None, we use the default resolution of 10px/m.
         :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
         return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
@@ -555,16 +556,14 @@ class NuScenesMapExplorer:
     def get_map_mask(self,
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
-                     layer_names: List[str],
-                     canvas_size: Tuple[int, int]) -> np.ndarray:
+                     layer_names: List[str] = None,
+                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
-                          If None, this plots the entire map.
-        :param patch_angle: Patch orientation in degrees.
-                            North-facing corresponds to 0.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
+        :param patch_angle: Patch orientation in degrees. North-facing corresponds to 0.
         :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
-        :param canvas_size: Size of the output mask (h, w).
+        :param canvas_size: Size of the output mask (h, w). If None, we use the default resolution of 10px/m.
         :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
         # For some combination of parameters, we need to know the size of the current map.
@@ -587,10 +586,10 @@ class NuScenesMapExplorer:
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
 
-        # If None, return in the original scale of 10px/m.
+        # If None, return the specified patch in the original scale of 10px/m.
         if canvas_size is None:
             map_scale = 10
-            canvas_size = np.array(map_dims[::-1]) * map_scale
+            canvas_size = np.array((patch_box[2], patch_box[3])) * map_scale
             canvas_size = tuple(np.round(canvas_size).astype(np.int32))
 
         # Get geometry of each layer.
@@ -600,6 +599,7 @@ class NuScenesMapExplorer:
         # Convert the patch box from global coordinates to local coordinates by setting the center to (0, 0).
         local_box = (0.0, 0.0, patch_box[2], patch_box[3])
         map_mask = self.map_geom_to_mask(map_geom, local_box, canvas_size)
+        assert np.all(map_mask.shape[1:] == canvas_size)
 
         return map_mask
 
