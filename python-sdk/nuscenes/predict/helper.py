@@ -299,6 +299,14 @@ class PredictHelper:
                                                              instance_token_for_velocity=instance_token,
                                                              helper=self)
 
+    def get_map_name_from_sample_token(self, sample_token: str) -> str:
+
+        sample = self.data.get('sample', sample_token)
+        scene = self.data.get('scene', sample['scene_token'])
+        log = self.data.get('log', scene['log_token'])
+        return log['location']
+
+
 
 def velocity(current: Dict[str, Any], prev: Dict[str, Any], time_diff: float) -> float:
     """
