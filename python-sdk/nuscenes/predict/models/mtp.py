@@ -19,13 +19,13 @@ from torchvision.models import (mobilenet_v2, resnet18, resnet34, resnet50,
 from nuscenes.eval.predict.config import PredictionConfig
 
 
-def trim_network_at_index(network: nn.Module, index: int) -> nn.Module:
+def trim_network_at_index(network: nn.Module, index: int = -1) -> nn.Module:
     """
     Returns a new network with all layers up to index from the back.
     :param network: Module to trim
     :param index: Where to trim the network. Counted from the last layer.
     """
-    return nn.Sequential(*list(network.children())[:-index])
+    return nn.Sequential(*list(network.children())[:index])
 
 RESNET_VERSION_TO_MODEL = {'resnet18': resnet18, 'resnet34': resnet34,
                            'resnet50': resnet50, 'resnet101': resnet101,
