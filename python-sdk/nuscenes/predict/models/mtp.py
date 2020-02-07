@@ -25,7 +25,7 @@ def trim_network_at_index(network: nn.Module, index: int) -> nn.Module:
     :param network: Module to trim
     :param index: Where to trim the network. Counted from the last layer.
     """
-    return nn.Sequential(*list(network.children())[:-1])
+    return nn.Sequential(*list(network.children())[:-index])
 
 RESNET_VERSION_TO_MODEL = {'resnet18': resnet18, 'resnet34': resnet34,
                            'resnet50': resnet50, 'resnet101': resnet101,
@@ -51,7 +51,7 @@ class ResNetBackbone(nn.Module):
 
         self.backbone = trim_network_at_index(RESNET_VERSION_TO_MODEL[version](), -1)
 
-    def forward(self, input_tensor):
+    def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
         """
         Outputs features after last convolution.
         :param input_tensor:  Shape [batch_size, n_channels, length, width]
@@ -95,7 +95,7 @@ class MTP(nn.Module):
     """Implements the MTP network."""
 
     def __init__(self, backbone: nn.Module, num_modes: int,
-                 seconds: int = 6, frequency_in_hz: int = 2,
+                 seconds: float = 6, frequency_in_hz: float = 2,
                  n_hidden_layers: int = 4096, input_shape: Tuple[int, int, int] = (3, 500, 500)):
         """
         Inits the MTP network.
@@ -110,6 +110,10 @@ class MTP(nn.Module):
         :param input_shape: Shape of the input expected by the network.
             This is needed because the size of the fully connected layer after
             the backbone depends on the backbone and its version.
+
+        Note:
+            Although seconds and frequency_in_hz are labeled their
+            product should be an int.
         """
 
         super().__init__()
@@ -118,17 +122,18 @@ class MTP(nn.Module):
         self.num_modes = num_modes
         backbone_feature_dim = self._calculate_backbone_feature_dim(input_shape)
         self.fc1 = nn.Linear(backbone_feature_dim + 3, n_hidden_layers)
-        predictions_per_mode = seconds * frequency_in_hz * 2
+        predictions_per_mode = int(seconds * frequency_in_hz) * 2
 
         self.fc2 = nn.Linear(n_hidden_layers, int(num_modes * predictions_per_mode + num_modes))
 
-    def _calculate_backbone_feature_dim(self, input_shape: Tuple[int, int, int]):
+    def _calculate_backbone_feature_dim(self, input_shape: Tuple[int, int, int]) -> int:
         """Helper to calculate the shape of the fully-connected regression layer."""
         tensor = torch.ones(1, *input_shape)
         output_feat = self.backbone.forward(tensor)
         return output_feat.shape[-1]
 
-    def forward(self, image_tensor, agent_state_vector):
+    def forward(self, image_tensor: torch.Tensor,
+                agent_state_vector: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the model.
         """
@@ -154,7 +159,7 @@ class MTPLoss:
     Computes the loss for the MTP model.
     """
 
-    def __init__(self, num_modes, regression_loss_weight,
+    def __init__(self, num_modes: int, regression_loss_weight: float,
                  angle_threshold_degrees: float = 5.):
         """
         Inits MTP loss
@@ -229,7 +234,8 @@ class MTPLoss:
         avg_distance = torch.mean(l2_norms)
         return avg_distance
 
-    def _compute_angles_from_ground_truth(self, target, trajectories) -> List[float]:
+    def _compute_angles_from_ground_truth(self, target: torch.Tensor,
+                                          trajectories: torch.Tensor) -> List[float]:
         """
         Compute angle between the target trajectory (ground truth) and
         the predicted trajectories.
@@ -246,7 +252,9 @@ class MTPLoss:
             angles_from_ground_truth.append((angle, mode))
         return angles_from_ground_truth
 
-    def _compute_best_mode(self, angles_from_ground_truth, target, trajectories):
+    def _compute_best_mode(self,
+                           angles_from_ground_truth: List[float],
+                           target: torch.Tensor, trajectories: torch.Tensor) -> int:
         """
         Finds the index of the best mode given the angles from the ground truth.
         :param angles_from_ground_truth: List of angles
