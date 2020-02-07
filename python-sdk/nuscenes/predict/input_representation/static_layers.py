@@ -25,7 +25,7 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
 
 def get_patchbox(x: float, y: float,
                  meters_ahead: float = 40, meters_behind: float = 10,
-                 meters_left: float = 25, meters_right: float = 25) -> Tuple[Tuple[float, float, float, float], float]:
+                 meters_left: float = 25, meters_right: float = 25) -> Tuple[float, float, float, float]:
 
     # Get the most data possible before the rotation
     buffer = max(meters_ahead, meters_behind, meters_left, meters_right)
@@ -34,12 +34,21 @@ def get_patchbox(x: float, y: float,
 
     return patch_box
 
-def change_color_of_binary_mask(image, color):
+def change_color_of_binary_mask(image: np.ndarray, color: Tuple[float, float, float]) -> np.ndarray:
+    """Changes color """
     image = image*color
+
+    # Return as type int so cv2 can manipulate it later.
     image = image.astype("uint8")
+
     return image
 
 class StaticLayerRasterizer(StaticLayerRepresentation):
+    """
+    Creates a representation of the static map layers where
+    the map layers are given a color and rasterized onto a
+    three channel image.
+    """
 
     def __init__(self, helper: PredictHelper,
                  layer_names: List[str] = None,
@@ -67,6 +76,11 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         self.combinator = Rasterizer()
 
     def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
+        """
+        Makes rasterized representation of static map layers.
+        :param instance_token: Token for instance.
+        :param sample_token: Token for sample.
+        """
 
         sample_annotation = self.helper.get_sample_annotation(instance_token, sample_token)
         map_name = self.helper.get_map_name_from_sample_token(sample_token)
@@ -83,9 +97,9 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         patchbox = get_patchbox(x, y, self.meters_ahead,
                                 self.meters_behind, self.meters_left, self.meters_right)
 
-        angle = (angle_of_rotation(yaw) * 180/np.pi)
+        angle_in_degrees = (angle_of_rotation(yaw) * 180/np.pi)
 
-        masks = self.maps[map_name].get_map_mask(patchbox, angle, self.layer_names, canvas_size=None)
+        masks = self.maps[map_name].get_map_mask(patchbox, angle_in_degrees, self.layer_names, canvas_size=None)
         images = [change_color_of_binary_mask(np.repeat(mask[:, :, np.newaxis], 3, 2), color) for mask, color in zip(masks, self.colors)]
 
         image = self.combinator.combine(images)

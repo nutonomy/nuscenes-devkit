@@ -6,14 +6,12 @@ import cv2
 
 from nuscenes.predict.input_representation.interface import Combinator
 
-def add_foreground_to_image(base_image: np.ndarray, foreground_image: np.ndarray) -> np.ndarray:
+def add_foreground_to_image(base_image: np.ndarray,
+                            foreground_image: np.ndarray) -> np.ndarray:
     """
-    Overlays a foreground image on top of a base image without mixing colors.
-
-    Images must be of the same size.
-    Args:
-        base_image (np array of dtype "uint8")
-        foreground_image (np array of dtype "uint8")
+    Overlays a foreground image on top of a base image without mixing colors. Type uint8.
+    :param base_image: Image that will be the background. Type uint8
+    :param foreground_image: Image that will be the forgreound.
     """
 
     if not base_image.shape == foreground_image.shape:
@@ -33,8 +31,15 @@ def add_foreground_to_image(base_image: np.ndarray, foreground_image: np.ndarray
     return combined_image
 
 class Rasterizer(Combinator):
+    """
+    Combines binary masks into a three channel image.
+    """
 
     def combine(self, data: List[np.ndarray]) -> np.ndarray:
+        """
+        Combine binary masks into image.
+        :param data: List of binary masks to combine.
+        """
         # All images in the dict are the same shape
         image_shape = data[0].shape
 
