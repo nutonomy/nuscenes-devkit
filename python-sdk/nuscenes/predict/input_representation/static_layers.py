@@ -1,7 +1,6 @@
 from typing import List, Dict, Tuple
 import os
 import numpy as np
-import cv2
 from pyquaternion import Quaternion
 
 from nuscenes.map_expansion.map_api import NuScenesMap
@@ -23,10 +22,6 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
         maps[map_name] = NuScenesMap(dataroot, map_name=map_name)
 
     return maps
-
-def get_2d_rotation(radians):
-    return np.array([[np.cos(radians), -np.sin(radians)], [np.sin(radians), np.cos(radians)]])
-
 
 def get_patchbox(x: float, y: float,
                  meters_ahead: float = 40, meters_behind: float = 10,
