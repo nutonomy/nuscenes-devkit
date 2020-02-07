@@ -21,7 +21,7 @@ class TestDataset(Dataset):
 
     def __getitem__(self, index: int):
 
-        token = sef.tokens[index]
+        token = self.tokens[index]
         instance_token, sample_token = token.split("_")
 
         image = self.static_layer_representation.make_representation(instance_token, sample_token)
@@ -37,6 +37,7 @@ class TestDataset(Dataset):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Run MTP to makesure it overfits on a single test case.')
+    parser.add_argument('--data_root', type=str)
     parser.add_argument('--use_gpu', type=bool, help='Whether to use gpu', default=False)
     args = parser.parse_args()
 
@@ -66,14 +67,14 @@ if __name__ == "__main__":
 
     tokens = tokens * 32
 
-    nusc = NuScenes('v1.0-trainval')
+    nusc = NuScenes('v1.0-trainval', dataroot=args.data_root)
     helper = PredictHelper(nusc)
 
     dataset = TestDataset(tokens, helper)
     dataloader = DataLoader(dataset, batch_size=16, num_workers=16)
 
     backbone = ResNetBackbone('resnet18')
-    model = MTP(backbone, args.num_modes)
+    model = MTP(backbone, NUM_MODES)
     model = model.to(device)
 
     loss_function = MTPLoss(NUM_MODES, 1, 5)
@@ -86,25 +87,28 @@ if __name__ == "__main__":
 
     minimum_loss = 0
 
-    for img, agent_state_vector, ground_truth in dataloader:
+    while True:
 
-        img = img.to(device)
-        agent_state_vector = agent_state_vector.to(device)
-        ground_truth = ground_truth.to(device)
+        for img, agent_state_vector, ground_truth in dataloader:
 
-        optimizer.zero_grad()
+            img = img.to(device)
+            agent_state_vector = agent_state_vector.to(device)
+            ground_truth = ground_truth.to(device)
 
-        prediction = model(img, agent_state_vector)
-        loss = loss_function(prediction, ground_truth)
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
 
-        current_loss = loss.cpu().detach().numpy()
+            prediction = model(img, agent_state_vector)
+            loss = loss_function(prediction, ground_truth)
+            loss.backward()
+            optimizer.step()
 
-        print(f"Current loss is {current_loss:.4f}")
-        #if np.allclose(current_loss, minimum_loss, atol=1e-4):
-        #    print(f"Achieved near-zero loss after {n_iter} iterations.")
-        #    break
+            current_loss = loss.cpu().detach().numpy()
 
-        n_iter += 1
+            print(f"Current loss is {current_loss:.4f}")
+
+            if n_iter % 32 == 0:
+                print(f"Number of iterations: {n_iter}.")
+            
+            n_iter += 1
+
 
