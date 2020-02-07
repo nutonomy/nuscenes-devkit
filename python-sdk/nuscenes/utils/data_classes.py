@@ -95,8 +95,9 @@ class PointCloud(ABC):
         sample_data_token = sample_rec['data'][chan]
         current_sd_rec = nusc.get('sample_data', sample_data_token)
         for _ in range(nsweeps):
-            # Load up the pointcloud.
+            # Load up the pointcloud and remove points close to the sensor.
             current_pc = cls.from_file(osp.join(nusc.dataroot, current_sd_rec['filename']))
+            current_pc.remove_close(min_distance)
 
             # Get past pose.
             current_pose_rec = nusc.get('ego_pose', current_sd_rec['ego_pose_token'])
@@ -112,8 +113,7 @@ class PointCloud(ABC):
             trans_matrix = reduce(np.dot, [ref_from_car, car_from_global, global_from_car, car_from_current])
             current_pc.transform(trans_matrix)
 
-            # Remove close points and add timevector.
-            current_pc.remove_close(min_distance)
+            # Add time vector which can be used as a temporal feature.
             time_lag = ref_time - 1e-6 * current_sd_rec['timestamp']  # Positive difference.
             times = time_lag * np.ones((1, current_pc.nbr_points()))
             all_times = np.hstack((all_times, times))
