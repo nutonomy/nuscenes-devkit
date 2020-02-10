@@ -473,3 +473,20 @@ class TestPredictHelper(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             helper.get_future_for_sample('1', -1, False)
+
+    def test_get_annotations_for_sample(self) -> None:
+
+        mock_samples = [{'token': '1', 'timestamp': -4e6, 'anns': ['1', '1b']}]
+
+        nusc = MockNuScenes(self.multiagent_mock_annotations, mock_samples)
+        helper = PredictHelper(nusc)
+        annotations = helper.get_annotations_for_sample('1')
+
+        answer = [{'token': '1', 'instance_token': '1', 'sample_token': '1',
+                   'translation': [0, 0, 0], 'rotation': [1, 0, 0, 0],
+                   'prev': '', 'next': '2'},
+                    {'token': '1b', 'instance_token': '2', 'sample_token': '1',
+                    'translation': [6, 6, 6], 'rotation': [1, 0, 0, 0],
+                    'prev': '', 'next': '2b'}]
+
+        self.assertListEqual(annotations, answer)
