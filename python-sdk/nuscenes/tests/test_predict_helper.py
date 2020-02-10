@@ -1,11 +1,14 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
+import copy
 import unittest
 from typing import Dict, List, Any
-from nuscenes.predict import PredictHelper, convert_global_coords_to_local
+
 import numpy as np
-import copy
+
+from nuscenes.predict import PredictHelper, convert_global_coords_to_local
+
 
 class MockNuScenes:
     """Mocks the NuScenes API needed to test PredictHelper"""
