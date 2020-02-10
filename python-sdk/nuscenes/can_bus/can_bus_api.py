@@ -28,7 +28,7 @@ class NuScenesCanBus:
         :param max_misaligment: Maximum distance in m that any pose is allowed to be away from the route.
         """
         # Check that folder exists.
-        self.can_dir = os.path.join(dataroot, 'can')
+        self.can_dir = os.path.join(dataroot, 'can_bus')
         if not os.path.isdir(self.can_dir):
             raise Exception('Error: CAN bus directory not found: %s. Please download it from '
                             'https://www.nuscenes.org/download' % self.can_dir)
