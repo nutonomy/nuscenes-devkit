@@ -1,9 +1,9 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar & Oscar Beijbom, 2019.
 
+import abc
 from collections import defaultdict
 from typing import List, Tuple, Union
-import abc
 
 import numpy as np
 

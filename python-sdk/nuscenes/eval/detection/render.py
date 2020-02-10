@@ -9,11 +9,11 @@ from matplotlib import pyplot as plt
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.eval.common.utils import boxes_to_sensor
 from nuscenes.eval.common.render import setup_axis
-from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionMetricDataList
+from nuscenes.eval.common.utils import boxes_to_sensor
 from nuscenes.eval.detection.constants import TP_METRICS, DETECTION_NAMES, DETECTION_COLORS, TP_METRICS_UNITS, \
     PRETTY_DETECTION_NAMES, PRETTY_TP_METRICS
+from nuscenes.eval.detection.data_classes import DetectionMetrics, DetectionMetricData, DetectionMetricDataList
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points
 

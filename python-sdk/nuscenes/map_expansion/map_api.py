@@ -3,25 +3,25 @@
 # + Map mask by Kiwoo Shin, 2019.
 # + Methods operating on NuScenesMap and NuScenes by Holger Caesar, 2019.
 
-import os
 import json
+import os
 import random
 from typing import Dict, List, Tuple, Optional, Union
 
+import cv2
 import descartes
-from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from matplotlib.patches import Rectangle, Arrow
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle, Arrow
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-from PIL import Image
-from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
-from shapely import affinity
-import cv2
 from pyquaternion import Quaternion
+from shapely import affinity
+from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
+from tqdm import tqdm
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
@@ -90,6 +90,15 @@ class NuScenesMap:
         self._make_shortcuts()
 
         self.explorer = NuScenesMapExplorer(self)
+
+        # Parse the map version and print a warning for deprecated maps.
+        if 'version' in self.json_obj:
+            self.version = self.json_obj['version']
+        else:
+            self.version = '1.0'
+        if self.version < '1.1':
+            print('Warning: You are using an outdated map version! Please go to https://www.nuscenes.org/download to '
+                  'download the latest map!')
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -306,7 +315,7 @@ class NuScenesMap:
                         layer_names: List[str] = None,
                         canvas_size: Tuple[int, int] = (100, 100),
                         figsize: Tuple[int, int] = (15, 15),
-                        n_row: int = 2) -> Tuple[Figure, Axes]:
+                        n_row: int = 2) -> Tuple[Figure, List[Axes]]:
         """
         Render map mask of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
@@ -315,7 +324,7 @@ class NuScenesMap:
         :param canvas_size: Size of the output mask (h, w).
         :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
-        :return: The matplotlib figure and axes of the rendered layers.
+        :return: The matplotlib figure and a list of axes of the rendered layers.
         """
         return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, canvas_size,
                                              figsize=figsize, n_row=n_row)
@@ -326,10 +335,11 @@ class NuScenesMap:
                      layer_names: List[str] = None,
                      canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
         """
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
-        :param patch_angle: Patch orientation in degrees.
-        :param layer_names: List of name of map layers to be extracted.
-        :param canvas_size: Size of the output mask (h, w).
+        Return list of map mask layers of the specified patch.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
+        :param patch_angle: Patch orientation in degrees. North-facing corresponds to 0.
+        :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
+        :param canvas_size: Size of the output mask (h, w). If None, we use the default resolution of 10px/m.
         :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
         return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
@@ -466,16 +476,16 @@ class NuScenesMapExplorer:
                         layer_names: List[str],
                         canvas_size: Tuple[int, int],
                         figsize: Tuple[int, int],
-                        n_row: int = 2) -> Tuple[Figure, Axes]:
+                        n_row: int = 2) -> Tuple[Figure, List[Axes]]:
         """
-        Render map mask of the patch specified by patch_box, and patch_angle.
+        Render map mask of the patch specified by patch_box and patch_angle.
         :param patch_box: Patch box defined as [x_center, y_center, height, width].
         :param patch_angle: Patch orientation in degrees.
         :param layer_names: A list of layer names to be extracted.
         :param canvas_size: Size of the output mask (h, w).
         :param figsize: Size of the figure.
         :param n_row: Number of rows with plots.
-        :return: The matplotlib figure and axes of the rendered layers.
+        :return: The matplotlib figure and a list of axes of the rendered layers.
         """
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
@@ -497,12 +507,12 @@ class NuScenesMapExplorer:
         for i in range(len(map_mask)):
             r = i // n_col
             c = i - r * n_col
-            ax = plt.subplot(gs[r, c])
-            ax.imshow(map_mask[i], origin='lower')
-            ax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
-            ax.grid(False)
+            subax = plt.subplot(gs[r, c])
+            subax.imshow(map_mask[i], origin='lower')
+            subax.text(canvas_size[0] * 0.5, canvas_size[1] * 1.1, layer_names[i])
+            subax.grid(False)
 
-        return fig, ax
+        return fig, fig.axes
 
     def get_map_geom(self,
                      patch_box: Tuple[float, float, float, float],
@@ -555,16 +565,14 @@ class NuScenesMapExplorer:
     def get_map_mask(self,
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
-                     layer_names: List[str],
-                     canvas_size: Tuple[int, int]) -> np.ndarray:
+                     layer_names: List[str] = None,
+                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
-        :param patch_box: Patch box defined as [x_center, y_center, height, width].
-                          If None, this plots the entire map.
-        :param patch_angle: Patch orientation in degrees.
-                            North-facing corresponds to 0.
+        :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
+        :param patch_angle: Patch orientation in degrees. North-facing corresponds to 0.
         :param layer_names: A list of layer names to be extracted, or None for all non-geometric layers.
-        :param canvas_size: Size of the output mask (h, w).
+        :param canvas_size: Size of the output mask (h, w). If None, we use the default resolution of 10px/m.
         :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
         # For some combination of parameters, we need to know the size of the current map.
@@ -587,10 +595,10 @@ class NuScenesMapExplorer:
         if layer_names is None:
             layer_names = self.map_api.non_geometric_layers
 
-        # If None, return in the original scale of 10px/m.
+        # If None, return the specified patch in the original scale of 10px/m.
         if canvas_size is None:
             map_scale = 10
-            canvas_size = np.array(map_dims[::-1]) * map_scale
+            canvas_size = np.array((patch_box[2], patch_box[3])) * map_scale
             canvas_size = tuple(np.round(canvas_size).astype(np.int32))
 
         # Get geometry of each layer.
@@ -600,6 +608,7 @@ class NuScenesMapExplorer:
         # Convert the patch box from global coordinates to local coordinates by setting the center to (0, 0).
         local_box = (0.0, 0.0, patch_box[2], patch_box[3])
         map_mask = self.map_geom_to_mask(map_geom, local_box, canvas_size)
+        assert np.all(map_mask.shape[1:] == canvas_size)
 
         return map_mask
 
@@ -941,9 +950,7 @@ class NuScenesMapExplorer:
         min_diff_patch = 30
 
         # Ids of scenes with a bad match between localization and map.
-        scene_blacklist = [3, 12, 18, 19, 33, 35, 36, 41, 45, 50, 54, 55, 61, 120, 121, 123, 126, 132, 133, 134, 149,
-                           154, 159, 196, 268, 278, 351, 365, 367, 368, 369, 372, 376, 377, 382, 385, 499, 515, 517,
-                           945, 947, 952, 955, 962, 963, 968]
+        scene_blacklist = [499, 515, 517]
 
         # Get logs by location.
         log_location = self.map_api.map_name
@@ -1350,7 +1357,7 @@ class NuScenesMapExplorer:
         # Check that nodes fall inside the path.
         x_min, y_min, x_max, y_max = box_coords
         cond_x = np.logical_and(node_coords[:, 0] < x_max, node_coords[:, 0] > x_min)
-        cond_y = np.logical_and(node_coords[:, 1] < y_max, node_coords[:, 0] > y_min)
+        cond_y = np.logical_and(node_coords[:, 1] < y_max, node_coords[:, 1] > y_min)
         cond = np.logical_and(cond_x, cond_y)
         if mode == 'intersect':
             return np.any(cond)

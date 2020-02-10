@@ -12,13 +12,13 @@ import numpy as np
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.tracking.algo import TrackingEvaluation
+from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP, LEGACY_METRICS
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricDataList, TrackingConfig, TrackingBox, \
     TrackingMetricData
-from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.loaders import create_tracks
-from nuscenes.eval.tracking.utils import print_final_metrics
-from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP, LEGACY_METRICS
 from nuscenes.eval.tracking.render import recall_metric_curve, summary_plot
+from nuscenes.eval.tracking.utils import print_final_metrics
 
 
 class TrackingEval:
