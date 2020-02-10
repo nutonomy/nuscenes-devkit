@@ -149,11 +149,6 @@ class Baseline(abc.ABC):
         pass
 
 
-def random_p():
-    a = np.random.random(25)
-    return np.exp(a) / np.exp(a).sum()
-
-
 class ConstantVelocityHeading(Baseline):
     """ Makes predictions according to constant velocity and heading model. """
 
