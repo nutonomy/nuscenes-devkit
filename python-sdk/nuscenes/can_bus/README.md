@@ -32,13 +32,13 @@ The messages (except *route*) contain different keys and values.
 Below we notate the dimensionality as \[d\] to indicate that a value has d dimensions.
   
 ## Derived messages
-Here we store additional information that is derived from various [CAN bus messages below](#can-bus-messages).
+Here we store additional information that is derived from various [CAN bus messages](#can-bus-messages) below.
 These messages are timeless and therefore do not provide the `utime` timestamp common to the CAN bus messages.
 
 ### Meta
 (*scene_%04d_meta.json*)
 
-This meta file summarizes all CAN bus messages (except route) and provides some statistics that may be helpful to understand the data.
+This meta file summarizes all CAN bus messages (except *route*) and provides some statistics that may be helpful to understand the data.
 - message_count: \[1\] How many messages of this type were logged.
 - message_freq: \[1\] The message frequency computed from timestamp and message_count.
 - timespan: \[1\] How many seconds passed from first to last message in a scene. Usually around 20s.
@@ -60,25 +60,25 @@ Here we list the raw CAN bus messages.
 We store each type of message in a separate file for each scene (e.g. `scene-0001_ms_imu.json`).
 Messages are stored in chronological order in the above file. 
 Each message has the following field:
-- utime: \[1\] The integer timestamp that the actual measurement took place (e.g. 1531883549954657).
+- utime: \[1\] The integer timestamp in microseconds that the actual measurement took place (e.g. 1531883549954657).
 For the *Zoe Sensors* and *Zoe Vehicle Info* messages this info is not directly available and is therefore replaced by the timestamp when the CAN bus message was received.
 
 ### IMU 
 (100Hz, *scene_%04d_ms_imu.json*)
 
 - linear_accel: \[3\] Acceleration vector (x, y, z) in the IMU frame in m/s/s.
-- q: \[4\] Quaternion that transforms from IMU coordinates to a fixed reference frame. The yaw of this reference frame is arbitrary, determined by the IMU. However, x-y plane of the reference frame is perpendicular to gravity, and z points up. 
+- q: \[4\] Quaternion that transforms from IMU coordinates to a fixed reference frame. The yaw of this reference frame is arbitrary, determined by the IMU. However, the x-y plane of the reference frame is perpendicular to gravity, and z points up. 
 - rotation_rate: \[3\] Angular velocity in rad/s around the x, y, and z axes, respectively, in the IMU coordinate frame.
 
 ### Pose
 (50Hz, *scene_%04d_pose.json*)
 
 The current pose of the ego vehicle, sampled at 50Hz.
-- accel: \[3\] Acceleration vector in the local frame in m/s/s.
-- orientation: \[4\]  The rotation vector in the body coordinate frame (x: forward, z:up).
-- pos: \[3\] The position (x, y, z) in meters in local frame. This should be identical to the nuScenes ego pose, but sampled at a higher frequency.
-- rotation_rate: \[3\] The angular velocity vector of the vehicle in rad/s.  This is expressed in the local frame.
-- vel: \[3\] The velocity in m/s, expressed in the local frame.
+- accel: \[3\] Acceleration vector in the ego vehicle frame in m/s/s.
+- orientation: \[4\]  The rotation vector in the ego vehicle frame.
+- pos: \[3\] The position (x, y, z) in meters in the ego vehicle frame. This should be identical to the [nuScenes ego pose](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#ego_pose), but sampled at a higher frequency.
+- rotation_rate: \[3\] The angular velocity vector of the vehicle in rad/s.  This is expressed in the ego vehicle frame.
+- vel: \[3\] The velocity in m/s, expressed in the ego vehicle frame.
  
 ### Steer Angle Feedback
 (100Hz, *scene_%04d_steeranglefeedback.json*)

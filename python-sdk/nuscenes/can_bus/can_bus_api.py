@@ -21,11 +21,11 @@ class NuScenesCanBus:
 
     def __init__(self,
                  dataroot: str = '/data/sets/nuscenes',
-                 max_misaligment: float = 5.0):
+                 max_misalignment: float = 5.0):
         """
         Initialize the nuScenes CAN bus API.
         :param dataroot: The nuScenes directory where the "can" folder is located.
-        :param max_misaligment: Maximum distance in m that any pose is allowed to be away from the route.
+        :param max_misalignment: Maximum distance in m that any pose is allowed to be away from the route.
         """
         # Check that folder exists.
         self.can_dir = os.path.join(dataroot, 'can_bus')
@@ -34,7 +34,7 @@ class NuScenesCanBus:
                             'https://www.nuscenes.org/download' % self.can_dir)
 
         # Define blacklist for scenes where route and ego pose are not aligned.
-        if max_misaligment == 5.0:
+        if max_misalignment == 5.0:
             # Default settings are hard-coded for performance reasons.
             self.route_blacklist = [
                 71, 73, 74, 75, 76, 85, 100, 101, 106, 107, 108, 109, 110, 112, 113, 114, 115, 116, 117, 118, 119,
@@ -151,11 +151,11 @@ class NuScenesCanBus:
         plt.show()
 
     def list_misaligned_routes(self,
-                               max_misaligment: float = 5.0) -> List[str]:
+                               max_misalignment: float = 5.0) -> List[str]:
         """
         Print all scenes where ego poses and baseline route are misaligned.
         We use the Hausdorff distance to decide on the misalignment.
-        :param max_misaligment: Maximum distance in m that any pose is allowed to be away from the route.
+        :param max_misalignment: Maximum distance in m that any pose is allowed to be away from the route.
         :return: A list of all the names of misaligned scenes.
         """
         # Get all scenes.
@@ -172,7 +172,7 @@ class NuScenesCanBus:
             # Filter by Hausdorff distance.
             dists = scipy_dist.cdist(pose, route)
             max_dist = np.max(np.min(dists, axis=1))
-            if max_dist > max_misaligment:
+            if max_dist > max_misalignment:
                 misaligned.append(scene_name)
 
         return misaligned
