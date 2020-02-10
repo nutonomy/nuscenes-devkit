@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, 2020.
+
 from typing import List
 from functools import reduce
 
@@ -12,6 +15,7 @@ def add_foreground_to_image(base_image: np.ndarray,
     Overlays a foreground image on top of a base image without mixing colors. Type uint8.
     :param base_image: Image that will be the background. Type uint8
     :param foreground_image: Image that will be the forgreound.
+    :return: Image Numpy array of type uint8.
     """
 
     if not base_image.shape == foreground_image.shape:
@@ -32,13 +36,14 @@ def add_foreground_to_image(base_image: np.ndarray,
 
 class Rasterizer(Combinator):
     """
-    Combines binary masks into a three channel image.
+    Combines images into a three channel image.
     """
 
     def combine(self, data: List[np.ndarray]) -> np.ndarray:
         """
-        Combine binary masks into image.
-        :param data: List of binary masks to combine.
+        Combine three channel images into a single image.
+        :param data: List of images to combine.
+        :return: Numpy array representing image (type 'uint8')
         """
         # All images in the dict are the same shape
         image_shape = data[0].shape
