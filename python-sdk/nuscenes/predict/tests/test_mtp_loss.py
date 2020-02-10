@@ -1,8 +1,10 @@
 
-import unittest
-import torch
-from nuscenes.predict.models import mtp
 import math
+import unittest
+
+import torch
+
+from nuscenes.predict.models import mtp
 
 
 class TestMTPLoss(unittest.TestCase):
@@ -74,9 +76,9 @@ class TestMTPLoss(unittest.TestCase):
 
         # test angle is 90.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 1]),
-                                                  make_trajectory([-1, 1])), 90., places=4)
+                                                   make_trajectory([-1, 1])), 90., places=4)
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 0]),
-                                                  make_trajectory([0, 1])), 90., places=4)
+                                                   make_trajectory([0, 1])), 90., places=4)
 
         # test angle is 180.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 0]),
