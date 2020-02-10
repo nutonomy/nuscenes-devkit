@@ -64,29 +64,29 @@ Each message has the following field:
 For the *Zoe Sensors* and *Zoe Vehicle Info* messages this info is not directly available and is therefore replaced by the timestamp when the CAN bus message was received.
 
 ### IMU 
-(*scene_%04d_ms_imu.json*)
+(100Hz, *scene_%04d_ms_imu.json*)
 
 - linear_accel: \[3\] Acceleration vector (x, y, z) in the IMU frame in m/s/s.
 - q: \[4\] Quaternion that transforms from IMU coordinates to a fixed reference frame. The yaw of this reference frame is arbitrary, determined by the IMU. However, x-y plane of the reference frame is perpendicular to gravity, and z points up. 
 - rotation_rate: \[3\] Angular velocity in rad/s around the x, y, and z axes, respectively, in the IMU coordinate frame.
 
 ### Pose
-(*scene_%04d_pose.json*)
+(50Hz, *scene_%04d_pose.json*)
 
 The current pose of the ego vehicle, sampled at 50Hz.
 - accel: \[3\] Acceleration vector in the local frame in m/s/s.
 - orientation: \[4\]  The rotation vector in the body coordinate frame (x: forward, z:up).
 - pos: \[3\] The position (x, y, z) in meters in local frame. This should be identical to the nuScenes ego pose, but sampled at a higher frequency.
 - rotation_rate: \[3\] The angular velocity vector of the vehicle in rad/s.  This is expressed in the local frame.
-- vel: \[3\] The velocity in m/s, expressed in the local frame.T
+- vel: \[3\] The velocity in m/s, expressed in the local frame.
  
 ### Steer Angle Feedback
-(*scene_%04d_steeranglefeedback.json*)
+(100Hz, *scene_%04d_steeranglefeedback.json*)
 
 - value: \[1\] Steering angle feedback in radians in range \[-7.7, 6.3\]. 0 indicates no steering, positive values indicate right turns, negative values left turns.
 
 ### Vehicle Monitor
-(*scene_%04d_vehicle_monitor.json*)
+(2Hz, *scene_%04d_vehicle_monitor.json*)
 
 - available_distance: \[1\] Available vehicle range given the current battery level in kilometers.
 - battery_level: \[1\] Current battery level in range \[0, 100\].
@@ -104,14 +104,14 @@ The current pose of the ego vehicle, sampled at 50Hz.
 - yaw_rate: \[1\] Yaw turning rate in degrees per second at a resolution of 0.1.
 
 ### Zoe Sensors
-(*scene_%04d_zoesensors.json*)
+(794-973Hz, *scene_%04d_zoesensors.json*)
 
 - brake_sensor: \[1\] Vehicle break sensor in range \[0.375,0.411\]. High values indicate breaking.
 - steering_sensor: \[1\] Vehicle steering sensor. Same as vehicle_monitor.steering.
 - throttle_sensor: \[1\] Vehicle throttle sensor. Same as vehicle_monitor.throttle.
 
 ### Zoe Vehicle Info
-(*scene_%04d_zoe_veh_info.json*)
+(100Hz, *scene_%04d_zoe_veh_info.json*)
 
 - FL_wheel_speed: \[1\] Front left wheel speed. The unit is rounds per minute with a resolution of 0.0417rpm.
 - FR_wheel_speed: \[1\] Front right wheel speed. The unit is rounds per minute with a resolution of 0.0417rpm.
@@ -119,12 +119,12 @@ The current pose of the ego vehicle, sampled at 50Hz.
 - RR_wheel_speed: \[1\] Rear right wheel speed. The unit is rounds per minute with a resolution of 0.0417rpm.
 - left_solar: \[1\] Zoe vehicle left solar sensor value as an integer.
 - longitudinal_accel: \[1\] Longitudinal acceleration in meters per second squared at a resolution of 0.05.
-- meanEffTorque: \[1\] Torque in Newton meters at a resolution of 0.5. Values in range \[-400, 1647\], offset by -400.
-- odom: \[1\] Undocumented. Values in range \[0, 124\].
-- odom_speed: \[1\] Undocumented. Values in range \[0, 60\].
-- pedal_cc: \[1\] Undocumented. Values in range \[0, 1000\].
-- regen: \[1\] Undocumented. Values in range \[0, 100\].
-- requestedTorqueAfterProc: \[1\] Torque in Newton meters at a resolution of 0.5. Values in range \[-400, 1647\], offset by -400.
+- meanEffTorque: \[1\] Actual torque delivered by the engine in Newton meters at a resolution of 0.5. Values in range \[-400, 1647\], offset by -400.
+- odom: \[1\] Odometry distance travelled modulo vehicle circumference. Values are in centimeters in range \[0, 124\]. Note that due to the low sampling frequency these values are only useful at low speeds.
+- odom_speed: \[1\] Vehicle speed in km/h. Values in range \[0, 60\]. For a higher sampling rate refer to the pose.vel message.
+- pedal_cc: \[1\] Throttle value. Values in range \[0, 1000\].
+- regen: \[1\] Coasting throttle. Values in range \[0, 100\].
+- requestedTorqueAfterProc: \[1\] Input torque requested in Newton meters at a resolution of 0.5. Values in range \[-400, 1647\], offset by -400.
 - right_solar: \[1\] Zoe vehicle right solar sensor value as an integer.
 - steer_corrected: \[1\] Steering angle (steer_raw) corrected by an offset (steer_offset_can).
 - steer_offset_can: \[1\] Steering angle offset in degrees, typically -12.6.
