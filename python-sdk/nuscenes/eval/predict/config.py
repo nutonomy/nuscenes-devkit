@@ -9,9 +9,9 @@ class PredictionConfig:
     """
     Data class that specifies the prediction evaluation settings.
     Intialized with:
-    metrics: List of nuscenes.eval.predict.metric.Metric objects
-    seconds: Number of seconds to predict for each agent
-    frequency: Rate at which prediction is made, in Hz
+    metrics: List of nuscenes.eval.predict.metric.Metric objects.
+    seconds: Number of seconds to predict for each agent.
+    frequency: Rate at which prediction is made, in Hz.
     """
 
     def __init__(self,
@@ -20,7 +20,7 @@ class PredictionConfig:
                  frequency: int = 2):
         self.metrics = metrics
         self.seconds = seconds
-        self.frequency = frequency # Hz
+        self.frequency = frequency  # Hz
 
     def serialize(self) -> Dict[str, Any]:
         """ Serialize instance into json-friendly format. """

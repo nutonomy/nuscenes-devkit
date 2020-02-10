@@ -3,6 +3,7 @@ import torch
 from torchvision.models.resnet import BasicBlock, Bottleneck
 from nuscenes.predict.models import mtp
 
+
 class TestBackBones(unittest.TestCase):
 
     def count_layers(self, model):
@@ -44,6 +45,7 @@ class TestBackBones(unittest.TestCase):
         tensor = torch.ones((1, 3, 100, 100))
 
         self.assertEqual(mobilenet(tensor).shape[1], 1280)
+
 
 class TestMTP(unittest.TestCase):
 

@@ -4,9 +4,10 @@ import torch
 from nuscenes.predict.models import mtp
 import math
 
+
 class TestMTPLoss(unittest.TestCase):
 
-    def test_get_trajectories_and_modes(self,):
+    def test_get_trajectories_and_modes(self):
 
         loss_n_modes_5 = mtp.MTPLoss(5, 0, 0)
         loss_n_modes_1 = mtp.MTPLoss(1, 0, 0)
@@ -17,12 +18,12 @@ class TestMTPLoss(unittest.TestCase):
         prediction_bs_1 = torch.cat([xy_pred.reshape(1, -1), mode_pred], axis=1)
         prediction_bs_2 = prediction_bs_1.repeat(2, 1)
 
-        # Testing many modes with batch size 1
+        # Testing many modes with batch size 1.
         traj, modes = loss_n_modes_5._get_trajectory_and_modes(prediction_bs_1)
         self.assertTrue(torch.allclose(traj, xy_pred.unsqueeze(0).reshape(1, 5, 30, 2)))
         self.assertTrue(torch.allclose(modes, mode_pred))
 
-        # Testing many modes with batch size > 1
+        # Testing many modes with batch size > 1.
         traj, modes = loss_n_modes_5._get_trajectory_and_modes(prediction_bs_2)
         self.assertTrue(torch.allclose(traj, xy_pred.repeat(1, 2).unsqueeze(0).reshape(2, 5, 30, 2)))
         self.assertTrue(torch.allclose(modes, mode_pred.repeat(2, 1)))
@@ -33,17 +34,17 @@ class TestMTPLoss(unittest.TestCase):
         prediction_bs_1 = torch.cat([xy_pred.reshape(1, -1), mode_pred], axis=1)
         prediction_bs_2 = prediction_bs_1.repeat(2, 1)
 
-        # Testing one mode with batch size 1
+        # Testing one mode with batch size 1.
         traj, modes = loss_n_modes_1._get_trajectory_and_modes(prediction_bs_1)
         self.assertTrue(torch.allclose(traj, xy_pred.unsqueeze(0).reshape(1, 1, 30, 2)))
         self.assertTrue(torch.allclose(modes, mode_pred))
 
-        # Testing one mode with batch size > 1
+        # Testing one mode with batch size > 1.
         traj, modes = loss_n_modes_1._get_trajectory_and_modes(prediction_bs_2)
         self.assertTrue(torch.allclose(traj, xy_pred.repeat(1, 2).unsqueeze(0).reshape(2, 1, 30, 2)))
         self.assertTrue(torch.allclose(modes, mode_pred.repeat(2, 1)))
 
-    def test_angle_between_trajectories(self,):
+    def test_angle_between_trajectories(self):
 
         def make_trajectory(last_point):
             traj = torch.zeros((12, 2))
@@ -55,29 +56,29 @@ class TestMTPLoss(unittest.TestCase):
 
         loss = mtp.MTPLoss(0, 0, 0)
 
-        # test angle is 0
+        # test angle is 0.
         self.assertEqual(loss._angle_between(make_trajectory([0, 0]), make_trajectory([0, 0])), 0.)
         self.assertEqual(loss._angle_between(make_trajectory([15, 15]), make_trajectory([15, 15])), 0.)
 
-        # test angle is 15
+        # test angle is 15.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 1]),
                                                    make_trajectory([math.sqrt(3)/2, 0.5])), 15., places=4)
 
-        # test angle is 30
+        # test angle is 30.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 0]),
                                                    make_trajectory([math.sqrt(3)/2, 0.5])), 30., places=4)
 
-        # test angle is 45
+        # test angle is 45.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 1]),
                                                    make_trajectory([0, 1])), 45., places=4)
 
-        # test angle is 90
+        # test angle is 90.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 1]),
                                                   make_trajectory([-1, 1])), 90., places=4)
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 0]),
                                                   make_trajectory([0, 1])), 90., places=4)
 
-        # test angle is 180
+        # test angle is 180.
         self.assertAlmostEqual(loss._angle_between(make_trajectory([1, 0]),
                                make_trajectory([-1, 0])), 180., places=4)
         self.assertAlmostEqual(loss._angle_between(make_trajectory([0, 1]),
@@ -135,17 +136,17 @@ class TestMTPLoss(unittest.TestCase):
 
         loss = mtp.MTPLoss(1, 1, angle_threshold_degrees=20)
 
-        # Only regression loss in single mode case
+        # Only regression loss in single mode case.
         self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
                                0, places=4)
 
-        # Now the best mode differs by 1 from the ground truth
-        # Smooth l1 loss subtracts 0.5 from l1 norm if diff >= 1
+        # Now the best mode differs by 1 from the ground truth.
+        # Smooth l1 loss subtracts 0.5 from l1 norm if diff >= 1.
         predictions[:, :60] += 1
         self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()), 0.5,
                                places=4)
 
-        # In this case, one element has perfect regression, the others are off by 1
+        # In this case, one element has perfect regression, the others are off by 1.
         predictions[1, :60] -= 1
         self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
                                (15/16)*0.5,
@@ -161,33 +162,19 @@ class TestMTPLoss(unittest.TestCase):
 
         loss = mtp.MTPLoss(10, 1, angle_threshold_degrees=20)
 
-        # Since one mode exactly matches gt, loss should only be classification error
+        # Since one mode exactly matches gt, loss should only be classification error.
         self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
                                -math.log(1/10), places=4)
 
-        # Now the best mode differs by 1 from the ground truth
-        # Smooth l1 loss subtracts 0.5 from l1 norm if diff >= 1
+        # Now the best mode differs by 1 from the ground truth.
+        # Smooth l1 loss subtracts 0.5 from l1 norm if diff >= 1.
         predictions[:, 540:600] += 1
         self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
                                -math.log(1/10) + 0.5,
                                places=4)
 
-        # In this case, one element has perfect regression, the others are off by 1
+        # In this case, one element has perfect regression, the others are off by 1.
         predictions[1, 540:600] -= 1
         self.assertAlmostEqual(float(loss(predictions, targets).detach().numpy()),
                                -math.log(1/10) + (15/16)*0.5,
                                places=4)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

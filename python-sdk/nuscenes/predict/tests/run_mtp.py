@@ -6,6 +6,7 @@ import torch.optim as optim
 
 from nuscenes.predict.models.mtp import ResNetBackbone, MTP, MTPLoss
 
+
 class TestDataset(IterableDataset):
 
     def __init__(self, num_modes: int = 1):
@@ -15,7 +16,7 @@ class TestDataset(IterableDataset):
 
         while True:
             image = torch.zeros((3, 100, 100))
-            agent_state_vector = torch.ones((3))
+            agent_state_vector = torch.ones(3)
             ground_truth = torch.ones((1, 12, 2))
 
             if self.num_modes == 1:
@@ -33,7 +34,7 @@ class TestDataset(IterableDataset):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Run MTP to makesure it overfits on a single test case.')
+    parser = argparse.ArgumentParser(description='Run MTP to make sure it overfits on a single test case.')
     parser.add_argument('--num_modes', type=int, help='How many modes to learn.', default=1)
     parser.add_argument('--use_gpu', type=bool, help='Whether to use gpu', default=False)
     args = parser.parse_args()

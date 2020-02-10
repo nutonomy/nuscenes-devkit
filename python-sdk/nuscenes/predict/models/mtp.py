@@ -3,7 +3,7 @@
 
 """
 Implementation of Multiple-Trajectory Prediction (MTP) model,
-based on  https://arxiv.org/pdf/1809.10732.pdf.
+based on https://arxiv.org/pdf/1809.10732.pdf.
 """
 
 import math
@@ -16,20 +16,20 @@ from torch.nn import functional as f
 from torchvision.models import (mobilenet_v2, resnet18, resnet34, resnet50,
                                 resnet101, resnet152)
 
-from nuscenes.eval.predict.config import PredictionConfig
-
 
 def trim_network_at_index(network: nn.Module, index: int = -1) -> nn.Module:
     """
     Returns a new network with all layers up to index from the back.
-    :param network: Module to trim
+    :param network: Module to trim.
     :param index: Where to trim the network. Counted from the last layer.
     """
     return nn.Sequential(*list(network.children())[:index])
 
+
 RESNET_VERSION_TO_MODEL = {'resnet18': resnet18, 'resnet34': resnet34,
                            'resnet50': resnet50, 'resnet101': resnet101,
                            'resnet152': resnet152}
+
 
 class ResNetBackbone(nn.Module):
     """
@@ -41,7 +41,7 @@ class ResNetBackbone(nn.Module):
     def __init__(self, version: str):
         """
         Inits ResNetBackbone
-        :param vesion: resnet version to use.
+        :param version: resnet version to use.
         """
         super().__init__()
 
@@ -60,6 +60,7 @@ class ResNetBackbone(nn.Module):
         """
         backbone_features = self.backbone(input_tensor)
         return torch.flatten(backbone_features, start_dim=1)
+
 
 class MobileNetBackbone(nn.Module):
     """
@@ -83,16 +84,16 @@ class MobileNetBackbone(nn.Module):
     def forward(self, input_tensor):
         """
         Outputs features after last convolution.
-        :param input_tensor:  Shape [batch_size, n_channels, length, width]
+        :param input_tensor:  Shape [batch_size, n_channels, length, width].
         :return: Tensor of shape [batch_size, n_convolution_filters]. For mobilenet_v2,
-            the shape is [batch_size, 1280]
+            the shape is [batch_size, 1280].
         """
         backbone_features = self.backbone(input_tensor)
         return backbone_features.mean([2, 3])
 
 
 class MTP(nn.Module):
-    """Implements the MTP network."""
+    """ Implements the MTP network. """
 
     def __init__(self, backbone: nn.Module, num_modes: int,
                  seconds: float = 6, frequency_in_hz: float = 2,
@@ -103,8 +104,8 @@ class MTP(nn.Module):
         :param num_modes: Number of predicted paths to estimate for each agent.
         :param seconds: Number of seconds into the future to predict.
             Default for the challenge is 6.
-        :param frequency: Frequency between timesteps in the prediction (in HZ).
-            Highest frequency is nuScenes is 2 hz.
+        :param frequency_in_hz: Frequency between timesteps in the prediction (in Hz).
+            Highest frequency is nuScenes is 2 Hz.
         :param n_hidden_layers: Size of fully connected layer after the CNN
             backbone processes the image.
         :param input_shape: Shape of the input expected by the network.
@@ -127,7 +128,7 @@ class MTP(nn.Module):
         self.fc2 = nn.Linear(n_hidden_layers, int(num_modes * predictions_per_mode + num_modes))
 
     def _calculate_backbone_feature_dim(self, input_shape: Tuple[int, int, int]) -> int:
-        """Helper to calculate the shape of the fully-connected regression layer."""
+        """ Helper to calculate the shape of the fully-connected regression layer. """
         tensor = torch.ones(1, *input_shape)
         output_feat = self.backbone.forward(tensor)
         return output_feat.shape[-1]
@@ -144,9 +145,9 @@ class MTP(nn.Module):
 
         predictions = self.fc2(self.fc1(features))
 
-        # Normalize the probabilities to sum to 1 for inference
+        # Normalize the probabilities to sum to 1 for inference.
         mode_probabilities = predictions[:, -self.num_modes:].clone()
-        if self.training is False:
+        if not self.training:
             mode_probabilities = f.softmax(mode_probabilities, dim=-1)
 
         predictions = predictions[:, :-self.num_modes]
@@ -159,7 +160,9 @@ class MTPLoss:
     Computes the loss for the MTP model.
     """
 
-    def __init__(self, num_modes: int, regression_loss_weight: float,
+    def __init__(self,
+                 num_modes: int,
+                 regression_loss_weight: float,
                  angle_threshold_degrees: float = 5.):
         """
         Inits MTP loss
@@ -170,7 +173,7 @@ class MTPLoss:
             and the ground to consider it a match.
         """
         self.num_modes = num_modes
-        self.num_location_coordinates_predicted = 2 # We predict x, y coordinates at each timestep
+        self.num_location_coordinates_predicted = 2  # We predict x, y coordinates at each timestep.
         self.regression_loss_weight = regression_loss_weight
         self.angle_threshold = angle_threshold_degrees
 
@@ -178,9 +181,9 @@ class MTPLoss:
                                   model_prediction: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Splits the predictions from the model into mode probabilities and trajectory.
-        :param model_prediction: Tensor of shape [batch_size, n_timesteps * n_modes * 2 + n_modes]
+        :param model_prediction: Tensor of shape [batch_size, n_timesteps * n_modes * 2 + n_modes].
         :return: Tuple of tensors. First item is the trajectories of shape [batch_size, n_modes, n_timesteps, 2].
-            Second item are the mode probabilities of shape [batch_size, num_modes]
+            Second item are the mode probabilities of shape [batch_size, num_modes].
         """
         mode_probabilities = model_prediction[:, -self.num_modes:].clone()
 
@@ -189,19 +192,20 @@ class MTPLoss:
 
         return trajectories_no_modes, mode_probabilities
 
-    def _angle_between(self, ref_traj: torch.Tensor,
+    def _angle_between(self,
+                       ref_traj: torch.Tensor,
                        traj_to_compare: torch.Tensor) -> float:
         """
         Computes the angle between the last points of the two trajectories.
         The resulting angle is in degrees and is an angle in the [0; 180) interval.
-        :param ref_traj: Tensor of shape [n_timesteps, 2]
-        :param traj_to_compare: Tensor of shape [n_timesteps, 2]
+        :param ref_traj: Tensor of shape [n_timesteps, 2].
+        :param traj_to_compare: Tensor of shape [n_timesteps, 2].
         """
 
         EPSILON = 1e-5
 
         if (ref_traj.ndim != 2 or traj_to_compare.ndim != 2 or
-            ref_traj.shape[1] != 2 or traj_to_compare.shape[1] != 2):
+                ref_traj.shape[1] != 2 or traj_to_compare.shape[1] != 2):
             raise ValueError('Both tensors should have shapes (-1, 2).')
 
         if torch.isnan(traj_to_compare[-1]).any() or torch.isnan(ref_traj[-1]).any():
@@ -227,20 +231,19 @@ class MTPLoss:
 
     def _compute_ave_l2_norms(self, tensor: torch.Tensor) -> float:
         """
-        Compute the average of l2 norms of each row in the tensor
-        :param tensor: Shape [1, n_timesteps, 2]
+        Compute the average of l2 norms of each row in the tensor.
+        :param tensor: Shape [1, n_timesteps, 2].
         """
         l2_norms = torch.norm(tensor, p=2, dim=2)
         avg_distance = torch.mean(l2_norms)
         return avg_distance
 
     def _compute_angles_from_ground_truth(self, target: torch.Tensor,
-                                          trajectories: torch.Tensor) -> List[float]:
+                                          trajectories: torch.Tensor) -> List[Tuple[float, int]]:
         """
-        Compute angle between the target trajectory (ground truth) and
-        the predicted trajectories.
-        :param target: Shape [1, n_timesteps, 2]
-        :param trajectories: Shape [n_modes, n_timesteps, 2
+        Compute angle between the target trajectory (ground truth) and the predicted trajectories.
+        :param target: Shape [1, n_timesteps, 2].
+        :param trajectories: Shape [n_modes, n_timesteps, 2].
         :return: List of angles.
         """
         angles_from_ground_truth = []
