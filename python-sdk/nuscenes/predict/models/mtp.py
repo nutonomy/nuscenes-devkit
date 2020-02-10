@@ -166,7 +166,7 @@ class MTPLoss:
 
     def __init__(self,
                  num_modes: int,
-                 regression_loss_weight: float,
+                 regression_loss_weight: float = 1.,
                  angle_threshold_degrees: float = 5.):
         """
         Inits MTP loss
