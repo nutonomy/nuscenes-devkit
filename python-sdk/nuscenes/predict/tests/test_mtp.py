@@ -13,6 +13,9 @@ class TestBackBones(unittest.TestCase):
             n_convs = 2
         elif isinstance(model[4][0], Bottleneck):
             n_convs = 3
+        else:
+            raise ValueError("Backbone layer block not supported!")
+        
         return sum([len(model[i]) for i in range(4, 8)]) * n_convs + 2
 
     def test_resnet(self):

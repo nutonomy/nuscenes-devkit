@@ -8,6 +8,10 @@ from nuscenes.predict.models import mtp
 
 
 class TestMTPLoss(unittest.TestCase):
+    """
+    Test each component of MTPLoss as well as the
+    __call__ method.
+    """
 
     def test_get_trajectories_and_modes(self):
 
@@ -17,7 +21,7 @@ class TestMTPLoss(unittest.TestCase):
         xy_pred = torch.arange(60).view(1, -1).repeat(1, 5).view(-1, 60)
         mode_pred = torch.arange(5).view(1, -1)
 
-        prediction_bs_1 = torch.cat([xy_pred.reshape(1, -1), mode_pred], axis=1)
+        prediction_bs_1 = torch.cat([xy_pred.reshape(1, -1), mode_pred], dim=1)
         prediction_bs_2 = prediction_bs_1.repeat(2, 1)
 
         # Testing many modes with batch size 1.
@@ -33,7 +37,7 @@ class TestMTPLoss(unittest.TestCase):
         xy_pred = torch.arange(60).view(1, -1).repeat(1, 1).view(-1, 60)
         mode_pred = torch.arange(1).view(1, -1)
 
-        prediction_bs_1 = torch.cat([xy_pred.reshape(1, -1), mode_pred], axis=1)
+        prediction_bs_1 = torch.cat([xy_pred.reshape(1, -1), mode_pred], dim=1)
         prediction_bs_2 = prediction_bs_1.repeat(2, 1)
 
         # Testing one mode with batch size 1.
@@ -52,9 +56,6 @@ class TestMTPLoss(unittest.TestCase):
             traj = torch.zeros((12, 2))
             traj[-1] = torch.Tensor(last_point)
             return traj
-
-        reference = torch.zeros(12, 2)
-        trajectory = torch.zeros(12, 2)
 
         loss = mtp.MTPLoss(0, 0, 0)
 

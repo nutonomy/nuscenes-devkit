@@ -23,6 +23,7 @@ def trim_network_at_index(network: nn.Module, index: int = -1) -> nn.Module:
     :param network: Module to trim.
     :param index: Where to trim the network. Counted from the last layer.
     """
+    assert index < 0, f"Param index must be negative. Received {index}."
     return nn.Sequential(*list(network.children())[:index])
 
 
@@ -113,7 +114,7 @@ class MTP(nn.Module):
             the backbone depends on the backbone and its version.
 
         Note:
-            Although seconds and frequency_in_hz are labeled their
+            Although seconds and frequency_in_hz are typed as floats, their
             product should be an int.
         """
 
@@ -137,11 +138,14 @@ class MTP(nn.Module):
                 agent_state_vector: torch.Tensor) -> torch.Tensor:
         """
         Forward pass of the model.
+        :param image_tensor: Tensor of images shape [batch_size, n_channels, length, width].
+        :param agent_state_vector: Tensor of floats representing the agent state.
+            [batch_size, 3].
         """
 
         backbone_features = self.backbone(image_tensor)
 
-        features = torch.cat([backbone_features, agent_state_vector], axis=1)
+        features = torch.cat([backbone_features, agent_state_vector], dim=1)
 
         predictions = self.fc2(self.fc1(features))
 
@@ -192,14 +196,15 @@ class MTPLoss:
 
         return trajectories_no_modes, mode_probabilities
 
-    def _angle_between(self,
-                       ref_traj: torch.Tensor,
+    @staticmethod
+    def _angle_between(ref_traj: torch.Tensor,
                        traj_to_compare: torch.Tensor) -> float:
         """
         Computes the angle between the last points of the two trajectories.
         The resulting angle is in degrees and is an angle in the [0; 180) interval.
         :param ref_traj: Tensor of shape [n_timesteps, 2].
         :param traj_to_compare: Tensor of shape [n_timesteps, 2].
+        :return: Angle between the trajectories.
         """
 
         EPSILON = 1e-5
@@ -229,14 +234,16 @@ class MTPLoss:
 
         return angle
 
-    def _compute_ave_l2_norms(self, tensor: torch.Tensor) -> float:
+    @staticmethod
+    def _compute_ave_l2_norms(tensor: torch.Tensor) -> float:
         """
         Compute the average of l2 norms of each row in the tensor.
         :param tensor: Shape [1, n_timesteps, 2].
+        :return: Average l2 norm. Float.
         """
         l2_norms = torch.norm(tensor, p=2, dim=2)
         avg_distance = torch.mean(l2_norms)
-        return avg_distance
+        return avg_distance.item()
 
     def _compute_angles_from_ground_truth(self, target: torch.Tensor,
                                           trajectories: torch.Tensor) -> List[Tuple[float, int]]:
@@ -263,6 +270,7 @@ class MTPLoss:
         :param angles_from_ground_truth: List of angles
         :param target: Shape [1, n_timesteps, 2]
         :param trajectories: Shape [n_modes, n_timesteps, 2]
+        :return: Integer index of best mode.
         """
 
         # We first sort the modes based on the angle to the ground truth (ascending order), and keep track of
@@ -288,7 +296,7 @@ class MTPLoss:
             distances_from_ground_truth = []
 
             for angle, mode in angles_from_ground_truth[:max_angle_below_thresh_idx + 1]:
-                norm = self._compute_ave_l2_norms(target - trajectories[mode, :, :]).item()
+                norm = self._compute_ave_l2_norms(target - trajectories[mode, :, :])
 
                 distances_from_ground_truth.append((norm, mode))
 
@@ -298,6 +306,14 @@ class MTPLoss:
         return best_mode
 
     def __call__(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        """
+        Computes the MTP loss given a tensor of predictions and targets.
+        The predictions are of shape [batch_size, n_ouput_neurons of last linear layer]
+        and the targets are of shape [batch_size, 1, n_timesteps, 2]
+        :param predictions: Model predictions for batch.
+        :param targets: Targets for batch.
+        :return: zero-dim tensor representing the loss on the batch.
+        """
 
         batch_losses = torch.Tensor().requires_grad_(True).to(predictions.device)
         trajectories, modes = self._get_trajectory_and_modes(predictions)

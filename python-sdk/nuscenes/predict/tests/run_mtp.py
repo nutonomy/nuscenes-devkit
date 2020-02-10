@@ -1,3 +1,10 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, 2020.
+
+"""
+Regression test to see if MTP can overfit on a single example.
+"""
+
 import argparse
 
 import numpy as np
@@ -8,7 +15,13 @@ from torch.utils.data import DataLoader, IterableDataset
 from nuscenes.predict.models.mtp import ResNetBackbone, MTP, MTPLoss
 
 
-class TestDataset(IterableDataset):
+class Dataset(IterableDataset):
+    """
+    Implements an infinite dataset where the input data
+    is always the same and the target is a path going
+    forward with 75% probability, and going backward
+    with 25% probability.
+    """
 
     def __init__(self, num_modes: int = 1):
         self.num_modes = num_modes
@@ -45,7 +58,7 @@ if __name__ == "__main__":
     else:
         device = torch.device('cpu')
 
-    dataset = TestDataset(args.num_modes)
+    dataset = Dataset(args.num_modes)
     dataloader = DataLoader(dataset, batch_size=16, num_workers=0)
 
     backbone = ResNetBackbone('resnet18')
@@ -63,6 +76,12 @@ if __name__ == "__main__":
     minimum_loss = 0
 
     if args.num_modes == 2:
+
+        # We expect to see 75% going_forward and
+        # 25% going backward. So the minimum
+        # classification loss is expected to be
+        # 0.56234
+
         minimum_loss += 0.56234
 
     for img, agent_state_vector, ground_truth in dataloader:
