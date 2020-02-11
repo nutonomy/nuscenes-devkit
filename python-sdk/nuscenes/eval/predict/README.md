@@ -1,6 +1,5 @@
 # nuScenes predicton task
 In this document we present the rules, submission process, and evaluation metrics of the nuScenes prediction task.
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/356) for the **EvalAI detection evaluation server**.
 
 ## Overview
 - [Introduction](#introduction)
