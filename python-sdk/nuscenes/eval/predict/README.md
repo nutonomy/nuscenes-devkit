@@ -15,14 +15,14 @@ A trajectory is a sequence of x-y locations. For this challenge, the predictions
 2 hertz.
 
 ## Challenges
-To allow users to benchmark the performance of their method against the community, we will host a single leaderboard all-year round.
-Additionally, we organize a number of challenges at leading Computer Vision and Machine Learning conference workshops.
-Users that submit their results during the challenge period are eligible for awards.
+To allow users to benchmark the performance of their method against the community, we will host a single leaderboard all year round.
+Additionally, we intend to organize a number of challenges at leading Computer Vision and Machine Learning conference workshops.
+Users that submit their results during the challenge period are eligible for awards. These awards may be different for each challenge.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
-The submission period will open in early march and continue until May 28th, 2020.
+The submission period will open in early March and continue until May 28th, 2020.
 Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
 Note that the evaluation server can still be used to benchmark your results after the challenge period.
 
@@ -30,7 +30,7 @@ Note that the evaluation server can still be used to benchmark your results afte
 ### Prediction-specific rules
 * The user can submit up to 25 proposed future trajectories, called `modes`, for each agent along with a probability the agent follows that proposal. Our metrics (explained below) will measure how well this proposed set of trajectories matches the ground truth.
 * Unlike previous challenges, the user will not submit their submissions to the eval server. Instead, we will run the user's model
-on the test set for them. To make this possible, the user should modify the `do_inference_for_submission` function in the [inference script](https://github.com/nutonomy/nuscenes-devkit/blob/nuscenes-predict-challenge/python-sdk/nuscenes/eval/predict/do_inference.py)
+on the test set for them. This is because we do not want to interfere with the [nuScenes detection challenge](https://www.nuscenes.org/object-detection?externalData=all&mapData=all&modalities=Any) by exposing the test set annotations. In order for us to run their model, the user should modify the `do_inference_for_submission` function in the [inference script](https://github.com/nutonomy/nuscenes-devkit/blob/nuscenes-predict-challenge/python-sdk/nuscenes/eval/predict/do_inference.py)
 so that their model is used.
 * Up to two seconds of past history can be used to predict the future trajectory for each agent.
 * Every submission to the challenge must be accompanied by a technical report describing the method in sufficient detail to allow for independent verification.
@@ -38,10 +38,10 @@ so that their model is used.
 ### General rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
-* Top leaderboard entries and their papers will be manually reviewed.
+* Top leaderboard entries and their papers will be manually reviewed to ensure no cheating was done.
 * Each user or team can have at most one one account on the evaluation server.
-* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
-* Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges.
+* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly weights or hyperparameter values.
+* Any attempt to make more submissions than allowed will result in a permanent ban of the team or company from all nuScenes challenges.
 
 ## Results format
 The `do_inference_for_submission` function must produce a list of [`Predictions`](https://github.com/nutonomy/nuscenes-devkit/blob/nuscenes-predict-challenge/python-sdk/nuscenes/eval/predict/data_classes.py). A `Prediction` has the following components:
