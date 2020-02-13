@@ -76,7 +76,7 @@ For the *Zoe Sensors* and *Zoe Vehicle Info* messages this info is not directly 
 The current pose of the ego vehicle, sampled at 50Hz.
 - accel: \[3\] Acceleration vector in the ego vehicle frame in m/s/s.
 - orientation: \[4\]  The rotation vector in the ego vehicle frame.
-- pos: \[3\] The position (x, y, z) in meters in the ego vehicle frame. This should be identical to the [nuScenes ego pose](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#ego_pose), but sampled at a higher frequency.
+- pos: \[3\] The position (x, y, z) in meters in the global frame. This is identical to the [nuScenes ego pose](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#ego_pose), but sampled at a higher frequency.
 - rotation_rate: \[3\] The angular velocity vector of the vehicle in rad/s.  This is expressed in the ego vehicle frame.
 - vel: \[3\] The velocity in m/s, expressed in the ego vehicle frame.
  
@@ -98,7 +98,7 @@ The current pose of the ego vehicle, sampled at 50Hz.
 - rear_right_rpm: \[1\] Rear right brake speed in revolutions per minute.
 - right_signal: \[1\] Right turning signal as an integer, 0 (inactive) or 1 (active).
 - steering: \[1\] Steering angle in degrees at a resolution of 0.1 in range \[-780, 779.9\].
-- steering_speed: \[1\] Steering speed in degrees per second.
+- steering_speed: \[1\] Steering speed in degrees per second in range \[-465, 393\].
 - throttle: \[1\] Throttle pedal position as an integer in range \[0, 1000\].
 - vehicle_speed: \[1\] Vehicle speed in km/h at a resolution of 0.01. 
 - yaw_rate: \[1\] Yaw turning rate in degrees per second at a resolution of 0.1.
