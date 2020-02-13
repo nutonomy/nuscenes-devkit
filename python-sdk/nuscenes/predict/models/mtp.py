@@ -31,7 +31,6 @@ RESNET_VERSION_TO_MODEL = {'resnet18': resnet18, 'resnet34': resnet34,
                            'resnet50': resnet50, 'resnet101': resnet101,
                            'resnet152': resnet152}
 
-
 class ResNetBackbone(nn.Module):
     """
     Outputs tensor after last convolution before the fully connected layer.
@@ -61,7 +60,6 @@ class ResNetBackbone(nn.Module):
         """
         backbone_features = self.backbone(input_tensor)
         return torch.flatten(backbone_features, start_dim=1)
-
 
 class MobileNetBackbone(nn.Module):
     """

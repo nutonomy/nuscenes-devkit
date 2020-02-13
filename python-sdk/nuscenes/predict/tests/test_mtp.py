@@ -15,7 +15,7 @@ class TestBackBones(unittest.TestCase):
             n_convs = 3
         else:
             raise ValueError("Backbone layer block not supported!")
-        
+
         return sum([len(model[i]) for i in range(4, 8)]) * n_convs + 2
 
     def test_resnet(self):
@@ -50,7 +50,6 @@ class TestBackBones(unittest.TestCase):
         tensor = torch.ones((1, 3, 100, 100))
 
         self.assertEqual(mobilenet(tensor).shape[1], 1280)
-
 
 class TestMTP(unittest.TestCase):
 
