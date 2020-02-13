@@ -55,6 +55,8 @@ def get_track_box(annotation: Dict[str, Any],
     :param resolution: Resolution pixels/meter of the image.
     """
 
+    assert resolution > 0
+
     location = annotation['translation'][:2]
     yaw_in_radians = quaternion_yaw(Quaternion(annotation['rotation']))
 
@@ -210,9 +212,9 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
     """
 
     def __init__(self, helper: PredictHelper,
-                 seconds_of_history: int = 2,
+                 seconds_of_history: float = 2,
                  frequency_in_hz: float = 2,
-                 resolution: float = 0.1,
+                 resolution: float = 0.1, # meters / pixel
                  meters_ahead: float = 40, meters_behind: float = 10,
                  meters_left: float = 25, meters_right: float = 25,
                  color_mapping: Callable[[str], Tuple[int, int, int]] = None):
@@ -220,11 +222,18 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
         self.helper = helper
         self.seconds_of_history = seconds_of_history
         self.frequency_in_hz = frequency_in_hz
+
+        if not resolution > 0:
+            raise ValueError(f"Resolution must be postive. Received {resolution}.")
+
         self.resolution = resolution
+
         self.meters_ahead = meters_ahead
         self.meters_behind = meters_behind
         self.meters_left = meters_left
         self.meters_right = meters_right
+
+
 
         if not color_mapping:
             color_mapping = default_colors

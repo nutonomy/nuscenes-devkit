@@ -87,7 +87,7 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
     def __init__(self, helper: PredictHelper,
                  layer_names: List[str] = None,
                  colors: List[Tuple[float, float, float]] = None,
-                 resolution: float = 0.1,
+                 resolution: float = 0.1, # meters / pixel
                  meters_ahead: float = 40, meters_behind: float = 10,
                  meters_left: float = 25, meters_right: float = 25):
 
