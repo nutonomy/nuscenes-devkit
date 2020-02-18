@@ -75,12 +75,15 @@ class NuScenesMap:
 
         # These are the non-geometric layers which have polygons as the geometric descriptors.
         self.non_geometric_polygon_layers = ['drivable_area', 'road_segment', 'road_block', 'lane', 'ped_crossing',
-                                             'walkway', 'stop_line', 'carpark_area', 'lane_connector']
+                                             'walkway', 'stop_line', 'carpark_area']
+
+        # We want to be able to search for lane connectors, but not render them.
+        self.lookup_polygon_layers = self.non_geometric_polygon_layers + ['lane_connector']
 
         # These are the non-geometric layers which have line strings as the geometric descriptors.
         self.non_geometric_line_layers = ['road_divider', 'lane_divider', 'traffic_light']
         self.non_geometric_layers = self.non_geometric_polygon_layers + self.non_geometric_line_layers
-        self.layer_names = self.geometric_layers + self.non_geometric_polygon_layers + self.non_geometric_line_layers
+        self.layer_names = self.geometric_layers + self.lookup_polygon_layers + self.non_geometric_line_layers
 
         with open(self.json_fname, 'r') as fh:
             self.json_obj = json.load(fh)
@@ -438,15 +441,32 @@ class NuScenesMap:
         return self.explorer.get_bounds(layer_name, token)
 
     def get_records_in_radius(self, x: float, y: float, radius: float,
-                              layers: List[str], mode: str = 'intersect') -> Dict[str, List[str]]:
+                              layer_names: List[str], mode: str = 'intersect') -> Dict[str, List[str]]:
+        """
+        Get all the record token that intersects or is within a given radius of a point.
+        :param x: X-coordinate in global frame.
+        :param y: y-coordinate in global frame.
+        :param layer_names: Names of the layers that we want to retrieve. By default will always
+        look at the all non geometric layers.
+        :param mode: "intersect" will return all non geometric records that intersects the patch, "within" will return
+        all non geometric records that are within the patch.
+        :return: Dictionary of layer_name - tokens pairs.
+        """
 
         box = [x - radius, y - radius, x + radius, y + radius]
-        return self.explorer.get_records_in_patch(box, layers, mode)
+        return self.explorer.get_records_in_patch(box, layer_names, mode)
 
     def discretize_lanes(self, tokens: List[str],
                          resolution_meters: float) -> Dict[str, List[Tuple[float, float, float]]]:
+        """
+        Discretizes a list of lane/lane connector tokens.
+        :param tokens: List of lane and/or lane connector record tokens. Can be retrieved with
+            get_records_in_radius or get_records_in_patch.
+        :param resolution_meters: How finely to discretize the splines.
+        :return: Mapping from lane/lane connector token to sequence of poses along the lane.
+        """
 
-        return {t: discretize_lane(self.arcline_path_3.get(t, []), resolution_meters) for t in tokens}
+        return {ID: discretize_lane(self.arcline_path_3.get(ID, []), resolution_meters) for ID in tokens}
 
 class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
@@ -1149,7 +1169,7 @@ class NuScenesMapExplorer:
         if mode not in ['intersect', 'within']:
             raise ValueError("Mode {} is not valid, choice=('intersect', 'within')".format(mode))
 
-        if layer_name in self.map_api.non_geometric_polygon_layers:
+        if layer_name in self.map_api.lookup_polygon_layers:
             return self._is_polygon_record_in_patch(token, layer_name, box_coords, mode)
         elif layer_name in self.map_api.non_geometric_line_layers:
             return self._is_line_record_in_patch(token, layer_name, box_coords,  mode)
@@ -1209,11 +1229,10 @@ class NuScenesMapExplorer:
         :return: The polygon wrapped in a shapely Polygon object.
         """
         polygon_record = self.map_api.get('polygon', polygon_token)
-        try:
-            exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
+
+        exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                            for token in polygon_record['exterior_node_tokens']]
-        except:
-            import pdb; pdb.set_trace()
+
 
         interiors = []
         for hole in polygon_record['holes']:
@@ -1325,7 +1344,7 @@ class NuScenesMapExplorer:
         otherwise, "within" will return True if the geometric object is within the patch and False otherwise.
         :return: Boolean value on whether a particular polygon record intersects or is within a particular patch.
         """
-        if layer_name not in self.map_api.non_geometric_polygon_layers:
+        if layer_name not in self.map_api.lookup_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
         x_min, y_min, x_max, y_max = box_coords
