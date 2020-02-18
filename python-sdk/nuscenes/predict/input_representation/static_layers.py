@@ -5,6 +5,7 @@ import os
 from typing import Dict, List, Tuple
 
 import numpy as np
+import cv2
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.utils import quaternion_yaw
@@ -14,7 +15,7 @@ from nuscenes.predict.helper import angle_of_rotation
 from nuscenes.predict.input_representation.combinators import Rasterizer
 from nuscenes.predict.input_representation.interface import \
     StaticLayerRepresentation
-from nuscenes.predict.input_representation.utils import get_crops
+from nuscenes.predict.input_representation.utils import get_crops, get_rotation_matrix, convert_to_pixel_coords
 
 
 def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
@@ -26,9 +27,10 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
     dataroot = helper.data.dataroot
 
     json_files = filter(lambda f: "json" in f, os.listdir(os.path.join(dataroot, "maps")))
-
     maps = {}
+
     for map_file in json_files:
+        print(map_file)
         map_name = map_file.split(".")[0]
         maps[map_name] = NuScenesMap(dataroot, map_name=map_name)
 
@@ -77,6 +79,47 @@ def correct_yaw(yaw: float) -> float:
 
     return yaw
 
+def draw_lanes_in_agent_frame(image_side_length,
+                              agent_x: float, agent_y: float,
+                              agent_yaw: float,
+                              radius: float,
+                              image_resolution: float,
+                              discretization_resolution_meters: float,
+                              map_api: NuScenesMap) -> np.ndarray:
+
+    central_track_pixels = (image_side_length / 2, image_side_length / 2)
+
+    base_image = np.zeros((image_side_length, image_side_length, 3))
+
+    lanes = map_api.get_records_in_radius(agent_x, agent_y, radius, ['lane', 'lane_connector'])
+    lanes = lanes['lane'] + lanes['lane_connector']
+    lanes = map_api.discretize_lanes(lanes, discretization_resolution_meters)
+
+    for poses_along_lane in lanes.values():
+
+        for start_pose, end_pose in zip(poses_along_lane[:-1], poses_along_lane[1:]):
+
+            start_pixels = convert_to_pixel_coords(start_pose[:2], (agent_x, agent_y),
+                                                   central_track_pixels, image_resolution)
+            end_pixels = convert_to_pixel_coords(end_pose[:2], (agent_x, agent_y),
+                                                 central_track_pixels, image_resolution)
+
+            start_pixels = (start_pixels[1], start_pixels[0])
+            end_pixels = (end_pixels[1], end_pixels[0])
+
+            # Need to flip the row coordinate and the column coordinate
+            # because of cv2 convention
+            cv2.line(base_image, start_pixels, end_pixels, [0, 200, 200],
+                     thickness=5)
+
+    rotation_mat = get_rotation_matrix(base_image.shape, agent_yaw)
+
+    rotated_image = cv2.warpAffine(base_image, rotation_mat, (base_image.shape[1],
+                                                              base_image.shape[0]))
+
+    return rotated_image.astype("uint8")
+
+
 class StaticLayerRasterizer(StaticLayerRepresentation):
     """
     Creates a representation of the static map layers where
@@ -124,18 +167,24 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
         yaw = quaternion_yaw(Quaternion(sample_annotation['rotation']))
 
-        yaw = correct_yaw(yaw)
+        print(yaw)
+
+        yaw_corrected = correct_yaw(yaw)
 
         image_side_length = 2 * max(self.meters_ahead, self.meters_behind,
                                     self.meters_left, self.meters_right)
 
         patchbox = get_patchbox(x, y, image_side_length)
 
-        angle_in_degrees = angle_of_rotation(yaw) * 180 / np.pi
+        angle_in_degrees = angle_of_rotation(yaw_corrected) * 180 / np.pi
 
         masks = self.maps[map_name].get_map_mask(patchbox, angle_in_degrees, self.layer_names, canvas_size=None)
 
         images = [change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color) for mask, color in zip(masks, self.colors)]
+
+        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, 50, self.resolution, 1, self.maps[map_name])
+
+        images.append(lanes)
 
         image = self.combinator.combine(images)
 

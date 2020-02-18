@@ -2,6 +2,10 @@
 # Code written by Freddy Boulton, 2020.
 
 from typing import Tuple
+import cv2
+import numpy as np
+
+from nuscenes.predict.helper import angle_of_rotation
 
 def convert_to_pixel_coords(location: Tuple[float, float],
                             center_of_image_in_global: Tuple[int, int],
@@ -52,3 +56,18 @@ def get_crops(meters_ahead: float, meters_behind: float,
                      int(image_side_length_pixels / 2 + (meters_right / resolution)))
 
     return row_crop, col_crop
+
+
+def get_rotation_matrix(image_shape: Tuple[int, int, int], yaw_in_radians: float) -> np.ndarray:
+    """
+    Gets a rotation matrix to rotate a three channel image so that
+    yaw_in_radians points along the positive y-axis.
+    :param image_shape: (Length, width, n_channels)
+    :param yaw_in_radians: Angle to rotate the image by.
+    """
+
+    rotation_in_degrees = angle_of_rotation(yaw_in_radians) * 180 / np.pi
+
+    print(rotation_in_degrees)
+
+    return cv2.getRotationMatrix2D((image_shape[1]/2, image_shape[0]/2), rotation_in_degrees, 1)

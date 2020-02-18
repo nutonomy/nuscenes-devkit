@@ -9,9 +9,9 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.predict import PredictHelper
-from nuscenes.predict.helper import (angle_of_rotation, quaternion_yaw)
+from nuscenes.predict.helper import quaternion_yaw
 from nuscenes.predict.input_representation.interface import AgentRepresentation
-from nuscenes.predict.input_representation.utils import convert_to_pixel_coords, get_crops
+from nuscenes.predict.input_representation.utils import convert_to_pixel_coords, get_crops, get_rotation_matrix
 
 History = Dict[str, List[Dict[str, Any]]]
 
@@ -193,18 +193,6 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
             cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
 
 
-def get_rotation_matrix(image_shape: Tuple[int, int, int], yaw_in_radians: float) -> np.ndarray:
-    """
-    Gets a rotation matrix to rotate a three channel image.
-    :param image_shape: (Length, width, n_channels)
-    :param yaw_in_radians: Angle to rotate the image by.
-    """
-
-    rotation_in_degrees = angle_of_rotation(yaw_in_radians) * 180 / np.pi
-
-    return cv2.getRotationMatrix2D((image_shape[1]/2, image_shape[0]/2), rotation_in_degrees, 1)
-
-
 class AgentBoxesWithFadedHistory(AgentRepresentation):
     """
     Represents the past sequence of agent states as a three-channel
@@ -232,8 +220,6 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
         self.meters_behind = meters_behind
         self.meters_left = meters_left
         self.meters_right = meters_right
-
-
 
         if not color_mapping:
             color_mapping = default_colors

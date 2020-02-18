@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
+from nuscenes.map_expansion.arcline_path_utils import discretize_lane
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
@@ -74,7 +75,7 @@ class NuScenesMap:
 
         # These are the non-geometric layers which have polygons as the geometric descriptors.
         self.non_geometric_polygon_layers = ['drivable_area', 'road_segment', 'road_block', 'lane', 'ped_crossing',
-                                             'walkway', 'stop_line', 'carpark_area']
+                                             'walkway', 'stop_line', 'carpark_area', 'lane_connector']
 
         # These are the non-geometric layers which have line strings as the geometric descriptors.
         self.non_geometric_line_layers = ['road_divider', 'lane_divider', 'traffic_light']
@@ -126,6 +127,8 @@ class NuScenesMap:
         self.road_divider = self._load_layer('road_divider')
         self.lane_divider = self._load_layer('lane_divider')
         self.traffic_light = self._load_layer('traffic_light')
+        self.arcline_path_3 = self._load_layer('arcline_path_3')
+        self.lane_connector = self._load_layer('lane_connector')
 
     def _make_token2ind(self) -> None:
         """ Store the mapping from token to layer index for each layer. """
@@ -434,6 +437,16 @@ class NuScenesMap:
         """
         return self.explorer.get_bounds(layer_name, token)
 
+    def get_records_in_radius(self, x: float, y: float, radius: float,
+                              layers: List[str], mode: str = 'intersect') -> Dict[str, List[str]]:
+
+        box = [x - radius, y - radius, x + radius, y + radius]
+        return self.explorer.get_records_in_patch(box, layers, mode)
+
+    def discretize_lanes(self, tokens: List[str],
+                         resolution_meters: float) -> Dict[str, List[Tuple[float, float, float]]]:
+
+        return {t: discretize_lane(self.arcline_path_3.get(t, []), resolution_meters) for t in tokens}
 
 class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
@@ -1196,8 +1209,11 @@ class NuScenesMapExplorer:
         :return: The polygon wrapped in a shapely Polygon object.
         """
         polygon_record = self.map_api.get('polygon', polygon_token)
-        exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
+        try:
+            exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                            for token in polygon_record['exterior_node_tokens']]
+        except:
+            import pdb; pdb.set_trace()
 
         interiors = []
         for hole in polygon_record['holes']:
