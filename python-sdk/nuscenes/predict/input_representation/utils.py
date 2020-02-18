@@ -64,10 +64,9 @@ def get_rotation_matrix(image_shape: Tuple[int, int, int], yaw_in_radians: float
     yaw_in_radians points along the positive y-axis.
     :param image_shape: (Length, width, n_channels)
     :param yaw_in_radians: Angle to rotate the image by.
+    :return: np.ndarray
     """
 
     rotation_in_degrees = angle_of_rotation(yaw_in_radians) * 180 / np.pi
-
-    print(rotation_in_degrees)
 
     return cv2.getRotationMatrix2D((image_shape[1]/2, image_shape[0]/2), rotation_in_degrees, 1)
