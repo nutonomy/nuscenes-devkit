@@ -7,7 +7,6 @@
 *.png
 *.jpg
 *ipynb_*
-*ipynb
 *._*
 *.so
 *.o

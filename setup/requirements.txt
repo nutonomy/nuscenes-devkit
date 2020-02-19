@@ -3,7 +3,7 @@ descartes
 fire
 jupyter
 matplotlib
-motmetrics
+motmetrics<=1.1.3
 numpy
 opencv-python
 pandas>=0.24

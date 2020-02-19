@@ -11,9 +11,10 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Citation](#citation)
 
 ## Changelog
+- Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
 - Dec. 11, 2019: Devkit v1.0.5: Remove weight factor from AMOTA tracking metrics.
 - Nov. 1, 2019: Tracking eval code released and detection eval code reorganized.
-- Jul. 1, 2019: Map expansion pack released.
+- Jul. 1, 2019: Map expansion released.
 - Apr. 30, 2019: Devkit v1.0.1: loosen PIP requirements, refine detection challenge, export 2d annotation script. 
 - Mar. 26, 2019: Full dataset, paper, & devkit v1.0.0 released. Support dropped for teaser data.
 - Dec. 20, 2018: Initial evaluation code released. Devkit folders restructured, which breaks backward compatibility.
@@ -37,13 +38,24 @@ Eventually you should have the following folder structure:
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
-## Map expansion
-In July 2019 we published a map expansion pack with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
+## CAN bus expansion
+In February 2020 we published the CAN bus expansion.
+It contains low-level vehicle data about the vehicle route, IMU, pose, steering angle feedback, battery, brakes, gear position, signals, wheel speeds, throttle, torque, solar sensors, odometry and more.
 To install this expansion, please follow these steps:
-- Download the expansion pack from the [Download page](https://www.nuscenes.org/download),
+- Download the expansion from the [Download page](https://www.nuscenes.org/download),
+- Move the can_bus folder to your nuScenes root directory (e.g. `/data/sets/nuscenes/can_bus`).
+- Get the latest version of the nuscenes-devkit.
+- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
+- Get started with the [readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/tutorial.ipynb).
+
+## Map expansion
+In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
+To install this expansion, please follow these steps:
+- Download the expansion from the [Download page](https://www.nuscenes.org/download),
 - Move the four .json files to your nuScenes maps folder (e.g. `/data/sets/nuscenes/maps`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
+- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/map_expansion/map_demo.ipynb).
 
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7.
