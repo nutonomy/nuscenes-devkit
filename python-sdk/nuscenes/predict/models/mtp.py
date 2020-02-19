@@ -13,83 +13,8 @@ from typing import List, Tuple
 import torch
 from torch import nn
 from torch.nn import functional as f
-from torchvision.models import (mobilenet_v2, resnet18, resnet34, resnet50,
-                                resnet101, resnet152)
 
-
-def trim_network_at_index(network: nn.Module, index: int = -1) -> nn.Module:
-    """
-    Returns a new network with all layers up to index from the back.
-    :param network: Module to trim.
-    :param index: Where to trim the network. Counted from the last layer.
-    """
-    assert index < 0, f"Param index must be negative. Received {index}."
-    return nn.Sequential(*list(network.children())[:index])
-
-
-RESNET_VERSION_TO_MODEL = {'resnet18': resnet18, 'resnet34': resnet34,
-                           'resnet50': resnet50, 'resnet101': resnet101,
-                           'resnet152': resnet152}
-
-class ResNetBackbone(nn.Module):
-    """
-    Outputs tensor after last convolution before the fully connected layer.
-
-    Allowed versions: resnet18, resnet34, resnet50, resnet101, resnet152.
-    """
-
-    def __init__(self, version: str):
-        """
-        Inits ResNetBackbone
-        :param version: resnet version to use.
-        """
-        super().__init__()
-
-        if version not in RESNET_VERSION_TO_MODEL:
-            raise ValueError(f'Parameter version must be one of {list(RESNET_VERSION_TO_MODEL.keys())}'
-                             f'. Received {version}.')
-
-        self.backbone = trim_network_at_index(RESNET_VERSION_TO_MODEL[version](), -1)
-
-    def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
-        """
-        Outputs features after last convolution.
-        :param input_tensor:  Shape [batch_size, n_channels, length, width]
-        :return: Tensor of shape [batch_size, n_convolution_filters]. For resnet50,
-            the shape is [batch_size, 2048]
-        """
-        backbone_features = self.backbone(input_tensor)
-        return torch.flatten(backbone_features, start_dim=1)
-
-class MobileNetBackbone(nn.Module):
-    """
-    Outputs tensor after last convolution before the fully connected layer.
-
-    Allowed versions: mobilenet_v2.
-    """
-
-    def __init__(self, version: str):
-        """
-        Inits MobileNetBackbone
-        :param version: mobilenet version to use.
-        """
-        super().__init__()
-
-        if version != 'mobilenet_v2':
-            raise NotImplementedError(f'Only mobilenet_v2 has been implemented. Received {version}.')
-
-        self.backbone = trim_network_at_index(mobilenet_v2(), -1)
-
-    def forward(self, input_tensor):
-        """
-        Outputs features after last convolution.
-        :param input_tensor:  Shape [batch_size, n_channels, length, width].
-        :return: Tensor of shape [batch_size, n_convolution_filters]. For mobilenet_v2,
-            the shape is [batch_size, 1280].
-        """
-        backbone_features = self.backbone(input_tensor)
-        return backbone_features.mean([2, 3])
-
+from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 
 class MTP(nn.Module):
     """ Implements the MTP network. """
@@ -120,17 +45,11 @@ class MTP(nn.Module):
 
         self.backbone = backbone
         self.num_modes = num_modes
-        backbone_feature_dim = self._calculate_backbone_feature_dim(input_shape)
+        backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)
         self.fc1 = nn.Linear(backbone_feature_dim + 3, n_hidden_layers)
         predictions_per_mode = int(seconds * frequency_in_hz) * 2
 
         self.fc2 = nn.Linear(n_hidden_layers, int(num_modes * predictions_per_mode + num_modes))
-
-    def _calculate_backbone_feature_dim(self, input_shape: Tuple[int, int, int]) -> int:
-        """ Helper to calculate the shape of the fully-connected regression layer. """
-        tensor = torch.ones(1, *input_shape)
-        output_feat = self.backbone.forward(tensor)
-        return output_feat.shape[-1]
 
     def forward(self, image_tensor: torch.Tensor,
                 agent_state_vector: torch.Tensor) -> torch.Tensor:
