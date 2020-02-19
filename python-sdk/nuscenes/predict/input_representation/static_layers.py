@@ -32,8 +32,11 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
     maps = {}
 
     for map_file in json_files:
-        print(map_file)
+
         map_name = map_file.split(".")[0]
+
+        print(f'static_layers.py - Loading Map: {map_name}')
+
         maps[map_name] = NuScenesMap(dataroot, map_name=map_name)
 
     return maps
