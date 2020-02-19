@@ -45,13 +45,13 @@ def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[float, float, 
 
     return segment_sign
 
-def recover_group_at_length(lie_group_pose: Tuple[float, float, float],
+def get_transformation_at_s(lie_group_pose: Tuple[float, float, float],
                             s: float) -> Tuple[float, float, float]:
     """
-    Computes group exponential for a pose.
+    Get the affine transformation at s meters along the path.
     :param lie_group_pose: Pose represented as tuple (x, y, yaw).
     :param s: Length along the arcline path in range (0, length_of_arcline_path].
-    :return: Pose at step along
+    :return: Transformation represented as pose tuple
     """
 
     theta = lie_group_pose[2] * s
@@ -65,18 +65,18 @@ def recover_group_at_length(lie_group_pose: Tuple[float, float, float],
         new_y = (lie_group_pose[0] * (1.0 - ctheta) + lie_group_pose[1] * stheta) / lie_group_pose[2]
         return [new_x, new_y, theta]
 
-def move_pose(starting: Tuple[float, float, float],
-              delta: Tuple[float, float, float]) -> Tuple[float, float, float]:
+def apply_affine_transformation(pose: Tuple[float, float, float],
+                                transformation: Tuple[float, float, float]) -> Tuple[float, float, float]:
     """
-    Composes two poses.
-    :param starting: Starting pose.
-    :param delta: Tuple representing a change in pose.
-    :return: Pose tuple.
+    Apply affine transformation to pose.
+    :param pose: Starting pose.
+    :param transformation: Affine transformation represented as a pose tuple.
+    :return: Pose tuple - the result of applying the transformation to the starting pose.
     """
 
-    new_x = math.cos(starting[2]) * delta[0] - math.sin(starting[2]) * delta[1] + starting[0]
-    new_y = math.sin(starting[2]) * delta[0] + math.cos(starting[2]) * delta[1] + starting[1]
-    new_yaw = principal_value(starting[2] + delta[2])
+    new_x = math.cos(pose[2]) * transformation[0] - math.sin(pose[2]) * transformation[1] + pose[0]
+    new_y = math.sin(pose[2]) * transformation[0] + math.cos(pose[2]) * transformation[1] + pose[1]
+    new_yaw = principal_value(pose[2] + transformation[2])
 
     return [new_x, new_y, new_yaw]
 
@@ -119,12 +119,12 @@ def pose_at_length(arcline_path_3: Dict[str, Any],
         length = arcline_path_3['segment_length'][i]
 
         if l <= length:
-            temp = recover_group_at_length(break_points[i], l)
-            result = move_pose(result, temp)
+            transformation = get_transformation_at_s(break_points[i], l)
+            result = apply_affine_transformation(result, transformation)
             break
 
-        temp = recover_group_at_length(break_points[i], length)
-        result = move_pose(result, temp)
+        transformation = get_transformation_at_s(break_points[i], length)
+        result = apply_affine_transformation(result, transformation)
         l -= length
 
     return result
@@ -170,8 +170,8 @@ def discretize(arcline_path_3: Dict[str, Any],
             g_s = step_along_path
             g_i += 1
 
-        frame_increment = recover_group_at_length(poses[g_i], step_along_path - g_s)
-        new_pose = move_pose(temp_pose, frame_increment)
+        transformation = get_transformation_at_s(poses[g_i], step_along_path - g_s)
+        new_pose = apply_affine_transformation(temp_pose, transformation)
         discretization.append(new_pose)
 
 
