@@ -31,7 +31,7 @@ packages = [p for p in packages if not p.endswith('__pycache__')]
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='1.0.5',
+    version='1.0.6',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
            'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle et al.',
     author_email='nuscenes@nutonomy.com',
@@ -43,7 +43,7 @@ setuptools.setup(
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
-    package_data={'': '*.json'},
+    package_data={'': ['*.json']},
     include_package_data=True,
     classifiers=[
         'Programming Language :: Python :: 3.6',
