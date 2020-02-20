@@ -4,7 +4,7 @@
 import math
 from typing import Dict, Any, List, Tuple
 
-
+# (x, y, yaw) in global frame
 Pose = Tuple[float, float, float]
 
 
