@@ -20,6 +20,7 @@ from nuscenes.predict.input_representation.utils import get_crops, get_rotation_
 
 Color = Tuple[float, float, float]
 
+
 def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
     """
     Loads all NuScenesMap instances for all available maps.
@@ -33,13 +34,14 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
 
     for map_file in json_files:
 
-        map_name = map_file.split(".")[0]
+        map_name = str(map_file.split(".")[0])
 
         print(f'static_layers.py - Loading Map: {map_name}')
 
         maps[map_name] = NuScenesMap(dataroot, map_name=map_name)
 
     return maps
+
 
 def get_patchbox(x_in_meters: float, y_in_meters: float,
                  image_side_length: float) -> Tuple[float, float, float, float]:
@@ -54,6 +56,7 @@ def get_patchbox(x_in_meters: float, y_in_meters: float,
     patch_box = (x_in_meters, y_in_meters, image_side_length, image_side_length)
 
     return patch_box
+
 
 def change_color_of_binary_mask(image: np.ndarray, color: Color) -> np.ndarray:
     """
@@ -70,6 +73,7 @@ def change_color_of_binary_mask(image: np.ndarray, color: Color) -> np.ndarray:
 
     return image
 
+
 def correct_yaw(yaw: float) -> float:
     """
     nuScenes maps were flipped over the y-axis, so we need to
@@ -83,6 +87,7 @@ def correct_yaw(yaw: float) -> float:
         yaw = np.pi - yaw
 
     return yaw
+
 
 def get_lanes_in_radius(x: float, y: float, radius: float,
                         discretization_meters: float,
@@ -105,10 +110,13 @@ def get_lanes_in_radius(x: float, y: float, radius: float,
 
     return lanes
 
+
 def color_by_yaw(agent_yaw_in_radians: float,
                  lane_yaw_in_radians: float) -> Color:
     """
     Color the pose one the lane based on its yaw difference to the agent yaw.
+    :param agent_yaw_in_radians: Yaw of the agent with respect to the global frame
+    :param lane_yaw_in_radians: Yaw of the pose on the lane with respect to the global frame
     """
 
     # By adding pi, lanes in the same direction as the agent are colored blue.
@@ -119,10 +127,13 @@ def color_by_yaw(agent_yaw_in_radians: float,
 
     normalized_rgb_color = colorsys.hsv_to_rgb(angle/360, 1., 1.)
 
-    color = tuple([color*255 for color in normalized_rgb_color])
-    return color
+    color = [color*255 for color in normalized_rgb_color]
 
-def draw_lanes_on_image(image: np.ndarray, lanes: Dict[str, List[Tuple[float, float]]],
+    # To make the return type consistent with Color definition
+    return color[0], color[1], color[2]
+
+
+def draw_lanes_on_image(image: np.ndarray, lanes: Dict[str, List[Tuple[float, float, float]]],
                         agent_global_coords: Tuple[float, float], agent_yaw_in_radians: float,
                         agent_pixels: Tuple[int, int],
                         resolution: float,
@@ -132,11 +143,12 @@ def draw_lanes_on_image(image: np.ndarray, lanes: Dict[str, List[Tuple[float, fl
     :param image: Image to draw lanes on. Preferably all-black or all-white image.
     :param lanes: Mapping from lane id to list of coordinate tuples in global coordinate system.
     :param agent_global_coords: Location of the agent in the global coordinate frame.
+    :param agent_yaw_in_radians:
     :param agent_pixels: Location of the agent in the image as (row_pixel, column_pixel).
-    :param map_api: The NuScenesMap instance to query.
+    :param resolution:
     :param color_function: By default, lanes are colored by the yaw difference between the pose
     on the lane and the agent yaw. However, you can supply your own function to color the lanes.
-    :return: np.ndarray with lanes drawn.
+    :return: Image (represented as np.ndarray) with lanes drawn.
     """
 
     for poses_along_lane in lanes.values():
@@ -185,7 +197,7 @@ def draw_lanes_in_agent_frame(image_side_length: int,
     :return: np array with lanes drawn.
     """
 
-    agent_pixels = (image_side_length / 2, image_side_length / 2)
+    agent_pixels = int(image_side_length / 2), int(image_side_length / 2)
 
     base_image = np.zeros((image_side_length, image_side_length, 3))
 
@@ -259,9 +271,13 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
         masks = self.maps[map_name].get_map_mask(patchbox, angle_in_degrees, self.layer_names, canvas_size=None)
 
-        images = [change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color) for mask, color in zip(masks, self.colors)]
+        images = []
+        for mask, color in zip(masks, self.colors):
+            images.append(change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color))
 
-        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, 50, self.resolution, 1, self.maps[map_name])
+        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, radius=50,
+                                          image_resolution=self.resolution, discretization_resolution_meters=1,
+                                          map_api=self.maps[map_name])
 
         images.append(lanes)
 

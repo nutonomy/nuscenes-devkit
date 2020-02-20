@@ -7,8 +7,9 @@ import numpy as np
 
 from nuscenes.predict.helper import angle_of_rotation
 
+
 def convert_to_pixel_coords(location: Tuple[float, float],
-                            center_of_image_in_global: Tuple[int, int],
+                            center_of_image_in_global: Tuple[float, float],
                             center_of_image_in_pixels: Tuple[int, int],
                             resolution: float = 0.1,
                             ) -> Tuple[int, int]:
@@ -64,7 +65,7 @@ def get_rotation_matrix(image_shape: Tuple[int, int, int], yaw_in_radians: float
     yaw_in_radians points along the positive y-axis.
     :param image_shape: (Length, width, n_channels)
     :param yaw_in_radians: Angle to rotate the image by.
-    :return: np.ndarray
+    :return: rotation matrix represented as np.ndarray
     """
 
     rotation_in_degrees = angle_of_rotation(yaw_in_radians) * 180 / np.pi

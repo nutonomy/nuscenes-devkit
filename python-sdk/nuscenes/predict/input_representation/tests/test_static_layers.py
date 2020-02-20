@@ -14,7 +14,8 @@ class TestStaticLayerRasterizer(unittest.TestCase):
 
     PATH = 'nuscenes.predict.input_representation.static_layers.{}'
 
-    def get_layer_mocks(self):
+    @staticmethod
+    def get_layer_mocks():
 
         layer_1 = np.zeros((100, 100, 3))
         box = cv2.boxPoints(((50, 50), (20, 10), -90))
@@ -30,10 +31,11 @@ class TestStaticLayerRasterizer(unittest.TestCase):
     def test_draw_lanes_on_image(self):
 
         image = np.zeros((200, 200, 3))
-        lanes = {'lane_1': [[15, 0, 0], [15, 10, 0], [15, 20, 0]],
-                 'lane_2': [[0, 15, 0], [10, 15, 0], [20, 15, 0]]}
+        lanes = {'lane_1': [(15, 0, 0), (15, 10, 0), (15, 20, 0)],
+                 'lane_2': [(0, 15, 0), (10, 15, 0), (20, 15, 0)]}
 
-        color_function = lambda h1, h2: [0, 200, 200]
+        def color_function(heading_1, heading_2):
+            return 0, 200, 200
 
         img = draw_lanes_on_image(image, lanes, (10, 10), 0, (100, 100), 0.1, color_function)
 
@@ -80,7 +82,6 @@ class TestStaticLayerRasterizer(unittest.TestCase):
         box = cv2.boxPoints(((50, 50), (20, 10), -90))
         answer = cv2.fillPoly(answer, pts=[np.int0(box)], color=(255, 255, 255))
         answer = cv2.line(answer, (50, 50), (50, 40), color=(255, 0, 0), thickness=2)
-        lanes = cv2.fillPoly(answer, pts=[np.int0(lane_box)], color=(255, 0, 0))
-
+        answer = cv2.fillPoly(answer, pts=[np.int0(lane_box)], color=(255, 0, 0))
 
         np.testing.assert_allclose(answer, image)
