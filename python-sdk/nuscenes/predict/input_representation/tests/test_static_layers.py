@@ -4,11 +4,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import cv2
+import numpy as np
 
-from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer, draw_lanes_on_image
 from nuscenes.predict import PredictHelper
+from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer, draw_lanes_on_image
+
 
 class TestStaticLayerRasterizer(unittest.TestCase):
 

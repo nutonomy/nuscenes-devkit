@@ -346,7 +346,7 @@ class NuScenesMap:
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
                      layer_names: List[str] = None,
-                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
+                     canvas_size: Optional[Tuple[int, int]] = (100, 100)) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
         :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.

@@ -1,8 +1,9 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
-from typing import Dict, Any, List, Tuple
 import math
+from typing import Dict, Any, List, Tuple
+
 
 Pose = Tuple[float, float, float]
 
@@ -56,7 +57,7 @@ def get_transformation_at_s(pose: Pose,
     Get the affine transformation at s meters along the path.
     :param pose: Pose represented as tuple (x, y, yaw).
     :param s: Length along the arcline path in range (0, length_of_arcline_path].
-    :return: Transformation represented as pose tuple
+    :return: Transformation represented as pose tuple.
     """
 
     theta = pose[2] * s
@@ -101,6 +102,7 @@ def _get_lie_algebra(segment_sign: Tuple[int, int, int],
             (1.0, 0.0, segment_sign[2] / radius)]
 
 
+
 def pose_at_length(arcline_path_3: Dict[str, Any],
                    l: float) -> Tuple[float, float, float]:
     """
@@ -139,7 +141,6 @@ def pose_at_length(arcline_path_3: Dict[str, Any],
 
 def discretize(arcline_path_3: Dict[str, Any],
                resolution_meters: float) -> List[Tuple[float, float, float]]:
-
     """
     Discretize an arcline_path_3.
     :param arcline_path_3: Arcline_Path_3 object.

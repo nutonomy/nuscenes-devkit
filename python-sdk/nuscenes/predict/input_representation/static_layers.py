@@ -1,12 +1,12 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
+import colorsys
 import os
 from typing import Dict, List, Tuple, Callable
-import colorsys
 
-import numpy as np
 import cv2
+import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.utils import quaternion_yaw
@@ -133,8 +133,10 @@ def color_by_yaw(agent_yaw_in_radians: float,
     return color[0], color[1], color[2]
 
 
-def draw_lanes_on_image(image: np.ndarray, lanes: Dict[str, List[Tuple[float, float, float]]],
-                        agent_global_coords: Tuple[float, float], agent_yaw_in_radians: float,
+def draw_lanes_on_image(image: np.ndarray,
+                        lanes: Dict[str, List[Tuple[float, float, float]]],
+                        agent_global_coords: Tuple[float, float],
+                        agent_yaw_in_radians: float,
                         agent_pixels: Tuple[int, int],
                         resolution: float,
                         color_function: Callable[[float, float], Color] = color_by_yaw) -> np.ndarray:
