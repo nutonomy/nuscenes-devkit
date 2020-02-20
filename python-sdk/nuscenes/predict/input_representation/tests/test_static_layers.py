@@ -4,17 +4,19 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import cv2
+import numpy as np
 
-from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer
 from nuscenes.predict import PredictHelper
+from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer, draw_lanes_on_image
+
 
 class TestStaticLayerRasterizer(unittest.TestCase):
 
     PATH = 'nuscenes.predict.input_representation.static_layers.{}'
 
-    def get_layer_mocks(self):
+    @staticmethod
+    def get_layer_mocks():
 
         layer_1 = np.zeros((100, 100, 3))
         box = cv2.boxPoints(((50, 50), (20, 10), -90))
@@ -27,12 +29,35 @@ class TestStaticLayerRasterizer(unittest.TestCase):
 
         return [layer_1, layer_2]
 
+    def test_draw_lanes_on_image(self):
+
+        image = np.zeros((200, 200, 3))
+        lanes = {'lane_1': [(15, 0, 0), (15, 10, 0), (15, 20, 0)],
+                 'lane_2': [(0, 15, 0), (10, 15, 0), (20, 15, 0)]}
+
+        def color_function(heading_1, heading_2):
+            return 0, 200, 200
+
+        img = draw_lanes_on_image(image, lanes, (10, 10), 0, (100, 100), 0.1, color_function)
+
+        answer = np.zeros((200, 200, 3))
+        cv2.line(answer, (150, 0), (150, 200), [0, 200, 200], thickness=5)
+        cv2.line(answer, (0, 50), (200, 50), [0, 200, 200], thickness=5)
+
+        np.testing.assert_allclose(answer, img)
+
     @patch(PATH.format('load_all_maps'))
-    def test_make_rasterization(self, mock_load_maps):
+    @patch(PATH.format('draw_lanes_in_agent_frame'))
+    def test_make_rasterization(self, mock_draw_lanes, mock_load_maps):
         """
         Mainly a smoke test since most of the logic is handled under-the-hood
         by get_map_mask method of nuScenes map API.
         """
+
+        lanes = np.zeros((100, 100, 3)).astype('uint8')
+        lane_box = cv2.boxPoints(((25, 75), (5, 5), -90))
+        lanes = cv2.fillPoly(lanes, pts=[np.int0(lane_box)], color=(255, 0, 0))
+        mock_draw_lanes.return_value = lanes
 
         layers = self.get_layer_mocks()
         mock_map_api = MagicMock()
@@ -58,5 +83,6 @@ class TestStaticLayerRasterizer(unittest.TestCase):
         box = cv2.boxPoints(((50, 50), (20, 10), -90))
         answer = cv2.fillPoly(answer, pts=[np.int0(box)], color=(255, 255, 255))
         answer = cv2.line(answer, (50, 50), (50, 40), color=(255, 0, 0), thickness=2)
+        answer = cv2.fillPoly(answer, pts=[np.int0(lane_box)], color=(255, 0, 0))
 
         np.testing.assert_allclose(answer, image)
