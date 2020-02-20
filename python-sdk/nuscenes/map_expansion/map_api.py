@@ -119,6 +119,9 @@ class NuScenesMap:
         """
         return self.json_obj['arcline_path_3']
 
+    def _load_lane_connectivity(self) -> Dict[str, Dict[str, List[str]]]:
+        return self.json_obj['connectivity']
+
     def _load_layers(self) -> None:
         """ Loads each available layer. """
 
@@ -139,7 +142,7 @@ class NuScenesMap:
         self.traffic_light = self._load_layer('traffic_light')
         self.arcline_path_3 = self._load_arcline_path()
         self.lane_connector = self._load_layer('lane_connector')
-        self.connectivity = self._load_layer('connectivity')
+        self.connectivity = self._load_lane_connectivity()
 
     def _make_token2ind(self) -> None:
         """ Store the mapping from token to layer index for each layer. """
