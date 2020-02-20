@@ -4,11 +4,12 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import cv2
+import numpy as np
 
-from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer, draw_lanes_on_image
 from nuscenes.predict import PredictHelper
+from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer, draw_lanes_on_image
+
 
 class TestStaticLayerRasterizer(unittest.TestCase):
 
@@ -81,6 +82,5 @@ class TestStaticLayerRasterizer(unittest.TestCase):
         answer = cv2.fillPoly(answer, pts=[np.int0(box)], color=(255, 255, 255))
         answer = cv2.line(answer, (50, 50), (50, 40), color=(255, 0, 0), thickness=2)
         lanes = cv2.fillPoly(answer, pts=[np.int0(lane_box)], color=(255, 0, 0))
-
 
         np.testing.assert_allclose(answer, image)

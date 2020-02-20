@@ -1,7 +1,8 @@
 import unittest
 
-from nuscenes.map_expansion import arcline_path_utils
 import numpy as np
+
+from nuscenes.map_expansion import arcline_path_utils
 
 
 class TestUtils(unittest.TestCase):

@@ -1,8 +1,9 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
-from typing import Dict, Any, List, Tuple
 import math
+from typing import Dict, Any, List, Tuple
+
 
 def principal_value(angle_in_radians: float) -> float:
     """
@@ -15,6 +16,7 @@ def principal_value(angle_in_radians: float) -> float:
     two_pi = 2 * math.pi
     scaled_angle = (angle_in_radians - interval_min) % two_pi + interval_min
     return scaled_angle
+
 
 def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[float, float, float]:
     """
@@ -45,13 +47,14 @@ def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[float, float, 
 
     return segment_sign
 
+
 def get_transformation_at_s(lie_group_pose: Tuple[float, float, float],
                             s: float) -> Tuple[float, float, float]:
     """
     Get the affine transformation at s meters along the path.
     :param lie_group_pose: Pose represented as tuple (x, y, yaw).
     :param s: Length along the arcline path in range (0, length_of_arcline_path].
-    :return: Transformation represented as pose tuple
+    :return: Transformation represented as pose tuple.
     """
 
     theta = lie_group_pose[2] * s
@@ -64,6 +67,7 @@ def get_transformation_at_s(lie_group_pose: Tuple[float, float, float],
         new_x = (lie_group_pose[1] * (ctheta - 1.0) + lie_group_pose[0] * stheta) / lie_group_pose[2]
         new_y = (lie_group_pose[0] * (1.0 - ctheta) + lie_group_pose[1] * stheta) / lie_group_pose[2]
         return [new_x, new_y, theta]
+
 
 def apply_affine_transformation(pose: Tuple[float, float, float],
                                 transformation: Tuple[float, float, float]) -> Tuple[float, float, float]:
@@ -93,6 +97,7 @@ def get_lie_algebra(segment_sign: Tuple[int, int, int],
     return [[1.0, 0.0, segment_sign[0] / radius],
             [1.0, 0.0, segment_sign[1] / radius],
             [1.0, 0.0, segment_sign[2] / radius]]
+
 
 def pose_at_length(arcline_path_3: Dict[str, Any],
                    l: float) -> Tuple[float, float, float]:
@@ -129,9 +134,9 @@ def pose_at_length(arcline_path_3: Dict[str, Any],
 
     return result
 
+
 def discretize(arcline_path_3: Dict[str, Any],
                resolution_meters: float) -> List[Tuple[float, float, float]]:
-
     """
     Discretize an arcline_path_3.
     :param arcline_path_3: Arcline_Path_3 object.
@@ -165,7 +170,7 @@ def discretize(arcline_path_3: Dict[str, Any],
 
         step_along_path = step * resolution_meters
 
-        if (step_along_path > cummulative_length[g_i]):
+        if step_along_path > cummulative_length[g_i]:
             temp_pose = pose_at_length(arcline_path_3, step_along_path)
             g_s = step_along_path
             g_i += 1
@@ -174,8 +179,8 @@ def discretize(arcline_path_3: Dict[str, Any],
         new_pose = apply_affine_transformation(temp_pose, transformation)
         discretization.append(new_pose)
 
-
     return discretization
+
 
 def discretize_lane(arcline_list: List[Dict[str, Any]],
                     resolution_meters: float) -> List[Tuple[float, float, float]]:

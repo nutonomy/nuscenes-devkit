@@ -1,12 +1,12 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
+import colorsys
 import os
 from typing import Dict, List, Tuple, Callable
-import colorsys
 
-import numpy as np
 import cv2
+import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.utils import quaternion_yaw
@@ -19,6 +19,7 @@ from nuscenes.predict.input_representation.interface import \
 from nuscenes.predict.input_representation.utils import get_crops, get_rotation_matrix, convert_to_pixel_coords
 
 Color = Tuple[float, float, float]
+
 
 def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
     """
@@ -41,6 +42,7 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
 
     return maps
 
+
 def get_patchbox(x_in_meters: float, y_in_meters: float,
                  image_side_length: float) -> Tuple[float, float, float, float]:
     """
@@ -54,6 +56,7 @@ def get_patchbox(x_in_meters: float, y_in_meters: float,
     patch_box = (x_in_meters, y_in_meters, image_side_length, image_side_length)
 
     return patch_box
+
 
 def change_color_of_binary_mask(image: np.ndarray, color: Color) -> np.ndarray:
     """
@@ -70,6 +73,7 @@ def change_color_of_binary_mask(image: np.ndarray, color: Color) -> np.ndarray:
 
     return image
 
+
 def correct_yaw(yaw: float) -> float:
     """
     nuScenes maps were flipped over the y-axis, so we need to
@@ -83,6 +87,7 @@ def correct_yaw(yaw: float) -> float:
         yaw = np.pi - yaw
 
     return yaw
+
 
 def get_lanes_in_radius(x: float, y: float, radius: float,
                         discretization_meters: float,
@@ -105,6 +110,7 @@ def get_lanes_in_radius(x: float, y: float, radius: float,
 
     return lanes
 
+
 def color_by_yaw(agent_yaw_in_radians: float,
                  lane_yaw_in_radians: float) -> Color:
     """
@@ -122,8 +128,11 @@ def color_by_yaw(agent_yaw_in_radians: float,
     color = tuple([color*255 for color in normalized_rgb_color])
     return color
 
-def draw_lanes_on_image(image: np.ndarray, lanes: Dict[str, List[Tuple[float, float]]],
-                        agent_global_coords: Tuple[float, float], agent_yaw_in_radians: float,
+
+def draw_lanes_on_image(image: np.ndarray,
+                        lanes: Dict[str, List[Tuple[float, float]]],
+                        agent_global_coords: Tuple[float, float],
+                        agent_yaw_in_radians: float,
                         agent_pixels: Tuple[int, int],
                         resolution: float,
                         color_function: Callable[[float, float], Color] = color_by_yaw) -> np.ndarray:
@@ -259,9 +268,11 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
         masks = self.maps[map_name].get_map_mask(patchbox, angle_in_degrees, self.layer_names, canvas_size=None)
 
-        images = [change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color) for mask, color in zip(masks, self.colors)]
+        images = [change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color)
+                  for mask, color in zip(masks, self.colors)]
 
-        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, 50, self.resolution, 1, self.maps[map_name])
+        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, 50, self.resolution, 1,
+                                          self.maps[map_name])
 
         images.append(lanes)
 

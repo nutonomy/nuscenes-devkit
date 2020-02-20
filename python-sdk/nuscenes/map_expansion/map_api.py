@@ -339,7 +339,7 @@ class NuScenesMap:
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
                      layer_names: List[str] = None,
-                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
+                     canvas_size: Optional[Tuple[int, int]] = (100, 100)) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
         :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
@@ -453,7 +453,7 @@ class NuScenesMap:
         :return: Dictionary of layer_name - tokens pairs.
         """
 
-        box = [x - radius, y - radius, x + radius, y + radius]
+        box = (x - radius, y - radius, x + radius, y + radius)
         return self.explorer.get_records_in_patch(box, layer_names, mode)
 
     def discretize_lanes(self, tokens: List[str],
@@ -467,6 +467,7 @@ class NuScenesMap:
         """
 
         return {ID: discretize_lane(self.arcline_path_3.get(ID, []), resolution_meters) for ID in tokens}
+
 
 class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
