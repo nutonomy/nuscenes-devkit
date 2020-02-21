@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.map_expansion.arcline_path_utils import discretize_lane
+from nuscenes.map_expansion.arcline_path_utils import discretize_lane, ArcLinePath
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
@@ -510,6 +510,45 @@ class NuScenesMap:
         """
 
         return self._get_connected_lanes(lane_token, 'incoming')
+
+    def get_lane(self, lane_token: str) -> List[ArcLinePath]:
+        """
+        Get the arc line path representation for a lane.
+        :param lane_token: Token for the lane
+        :return: Arc line path representation of the lane
+        """
+
+        lane = self.arcline_path_3.get(lane_token)
+        if not lane:
+            raise ValueError(f'Lane token {lane_token} is not a valid lane.')
+
+        return lane
+
+    def get_closest_lane(self, x: float, y: float) -> str:
+        """
+        Get closest lane id. The distance from a point (x, y) to a lane is the minimum l2 distance
+        from (x, y) to a point on the lane
+        :param x: X coordinate in global coordinate frame
+        :param y: Y Coordinate in global coordinate frame
+        :return: Lane id of closest lane
+        """
+
+        lanes = self.get_records_in_radius(x, y, 5, ['lane', 'lane_connector'])
+        lanes = lanes['lane'] + lanes['lane_connector']
+
+        discrete_points = self.discretize_lanes(lanes, 0.5)
+
+        current_min = np.inf
+
+        for lane_id, points in discrete_points.items():
+
+            distance = np.linalg.norm(np.array(points)[:, :2] - [x, y], axis=1).min()
+            if distance <= current_min:
+                current_min = distance
+                min_id = lane_id
+
+        return min_id
+
 
 
 class NuScenesMapExplorer:
