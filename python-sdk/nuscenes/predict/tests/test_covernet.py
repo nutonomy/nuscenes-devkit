@@ -6,6 +6,7 @@ from torch.nn.functional import cross_entropy
 from nuscenes.predict.models.covernet import l1_distance, ConstantLatticeLoss, CoverNet
 from nuscenes.predict.models.backbone import ResNetBackbone
 
+
 class TestCoverNet(unittest.TestCase):
 
     def test_shapes_in_forward_pass_correct(self):
@@ -31,17 +32,14 @@ class TestConstantLatticeLoss(unittest.TestCase):
 
         # Should select the first mode
         ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) + 2
-        #ground_truth = ground_truth.repeat(3, 1, 1)
         self.assertEqual(l1_distance(lattice, ground_truth), 0)
 
         # Should select the second mode
         ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) * 3 + 4
-        #ground_truth = ground_truth.repeat(3, 1, 1)
         self.assertEqual(l1_distance(lattice, ground_truth), 1)
 
         # Should select the third mode
         ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) * 6 + 10
-        #ground_truth = ground_truth.repeat(3, 1, 1)
         self.assertEqual(l1_distance(lattice, ground_truth), 2)
 
     def test_constant_lattice_loss(self):

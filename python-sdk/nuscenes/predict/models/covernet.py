@@ -1,7 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Elena Corina Grigore 2020.
 
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Union
 
 import torch
 from torch import nn
@@ -29,7 +29,7 @@ class CoverNet(nn.Module):
             vector after the CNN backbone.
         """
 
-        if not isinstance(n_hidden_layers, list):
+        if n_hidden_layers and not isinstance(n_hidden_layers, list):
             raise ValueError(f"Param n_hidden_layers must be a list. Received {type(n_hidden_layers)}")
 
         super().__init__()
@@ -80,7 +80,7 @@ class ConstantLatticeLoss:
     Computes the loss for a constant lattice CoverNet model.
     """
 
-    def __init__(self, lattice: np.ndarray,
+    def __init__(self, lattice: Union[np.ndarray, torch.Tensor],
                  similarity_function: Callable[[torch.Tensor, torch.Tensor], int] = l1_distance):
         """
         Inits the loss.
