@@ -453,12 +453,16 @@ class NuScenesMap:
 
         box_coords = self.explorer.get_bounds(layer_name, token)
         intersect = self.explorer.get_records_in_patch(box_coords, ['road_segment','road_block','lane'], mode='intersect')
-        #if road segment, return all connected layers except original road segment
+        result = {layer: [] for layer in ['road_segment','road_block','lane']} 
         if layer_name == 'road_segment':
-            result = intersect
-            result['road_segment'].remove(token)
+            original_exterior_nodes = self.get(layer_name,token)['exterior_node_tokens']
+
+            for key in ['road_segment','road_block','lane']:
+                for token2 in intersect[key]:
+                    exterior_nodes = self.get(key,token2)['exterior_node_tokens']
+                    if any(n in exterior_nodes for n in original_exterior_nodes) and token2!=equivalent_layers[key]: #if ANY original exterior nodes exist in exterior nodes, and not equivalent layer
+                        result[key].append(token2)
         else:
-            result = {layer: [] for layer in ['road_segment','road_block','lane']} 
             to_edge_line = self.get(layer_name,token)['to_edge_line_token']
             to_edge_nodes = self.get('line',to_edge_line)['node_tokens']
 
