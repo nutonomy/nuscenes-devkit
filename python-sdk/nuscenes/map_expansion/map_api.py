@@ -436,6 +436,10 @@ class NuScenesMap:
 
     def get_next_road(self, x: float, y: float) -> Dict[str,List[str]]:
         """
+        Get the next road layer(s) from a point of interest.
+        :param x: x coordinate of the point of interest.
+        :param y: y coordinate of the point of interest.
+        :return: Dictionary of layer_name - tokens pairs
         """
         layers = self.explorer.layers_on_point(x,y)
         equivalent_layers = {layer: layers[layer] for layer in ['road_segment','road_block','lane']}
