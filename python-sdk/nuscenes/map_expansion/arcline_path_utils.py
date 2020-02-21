@@ -1,8 +1,13 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
-from typing import Dict, Any, List, Tuple
+
 import math
+from typing import Dict, Any, Tuple, List
+
+# (x, y, yaw) in global frame
+Pose = Tuple[float, float, float]
+
 
 def principal_value(angle_in_radians: float) -> float:
     """
@@ -16,7 +21,9 @@ def principal_value(angle_in_radians: float) -> float:
     scaled_angle = (angle_in_radians - interval_min) % two_pi + interval_min
     return scaled_angle
 
-def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[float, float, float]:
+
+
+def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[int, int, int]:
     """
     Compute the sign of an arcline_path_3 based on its shape.
     :param arcline_path_3: arcline_patch_3 record.
@@ -43,56 +50,59 @@ def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[float, float, 
     else:
         segment_sign[2] = -1
 
-    return segment_sign
+    return segment_sign[0], segment_sign[1], segment_sign[2]
 
-def recover_group_at_length(lie_group_pose: Tuple[float, float, float],
-                            s: float) -> Tuple[float, float, float]:
+
+def get_transformation_at_s(pose: Pose,
+                            s: float) -> Pose:
     """
-    Computes group exponential for a pose.
-    :param lie_group_pose: Pose represented as tuple (x, y, yaw).
+    Get the affine transformation at s meters along the path.
+    :param pose: Pose represented as tuple (x, y, yaw).
     :param s: Length along the arcline path in range (0, length_of_arcline_path].
-    :return: Pose at step along
+    :return: Transformation represented as pose tuple.
     """
 
-    theta = lie_group_pose[2] * s
+    theta = pose[2] * s
     ctheta = math.cos(theta)
     stheta = math.sin(theta)
 
-    if abs(lie_group_pose[2]) < 1e-6:
-        return [lie_group_pose[0] * s, lie_group_pose[1] * s, theta]
+    if abs(pose[2]) < 1e-6:
+        return pose[0] * s, pose[1] * s, theta
     else:
-        new_x = (lie_group_pose[1] * (ctheta - 1.0) + lie_group_pose[0] * stheta) / lie_group_pose[2]
-        new_y = (lie_group_pose[0] * (1.0 - ctheta) + lie_group_pose[1] * stheta) / lie_group_pose[2]
-        return [new_x, new_y, theta]
+        new_x = (pose[1] * (ctheta - 1.0) + pose[0] * stheta) / pose[2]
+        new_y = (pose[0] * (1.0 - ctheta) + pose[1] * stheta) / pose[2]
+        return new_x, new_y, theta
 
-def move_pose(starting: Tuple[float, float, float],
-              delta: Tuple[float, float, float]) -> Tuple[float, float, float]:
+
+def apply_affine_transformation(pose: Pose,
+                                transformation: Pose) -> Pose:
     """
-    Composes two poses.
-    :param starting: Starting pose.
-    :param delta: Tuple representing a change in pose.
-    :return: Pose tuple.
+    Apply affine transformation to pose.
+    :param pose: Starting pose.
+    :param transformation: Affine transformation represented as a pose tuple.
+    :return: Pose tuple - the result of applying the transformation to the starting pose.
     """
 
-    new_x = math.cos(starting[2]) * delta[0] - math.sin(starting[2]) * delta[1] + starting[0]
-    new_y = math.sin(starting[2]) * delta[0] + math.cos(starting[2]) * delta[1] + starting[1]
-    new_yaw = principal_value(starting[2] + delta[2])
+    new_x = math.cos(pose[2]) * transformation[0] - math.sin(pose[2]) * transformation[1] + pose[0]
+    new_y = math.sin(pose[2]) * transformation[0] + math.cos(pose[2]) * transformation[1] + pose[1]
+    new_yaw = principal_value(pose[2] + transformation[2])
 
-    return [new_x, new_y, new_yaw]
+    return new_x, new_y, new_yaw
 
 
-def get_lie_algebra(segment_sign: Tuple[int, int, int],
-                    radius: float) -> List[Tuple[float, float, float]]:
+def _get_lie_algebra(segment_sign: Tuple[int, int, int],
+                     radius: float) -> List[Tuple[float, float, float]]:
     """
-    Gets the lie algebra for an arcline path.
+    Gets the Lie algebra for an arcline path.
     :param segment_sign: Tuple of signs for each segment in the arcline path.
     :param radius: Radius of curvature of the arcline path.
     :return: List of lie algebra poses.
     """
 
-    return [[1.0, 0.0, segment_sign[0] / radius],
-            [1.0, 0.0, segment_sign[1] / radius],
-            [1.0, 0.0, segment_sign[2] / radius]]
+    return [(1.0, 0.0, segment_sign[0] / radius),
+            (1.0, 0.0, segment_sign[1] / radius),
+            (1.0, 0.0, segment_sign[2] / radius)]
+
 
 def pose_at_length(arcline_path_3: Dict[str, Any],
                    l: float) -> Tuple[float, float, float]:
@@ -107,31 +117,31 @@ def pose_at_length(arcline_path_3: Dict[str, Any],
 
     assert -1e-6 <= l <= path_length
 
-    l = max(0, min(l, path_length))
+    l = max(0.0, min(l, path_length))
 
     result = arcline_path_3['start_pose']
     segment_sign = compute_segment_sign(arcline_path_3)
 
-    break_points = get_lie_algebra(segment_sign, arcline_path_3['radius'])
+    break_points = _get_lie_algebra(segment_sign, arcline_path_3['radius'])
 
     for i in range(len(break_points)):
 
         length = arcline_path_3['segment_length'][i]
 
         if l <= length:
-            temp = recover_group_at_length(break_points[i], l)
-            result = move_pose(result, temp)
+            transformation = get_transformation_at_s(break_points[i], l)
+            result = apply_affine_transformation(result, transformation)
             break
 
-        temp = recover_group_at_length(break_points[i], length)
-        result = move_pose(result, temp)
+        transformation = get_transformation_at_s(break_points[i], length)
+        result = apply_affine_transformation(result, transformation)
         l -= length
 
     return result
 
+
 def discretize(arcline_path_3: Dict[str, Any],
                resolution_meters: float) -> List[Tuple[float, float, float]]:
-
     """
     Discretize an arcline_path_3.
     :param arcline_path_3: Arcline_Path_3 object.
@@ -148,13 +158,13 @@ def discretize(arcline_path_3: Dict[str, Any],
 
     discretization = []
 
-    cummulative_length = [arcline_path_3['segment_length'][0],
-                          arcline_path_3['segment_length'][0] + arcline_path_3['segment_length'][1],
-                          path_length + resolution_meters]
+    cumulative_length = [arcline_path_3['segment_length'][0],
+                         arcline_path_3['segment_length'][0] + arcline_path_3['segment_length'][1],
+                         path_length + resolution_meters]
 
     segment_sign = compute_segment_sign(arcline_path_3)
 
-    poses = get_lie_algebra(segment_sign, radius)
+    poses = _get_lie_algebra(segment_sign, radius)
 
     temp_pose = arcline_path_3['start_pose']
 
@@ -165,17 +175,17 @@ def discretize(arcline_path_3: Dict[str, Any],
 
         step_along_path = step * resolution_meters
 
-        if (step_along_path > cummulative_length[g_i]):
+        if step_along_path > cumulative_length[g_i]:
             temp_pose = pose_at_length(arcline_path_3, step_along_path)
             g_s = step_along_path
             g_i += 1
 
-        frame_increment = recover_group_at_length(poses[g_i], step_along_path - g_s)
-        new_pose = move_pose(temp_pose, frame_increment)
+        transformation = get_transformation_at_s(poses[g_i], step_along_path - g_s)
+        new_pose = apply_affine_transformation(temp_pose, transformation)
         discretization.append(new_pose)
 
-
     return discretization
+
 
 def discretize_lane(arcline_list: List[Dict[str, Any]],
                     resolution_meters: float) -> List[Tuple[float, float, float]]:

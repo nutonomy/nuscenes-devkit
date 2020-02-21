@@ -6,7 +6,7 @@
 import json
 import os
 import random
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional, Union, Any
 
 import cv2
 import descartes
@@ -112,6 +112,13 @@ class NuScenesMap:
         """
         return self.json_obj[layer_name]
 
+    def _load_arcline_path(self,) -> Dict[str, Dict[str, Any]]:
+        """
+        Returns a dictionary mapping arcline_path_3 token to arcline_path_3 record.
+        :return: Dictionary Mapping token to arcline_path_3
+        """
+        return self.json_obj['arcline_path_3']
+
     def _load_layers(self) -> None:
         """ Loads each available layer. """
 
@@ -130,7 +137,7 @@ class NuScenesMap:
         self.road_divider = self._load_layer('road_divider')
         self.lane_divider = self._load_layer('lane_divider')
         self.traffic_light = self._load_layer('traffic_light')
-        self.arcline_path_3 = self._load_layer('arcline_path_3')
+        self.arcline_path_3 = self._load_arcline_path()
         self.lane_connector = self._load_layer('lane_connector')
 
     def _make_token2ind(self) -> None:
@@ -339,7 +346,7 @@ class NuScenesMap:
                      patch_box: Tuple[float, float, float, float],
                      patch_angle: float,
                      layer_names: List[str] = None,
-                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
+                     canvas_size: Optional[Tuple[int, int]] = (100, 100)) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
         :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
@@ -443,9 +450,10 @@ class NuScenesMap:
     def get_records_in_radius(self, x: float, y: float, radius: float,
                               layer_names: List[str], mode: str = 'intersect') -> Dict[str, List[str]]:
         """
-        Get all the record token that intersects or is within a given radius of a point.
+        Get all the record tokens that intersect a square patch of side length 2*radius centered on (x,y).
         :param x: X-coordinate in global frame.
         :param y: y-coordinate in global frame.
+        :param radius: All records within radius meters of point (x, y) will be returned.
         :param layer_names: Names of the layers that we want to retrieve. By default will always
         look at the all non geometric layers.
         :param mode: "intersect" will return all non geometric records that intersects the patch, "within" will return
@@ -453,8 +461,8 @@ class NuScenesMap:
         :return: Dictionary of layer_name - tokens pairs.
         """
 
-        box = [x - radius, y - radius, x + radius, y + radius]
-        return self.explorer.get_records_in_patch(box, layer_names, mode)
+        patch = (x - radius, y - radius, x + radius, y + radius)
+        return self.explorer.get_records_in_patch(patch, layer_names, mode)
 
     def discretize_lanes(self, tokens: List[str],
                          resolution_meters: float) -> Dict[str, List[Tuple[float, float, float]]]:
