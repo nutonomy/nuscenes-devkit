@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Freddy Boulton, Elena Corina Grigore 2020.
+# Code written by Freddy Boulton, Tung Phan 2020.
 
 from typing import List, Tuple, Callable, Union
 

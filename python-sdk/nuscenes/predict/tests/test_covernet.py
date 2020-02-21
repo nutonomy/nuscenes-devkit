@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Freddy Boulton, 2020.
+
 import unittest
 import math
 import torch
