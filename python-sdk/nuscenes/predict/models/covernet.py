@@ -101,13 +101,18 @@ class ConstantLatticeLoss:
         :return: Average element-wise loss on the batch.
         """
 
+        # If using GPU, need to copy the lattice to the GPU if haven't done so already
+        # This ensures we only copy it once
+        if self.lattice.device != batch_logits.device:
+            self.lattice = self.lattice.to(batch_logits.device)
+
         batch_losses = torch.Tensor().requires_grad_(True).to(batch_logits.device)
 
         for logit, ground_truth in zip(batch_logits, batch_ground_truth_trajectory):
 
             closest_lattice_trajectory = self.similarity_func(self.lattice, ground_truth)
-
-            classification_loss = f.cross_entropy(logit.unsqueeze(0), torch.LongTensor([closest_lattice_trajectory]))
+            label = torch.LongTensor([closest_lattice_trajectory]).to(batch_logits.device)
+            classification_loss = f.cross_entropy(logit.unsqueeze(0), label)
 
             batch_losses = torch.cat((batch_losses, classification_loss.unsqueeze(0)), 0)
 
