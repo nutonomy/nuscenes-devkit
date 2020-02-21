@@ -16,6 +16,7 @@ from torch.nn import functional as f
 
 from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 
+
 class MTP(nn.Module):
     """ Implements the MTP network. """
 
@@ -224,7 +225,7 @@ class MTPLoss:
 
     def __call__(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         """
-        Computes the MTP loss given a tensor of predictions and targets.
+        Computes the MTP loss on a batch.
         The predictions are of shape [batch_size, n_ouput_neurons of last linear layer]
         and the targets are of shape [batch_size, 1, n_timesteps, 2]
         :param predictions: Model predictions for batch.
