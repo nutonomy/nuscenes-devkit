@@ -119,6 +119,9 @@ class NuScenesMap:
         """
         return self.json_obj['arcline_path_3']
 
+    def _load_lane_connectivity(self) -> Dict[str, Dict[str, List[str]]]:
+        return self.json_obj['connectivity']
+
     def _load_layers(self) -> None:
         """ Loads each available layer. """
 
@@ -139,6 +142,7 @@ class NuScenesMap:
         self.traffic_light = self._load_layer('traffic_light')
         self.arcline_path_3 = self._load_arcline_path()
         self.lane_connector = self._load_layer('lane_connector')
+        self.connectivity = self._load_lane_connectivity()
 
     def _make_token2ind(self) -> None:
         """ Store the mapping from token to layer index for each layer. """
@@ -475,6 +479,37 @@ class NuScenesMap:
         """
 
         return {ID: discretize_lane(self.arcline_path_3.get(ID, []), resolution_meters) for ID in tokens}
+
+    def _get_connected_lanes(self, lane_token: str, incoming_outgoing: str) -> List[str]:
+        """
+        Helper for getting the lanes connected to a given lane
+        :param lane_token: Token for the lane.
+        :param incoming_outgoing: Whether to get incoming or outgoing lanes
+        :return: List of lane tokens this lane is connected to.
+        """
+
+        if lane_token not in self.connectivity:
+            raise ValueError(f"{lane_token} is not a valid lane.")
+
+        return self.connectivity[lane_token][incoming_outgoing]
+
+    def get_outgoing_lane_ids(self, lane_token: str) -> List[str]:
+        """
+        Get the out-going lanes
+        :param lane_token: Token for the lane
+        :return: List of lane tokens that start at the end of this lane.
+        """
+
+        return self._get_connected_lanes(lane_token, 'outgoing')
+
+    def get_incoming_lane_ids(self, lane_token: str) -> List[str]:
+        """
+        Get the incoming lanes
+        :param lane_token: Token for the lane
+        :return: List of lane tokens that end at the start of this lane.
+        """
+
+        return self._get_connected_lanes(lane_token, 'incoming')
 
 
 class NuScenesMapExplorer:
