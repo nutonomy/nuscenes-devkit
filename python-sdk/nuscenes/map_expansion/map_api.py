@@ -550,7 +550,6 @@ class NuScenesMap:
         return min_id
 
 
-
 class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
     def __init__(self,
