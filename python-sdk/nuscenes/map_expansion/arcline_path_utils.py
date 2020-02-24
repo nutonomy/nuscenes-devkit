@@ -4,8 +4,12 @@
 import math
 from typing import Dict, Any, List, Tuple
 
+import numpy as np
+
 # (x, y, yaw) in global frame
 Pose = Tuple[float, float, float]
+
+ArcLinePath = Dict[str, Any]
 
 
 def principal_value(angle_in_radians: float) -> float:
@@ -21,14 +25,14 @@ def principal_value(angle_in_radians: float) -> float:
     return scaled_angle
 
 
-def compute_segment_sign(arcline_path_3: Dict[str, Any]) -> Tuple[int, int, int]:
+def compute_segment_sign(arcline_path: ArcLinePath) -> Tuple[int, int, int]:
     """
-    Compute the sign of an arcline_path_3 based on its shape.
-    :param arcline_path_3: arcline_patch_3 record.
+    Compute the sign of an arcline path based on its shape.
+    :param arcline_path: arcline path record.
     :return: Tuple of signs for all three parts of the path. 0 if straight, -1 if right,
         1 if left.
     """
-    shape = arcline_path_3['shape']
+    shape = arcline_path['shape']
     segment_sign = [0, 0, 0]
 
     if shape in ("LRL", "LSL", "LSR"):
@@ -103,29 +107,29 @@ def _get_lie_algebra(segment_sign: Tuple[int, int, int],
 
 
 
-def pose_at_length(arcline_path_3: Dict[str, Any],
+def pose_at_length(arcline_path: ArcLinePath,
                    l: float) -> Tuple[float, float, float]:
     """
-    Retrieves pose at step meters along the arcline_path_3.
-    :param arcline_path_3: Arcline_path_3 object.
+    Retrieves pose at l meters along the arcline path.
+    :param arcline_path: Arcline path object.
     :param l: Get the pose this many meters along the path.
     :return: Pose tuple.
     """
 
-    path_length = sum(arcline_path_3['segment_length'])
+    path_length = sum(arcline_path['segment_length'])
 
     assert -1e-6 <= l <= path_length
 
     l = max(0.0, min(l, path_length))
 
-    result = arcline_path_3['start_pose']
-    segment_sign = compute_segment_sign(arcline_path_3)
+    result = arcline_path['start_pose']
+    segment_sign = compute_segment_sign(arcline_path)
 
-    break_points = _get_lie_algebra(segment_sign, arcline_path_3['radius'])
+    break_points = _get_lie_algebra(segment_sign, arcline_path['radius'])
 
     for i in range(len(break_points)):
 
-        length = arcline_path_3['segment_length'][i]
+        length = arcline_path['segment_length'][i]
 
         if l <= length:
             transformation = get_transformation_at_s(break_points[i], l)
@@ -139,17 +143,17 @@ def pose_at_length(arcline_path_3: Dict[str, Any],
     return result
 
 
-def discretize(arcline_path_3: Dict[str, Any],
-               resolution_meters: float) -> List[Tuple[float, float, float]]:
+def discretize(arcline_path: ArcLinePath,
+               resolution_meters: float) -> List[Pose]:
     """
-    Discretize an arcline_path_3.
-    :param arcline_path_3: Arcline_Path_3 object.
+    Discretize an arcline path.
+    :param arcline_path: Arcline path record.
     :param resolution_meters: How finely to discretize the path.
     :return: List of pose tuples.
     """
 
-    path_length = sum(arcline_path_3['segment_length'])
-    radius = arcline_path_3['radius']
+    path_length = sum(arcline_path['segment_length'])
+    radius = arcline_path['radius']
 
     n_points = int(max(math.ceil(path_length / resolution_meters) + 1.5, 2))
 
@@ -157,15 +161,15 @@ def discretize(arcline_path_3: Dict[str, Any],
 
     discretization = []
 
-    cumulative_length = [arcline_path_3['segment_length'][0],
-                         arcline_path_3['segment_length'][0] + arcline_path_3['segment_length'][1],
+    cumulative_length = [arcline_path['segment_length'][0],
+                         arcline_path['segment_length'][0] + arcline_path['segment_length'][1],
                          path_length + resolution_meters]
 
-    segment_sign = compute_segment_sign(arcline_path_3)
+    segment_sign = compute_segment_sign(arcline_path)
 
     poses = _get_lie_algebra(segment_sign, radius)
 
-    temp_pose = arcline_path_3['start_pose']
+    temp_pose = arcline_path['start_pose']
 
     g_i = 0
     g_s = 0.0
@@ -175,7 +179,7 @@ def discretize(arcline_path_3: Dict[str, Any],
         step_along_path = step * resolution_meters
 
         if step_along_path > cumulative_length[g_i]:
-            temp_pose = pose_at_length(arcline_path_3, step_along_path)
+            temp_pose = pose_at_length(arcline_path, step_along_path)
             g_s = step_along_path
             g_i += 1
 
@@ -186,19 +190,99 @@ def discretize(arcline_path_3: Dict[str, Any],
     return discretization
 
 
-def discretize_lane(arcline_list: List[Dict[str, Any]],
-                    resolution_meters: float) -> List[Tuple[float, float, float]]:
+def discretize_lane(lane: List[ArcLinePath],
+                    resolution_meters: float) -> List[Pose]:
     """
     Discretizes a lane and returns list of all the poses alone the lane.
-    :param arcline_list: Lanes are represented as a list of arcline_3_paths.
-    :param resolution_meters: How finely to discretize the lane. Smaller values ensure turning
+    :param lane: Lanes are represented as a list of arcline paths.
+    :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
         lanes are properly represented.
     :return: List of pose tuples along the lane.
     """
 
     pose_list = []
-    for arcline_path in arcline_list:
-        poses = discretize(arcline_path, resolution_meters)
+    for path in lane:
+        poses = discretize(path, resolution_meters)
         for pose in poses:
             pose_list.append(pose)
     return pose_list
+
+
+def length_of_lane(lane: List[ArcLinePath]) -> float:
+    """
+    Calculates the length of a lane in meters
+    :param lane: Lane
+    :return: Length of lane in meters
+    """
+
+    # Meters
+    return sum(sum(path['segment_length']) for path in lane)
+
+
+def project_pose_to_lane(pose: Pose, lane: List[ArcLinePath], resolution_meters: float = 0.5) -> Tuple[Pose, float]:
+    """
+    Find the closest pose on a lane to a query pose and additionally return the
+    distance along the lane for this pose. Note that this function does
+    not take the heading of the query pose into account.
+    :param pose: Query pose
+    :param lane: Will find the closest pose on this lane
+    :param resolution_meters: How finely to discretize the lane.
+    :return: Tuple of the closest pose and the distance along the lane
+    """
+
+    discretized_lane = discretize_lane(lane, resolution_meters=resolution_meters)
+
+    xy_points = np.array(discretized_lane)[:, :2]
+    closest_pose_index = np.linalg.norm(xy_points - pose[:2], axis=1).argmin()
+
+    closest_pose = discretized_lane[closest_pose_index]
+    distance_along_lane = closest_pose_index * 0.5
+    return closest_pose, distance_along_lane
+
+
+def _find_index(distance_along_lane: float, lengths: List[float]) -> int:
+    """
+    Helper function for finding of path along lane corresponding to the distance_along_lane
+    :param distance_along_lane: Distance along the lane (in meters)
+    :param lengths: Cumulative distance at each end point along the paths in the lane
+    :return: Index of path
+    """
+
+    if len(lengths) == 1:
+        return 0
+    else:
+        return min(index for index, length in enumerate(lengths) if distance_along_lane <= length)
+
+
+def get_curvature_at_distance_along_lane(distance_along_lane: float, lane: List[ArcLinePath]) -> float:
+    """
+    Computes the unsigned curvature (1 / meters) at a distance along a lane.
+    :param distance_along_lane: Distance along the lane to calculate the curvature at
+    :param lane: Lane to query
+    :return: Curvature, always non negative.
+    """
+
+    total_length_at_segments = np.cumsum([sum(path['segment_length']) for path in lane])
+    segment_index = _find_index(distance_along_lane, total_length_at_segments)
+
+    path = lane[segment_index]
+    path_length = path['segment_length']
+
+    if segment_index > 0:
+        distance_along_path = distance_along_lane - total_length_at_segments[segment_index - 1]
+    else:
+        distance_along_path = distance_along_lane
+
+    segment_index = _find_index(distance_along_path, np.cumsum(path_length))
+
+    segment_shape = path['shape'][segment_index]
+
+    # Straight lanes have no curvature
+    if segment_shape == 'S':
+        return 0
+    else:
+        return 1 / path['radius']
+
+
+
+
