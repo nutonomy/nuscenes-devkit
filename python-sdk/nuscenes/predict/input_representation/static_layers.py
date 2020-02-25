@@ -266,18 +266,21 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
         image_side_length = 2 * max(self.meters_ahead, self.meters_behind,
                                     self.meters_left, self.meters_right)
+        image_side_length_pixels = int(image_side_length / self.resolution)
 
         patchbox = get_patchbox(x, y, image_side_length)
 
         angle_in_degrees = angle_of_rotation(yaw_corrected) * 180 / np.pi
 
-        masks = self.maps[map_name].get_map_mask(patchbox, angle_in_degrees, self.layer_names, canvas_size=None)
+        canvas_size = (image_side_length_pixels, image_side_length_pixels)
+
+        masks = self.maps[map_name].get_map_mask(patchbox, angle_in_degrees, self.layer_names, canvas_size=canvas_size)
 
         images = []
         for mask, color in zip(masks, self.colors):
             images.append(change_color_of_binary_mask(np.repeat(mask[::-1, :, np.newaxis], 3, 2), color))
 
-        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, radius=50,
+        lanes = draw_lanes_in_agent_frame(image_side_length_pixels, x, y, yaw, radius=50,
                                           image_resolution=self.resolution, discretization_resolution_meters=1,
                                           map_api=self.maps[map_name])
 
