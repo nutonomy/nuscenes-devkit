@@ -9,6 +9,9 @@ from torch.nn import functional as f
 import numpy as np
 from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 
+# Number of entries in Agent State Vector
+ASV_DIM = 3
+
 
 class CoverNet(nn.Module):
     """
@@ -40,7 +43,7 @@ class CoverNet(nn.Module):
         self.backbone = backbone
 
         backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)
-        n_hidden_layers = [backbone_feature_dim + 3] + n_hidden_layers + [num_modes]
+        n_hidden_layers = [backbone_feature_dim + ASV_DIM] + n_hidden_layers + [num_modes]
 
         linear_layers = [nn.Linear(in_dim, out_dim) for in_dim, out_dim in zip(n_hidden_layers[:-1], n_hidden_layers[1:])]
 
@@ -64,12 +67,12 @@ class CoverNet(nn.Module):
         return logits
 
 
-def l1_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> int:
+def l1_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
     """
     Computes the index of the closest trajectory in the lattice as measured by l1 distance
     :param lattice: Lattice of pre-generated trajectories. Shape [num_modes, n_timesteps, state_dim]
     :param ground_truth: Ground truth trajectory of agent. Shape [1, n_timesteps, state_dim].
-    :return: Index of most closest mode in the lattice.
+    :return: Index of closest mode in the lattice.
     """
     stacked_ground_truth = ground_truth.repeat(lattice.shape[0], 1, 1)
     return f.l1_loss(lattice, stacked_ground_truth, reduction='none').sum(dim=2).mean(dim=1).argmin()

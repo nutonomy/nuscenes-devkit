@@ -80,7 +80,7 @@ class MobileNetBackbone(nn.Module):
 
         self.backbone = trim_network_at_index(mobilenet_v2(), -1)
 
-    def forward(self, input_tensor):
+    def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
         """
         Outputs features after last convolution.
         :param input_tensor:  Shape [batch_size, n_channels, length, width].

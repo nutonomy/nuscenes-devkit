@@ -16,6 +16,9 @@ from torch.nn import functional as f
 
 from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 
+# Number of entries in Agent State Vector
+ASV_DIM = 3
+
 
 class MTP(nn.Module):
     """ Implements the MTP network. """
@@ -47,7 +50,7 @@ class MTP(nn.Module):
         self.backbone = backbone
         self.num_modes = num_modes
         backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)
-        self.fc1 = nn.Linear(backbone_feature_dim + 3, n_hidden_layers)
+        self.fc1 = nn.Linear(backbone_feature_dim + ASV_DIM, n_hidden_layers)
         predictions_per_mode = int(seconds * frequency_in_hz) * 2
 
         self.fc2 = nn.Linear(n_hidden_layers, int(num_modes * predictions_per_mode + num_modes))

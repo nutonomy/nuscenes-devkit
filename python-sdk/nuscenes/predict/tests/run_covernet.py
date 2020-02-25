@@ -64,8 +64,6 @@ if __name__ == "__main__":
 
     loss_function = ConstantLatticeLoss(lattice)
 
-    current_loss = 10000
-
     optimizer = optim.SGD(model.parameters(), lr=0.1)
 
     n_iter = 0
