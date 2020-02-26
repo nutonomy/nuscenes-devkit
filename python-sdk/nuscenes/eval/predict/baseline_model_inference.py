@@ -9,7 +9,7 @@ from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.predict.splits import get_prediction_challenge_split
 from nuscenes.predict import PredictHelper
-from nuscenes.predict.models import ConstantVelocityHeading, PhysicsOracle
+from nuscenes.predict.models.physics import ConstantVelocityHeading, PhysicsOracle
 
 
 def main(version: str, data_root: str,
@@ -50,4 +50,4 @@ if __name__ == "__main__":
     parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra')
 
     args = parser.parse_args()
-    main(args.version, args.split_name, args.output_dir, args.config_name)
+    main(args.version, args.data_root, args.split_name, args.output_dir, args.config_name)
