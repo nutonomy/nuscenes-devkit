@@ -2,7 +2,6 @@
 # Code written by Freddy Boulton, 2020.
 
 from typing import Tuple
-
 import cv2
 import numpy as np
 

@@ -5,8 +5,8 @@ import colorsys
 import os
 from typing import Dict, List, Tuple, Callable
 
-import cv2
 import numpy as np
+import cv2
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.utils import quaternion_yaw
@@ -200,7 +200,6 @@ def draw_lanes_in_agent_frame(image_side_length: int,
     """
 
     agent_pixels = int(image_side_length / 2), int(image_side_length / 2)
-
     base_image = np.zeros((image_side_length, image_side_length, 3))
 
     lanes = get_lanes_in_radius(agent_x, agent_y, radius, discretization_resolution_meters, map_api)
@@ -283,6 +282,10 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
         lanes = draw_lanes_in_agent_frame(image_side_length_pixels, x, y, yaw, radius=50,
                                           image_resolution=self.resolution, discretization_resolution_meters=1,
                                           map_api=self.maps[map_name])
+
+        images.append(lanes)
+
+        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, 50, self.resolution, 1, self.maps[map_name])
 
         images.append(lanes)
 

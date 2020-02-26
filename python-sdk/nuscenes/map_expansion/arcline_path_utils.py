@@ -1,8 +1,9 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
+
 import math
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, Tuple, List
 
 import numpy as np
 
@@ -104,7 +105,6 @@ def _get_lie_algebra(segment_sign: Tuple[int, int, int],
     return [(1.0, 0.0, segment_sign[0] / radius),
             (1.0, 0.0, segment_sign[1] / radius),
             (1.0, 0.0, segment_sign[2] / radius)]
-
 
 
 def pose_at_length(arcline_path: ArcLinePath,

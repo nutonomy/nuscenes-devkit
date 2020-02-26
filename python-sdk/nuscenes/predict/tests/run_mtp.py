@@ -12,7 +12,8 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, IterableDataset
 
-from nuscenes.predict.models.mtp import ResNetBackbone, MTP, MTPLoss
+from nuscenes.predict.models.backbone import ResNetBackbone
+from nuscenes.predict.models.mtp import MTP, MTPLoss
 
 
 class Dataset(IterableDataset):
