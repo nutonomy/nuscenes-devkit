@@ -434,44 +434,58 @@ class NuScenesMap:
         """
         return self.explorer.get_bounds(layer_name, token)
 
-    def get_next_road(self, x: float, y: float) -> Dict[str,List[str]]:
+    def get_next_road(self, x: float, y: float) -> Dict[str, List[str]]:
         """
         Get the next road layer(s) from a point of interest.
+        Returns road_segment, road_block and lane.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
-        :return: Dictionary of layer_name - tokens pairs
+        :return: Dictionary of layer_name - tokens pairs.
         """
-        layers = self.explorer.layers_on_point(x,y)
-        equivalent_layers = {layer: layers[layer] for layer in ['road_segment','road_block','lane']}
-        
-        #check for lane, road_block, road_segment in decreasing order of preference
-        for layer in ['lane','road_block','road_segment']:
-            if equivalent_layers[layer]!='':
-                layer_name = layer; token = equivalent_layers[layer]
+        # Filter out irrelevant layers.
+        road_layers = ['road_segment', 'road_block', 'lane']
+        layers = self.explorer.layers_on_point(x, y)
+        rel_layers = {layer: layers[layer] for layer in road_layers}
+
+        # Pick most fine-grained road layer (lane, road_block, road_segment) object that contains the point.
+        rel_layer = None
+        rel_token = None
+        for layer in road_layers[::-1]:
+            if rel_layers[layer] != '':
+                rel_layer = layer
+                rel_token = rel_layers[layer]
                 break
-        assert layer_name!='', 'No suitable layer on point'
+        assert rel_layer is not None, 'Error: No suitable layer in the specified point location!'
 
-        box_coords = self.explorer.get_bounds(layer_name, token)
-        intersect = self.explorer.get_records_in_patch(box_coords, ['road_segment','road_block','lane'], mode='intersect')
-        result = {layer: [] for layer in ['road_segment','road_block','lane']} 
-        if layer_name == 'road_segment':
-            original_exterior_nodes = self.get(layer_name,token)['exterior_node_tokens']
+        # Get all records that overlap with the bounding box of the selected road.
+        box_coords = self.explorer.get_bounds(rel_layer, rel_token)
+        intersect = self.explorer.get_records_in_patch(box_coords, road_layers, mode='intersect')
 
-            for key in ['road_segment','road_block','lane']:
-                for token2 in intersect[key]:
-                    exterior_nodes = self.get(key,token2)['exterior_node_tokens']
-                    if any(n in exterior_nodes for n in original_exterior_nodes) and token2!=equivalent_layers[key]: #if ANY original exterior nodes exist in exterior nodes, and not equivalent layer
-                        result[key].append(token2)
+        # Go through all objects within the bounding box.
+        result = {layer: [] for layer in road_layers}
+        if rel_layer == 'road_segment':
+            # For road segments, we do not have a direction.
+            # Return objects that have ANY exterior points in common with the relevant layer.
+            rel_exterior_nodes = self.get(rel_layer, rel_token)['exterior_node_tokens']
+            for layer in road_layers:
+                for token in intersect[layer]:
+                    exterior_nodes = self.get(layer, token)['exterior_node_tokens']
+                    if any(n in exterior_nodes for n in rel_exterior_nodes) \
+                            and token != rel_layers[layer]:
+                        result[layer].append(token)
         else:
-            to_edge_line = self.get(layer_name,token)['to_edge_line_token']
-            to_edge_nodes = self.get('line',to_edge_line)['node_tokens']
-
-            for key in ['road_segment','road_block','lane']:
-                for token2 in intersect[key]:
-                    exterior_nodes = self.get(key,token2)['exterior_node_tokens']
-                    if all(n in exterior_nodes for n in to_edge_nodes) and token2!=equivalent_layers[key]: #if all to edge nodes exist in exterior nodes, and not equivalent layer
-                        result[key].append(token2)
+            # For lanes and road blocks, the next road is indicated by the edge line.
+            # Return objects where ALL edge line nodes are included in the exterior nodes.
+            to_edge_line = self.get(rel_layer, rel_token)['to_edge_line_token']
+            to_edge_nodes = self.get('line', to_edge_line)['node_tokens']
+            for layer in road_layers:
+                for token in intersect[layer]:
+                    exterior_nodes = self.get(layer, token)['exterior_node_tokens']
+                    if all(n in exterior_nodes for n in to_edge_nodes) \
+                            and token != rel_layers[layer]:
+                        result[layer].append(token)
         return result
+
 
 class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
