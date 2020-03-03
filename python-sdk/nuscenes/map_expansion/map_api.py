@@ -434,6 +434,44 @@ class NuScenesMap:
         """
         return self.explorer.get_bounds(layer_name, token)
 
+    def get_next_road(self, x: float, y: float) -> Dict[str,List[str]]:
+        """
+        Get the next road layer(s) from a point of interest.
+        :param x: x coordinate of the point of interest.
+        :param y: y coordinate of the point of interest.
+        :return: Dictionary of layer_name - tokens pairs
+        """
+        layers = self.explorer.layers_on_point(x,y)
+        equivalent_layers = {layer: layers[layer] for layer in ['road_segment','road_block','lane']}
+        
+        #check for lane, road_block, road_segment in decreasing order of preference
+        for layer in ['lane','road_block','road_segment']:
+            if equivalent_layers[layer]!='':
+                layer_name = layer; token = equivalent_layers[layer]
+                break
+        assert layer_name!='', 'No suitable layer on point'
+
+        box_coords = self.explorer.get_bounds(layer_name, token)
+        intersect = self.explorer.get_records_in_patch(box_coords, ['road_segment','road_block','lane'], mode='intersect')
+        result = {layer: [] for layer in ['road_segment','road_block','lane']} 
+        if layer_name == 'road_segment':
+            original_exterior_nodes = self.get(layer_name,token)['exterior_node_tokens']
+
+            for key in ['road_segment','road_block','lane']:
+                for token2 in intersect[key]:
+                    exterior_nodes = self.get(key,token2)['exterior_node_tokens']
+                    if any(n in exterior_nodes for n in original_exterior_nodes) and token2!=equivalent_layers[key]: #if ANY original exterior nodes exist in exterior nodes, and not equivalent layer
+                        result[key].append(token2)
+        else:
+            to_edge_line = self.get(layer_name,token)['to_edge_line_token']
+            to_edge_nodes = self.get('line',to_edge_line)['node_tokens']
+
+            for key in ['road_segment','road_block','lane']:
+                for token2 in intersect[key]:
+                    exterior_nodes = self.get(key,token2)['exterior_node_tokens']
+                    if all(n in exterior_nodes for n in to_edge_nodes) and token2!=equivalent_layers[key]: #if all to edge nodes exist in exterior nodes, and not equivalent layer
+                        result[key].append(token2)
+        return result
 
 class NuScenesMapExplorer:
     """ Helper class to explore the nuScenes map data. """
