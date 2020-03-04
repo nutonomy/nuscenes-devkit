@@ -285,10 +285,6 @@ class StaticLayerRasterizer(StaticLayerRepresentation):
 
         images.append(lanes)
 
-        lanes = draw_lanes_in_agent_frame(int(image_side_length / self.resolution), x, y, yaw, 50, self.resolution, 1, self.maps[map_name])
-
-        images.append(lanes)
-
         image = self.combinator.combine(images)
 
         row_crop, col_crop = get_crops(self.meters_ahead, self.meters_behind, self.meters_left,

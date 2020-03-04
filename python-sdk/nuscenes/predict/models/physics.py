@@ -54,7 +54,7 @@ def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
     and frequency.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Time step between predictions (Hz).
+    :param sampled_at: Number of predictions to make per second.
     """
     x, y, vx, vy, _, _, _, _, _, _ = kinematics_data
     preds = []
@@ -71,7 +71,7 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
     the assumption that the acceleration and heading are constant.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Time step between predictions (Hz).
+    :param sampled_at: Number of predictions to make per second.
     """
     x, y, vx, vy, ax, ay, _, _, _, _ = kinematics_data
 
@@ -91,7 +91,7 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
     the assumption that the (scalar) speed and yaw rate are constant.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Time step between predictions (Hz).
+    :param sampled_at: Number of predictions to make per second.
     """
     x, y, vx, vy, _, _, speed, yaw_rate, _, yaw = kinematics_data
 
@@ -114,7 +114,7 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
     the assumption that the rates of change of speed and yaw are constant.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Time step between predictions (Hz).
+    :param sampled_at: Number of predictions to make per second.
     """
     x, y, vx, vy, _, _, speed, yaw_rate, accel, yaw = kinematics_data
 
