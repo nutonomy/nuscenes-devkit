@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 
 import numpy as np
 
-from nuscenes.predict import PredictHelper, convert_global_coords_to_local
+from nuscenes.predict import PredictHelper, convert_global_coords_to_local, convert_local_coords_to_global
 
 
 class MockNuScenes:
@@ -27,7 +27,7 @@ class MockNuScenes:
         assert table_name in {'sample_annotation', 'sample'}
         return getattr(self, "_" + table_name)[token]
 
-class Test_convert_global_coords_to_local(unittest.TestCase):
+class Test_convert_coords(unittest.TestCase):
 
     def setUp(self):
         along_pos_x = np.zeros((5, 2))
@@ -55,30 +55,46 @@ class Test_convert_global_coords_to_local(unittest.TestCase):
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
         np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_x + [[50, 25]], atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
         np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_y + [[50, 25]], atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
         np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_x + [[50, 25]], atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
         np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_y + [[50, 25]], atol=1e-4)
 
     def test_heading_pi_over_4(self):
         rotation = (np.cos(np.pi / 8), 0, 0, np.sin(np.pi / 8))
@@ -88,30 +104,46 @@ class Test_convert_global_coords_to_local(unittest.TestCase):
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * np.sqrt(2) / 2, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * np.sqrt(2) / 2, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_x + [[50, 25]], atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_y + [[50, 25]], atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
         np.testing.assert_allclose(answer,  self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer,  self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_x + [[50, 25]], atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
         np.testing.assert_allclose(answer,  self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer,  self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_y + [[50, 25]], atol=1e-4)
 
     def test_heading_pi_over_2(self):
         rotation = (np.cos(np.pi / 4), 0, 0, np.sin(np.pi / 4))
@@ -121,30 +153,46 @@ class Test_convert_global_coords_to_local(unittest.TestCase):
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
         np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_pos_x,  atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_x + [[50, 25]], atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
         np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_y + [[50, 25]], atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
         np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_x + [[50, 25]], atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
         np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_y + [[50, 25]], atol=1e-4)
 
     def test_heading_3pi_over_4(self):
         rotation = (np.cos(3 * np.pi / 8), 0, 0, np.sin(3 * np.pi / 8))
@@ -154,30 +202,46 @@ class Test_convert_global_coords_to_local(unittest.TestCase):
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]],  atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_x + [[50, 25]], atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_y + [[50, 25]], atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_x + [[50, 25]], atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_y + [[50, 25]], atol=1e-4)
 
     def test_heading_pi(self):
         rotation = (np.cos(np.pi / 2), 0, 0, np.sin(np.pi / 2))
@@ -187,30 +251,46 @@ class Test_convert_global_coords_to_local(unittest.TestCase):
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
         np.testing.assert_allclose(answer, self.along_neg_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_neg_y,  atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_x + [[50, 25]], atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
         np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_pos_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_y + [[50, 25]], atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
         np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_pos_y, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_x + [[50, 25]], atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
         np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.along_neg_x, atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_y + [[50, 25]], atol=1e-4)
 
     def test_heading_neg_pi_over_4(self):
         rotation = (np.cos(-np.pi / 8), 0, 0, np.sin(-np.pi / 8))
@@ -220,30 +300,46 @@ class Test_convert_global_coords_to_local(unittest.TestCase):
         # Testing path along pos x direction
         answer = convert_global_coords_to_local(self.along_pos_x, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, np.sqrt(2) / 2]],  atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_x + [[50, 25]], atol=1e-4)
 
         # Testing path along pos y direction
         answer = convert_global_coords_to_local(self.along_pos_y, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_pos_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_pos_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[-np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_pos_y + [[50, 25]], atol=1e-4)
 
         # Testing path along neg x direction
         answer = convert_global_coords_to_local(self.along_neg_x, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_x, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_x + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, -np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_x + [[50, 25]], atol=1e-4)
 
         # Testing path along neg y direction
         answer = convert_global_coords_to_local(self.along_neg_y, origin, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, origin, rotation),
+                                   self.along_neg_y, atol=1e-4)
 
         answer = convert_global_coords_to_local(self.along_neg_y + [[50, 25]], offset, rotation)
         np.testing.assert_allclose(answer, self.y_equals_x * [[np.sqrt(2) / 2, np.sqrt(2) / 2]], atol=1e-4)
+        np.testing.assert_allclose(convert_local_coords_to_global(answer, offset, rotation),
+                                   self.along_neg_y + [[50, 25]], atol=1e-4)
 
 
 class TestPredictHelper(unittest.TestCase):

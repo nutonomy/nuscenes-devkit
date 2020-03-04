@@ -56,6 +56,24 @@ def convert_global_coords_to_local(coordinates: np.ndarray,
     return np.dot(transform, coords).T[:, :2]
 
 
+def convert_local_coords_to_global(coordinates: np.ndarray,
+                                   translation: Tuple[float, float, float],
+                                   rotation: Tuple[float, float, float, float]) -> np.ndarray:
+    """
+    Converts local coordinates to global coordinates.
+    :param coordinates: x,y locations. array of shape [n_steps, 2]
+    :param translation: Tuple of (x, y, z) location that is the center of the new frame
+    :param rotation: Tuple representation of quaternion of new frame.
+        Representation - cos(theta / 2) + (xi + yi + zi)sin(theta / 2).
+    :return: x,y locations stored in array of share [n_times, 2].
+    """
+    yaw = angle_of_rotation(quaternion_yaw(Quaternion(rotation)))
+
+    transform = make_2d_rotation_matrix(angle_in_radians=-yaw)
+
+    return np.dot(transform, coordinates.T).T[:, :2] + np.atleast_2d(np.array(translation)[:2])
+
+
 class PredictHelper:
     """ Wrapper class around NuScenes to help retrieve data for the prediction task. """
 
