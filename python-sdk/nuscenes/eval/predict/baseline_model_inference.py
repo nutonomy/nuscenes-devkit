@@ -9,7 +9,7 @@ from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.predict.splits import get_prediction_challenge_split
 from nuscenes.predict import PredictHelper
-from nuscenes.predict.models import ConstantVelocityHeading, PhysicsOracle
+from nuscenes.predict.models.physics import ConstantVelocityHeading, PhysicsOracle
 
 
 def main(version: str, data_root: str,
