@@ -54,7 +54,7 @@ def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
     and frequency.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Timester between predictions (Hz).
+    :param sampled_at: Time step between predictions (Hz).
     """
     x, y, vx, vy, _, _, _, _, _, _ = kinematics_data
     preds = []
@@ -71,7 +71,7 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
     the assumption that the acceleration and heading are constant.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Timester between predictions (Hz).
+    :param sampled_at: Time step between predictions (Hz).
     """
     x, y, vx, vy, ax, ay, _, _, _, _ = kinematics_data
 
@@ -91,7 +91,7 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
     the assumption that the (scalar) speed and yaw rate are constant.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Timester between predictions (Hz).
+    :param sampled_at: Time step between predictions (Hz).
     """
     x, y, vx, vy, _, _, speed, yaw_rate, _, yaw = kinematics_data
 
@@ -114,7 +114,7 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
     the assumption that the rates of change of speed and yaw are constant.
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
-    :param sampled_at: Timester between predictions (Hz).
+    :param sampled_at: Time step between predictions (Hz).
     """
     x, y, vx, vy, _, _, speed, yaw_rate, accel, yaw = kinematics_data
 
@@ -122,7 +122,7 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
     time_step = 1.0 / sampled_at
     speed_step = time_step * accel
     yaw_step = time_step * yaw_rate
-    for time in np.arange(time_step, sec_from_now + time_step, time_step):
+    for _ in np.arange(time_step, sec_from_now + time_step, time_step):
         distance_step = time_step * speed
         x += distance_step * np.cos(yaw)
         y += distance_step * np.sin(yaw)
@@ -160,7 +160,7 @@ class ConstantVelocityHeading(Baseline):
         instance, sample = token.split("_")
         annotation = self.helper.get_sample_annotation(instance, sample)
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
-        cv_heading = _constant_acceleration_and_heading(kinematics, self.sec_from_now, self.sampled_at)
+        cv_heading = _constant_velocity_heading_from_kinematics(kinematics, self.sec_from_now, self.sampled_at)
         prediction = convert_global_coords_to_local(cv_heading, annotation['translation'], annotation['rotation'])
 
         # Need the prediction to have 2d.
