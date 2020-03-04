@@ -1,8 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Eric Wolff 2020.
 from typing import List, Dict, Any
+import os
+import json
 
 from nuscenes.eval.predict.metrics import Metric, DeserializeMetric
+from nuscenes.predict import PredictHelper
 
 
 class PredictionConfig:
@@ -29,7 +32,27 @@ class PredictionConfig:
                 'seconds': self.seconds}
 
     @classmethod
-    def deserialize(cls, content: Dict[str, Any]):
+    def deserialize(cls, content: Dict[str, Any], helper: PredictHelper):
         """ Initialize from serialized dictionary. """
-        return cls([DeserializeMetric(metric) for metric in content['metrics']],
+        return cls([DeserializeMetric(metric, helper) for metric in content['metrics']],
                    seconds=content['seconds'])
+
+
+def load_prediction_config(helper: PredictHelper, config_name: str = 'predict_2020_icra.json') -> PredictionConfig:
+    """
+    Loads a PredictionConfig from json file stored in eval/predict/configs
+    :param helper: Instance of PredictHelper. Needed for OffRoadRate metric.
+    :param config_name: Name of json cofig file
+    :return: PredictionConfig
+    """
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_path = os.path.join(this_dir, "configs", config_name)
+    assert os.path.exists(cfg_path), f'Requested unknown configuration {cfg_path}'
+
+    # Load config file and deserialize it.
+    with open(cfg_path, 'r') as f:
+        config = json.load(f)
+
+    return PredictionConfig.deserialize(config, helper)
+
+

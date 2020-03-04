@@ -1,8 +1,28 @@
 import unittest
+from unittest.mock import MagicMock, patch
+from typing import Dict
+import json
+import os
 
 import numpy as np
+from shapely.geometry import shape, MultiPolygon
 
+from nuscenes.predict import PredictHelper
 from nuscenes.eval.predict import metrics
+from nuscenes.eval.predict.data_classes import Prediction
+
+
+def mock_load_drivable_area_polygons(mock_helper: MagicMock) -> Dict[str, MultiPolygon]:
+    del mock_helper
+
+    def load_polygon(filename: str):
+        return shape(json.load(open(os.path.join(DIRECTORY, filename)))).buffer(0)
+
+    DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+    return {'singapore-onenorth': load_polygon('onenorth_drivable_area.json'),
+            'singapore-hollandvillage': load_polygon('holland_village_drivable_area.json'),
+            'singapore-queenstown': load_polygon('queenstown_drivable_area.json'),
+            'boston-seaport': load_polygon('boston_drivable_area.json')}
 
 
 class TestFunctions(unittest.TestCase):
@@ -201,13 +221,21 @@ class TestMetrics(unittest.TestCase):
                                                     'aggregators': [{'name': 'RowMean'}],
                                                     'tolerance': 2})
 
+    def test_OffRoadRate(self):
+        with patch.object(metrics.OffRoadRate, 'load_drivable_area_polygons'):
+            helper = MagicMock(spec=PredictHelper)
+            off_road_rate = metrics.OffRoadRate(helper, [metrics.RowMean()])
+            self.assertDictEqual(off_road_rate.serialize(), {'name': 'OffRoadRate',
+                                                             'aggregators': [{'name': 'RowMean'}]})
+
     def test_DeserializeMetric(self):
 
         config = {'name': 'MinADEK',
                   'k_to_report': [1, 5, 10],
                   'aggregators': [{'name': 'RowMean'}]}
 
-        m = metrics.DeserializeMetric(config)
+        helper = MagicMock(spec=PredictHelper)
+        m = metrics.DeserializeMetric(config, helper)
         self.assertEqual(m.name, 'MinADEK')
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
@@ -216,7 +244,7 @@ class TestMetrics(unittest.TestCase):
                   'k_to_report': [1, 5, 10],
                   'aggregators': [{'name': 'RowMean'}]}
 
-        m = metrics.DeserializeMetric(config)
+        m = metrics.DeserializeMetric(config, helper)
         self.assertEqual(m.name, 'MinFDEK')
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
@@ -226,9 +254,80 @@ class TestMetrics(unittest.TestCase):
                   'tolerance': 2,
                   'aggregators': [{'name': 'RowMean'}]}
 
-        m = metrics.DeserializeMetric(config)
+        m = metrics.DeserializeMetric(config, helper)
         self.assertEqual(m.name, 'HitRateTopK_2')
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
+
+        with patch.object(metrics.OffRoadRate, 'load_drivable_area_polygons'):
+            config = {'name': 'OffRoadRate',
+                      'aggregators': [{'name': 'RowMean'}]}
+
+            m = metrics.DeserializeMetric(config, helper)
+            self.assertEqual(m.name, 'OffRoadRate')
+            self.assertEqual(m.aggregators[0].name, 'RowMean')
+
+
+class TestOffRoadRate(unittest.TestCase):
+
+    def _do_test(self, map_name, predictions, answer):
+        with patch.object(metrics.OffRoadRate, 'load_drivable_area_polygons') as mock_load:
+            mock_load.side_effect = mock_load_drivable_area_polygons
+            helper = MagicMock(spec=PredictHelper)
+            helper.get_map_name_from_sample_token.return_value = map_name
+            off_road_rate = metrics.OffRoadRate(helper, [metrics.RowMean()])
+
+            probabilities = np.array([1/3, 1/3, 1/3])
+            prediction = Prediction('foo-instance', 'foo-sample', predictions, probabilities)
+
+            # Two violations out of three trajectories
+            np.testing.assert_allclose(off_road_rate(np.array([]), prediction), np.array([answer]))
+
+    def test_boston(self):
+        predictions = np.array([[(486.91778944573264, 812.8782745377198),
+                                 (487.3648565923963, 813.7269620253566),
+                                 (487.811923719944, 814.5756495230632),
+                                 (488.2589908474917, 815.4243370207698)],
+                                [(486.91778944573264, 812.8782745377198),
+                                 (487.3648565923963, 813.7269620253566),
+                                 (487.811923719944, 814.5756495230632),
+                                 (0, 0)],
+                                [(0, 0), (0, 1), (0, 2)]])
+        self._do_test('boston-seaport', predictions, 2/3)
+
+
+    def test_one_north(self):
+        predictions = np.array([[(965.8515334916171, 535.711518726687),
+                                 (963.6475430050381, 532.9713854167148),
+                                 (961.4435525191437, 530.231252106192),
+                                 (959.239560587773, 527.4911199583674)],
+                                [(508.8742570078554, 875.3458194583762),
+                                 (505.2029816111618, 877.7929160023881),
+                                 (501.5317062144682, 880.2400125464),
+                                 (497.86043081777467, 882.6871090904118),
+                                 (494.18915542108107, 885.1342056344237)],
+                                [(0, 0), (0, 1), (0, 2)]])
+        self._do_test('singapore-onenorth', predictions, 1/3)
+
+    def test_queenstown(self):
+        predictions = np.array([[(744.8769428947988, 2508.398411382534),
+                                 (747.7808552527478, 2507.1313712702054),
+                                 (750.7893530020073, 2506.1385301483474)],
+                                [(-100, 0), (-10, 100)]])
+        self._do_test('singapore-queenstown', predictions, 1/2)
+
+    def test_hollandvillage(self):
+        predictions = np.array([[(1150.811356677105, 1598.0397224872172),
+                                (1158.783061670897, 1595.5210995059333),
+                                (1166.7543904812692, 1593.0012894706226),
+                                (1174.6895821186222, 1590.3704726754975)],
+                               [(1263.841977478558, 943.4546342496925),
+                                (1262.3235250519404, 944.6782247770625),
+                                (1260.8163412684773, 945.9156425437817),
+                                (1259.3272449205788, 947.1747683330505)]])
+        self._do_test('singapore-hollandvillage', predictions, 0)
+
+
+
 
 

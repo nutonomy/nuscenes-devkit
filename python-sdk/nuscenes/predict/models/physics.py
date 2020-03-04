@@ -158,13 +158,11 @@ class ConstantVelocityHeading(Baseline):
         :param token: string of format {instance_token}_{sample_token}.
         """
         instance, sample = token.split("_")
-        annotation = self.helper.get_sample_annotation(instance, sample)
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
         cv_heading = _constant_velocity_heading_from_kinematics(kinematics, self.sec_from_now, self.sampled_at)
-        prediction = convert_global_coords_to_local(cv_heading, annotation['translation'], annotation['rotation'])
 
         # Need the prediction to have 2d.
-        return Prediction(instance, sample, np.expand_dims(prediction, 0), np.array([1]))
+        return Prediction(instance, sample, np.expand_dims(cv_heading, 0), np.array([1]))
 
 
 class PhysicsOracle(Baseline):
@@ -176,9 +174,8 @@ class PhysicsOracle(Baseline):
         :param token: string of format {instance_token}_{sample_token}.
         """
         instance, sample = token.split("_")
-        annotation = self.helper.get_sample_annotation(instance, sample)
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
-        ground_truth = self.helper.get_future_for_agent(instance, sample, self.sec_from_now, in_agent_frame=True)
+        ground_truth = self.helper.get_future_for_agent(instance, sample, self.sec_from_now, in_agent_frame=False)
 
         path_funs = [
             _constant_acceleration_and_heading,
@@ -188,13 +185,11 @@ class PhysicsOracle(Baseline):
         ]
 
         paths = [path_fun(kinematics, self.sec_from_now, self.sampled_at) for path_fun in path_funs]
-        paths_ego = [convert_global_coords_to_local(path, annotation['translation'], annotation['rotation'])
-                     for path in paths]
 
         # Select the one with the least l2 error, averaged (or equivalently, summed) over all
         # points of the path.  This is (proportional to) the Frobenius norm of the difference
         # between the path (as an n x 2 matrix) and the ground truth.
-        oracle = sorted(paths_ego,
+        oracle = sorted(paths,
                         key=lambda path: np.linalg.norm(np.array(path) - ground_truth, ord="fro"))[0]
 
         # Need the prediction to have 2d.

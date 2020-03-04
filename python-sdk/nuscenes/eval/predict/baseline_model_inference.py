@@ -6,7 +6,7 @@ import json
 import os
 
 from nuscenes import NuScenes
-from nuscenes.eval.common.config import config_factory
+from nuscenes.eval.predict.config import load_prediction_config
 from nuscenes.eval.predict.splits import get_prediction_challenge_split
 from nuscenes.predict import PredictHelper
 from nuscenes.predict.models.physics import ConstantVelocityHeading, PhysicsOracle
@@ -26,7 +26,7 @@ def main(version: str, data_root: str,
     nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
     dataset = get_prediction_challenge_split(split_name)
-    config = config_factory(config_name)
+    config = load_prediction_config(helper, config_name)
     oracle = PhysicsOracle(config.seconds, helper)
     cv_heading = ConstantVelocityHeading(config.seconds, helper)
 

@@ -5,7 +5,11 @@ import abc
 from typing import List, Dict, Any
 
 import numpy as np
+from shapely.geometry import MultiPolygon, LineString
 
+from nuscenes.predict import PredictHelper
+from nuscenes.predict.input_representation.static_layers import load_all_maps
+from nuscenes.map_expansion.map_api import NuScenesMap
 from nuscenes.eval.predict.data_classes import Prediction
 
 
@@ -187,6 +191,10 @@ class Metric(SerializableFunction):
     def shape(self,) -> str:
         pass
 
+    @abc.abstractmethod
+    def serialize(self) -> Dict[str, Any]:
+        pass
+
 
 def desired_number_of_modes(results: np.ndarray,
                             k_to_report: List[int]) -> np.ndarray:
@@ -290,14 +298,54 @@ class HitRateTopK(Metric):
 
 class OffRoadRate(Metric):
 
-    def __call__(self, predictions, stacked_ground_truth, probabilities):
-        raise NotImplementedError("OffRoadRate not implemented!")
+    def __init__(self, helper: PredictHelper, aggregators: List[Aggregator]):
+        self._aggregators = aggregators
+        self.helper = helper
+        self.drivable_area_polygons = self.load_drivable_area_polygons(helper)
 
+    @staticmethod
+    def load_drivable_area_polygons(helper: PredictHelper) -> Dict[str, MultiPolygon]:
 
-class CollisionRate(Metric):
+        maps: Dict[str, NuScenesMap] = load_all_maps(helper)
 
-    def __call__(self, predictions, stacked_ground_truth, probabilities):
-        raise NotImplementedError("CollisionRate not implemented")
+        polygons = {}
+        for map_name, map_api in maps.items():
+            drivable_area_polygons = [map_api.extract_polygon(token) for record in map_api.drivable_area
+                                      for token in record['polygon_tokens']]
+
+            # To ensure the multipolygon is valid
+            polygons[map_name] = MultiPolygon(drivable_area_polygons).buffer(0)
+
+        return polygons
+
+    def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
+        map_name = self.helper.get_map_name_from_sample_token(prediction.sample)
+        drivable_area = self.drivable_area_polygons[map_name]
+
+        n_violations = 0
+        for mode in prediction.prediction:
+
+            trajectory = LineString(mode)
+            if not drivable_area.contains(trajectory):
+                n_violations += 1
+
+        return np.array([n_violations / prediction.prediction.shape[0]])
+
+    def serialize(self) -> Dict[str, Any]:
+        return {'name': self.name,
+                'aggregators': [agg.serialize() for agg in self.aggregators]}
+
+    @property
+    def aggregators(self,) -> List[Aggregator]:
+        return self._aggregators
+
+    @property
+    def name(self):
+        return 'OffRoadRate'
+
+    @property
+    def shape(self):
+        return 1
 
 
 def DeserializeAggregator(config: Dict[str, Any]) -> Aggregator:
@@ -308,7 +356,7 @@ def DeserializeAggregator(config: Dict[str, Any]) -> Aggregator:
         raise ValueError(f"Cannot deserialize Aggregator {config['name']}.")
 
 
-def DeserializeMetric(config: Dict[str, Any]) -> Metric:
+def DeserializeMetric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
     """ Helper for deserializing Metrics. """
     if config['name'] == 'MinADEK':
         return MinADEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
@@ -317,5 +365,7 @@ def DeserializeMetric(config: Dict[str, Any]) -> Metric:
     elif config['name'] == 'HitRateTopK':
         return HitRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
                            tolerance=config['tolerance'])
+    elif config['name'] == 'OffRoadRate':
+        return OffRoadRate(helper, [DeserializeAggregator(agg) for agg in config['aggregators']])
     else:
         raise ValueError(f"Cannot deserialize function {config['name']}.")
