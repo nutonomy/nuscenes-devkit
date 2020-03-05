@@ -13,19 +13,6 @@ from nuscenes.eval.predict import metrics
 from nuscenes.eval.predict.data_classes import Prediction
 
 
-def mock_load_drivable_area_polygons(mock_helper: MagicMock) -> Dict[str, MultiPolygon]:
-    del mock_helper
-
-    def load_polygon(filename: str):
-        return shape(json.load(open(os.path.join(DIRECTORY, filename)))).buffer(0)
-
-    DIRECTORY = os.path.dirname(os.path.realpath(__file__))
-    return {'singapore-onenorth': load_polygon('onenorth_drivable_area.json'),
-            'singapore-hollandvillage': load_polygon('holland_village_drivable_area.json'),
-            'singapore-queenstown': load_polygon('queenstown_drivable_area.json'),
-            'boston-seaport': load_polygon('boston_drivable_area.json')}
-
-
 class TestFunctions(unittest.TestCase):
 
     def setUp(self):
@@ -274,7 +261,7 @@ class TestOffRoadRate(unittest.TestCase):
     def _do_test(self, map_name, predictions, answer):
         with patch.object(PredictHelper, 'get_map_name_from_sample_token') as get_map_name:
             get_map_name.return_value = map_name
-            nusc = NuScenes('v1.0-mini')
+            nusc = NuScenes('v1.0-mini', dataroot=os.environ['NUSCENES'])
             helper = PredictHelper(nusc)
 
             off_road_rate = metrics.OffRoadRate(helper, [metrics.RowMean()])
