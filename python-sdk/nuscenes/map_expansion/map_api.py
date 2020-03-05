@@ -97,8 +97,8 @@ class NuScenesMap:
         else:
             self.version = '1.0'
         if self.version < '1.1':
-            print('Warning: You are using an outdated map version! Please go to https://www.nuscenes.org/download to '
-                  'download the latest map!')
+            raise Exception('Error: You are using an outdated map version! '
+                            'Please go to https://www.nuscenes.org/download to download the latest map!')
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -220,15 +220,17 @@ class NuScenesMap:
     def render_layers(self,
                       layer_names: List[str],
                       alpha: float = 0.5,
-                      figsize: Tuple[int, int] = (15, 15)) -> Tuple[Figure, Axes]:
+                      figsize: Tuple[int, int] = (15, 15),
+                      tokens: List[str] = None) -> Tuple[Figure, Axes]:
         """
         Render a list of layer names.
         :param layer_names: A list of layer names.
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
+        :param tokens: Optional list of tokens to render. None means all tokens are rendered.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_layers(layer_names, alpha, figsize)
+        return self.explorer.render_layers(layer_names, alpha, figsize, tokens)
 
     def render_map_patch(self,
                          box_coords: Tuple[float, float, float, float],
@@ -433,6 +435,72 @@ class NuScenesMap:
         :return: min_x, min_y, max_x, max_y of of the line representation.
         """
         return self.explorer.get_bounds(layer_name, token)
+
+    def render_next_roads(self,
+                          x: float,
+                          y: float,
+                          alpha: float = 0.5,
+                          figsize: Tuple[int, int] = (15, 15)) -> None:
+        """
+        Renders the possible next roads from a point of interest.
+        :param x: x coordinate of the point of interest.
+        :param y: y coordinate of the point of interest.
+        :param alpha: The opacity of each layer that gets rendered.
+        :param figsize: Size of the whole figure.
+        """
+        self.explorer.render_next_roads(x, y, alpha, figsize)
+
+    def get_next_roads(self, x: float, y: float) -> Dict[str, List[str]]:
+        """
+        Get the possible next roads from a point of interest.
+        Returns road_segment, road_block and lane.
+        :param x: x coordinate of the point of interest.
+        :param y: y coordinate of the point of interest.
+        :return: Dictionary of layer_name - tokens pairs.
+        """
+        # Filter out irrelevant layers.
+        road_layers = ['road_segment', 'road_block', 'lane']
+        layers = self.explorer.layers_on_point(x, y)
+        rel_layers = {layer: layers[layer] for layer in road_layers}
+
+        # Pick most fine-grained road layer (lane, road_block, road_segment) object that contains the point.
+        rel_layer = None
+        rel_token = None
+        for layer in road_layers[::-1]:
+            if rel_layers[layer] != '':
+                rel_layer = layer
+                rel_token = rel_layers[layer]
+                break
+        assert rel_layer is not None, 'Error: No suitable layer in the specified point location!'
+
+        # Get all records that overlap with the bounding box of the selected road.
+        box_coords = self.explorer.get_bounds(rel_layer, rel_token)
+        intersect = self.explorer.get_records_in_patch(box_coords, road_layers, mode='intersect')
+
+        # Go through all objects within the bounding box.
+        result = {layer: [] for layer in road_layers}
+        if rel_layer == 'road_segment':
+            # For road segments, we do not have a direction.
+            # Return objects that have ANY exterior points in common with the relevant layer.
+            rel_exterior_nodes = self.get(rel_layer, rel_token)['exterior_node_tokens']
+            for layer in road_layers:
+                for token in intersect[layer]:
+                    exterior_nodes = self.get(layer, token)['exterior_node_tokens']
+                    if any(n in exterior_nodes for n in rel_exterior_nodes) \
+                            and token != rel_layers[layer]:
+                        result[layer].append(token)
+        else:
+            # For lanes and road blocks, the next road is indicated by the edge line.
+            # Return objects where ALL edge line nodes are included in the exterior nodes.
+            to_edge_line = self.get(rel_layer, rel_token)['to_edge_line_token']
+            to_edge_nodes = self.get('line', to_edge_line)['node_tokens']
+            for layer in road_layers:
+                for token in intersect[layer]:
+                    exterior_nodes = self.get(layer, token)['exterior_node_tokens']
+                    if all(n in exterior_nodes for n in to_edge_nodes) \
+                            and token != rel_layers[layer]:
+                        result[layer].append(token)
+        return result
 
 
 class NuScenesMapExplorer:
@@ -690,12 +758,14 @@ class NuScenesMapExplorer:
     def render_layers(self,
                       layer_names: List[str],
                       alpha: float,
-                      figsize: Tuple[int, int]) -> Tuple[Figure, Axes]:
+                      figsize: Tuple[int, int],
+                      tokens: List[str] = None) -> Tuple[Figure, Axes]:
         """
         Render a list of layers.
         :param layer_names: A list of layer names.
         :param alpha: The opacity of each layer.
         :param figsize: Size of the whole figure.
+        :param tokens: Optional list of tokens to render. None means all tokens are rendered.
         :return: The matplotlib figure and axes of the rendered layers.
         """
         fig = plt.figure(figsize=figsize)
@@ -707,7 +777,7 @@ class NuScenesMapExplorer:
         layer_names = list(set(layer_names))
 
         for layer_name in layer_names:
-            self._render_layer(ax, layer_name, alpha)
+            self._render_layer(ax, layer_name, alpha, tokens)
 
         ax.legend()
 
@@ -1023,6 +1093,33 @@ class NuScenesMapExplorer:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
         return map_poses
+
+    def render_next_roads(self,
+                          x: float,
+                          y: float,
+                          alpha: float = 0.5,
+                          figsize: Tuple[int, int] = (15, 15)) -> None:
+        """
+        Renders the possible next roads from a point of interest.
+        :param x: x coordinate of the point of interest.
+        :param y: y coordinate of the point of interest.
+        :param alpha: The opacity of each layer that gets rendered.
+        :param figsize: Size of the whole figure.
+        """
+        # Get next roads.
+        next_roads = self.map_api.get_next_roads(x, y)
+        layer_names = []
+        tokens = []
+        for layer_name, layer_tokens in next_roads.items():
+            if len(layer_tokens) > 0:
+                layer_names.append(layer_name)
+                tokens.extend(layer_tokens)
+
+        # Render them.
+        fig, ax = self.render_layers(layer_names, alpha, figsize, tokens)
+
+        # Render current location with an x.
+        ax.plot(x, y, 'x', markersize=12, color='red')
 
     @staticmethod
     def _clip_points_behind_camera(points, near_plane: float):
@@ -1364,32 +1461,36 @@ class NuScenesMapExplorer:
         elif mode == 'within':
             return np.all(cond)
 
-    def _render_layer(self, ax: Axes, layer_name: str, alpha: float) -> None:
+    def _render_layer(self, ax: Axes, layer_name: str, alpha: float, tokens: List[str] = None) -> None:
         """
         Wrapper method that renders individual layers on an axis.
         :param ax: The matplotlib axes where the layer will get rendered.
         :param layer_name: Name of the layer that we are interested in.
         :param alpha: The opacity of the layer to be rendered.
+        :param tokens: Optional list of tokens to render. None means all tokens are rendered.
         """
         if layer_name in self.map_api.non_geometric_polygon_layers:
-            self._render_polygon_layer(ax, layer_name, alpha)
+            self._render_polygon_layer(ax, layer_name, alpha, tokens)
         elif layer_name in self.map_api.non_geometric_line_layers:
-            self._render_line_layer(ax, layer_name, alpha)
+            self._render_line_layer(ax, layer_name, alpha, tokens)
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
 
-    def _render_polygon_layer(self, ax: Axes, layer_name: str, alpha: float) -> None:
+    def _render_polygon_layer(self, ax: Axes, layer_name: str, alpha: float, tokens: List[str] = None) -> None:
         """
         Renders an individual non-geometric polygon layer on an axis.
         :param ax: The matplotlib axes where the layer will get rendered.
         :param layer_name: Name of the layer that we are interested in.
         :param alpha: The opacity of the layer to be rendered.
+        :param tokens: Optional list of tokens to render. None means all tokens are rendered.
         """
         if layer_name not in self.map_api.non_geometric_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
         first_time = True
         records = getattr(self.map_api, layer_name)
+        if tokens is not None:
+            records = [r for r in records if r['token'] in tokens]
         if layer_name == 'drivable_area':
             for record in records:
                 polygons = [self.map_api.extract_polygon(polygon_token) for polygon_token in record['polygon_tokens']]
@@ -1415,18 +1516,21 @@ class NuScenesMapExplorer:
                 ax.add_patch(descartes.PolygonPatch(polygon, fc=self.color_map[layer_name], alpha=alpha,
                                                     label=label))
 
-    def _render_line_layer(self, ax: Axes, layer_name: str, alpha: float) -> None:
+    def _render_line_layer(self, ax: Axes, layer_name: str, alpha: float, tokens: List[str] = None) -> None:
         """
         Renders an individual non-geometric line layer on an axis.
         :param ax: The matplotlib axes where the layer will get rendered.
         :param layer_name: Name of the layer that we are interested in.
         :param alpha: The opacity of the layer to be rendered.
+        :param tokens: Optional list of tokens to render. None means all tokens are rendered.
         """
         if layer_name not in self.map_api.non_geometric_line_layers:
             raise ValueError("{} is not a line layer".format(layer_name))
 
         first_time = True
         records = getattr(self.map_api, layer_name)
+        if tokens is not None:
+            records = [r for r in records if r['token'] in tokens]
         for record in records:
             if first_time:
                 label = layer_name
