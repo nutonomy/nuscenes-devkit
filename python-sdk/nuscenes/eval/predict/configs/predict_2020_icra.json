@@ -1,45 +1,53 @@
 {
-  "metrics": [
-    {
-      "k_to_report": [
-        1,
-        5,
-        10
-      ],
-      "name": "MinFDEK",
-      "aggregators": [
+    "seconds": 6,
+    "metrics": [
         {
-          "name": "RowMean"
-        }
-      ]
-    },
-    {
-      "k_to_report": [
-        1,
-        5,
-        10
-      ],
-      "name": "MinADEK",
-      "aggregators": [
+            "k_to_report": [
+                1,
+                5,
+                10
+            ],
+            "name": "MinFDEK",
+            "aggregators": [
+                {
+                    "name": "RowMean"
+                }
+            ]
+        },
         {
-          "name": "RowMean"
-        }
-      ]
-    },
-    {
-      "k_to_report": [
-        1,
-        5,
-        10
-      ],
-      "name": "HitRateTopK",
-      "aggregators": [
+            "k_to_report": [
+                1,
+                5,
+                10
+            ],
+            "name": "MinADEK",
+            "aggregators": [
+                {
+                    "name": "RowMean"
+                }
+            ]
+        },
         {
-          "name": "RowMean"
+            "k_to_report": [
+                1,
+                5,
+                10
+            ],
+            "name": "HitRateTopK",
+            "aggregators": [
+                {
+                    "name": "RowMean"
+                }
+            ],
+            "tolerance": 2
+        },
+        {
+            "name": "OffRoadRate",
+            "aggregators": [
+                {
+                    "name": "RowMean"
+                }
+            ]
         }
-      ],
-      "tolerance": 2
-    }
-  ],
-  "seconds": 6
+    ]
 }
