@@ -7,6 +7,7 @@ import os
 import numpy as np
 from shapely.geometry import shape, MultiPolygon
 
+from nuscenes import NuScenes
 from nuscenes.predict import PredictHelper
 from nuscenes.eval.predict import metrics
 from nuscenes.eval.predict.data_classes import Prediction
@@ -271,10 +272,11 @@ class TestMetrics(unittest.TestCase):
 class TestOffRoadRate(unittest.TestCase):
 
     def _do_test(self, map_name, predictions, answer):
-        with patch.object(metrics.OffRoadRate, 'load_drivable_area_polygons') as mock_load:
-            mock_load.side_effect = mock_load_drivable_area_polygons
-            helper = MagicMock(spec=PredictHelper)
-            helper.get_map_name_from_sample_token.return_value = map_name
+        with patch.object(PredictHelper, 'get_map_name_from_sample_token') as get_map_name:
+            get_map_name.return_value = map_name
+            nusc = NuScenes('v1.0-mini')
+            helper = PredictHelper(nusc)
+
             off_road_rate = metrics.OffRoadRate(helper, [metrics.RowMean()])
 
             probabilities = np.array([1/3, 1/3, 1/3])
