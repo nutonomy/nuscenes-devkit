@@ -97,8 +97,8 @@ class NuScenesMap:
         else:
             self.version = '1.0'
         if self.version < '1.1':
-            print('Warning: You are using an outdated map version! Please go to https://www.nuscenes.org/download to '
-                  'download the latest map!')
+            raise Exception('Error: You are using an outdated map version! '
+                            'Please go to https://www.nuscenes.org/download to download the latest map!')
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
