@@ -305,6 +305,11 @@ class OffRoadRate(Metric):
 
     @staticmethod
     def load_drivable_area_polygons(helper: PredictHelper) -> Dict[str, MultiPolygon]:
+        """
+        Loads the polygon representation of the drivable area for each map
+        :param helper: Instance of PredictHelper
+        :return: Mapping from map_name to drivable area polygon
+        """
 
         maps: Dict[str, NuScenesMap] = load_all_maps(helper)
 
@@ -313,7 +318,9 @@ class OffRoadRate(Metric):
             drivable_area_polygons = [map_api.extract_polygon(token) for record in map_api.drivable_area
                                       for token in record['polygon_tokens']]
 
-            # To ensure the multipolygon is valid
+            # In order to query the drivable area polygon, it must be a valid polygon
+            # To ensure the polygon is valid, we use the buffer method, which returns a valid new
+            # polygon constructed from the points withing a given distance of the input polygon
             polygons[map_name] = MultiPolygon(drivable_area_polygons).buffer(0)
 
         return polygons

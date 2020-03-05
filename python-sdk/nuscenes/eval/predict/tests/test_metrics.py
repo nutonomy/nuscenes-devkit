@@ -315,8 +315,3 @@ class TestOffRoadRate(unittest.TestCase):
                                 (1260.8163412684773, 945.9156425437817),
                                 (1259.3272449205788, 947.1747683330505)]])
         self._do_test('singapore-hollandvillage', predictions, 0)
-
-
-
-
-
