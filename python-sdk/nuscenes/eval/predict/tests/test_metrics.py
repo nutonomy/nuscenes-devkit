@@ -255,6 +255,23 @@ class TestMetrics(unittest.TestCase):
             self.assertEqual(m.name, 'OffRoadRate')
             self.assertEqual(m.aggregators[0].name, 'RowMean')
 
+    def test_flatten_metrics(self):
+        results = {"MinFDEK": {"RowMean": [5.92, 6.1, 7.2]},
+                   "MinADEK": {"RowMean": [2.48, 3.29, 3.79]},
+                   "HitRateTopK_2": {"RowMean": [0.37, 0.45, 0.55]}}
+
+        metric_functions = [metrics.MinFDEK([1, 5, 10], aggregators=[metrics.RowMean()]),
+                            metrics.MinADEK([1, 5, 10], aggregators=[metrics.RowMean()]),
+                            metrics.HitRateTopK([1, 5, 10], tolerance=2, aggregators=[metrics.RowMean()])]
+
+        flattened = metrics.flatten_metrics(results, metric_functions)
+
+        answer = {'MinFDEK_1': 5.92, 'MinFDEK_5': 6.1, 'MinFDEK_10': 7.2,
+                  'MinADEK_1': 2.48, 'MinADEK_5': 3.29, 'MinADEK_10': 3.79,
+                  'HitRateTopK_2_1': 0.37, 'HitRateTopK_2_5': 0.45, 'HitRateTopK_2_10': 0.55}
+
+        self.assertDictEqual(flattened, answer)
+
 
 class TestOffRoadRate(unittest.TestCase):
 
@@ -266,7 +283,7 @@ class TestOffRoadRate(unittest.TestCase):
 
             off_road_rate = metrics.OffRoadRate(helper, [metrics.RowMean()])
 
-            probabilities = np.array([1/3, 1/3, 1/3])
+            probabilities = np.array([1/3] * predictions.shape[0])
             prediction = Prediction('foo-instance', 'foo-sample', predictions, probabilities)
 
             # Two violations out of three trajectories
@@ -281,28 +298,27 @@ class TestOffRoadRate(unittest.TestCase):
                                  (487.3648565923963, 813.7269620253566),
                                  (487.811923719944, 814.5756495230632),
                                  (0, 0)],
-                                [(0, 0), (0, 1), (0, 2)]])
+                                [(0, 0), (0, 1), (0, 2), (0, 3)]])
         self._do_test('boston-seaport', predictions, 2/3)
 
 
     def test_one_north(self):
-        predictions = np.array([[(965.8515334916171, 535.711518726687),
-                                 (963.6475430050381, 532.9713854167148),
-                                 (961.4435525191437, 530.231252106192),
-                                 (959.239560587773, 527.4911199583674)],
-                                [(508.8742570078554, 875.3458194583762),
-                                 (505.2029816111618, 877.7929160023881),
-                                 (501.5317062144682, 880.2400125464),
-                                 (497.86043081777467, 882.6871090904118),
-                                 (494.18915542108107, 885.1342056344237)],
-                                [(0, 0), (0, 1), (0, 2)]])
+        predictions = np.array([[[965.8515334916171, 535.711518726687],
+                                 [963.6475430050381, 532.9713854167148],
+                                 [961.4435525191437, 530.231252106192],
+                                 [959.239560587773, 527.4911199583674]],
+                                [[508.8742570078554, 875.3458194583762],
+                                 [505.2029816111618, 877.7929160023881],
+                                 [501.5317062144682, 880.2400125464],
+                                 [497.86043081777467, 882.6871090904118]],
+                                [[0, 0], [0, 1], [0, 2], [0, 3]]])
         self._do_test('singapore-onenorth', predictions, 1/3)
 
     def test_queenstown(self):
-        predictions = np.array([[(744.8769428947988, 2508.398411382534),
-                                 (747.7808552527478, 2507.1313712702054),
-                                 (750.7893530020073, 2506.1385301483474)],
-                                [(-100, 0), (-10, 100)]])
+        predictions = np.array([[[744.8769428947988, 2508.398411382534],
+                                 [747.7808552527478, 2507.131371270205],
+                                 [750.7893530020073, 2506.1385301483474]],
+                                [[-100, 0], [-10, 100], [0, 2]]])
         self._do_test('singapore-queenstown', predictions, 1/2)
 
     def test_hollandvillage(self):
