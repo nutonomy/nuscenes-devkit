@@ -8,20 +8,25 @@ will use. If you follow these steps, then if it runs on your machine, it will ru
 ## Requirements
 
 - Docker version >= 19 (We tested with 19.03.7)
-- machine with GPU card and nvidia drivers (for GPU support)
+- machine with GPU card, nvidia drivers and CUDA 10.1 (for GPU support)
 - nvidia-docker https://github.com/NVIDIA/nvidia-docker. You can use generic docker image if you don't need GPU support
 - nuScenes dataset
 - cloned nuScenes-devkit repo https://github.com/nutonomy/nuscenes-devkit
 
 ## Usage
-- pull docker image
+- pull docker image. For CUDA 10.1 use:
 ```
-docker pull nuscenes/dev-challenge:latest
+docker pull nuscenes/dev-challenge:10.1
 ```
 
 - create directory for output data
 ```
 mkdir -p ~/Documents/submissions
+```
+
+- create home directory for the image (needed if you need to install extra packages).
+```
+mkdir -p ~/Desktop/home_directory
 ```
 
 - Modify `do_inference.py` in `nuscenes/eval/predict/submission` to 
@@ -37,7 +42,8 @@ docker run [ --gpus all ] -ti --rm \
    -v <PATH TO NUSCENES DATASET>:/data/sets/nuscenes \
    -v <PATH TO nuScenes-devkit ROOT DIR>/python-sdk:/nuscenes-dev/python-sdk \
    -v <PATH TO nuscenes/eval/predict/submission>:/nuscenes-dev/predict \
-   -v ~/Documents:/nuscenes-dev/Documents \
+   -v ~/Documents/:/nuscenes-dev/Documents \
+   -v ~/Desktop/home_directory:/home/<username>
    nuscenes/dev-challenge:latest
 ```
 
