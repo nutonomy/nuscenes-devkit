@@ -68,15 +68,15 @@ def final_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray)
 
 
 @returns_2d_array
-def hit_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
-                      tolerance: float) -> np.array:
+def miss_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
+                       tolerance: float) -> np.array:
     """Efficiently compute 'hit' metric between trajectories and ground truths.
     :param stacked_trajs: [num_modes, horizon_length, state_dim]
     :param stacked_ground_truth: [num_modes, horizon_length, state_dim]
     :param tolerance: max distance (m) for a 'hit' to be True
     :return: True iff there was a 'hit.' Size [num_modes]
     """
-    return max_distances(stacked_trajs, stacked_ground_truth) < tolerance
+    return max_distances(stacked_trajs, stacked_ground_truth) >= tolerance
 
 
 @returns_2d_array
@@ -106,13 +106,13 @@ def rank_metric_over_top_k_modes(metric_results: np.ndarray,
     return func(sorted_metrics, axis=-1)
 
 
-def hit_rate_top_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
-                   mode_probabilities: np.ndarray,
-                   tolerance: float) -> np.ndarray:
+def miss_rate_top_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
+                    mode_probabilities: np.ndarray,
+                    tolerance: float) -> np.ndarray:
     """Compute the hit rate over the top k modes."""
 
-    hit_rate = hit_max_distances(stacked_trajs, stacked_ground_truth, tolerance)
-    return rank_metric_over_top_k_modes(hit_rate, mode_probabilities, "max")
+    miss_rate = miss_max_distances(stacked_trajs, stacked_ground_truth, tolerance)
+    return rank_metric_over_top_k_modes(miss_rate, mode_probabilities, "min")
 
 
 def min_ade_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
@@ -259,7 +259,7 @@ class MinFDEK(Metric):
         return len(self.k_to_report)
 
 
-class HitRateTopK(Metric):
+class MissRateTopK(Metric):
 
     def __init__(self, k_to_report: List[int], aggregators: List[Aggregator],
                  tolerance: float = 2.):
@@ -269,13 +269,13 @@ class HitRateTopK(Metric):
 
     def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
         ground_truth = stack_ground_truth(ground_truth, prediction.number_of_modes)
-        results = hit_rate_top_k(prediction.prediction, ground_truth,
+        results = miss_rate_top_k(prediction.prediction, ground_truth,
                                  prediction.probabilities, self.tolerance)
         return desired_number_of_modes(results, self.k_to_report)
 
     def serialize(self) -> Dict[str, Any]:
         return {'k_to_report': self.k_to_report,
-                'name': 'HitRateTopK',
+                'name': 'MissRateTopK',
                 'aggregators': [agg.serialize() for agg in self.aggregators],
                 'tolerance': self.tolerance}
 
@@ -285,7 +285,7 @@ class HitRateTopK(Metric):
 
     @property
     def name(self):
-        return f"HitRateTopK_{self.tolerance}"
+        return f"MissRateTopK_{self.tolerance}"
 
     @property
     def shape(self):
@@ -365,8 +365,8 @@ def DeserializeMetric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
         return MinADEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'MinFDEK':
         return MinFDEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
-    elif config['name'] == 'HitRateTopK':
-        return HitRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
+    elif config['name'] == 'MissRateTopK':
+        return MissRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
                            tolerance=config['tolerance'])
     elif config['name'] == 'OffRoadRate':
         return OffRoadRate(helper, [DeserializeAggregator(agg) for agg in config['aggregators']])
@@ -374,9 +374,12 @@ def DeserializeMetric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
         raise ValueError(f"Cannot deserialize function {config['name']}.")
 
 
-def flatten_metrics(results: Dict[str, Any], metrics: List[Metric]):
+def flatten_metrics(results: Dict[str, Any], metrics: List[Metric]) -> Dict[str, List[float]]:
     """
-
+    Collapses results into a 2D table represented by a dictionary mapping the metric name to
+    the metric values.
+    :param results: Mapping from metric function name to result of aggregators.
+    :param metrics: List of metrics in the results.
     """
 
     metric_names = {metric.name: metric for metric in metrics}
