@@ -8,14 +8,22 @@ from typing import List
 
 from nuscenes import NuScenes
 from nuscenes.eval.predict.config import load_prediction_config
+from nuscenes.eval.predict.config import PredictionConfig
 from nuscenes.eval.predict.data_classes import Prediction
 from nuscenes.eval.predict.splits import get_prediction_challenge_split
 from nuscenes.predict import PredictHelper
 from nuscenes.predict.models.physics import ConstantVelocityHeading
 
 
+def load_model(helper: PredictHelper, config: PredictionConfig, path_to_model_weights: str):
+    """
+    Loads model with desired weights
+    """
+    return ConstantVelocityHeading(config.seconds, helper)
+
+
 def do_inference_for_submission(helper: PredictHelper,
-                                pred_seconds: int,
+                                config: PredictionConfig,
                                 dataset_tokens: List[str]) -> List[Prediction]:
     """
     Currently, this will make a submission with a constant velocity and heading model.
@@ -23,12 +31,15 @@ def do_inference_for_submission(helper: PredictHelper,
     about providing any of the parameters to this function since they are provided by the main function below.
     You can test if your script works by evaluating on the val set.
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
-    :param pred_seconds: NUmber of second to do the prediction for. Handled by config in parent scope.
+    :param config: Instance of PredictionConfig.
     :param dataset_tokens: Tokens of instance_sample pairs in the test set.
     :returns: List of predictions.
     """
 
-    cv_heading = ConstantVelocityHeading(pred_seconds, helper)
+    #TODO: Fill in the path to the model weights here
+    path_to_model_weights = ""
+
+    cv_heading = load_model(helper, config, path_to_model_weights)
 
     cv_preds = []
     for token in dataset_tokens:
@@ -53,7 +64,7 @@ def main(version: str, data_root: str, split_name: str, output_dir: str, submiss
     dataset = get_prediction_challenge_split(split_name)
     config = load_prediction_config(helper, config_name)
 
-    predictions = do_inference_for_submission(helper, config.seconds, dataset)
+    predictions = do_inference_for_submission(helper, config, dataset)
     predictions = [prediction.serialize() for prediction in predictions]
     json.dump(predictions, open(os.path.join(output_dir, f"{submission_name}_inference.json"), "w"))
 
