@@ -1,14 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-
 import colorsys
 import os
 from typing import Dict, List, Tuple, Callable
 
-import numpy as np
 import cv2
-from pyquaternion import Quaternion
-
+import numpy as np
 from nuscenes.eval.common.utils import quaternion_yaw
 from nuscenes.map_expansion.map_api import NuScenesMap
 from nuscenes.predict import PredictHelper
@@ -17,6 +14,7 @@ from nuscenes.predict.input_representation.combinators import Rasterizer
 from nuscenes.predict.input_representation.interface import \
     StaticLayerRepresentation
 from nuscenes.predict.input_representation.utils import get_crops, get_rotation_matrix, convert_to_pixel_coords
+from pyquaternion import Quaternion
 
 Color = Tuple[float, float, float]
 

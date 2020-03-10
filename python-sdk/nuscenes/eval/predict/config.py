@@ -1,8 +1,8 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Eric Wolff 2020.
-from typing import List, Dict, Any
-import os
 import json
+import os
+from typing import List, Dict, Any
 
 from nuscenes.eval.predict.metrics import Metric, DeserializeMetric
 from nuscenes.predict import PredictHelper
@@ -11,7 +11,7 @@ from nuscenes.predict import PredictHelper
 class PredictionConfig:
     """
     Data class that specifies the prediction evaluation settings.
-    Intialized with:
+    Initialized with:
     metrics: List of nuscenes.eval.predict.metric.Metric objects.
     seconds: Number of seconds to predict for each agent.
     frequency: Rate at which prediction is made, in Hz.
@@ -42,7 +42,7 @@ def load_prediction_config(helper: PredictHelper, config_name: str = 'predict_20
     """
     Loads a PredictionConfig from json file stored in eval/predict/configs
     :param helper: Instance of PredictHelper. Needed for OffRoadRate metric.
-    :param config_name: Name of json cofig file
+    :param config_name: Name of json config file
     :return: PredictionConfig
     """
     this_dir = os.path.dirname(os.path.abspath(__file__))

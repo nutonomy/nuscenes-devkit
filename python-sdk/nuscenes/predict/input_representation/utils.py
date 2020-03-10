@@ -1,16 +1,15 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-
 from typing import Tuple
+
 import cv2
 import numpy as np
-
 from nuscenes.predict.helper import angle_of_rotation
 
 
 def convert_to_pixel_coords(location: Tuple[float, float],
                             center_of_image_in_global: Tuple[float, float],
-                            center_of_image_in_pixels: Tuple[int, int],
+                            center_of_image_in_pixels: Tuple[float, float],
                             resolution: float = 0.1) -> Tuple[int, int]:
     """
     Convert from global coordinates to pixel coordinates.

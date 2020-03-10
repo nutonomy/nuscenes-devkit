@@ -1,6 +1,8 @@
-
+# nuScenes dev-kit.
+# Code written by Freddy Boulton 2020.
 import abc
 from typing import List
+
 import numpy as np
 
 
@@ -27,7 +29,14 @@ class Combinator(abc.ABC):
     def combine(self, data: List[np.ndarray]) -> np.ndarray:
         raise NotImplementedError()
 
+
 class InputRepresentation:
+    """
+    Specifies how to represent the input for a prediction model.
+    Need to provide a StaticLayerRepresentation - how the map is represented,
+    an AgentRepresentation - how agents in the scene are represented,
+    and a Combinator, how the StaticLayerRepresentation and AgentRepresentation should be combined.
+    """
 
     def __init__(self, static_layer: StaticLayerRepresentation, agent: AgentRepresentation,
                  combinator: Combinator):

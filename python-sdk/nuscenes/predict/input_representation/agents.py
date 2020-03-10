@@ -1,19 +1,18 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-
-from typing import Any, Dict, List, Tuple, Callable
 import colorsys
+from typing import Any, Dict, List, Tuple, Callable
 
 import cv2
 import numpy as np
-from pyquaternion import Quaternion
-
 from nuscenes.predict import PredictHelper
 from nuscenes.predict.helper import quaternion_yaw
 from nuscenes.predict.input_representation.interface import AgentRepresentation
 from nuscenes.predict.input_representation.utils import convert_to_pixel_coords, get_crops, get_rotation_matrix
+from pyquaternion import Quaternion
 
 History = Dict[str, List[Dict[str, Any]]]
+
 
 def pixels_to_box_corners(row_pixel: int, column_pixel: int,
                           length_in_pixels: float,
@@ -42,13 +41,13 @@ def pixels_to_box_corners(row_pixel: int, column_pixel: int,
 
 
 def get_track_box(annotation: Dict[str, Any],
-                  center_coordinates: Tuple[int, int],
-                  center_pixels: Tuple[int, int],
+                  center_coordinates: Tuple[float, float],
+                  center_pixels: Tuple[float, float],
                   resolution: float = 0.1) -> np.ndarray:
     """
     Get four corners of bounding box for agent in pixels.
     :param annotation: The annotation record of the agent.
-    :param ego_coordinates: (x, y) coordinates in global frame
+    :param center_coordinates: (x, y) coordinates in global frame
         of the center of the image
     :param center_pixels: (row_index, column_index) location of the center
         of the image in pixel coordinates.
@@ -107,14 +106,15 @@ def add_present_time_to_history(current_time: List[Dict[str, Any]],
 
     return history
 
+
 def fade_color(color: Tuple[int, int, int],
                step: int,
                total_number_of_steps: int) -> Tuple[int, int, int]:
     """
     Fades a color so that past observations are darker in the image.
     :param color: Tuple of ints describing an RGB color.
-    :param step: The current timestep.
-    :param total_number_of_steps: The total number of timesteps
+    :param step: The current time step.
+    :param total_number_of_steps: The total number of time steps
         the agent has in the image.
     :return: Tuple representing faded rgb color.
     """
@@ -135,25 +135,26 @@ def fade_color(color: Tuple[int, int, int],
                                   new_value * 255.)
     return new_rgb
 
+
 def default_colors(category_name: str) -> Tuple[int, int, int]:
     """
-    Maps a category name to an rgb color (unfaded).
+    Maps a category name to an rgb color (without fading).
     :param category_name: Name of object category for the annotation.
     :return: Tuple representing rgb color.
     """
 
     if 'vehicle' in category_name:
-        return (255, 255, 0) # yellow
+        return 255, 255, 0  # yellow
     elif 'object' in category_name:
-        return (204, 0, 204) # violet
+        return 204, 0, 204  # violet
     elif 'human' in category_name:
-        return (255, 153, 51) # orange
+        return 255, 153, 51  # orange
     else:
         raise ValueError(f"Cannot map {category_name} to a color.")
 
 
 def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
-                     center_agent_pixels: Tuple[int, int],
+                     center_agent_pixels: Tuple[float, float],
                      agent_history: History,
                      base_image: np.ndarray,
                      get_color: Callable[[str], Tuple[int, int, int]],
@@ -162,7 +163,7 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
     Draws past sequence of agent boxes on the image.
     :param center_agent_annotation: Annotation record for the agent
         that is in the center of the image.
-    :param center_agent_pixel: Pixel location of the agent in the
+    :param center_agent_pixels: Pixel location of the agent in the
         center of the image.
     :param agent_history: History for all agents in the scene.
     :param base_image: Image to draw the agents in.
@@ -202,7 +203,7 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
     def __init__(self, helper: PredictHelper,
                  seconds_of_history: float = 2,
                  frequency_in_hz: float = 2,
-                 resolution: float = 0.1, # meters / pixel
+                 resolution: float = 0.1,  # meters / pixel
                  meters_ahead: float = 40, meters_behind: float = 10,
                  meters_left: float = 25, meters_right: float = 25,
                  color_mapping: Callable[[str], Tuple[int, int, int]] = None):
@@ -212,7 +213,7 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
         self.frequency_in_hz = frequency_in_hz
 
         if not resolution > 0:
-            raise ValueError(f"Resolution must be postive. Received {resolution}.")
+            raise ValueError(f"Resolution must be positive. Received {resolution}.")
 
         self.resolution = resolution
 
@@ -269,6 +270,5 @@ class AgentBoxesWithFadedHistory(AgentRepresentation):
         row_crop, col_crop = get_crops(self.meters_ahead, self.meters_behind,
                                        self.meters_left, self.meters_right, self.resolution,
                                        image_side_length)
-
 
         return rotated_image[row_crop, col_crop].astype('uint8')

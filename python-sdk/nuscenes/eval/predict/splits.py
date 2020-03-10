@@ -10,6 +10,7 @@ from nuscenes.utils.splits import create_splits_scenes
 
 NUM_IN_VAL = 200
 
+
 def get_prediction_challenge_split(split: str) -> List[str]:
     """
     Gets a list of {instance_token}_{sample_token} strings for each split

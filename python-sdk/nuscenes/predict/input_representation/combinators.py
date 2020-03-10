@@ -1,13 +1,12 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
-
-from typing import List
 from functools import reduce
+from typing import List
 
-import numpy as np
 import cv2
-
+import numpy as np
 from nuscenes.predict.input_representation.interface import Combinator
+
 
 def add_foreground_to_image(base_image: np.ndarray,
                             foreground_image: np.ndarray) -> np.ndarray:
@@ -33,6 +32,7 @@ def add_foreground_to_image(base_image: np.ndarray,
     img2_fg = cv2.bitwise_and(foreground_image, foreground_image, mask=mask)
     combined_image = cv2.add(img1_bg, img2_fg)
     return combined_image
+
 
 class Rasterizer(Combinator):
     """

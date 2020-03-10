@@ -41,7 +41,7 @@ def main(version: str, data_root: str, submission_path: str,
     """
     Computes metrics for a submission stored in submission_path with a given submission_name with the metrics
     specified by the config_name.
-    :param version: NuScenes dataset version.
+    :param version: NuScenes data set version.
     :param data_root: Directory storing NuScenes data.
     :param submission_path: Directory storing submission.
     :param config_name: Name of config file.
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Perform Inference with baseline models.')
     parser.add_argument('--version', help='NuScenes version number.')
     parser.add_argument('--data_root', help='Directory storing NuScenes data.', default='/data/sets/nuscenes')
-    parser.add_argument('--submission_path', help='Path storing the submission file. Must end with _inference.')
+    parser.add_argument('--submission_path', help='Path storing the submission file.')
     parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra.json')
     args = parser.parse_args()
     main(args.version, args.data_root, args.submission_path, args.config_name)
