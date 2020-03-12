@@ -210,7 +210,7 @@ class TestMetrics(unittest.TestCase):
                                                     'tolerance': 2})
 
     def test_OffRoadRate(self):
-        with patch.object(metrics.OffRoadRate, 'load_drivable_area_polygons'):
+        with patch.object(metrics.OffRoadRate, 'load_drivable_area_masks'):
             helper = MagicMock(spec=PredictHelper)
             off_road_rate = metrics.OffRoadRate(helper, [metrics.RowMean()])
             self.assertDictEqual(off_road_rate.serialize(), {'name': 'OffRoadRate',
@@ -247,7 +247,7 @@ class TestMetrics(unittest.TestCase):
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
 
-        with patch.object(metrics.OffRoadRate, 'load_drivable_area_polygons'):
+        with patch.object(metrics.OffRoadRate, 'load_drivable_area_masks'):
             config = {'name': 'OffRoadRate',
                       'aggregators': [{'name': 'RowMean'}]}
 
@@ -317,8 +317,9 @@ class TestOffRoadRate(unittest.TestCase):
     def test_queenstown(self):
         predictions = np.array([[[744.8769428947988, 2508.398411382534],
                                  [747.7808552527478, 2507.131371270205],
-                                 [750.7893530020073, 2506.1385301483474]],
-                                [[-100, 0], [-10, 100], [0, 2]]])
+                                 [750.7893530020073, 2506.1385301483474],
+                                 [751, 2506]],
+                                [[-100, 0], [-10, 100], [0, 2], [-20, 70]]])
         self._do_test('singapore-queenstown', predictions, 1/2)
 
     def test_hollandvillage(self):

@@ -8,8 +8,6 @@ from typing import List
 
 from nuscenes.utils.splits import create_splits_scenes
 
-NUM_IN_VAL = 200
-
 
 def get_prediction_challenge_split(split: str) -> List[str]:
     """
@@ -24,14 +22,16 @@ def get_prediction_challenge_split(split: str) -> List[str]:
     else:
         split_name = split
 
+    num_in_val = 200
+
     path_to_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "prediction_scenes.json")
     prediction_scenes = json.load(open(path_to_file, "r"))
     scenes = create_splits_scenes()
     scenes_for_split = scenes[split_name]
     
     if split == 'train':
-        scenes_for_split = scenes_for_split[NUM_IN_VAL:]
+        scenes_for_split = scenes_for_split[num_in_val:]
     if split == 'train_val':
-        scenes_for_split = scenes_for_split[:NUM_IN_VAL]
+        scenes_for_split = scenes_for_split[:num_in_val]
 
     return list(chain.from_iterable(map(lambda scene: prediction_scenes.get(scene, []), scenes_for_split)))

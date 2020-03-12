@@ -2,10 +2,11 @@
 # Code written by Freddy Boulton, Eric Wolff 2020.
 """ Implementation of metrics used in the nuScenes prediction challenge. """
 import abc
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import numpy as np
 from shapely.geometry import MultiPolygon, LineString
+from scipy import interpolate
 
 from nuscenes.predict import PredictHelper
 from nuscenes.predict.input_representation.static_layers import load_all_maps
@@ -297,10 +298,11 @@ class OffRoadRate(Metric):
     def __init__(self, helper: PredictHelper, aggregators: List[Aggregator]):
         self._aggregators = aggregators
         self.helper = helper
-        self.drivable_area_polygons = self.load_drivable_area_polygons(helper)
+        self.drivable_area_polygons = self.load_drivable_area_masks(helper)
+        self.pixels_per_meter = 10
 
     @staticmethod
-    def load_drivable_area_polygons(helper: PredictHelper) -> Dict[str, MultiPolygon]:
+    def load_drivable_area_masks(helper: PredictHelper) -> Dict[str, np.ndarray]:
         """
         Loads the polygon representation of the drivable area for each map
         :param helper: Instance of PredictHelper
@@ -309,27 +311,63 @@ class OffRoadRate(Metric):
 
         maps: Dict[str, NuScenesMap] = load_all_maps(helper)
 
-        polygons = {}
+        masks = {}
         for map_name, map_api in maps.items():
-            drivable_area_polygons = [map_api.extract_polygon(token) for record in map_api.drivable_area
-                                      for token in record['polygon_tokens']]
 
-            # In order to query the drivable area polygon, it must be a valid polygon
-            # To ensure the polygon is valid, we use the buffer method, which returns a valid new
-            # polygon constructed from the points withing a given distance of the input polygon
-            polygons[map_name] = MultiPolygon(drivable_area_polygons).buffer(0)
+            masks[map_name] = map_api.get_map_mask(patch_box=None, patch_angle=0, layer_names=['drivable_area'],
+                                                   canvas_size=None)[0]
 
-        return polygons
+        return masks
+
+    @staticmethod
+    def interpolate_path(mode: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Interpolate trajectory with a cubic spline if there are enough points.
+        """
+
+        # interpolate.splprep needs unique points.
+        # We use a loop as opposed to np.unique because
+        # the order of the points must be the same
+        seen = set()
+        ordered_array = []
+        for row in mode:
+            row_tuple = tuple(row)
+            if row_tuple not in seen:
+                seen.add(row_tuple)
+                ordered_array.append(row_tuple)
+
+        new_array = np.array(ordered_array)
+
+        unique_points = np.atleast_2d(new_array)
+
+        if unique_points.shape[0] <= 3:
+            return unique_points[:, 0], unique_points[:, 1]
+        else:
+            knots, _ = interpolate.splprep([unique_points[:, 0], unique_points[:, 1]], k=3, s=0.1)
+            x_interpolated, y_interpolated = interpolate.splev(np.linspace(0, 1, 200), knots)
+            return x_interpolated, y_interpolated
 
     def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
         map_name = self.helper.get_map_name_from_sample_token(prediction.sample)
         drivable_area = self.drivable_area_polygons[map_name]
+        max_row, max_col = drivable_area.shape
 
         n_violations = 0
         for mode in prediction.prediction:
 
-            trajectory = LineString(mode)
-            if not drivable_area.contains(trajectory):
+            # Fit a cubic spline to the trajectory and interpolate with 200 points
+            x_interpolated, y_interpolated = self.interpolate_path(mode)
+
+            # x coordinate -> col y coordinate -> row
+            # Mask has already been flipped over y-axis
+            index_row = (y_interpolated * self.pixels_per_meter).astype("int")
+            index_col = (x_interpolated * self.pixels_per_meter).astype("int")
+
+            row_out_of_bounds = np.any(index_row >= max_row) or np.any(index_row < 0)
+            col_out_of_bounds = np.any(index_col >= max_col) or np.any(index_col < 0)
+            out_of_bounds = row_out_of_bounds or col_out_of_bounds
+            
+            if out_of_bounds or not np.all(drivable_area[index_row, index_col]):
                 n_violations += 1
 
         return np.array([n_violations / prediction.prediction.shape[0]])
