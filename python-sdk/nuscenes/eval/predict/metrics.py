@@ -2,10 +2,11 @@
 # Code written by Freddy Boulton, Eric Wolff 2020.
 """ Implementation of metrics used in the nuScenes prediction challenge. """
 import abc
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import numpy as np
 from shapely.geometry import MultiPolygon, LineString
+from scipy import interpolate
 
 from nuscenes.predict import PredictHelper
 from nuscenes.predict.input_representation.static_layers import load_all_maps
@@ -68,15 +69,15 @@ def final_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray)
 
 
 @returns_2d_array
-def hit_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
-                      tolerance: float) -> np.array:
+def miss_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
+                       tolerance: float) -> np.array:
     """Efficiently compute 'hit' metric between trajectories and ground truths.
     :param stacked_trajs: [num_modes, horizon_length, state_dim]
     :param stacked_ground_truth: [num_modes, horizon_length, state_dim]
     :param tolerance: max distance (m) for a 'hit' to be True
     :return: True iff there was a 'hit.' Size [num_modes]
     """
-    return max_distances(stacked_trajs, stacked_ground_truth) < tolerance
+    return max_distances(stacked_trajs, stacked_ground_truth) >= tolerance
 
 
 @returns_2d_array
@@ -106,13 +107,13 @@ def rank_metric_over_top_k_modes(metric_results: np.ndarray,
     return func(sorted_metrics, axis=-1)
 
 
-def hit_rate_top_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
-                   mode_probabilities: np.ndarray,
-                   tolerance: float) -> np.ndarray:
+def miss_rate_top_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
+                    mode_probabilities: np.ndarray,
+                    tolerance: float) -> np.ndarray:
     """Compute the hit rate over the top k modes."""
 
-    hit_rate = hit_max_distances(stacked_trajs, stacked_ground_truth, tolerance)
-    return rank_metric_over_top_k_modes(hit_rate, mode_probabilities, "max")
+    miss_rate = miss_max_distances(stacked_trajs, stacked_ground_truth, tolerance)
+    return rank_metric_over_top_k_modes(miss_rate, mode_probabilities, "min")
 
 
 def min_ade_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
@@ -191,10 +192,6 @@ class Metric(SerializableFunction):
     def shape(self,) -> str:
         pass
 
-    @abc.abstractmethod
-    def serialize(self) -> Dict[str, Any]:
-        pass
-
 
 def desired_number_of_modes(results: np.ndarray,
                             k_to_report: List[int]) -> np.ndarray:
@@ -263,7 +260,7 @@ class MinFDEK(Metric):
         return len(self.k_to_report)
 
 
-class HitRateTopK(Metric):
+class MissRateTopK(Metric):
 
     def __init__(self, k_to_report: List[int], aggregators: List[Aggregator],
                  tolerance: float = 2.):
@@ -273,13 +270,13 @@ class HitRateTopK(Metric):
 
     def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
         ground_truth = stack_ground_truth(ground_truth, prediction.number_of_modes)
-        results = hit_rate_top_k(prediction.prediction, ground_truth,
+        results = miss_rate_top_k(prediction.prediction, ground_truth,
                                  prediction.probabilities, self.tolerance)
         return desired_number_of_modes(results, self.k_to_report)
 
     def serialize(self) -> Dict[str, Any]:
         return {'k_to_report': self.k_to_report,
-                'name': 'HitRateTopK',
+                'name': 'MissRateTopK',
                 'aggregators': [agg.serialize() for agg in self.aggregators],
                 'tolerance': self.tolerance}
 
@@ -289,7 +286,7 @@ class HitRateTopK(Metric):
 
     @property
     def name(self):
-        return f"HitRateTopK_{self.tolerance}"
+        return f"MissRateTopK_{self.tolerance}"
 
     @property
     def shape(self):
@@ -301,10 +298,11 @@ class OffRoadRate(Metric):
     def __init__(self, helper: PredictHelper, aggregators: List[Aggregator]):
         self._aggregators = aggregators
         self.helper = helper
-        self.drivable_area_polygons = self.load_drivable_area_polygons(helper)
+        self.drivable_area_polygons = self.load_drivable_area_masks(helper)
+        self.pixels_per_meter = 10
 
     @staticmethod
-    def load_drivable_area_polygons(helper: PredictHelper) -> Dict[str, MultiPolygon]:
+    def load_drivable_area_masks(helper: PredictHelper) -> Dict[str, np.ndarray]:
         """
         Loads the polygon representation of the drivable area for each map
         :param helper: Instance of PredictHelper
@@ -313,27 +311,63 @@ class OffRoadRate(Metric):
 
         maps: Dict[str, NuScenesMap] = load_all_maps(helper)
 
-        polygons = {}
+        masks = {}
         for map_name, map_api in maps.items():
-            drivable_area_polygons = [map_api.extract_polygon(token) for record in map_api.drivable_area
-                                      for token in record['polygon_tokens']]
 
-            # In order to query the drivable area polygon, it must be a valid polygon
-            # To ensure the polygon is valid, we use the buffer method, which returns a valid new
-            # polygon constructed from the points withing a given distance of the input polygon
-            polygons[map_name] = MultiPolygon(drivable_area_polygons).buffer(0)
+            masks[map_name] = map_api.get_map_mask(patch_box=None, patch_angle=0, layer_names=['drivable_area'],
+                                                   canvas_size=None)[0]
 
-        return polygons
+        return masks
+
+    @staticmethod
+    def interpolate_path(mode: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Interpolate trajectory with a cubic spline if there are enough points.
+        """
+
+        # interpolate.splprep needs unique points.
+        # We use a loop as opposed to np.unique because
+        # the order of the points must be the same
+        seen = set()
+        ordered_array = []
+        for row in mode:
+            row_tuple = tuple(row)
+            if row_tuple not in seen:
+                seen.add(row_tuple)
+                ordered_array.append(row_tuple)
+
+        new_array = np.array(ordered_array)
+
+        unique_points = np.atleast_2d(new_array)
+
+        if unique_points.shape[0] <= 3:
+            return unique_points[:, 0], unique_points[:, 1]
+        else:
+            knots, _ = interpolate.splprep([unique_points[:, 0], unique_points[:, 1]], k=3, s=0.1)
+            x_interpolated, y_interpolated = interpolate.splev(np.linspace(0, 1, 200), knots)
+            return x_interpolated, y_interpolated
 
     def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
         map_name = self.helper.get_map_name_from_sample_token(prediction.sample)
         drivable_area = self.drivable_area_polygons[map_name]
+        max_row, max_col = drivable_area.shape
 
         n_violations = 0
         for mode in prediction.prediction:
 
-            trajectory = LineString(mode)
-            if not drivable_area.contains(trajectory):
+            # Fit a cubic spline to the trajectory and interpolate with 200 points
+            x_interpolated, y_interpolated = self.interpolate_path(mode)
+
+            # x coordinate -> col y coordinate -> row
+            # Mask has already been flipped over y-axis
+            index_row = (y_interpolated * self.pixels_per_meter).astype("int")
+            index_col = (x_interpolated * self.pixels_per_meter).astype("int")
+
+            row_out_of_bounds = np.any(index_row >= max_row) or np.any(index_row < 0)
+            col_out_of_bounds = np.any(index_col >= max_col) or np.any(index_col < 0)
+            out_of_bounds = row_out_of_bounds or col_out_of_bounds
+            
+            if out_of_bounds or not np.all(drivable_area[index_row, index_col]):
                 n_violations += 1
 
         return np.array([n_violations / prediction.prediction.shape[0]])
@@ -369,10 +403,35 @@ def DeserializeMetric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
         return MinADEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'MinFDEK':
         return MinFDEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
-    elif config['name'] == 'HitRateTopK':
-        return HitRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
+    elif config['name'] == 'MissRateTopK':
+        return MissRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
                            tolerance=config['tolerance'])
     elif config['name'] == 'OffRoadRate':
         return OffRoadRate(helper, [DeserializeAggregator(agg) for agg in config['aggregators']])
     else:
         raise ValueError(f"Cannot deserialize function {config['name']}.")
+
+
+def flatten_metrics(results: Dict[str, Any], metrics: List[Metric]) -> Dict[str, List[float]]:
+    """
+    Collapses results into a 2D table represented by a dictionary mapping the metric name to
+    the metric values.
+    :param results: Mapping from metric function name to result of aggregators.
+    :param metrics: List of metrics in the results.
+    """
+
+    metric_names = {metric.name: metric for metric in metrics}
+
+    flattened_metrics = {}
+
+    for metric_name, values in results.items():
+
+        metric_class = metric_names[metric_name]
+
+        if hasattr(metric_class, 'k_to_report'):
+            for value, k in zip(values['RowMean'], metric_class.k_to_report):
+                flattened_metrics[f"{metric_name}_{k}"] = value
+        else:
+            flattened_metrics[metric_name] = values['RowMean']
+
+    return flattened_metrics

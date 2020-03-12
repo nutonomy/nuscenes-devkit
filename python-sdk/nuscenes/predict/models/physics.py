@@ -1,15 +1,13 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Robert Beaudoin 2020.
-
 import abc
 from typing import Tuple
 
 import numpy as np
-from pyquaternion import Quaternion
-
 from nuscenes.eval.common.utils import quaternion_yaw
 from nuscenes.eval.predict.data_classes import Prediction
-from nuscenes.predict import PredictHelper, convert_global_coords_to_local
+from nuscenes.predict import PredictHelper
+from pyquaternion import Quaternion
 
 KinematicsData = Tuple[float, float, float, float, float, float, float, float, float, float]
 

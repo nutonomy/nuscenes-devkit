@@ -13,11 +13,12 @@ from nuscenes.predict.models.physics import ConstantVelocityHeading, PhysicsOrac
 
 
 def main(version: str, data_root: str,
-         split_name: str, output_dir: str, config_name: str = 'predict_2020_icra') -> None:
+         split_name: str, output_dir: str, config_name: str = 'predict_2020_icra.json') -> None:
     """
     Performs inference for all of the baseline models defined in models.py.
-    :param version: Nuscenes dataset version.
-    :param split_name: Nuscenes data split name, e.g. train, val, mini_train, etc.
+    :param version: NuScenes data set version.
+    :param data_root: Directory where the NuScenes data is stored.
+    :param split_name: NuScenes data split name, e.g. train, val, mini_train, etc.
     :param output_dir: Directory where predictions should be stored.
     :param config_name: Name of config file.
     :return: None.
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_root', help='Directory storing NuScenes data.', default='/data/sets/nuscenes')
     parser.add_argument('--split_name', help='Data split to run inference on.')
     parser.add_argument('--output_dir', help='Directory to store output files.')
-    parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra')
+    parser.add_argument('--config_name', help='Config file to use.', default='predict_2020_icra.json')
 
     args = parser.parse_args()
-    main(args.version, args.split_name, args.output_dir, args.config_name)
+    main(args.version, args.data_root, args.split_name, args.output_dir, args.config_name)

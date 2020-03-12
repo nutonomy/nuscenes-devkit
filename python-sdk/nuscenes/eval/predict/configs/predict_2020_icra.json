@@ -33,7 +33,7 @@
                 5,
                 10
             ],
-            "name": "HitRateTopK",
+            "name": "MissRateTopK",
             "aggregators": [
                 {
                     "name": "RowMean"

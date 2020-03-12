@@ -1,7 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton 2020.
-
 from typing import Tuple
+
 import torch
 from torch import nn
 from torchvision.models import (mobilenet_v2, resnet18, resnet34, resnet50,

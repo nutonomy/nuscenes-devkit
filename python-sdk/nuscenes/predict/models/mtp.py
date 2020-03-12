@@ -1,20 +1,17 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Elena Corina Grigore 2020.
-
 """
 Implementation of Multiple-Trajectory Prediction (MTP) model,
 based on https://arxiv.org/pdf/1809.10732.pdf.
 """
-
 import math
 import random
 from typing import List, Tuple
 
 import torch
+from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 from torch import nn
 from torch.nn import functional as f
-
-from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 
 # Number of entries in Agent State Vector
 ASV_DIM = 3
@@ -184,11 +181,11 @@ class MTPLoss:
         return angles_from_ground_truth
 
     def _compute_best_mode(self,
-                           angles_from_ground_truth: List[float],
+                           angles_from_ground_truth: List[Tuple[float, int]],
                            target: torch.Tensor, trajectories: torch.Tensor) -> int:
         """
         Finds the index of the best mode given the angles from the ground truth.
-        :param angles_from_ground_truth: List of angles
+        :param angles_from_ground_truth: List of (angle, mode index) tuples.
         :param target: Shape [1, n_timesteps, 2]
         :param trajectories: Shape [n_modes, n_timesteps, 2]
         :return: Integer index of best mode.
