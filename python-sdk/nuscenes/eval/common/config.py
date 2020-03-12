@@ -7,7 +7,6 @@ from typing import Union
 
 from nuscenes.eval.detection.data_classes import DetectionConfig
 from nuscenes.eval.tracking.data_classes import TrackingConfig
-from nuscenes.eval.predict.config import PredictionConfig
 
 
 def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingConfig]:
@@ -19,7 +18,7 @@ def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingCo
     """
     # Check if config exists.
     tokens = configuration_name.split('_')
-    assert len(tokens) > 1, 'Error: Configuration name must be have prefix "detection_", or "tracking_"!'
+    assert len(tokens) > 1, 'Error: Configuration name must be have prefix "detection_" or "tracking_"!'
     task = tokens[0]
     this_dir = os.path.dirname(os.path.abspath(__file__))
     cfg_path = os.path.join(this_dir, '..', task, 'configs', '%s.json' % configuration_name)
