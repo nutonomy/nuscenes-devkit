@@ -344,9 +344,11 @@ class PredictHelper:
         :param max_time_diff: If the time difference between now and the most recent annotation is larger
             than this param, function will return np.nan.
         """
-        return self._compute_diff_between_sample_annotations(instance_token, sample_token, max_time_diff, with_function=velocity)
+        return self._compute_diff_between_sample_annotations(instance_token, sample_token, max_time_diff,
+                                                             with_function=velocity)
 
-    def get_heading_change_rate_for_agent(self, instance_token: str, sample_token: str, max_time_diff: float = 1.5) -> float:
+    def get_heading_change_rate_for_agent(self, instance_token: str, sample_token: str,
+                                          max_time_diff: float = 1.5) -> float:
         """
         Computes heading change rate based on the difference between the current and previous annotation.
         :param instance_token: Instance token.

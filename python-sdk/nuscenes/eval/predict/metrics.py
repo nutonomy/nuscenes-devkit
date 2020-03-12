@@ -5,7 +5,6 @@ import abc
 from typing import List, Dict, Any, Tuple
 
 import numpy as np
-from shapely.geometry import MultiPolygon, LineString
 from scipy import interpolate
 
 from nuscenes.predict import PredictHelper
@@ -405,7 +404,7 @@ def DeserializeMetric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
         return MinFDEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'MissRateTopK':
         return MissRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
-                           tolerance=config['tolerance'])
+                            tolerance=config['tolerance'])
     elif config['name'] == 'OffRoadRate':
         return OffRoadRate(helper, [DeserializeAggregator(agg) for agg in config['aggregators']])
     else:
