@@ -10,7 +10,7 @@ from nuscenes.eval.tracking.data_classes import TrackingConfig
 from nuscenes.eval.predict.config import PredictionConfig
 
 
-def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingConfig, PredictionConfig]:
+def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingConfig]:
     """
     Creates a *Config instance that can be used to initialize a *Eval instance, where * stands for Detection/Tracking.
     Note that this only works if the config file is located in the nuscenes/eval/common/configs folder.
@@ -19,7 +19,7 @@ def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingCo
     """
     # Check if config exists.
     tokens = configuration_name.split('_')
-    assert len(tokens) > 1, 'Error: Configuration name must be have prefix "detection_", "tracking_" or "predict_"!'
+    assert len(tokens) > 1, 'Error: Configuration name must be have prefix "detection_", or "tracking_"!'
     task = tokens[0]
     this_dir = os.path.dirname(os.path.abspath(__file__))
     cfg_path = os.path.join(this_dir, '..', task, 'configs', '%s.json' % configuration_name)
