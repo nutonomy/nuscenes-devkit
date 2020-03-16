@@ -33,8 +33,8 @@ def returns_2d_array(function):
 @returns_2d_array
 def mean_distances(stacked_trajs: np.ndarray,
                    stacked_ground_truth: np.ndarray) -> np.ndarray:
-    """Efficiently compute mean L2 norm between trajectories and ground truths
-        (pairwise over states). Batch dimension is optional.
+    """
+    Efficiently compute mean L2 norm between trajectories and ground truths (pairwise over states).
     :param stacked_trajs: [batch_size, num_modes, horizon_length, state_dim]
     :param stacked_ground_truth: [batch_size, num_modes, horizon_length, state_dim]
     :return: mean L2 norms as [batch_size, num_modes]
@@ -44,8 +44,8 @@ def mean_distances(stacked_trajs: np.ndarray,
 
 @returns_2d_array
 def max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray) -> np.ndarray:
-    """Efficiently compute max L2 norm between trajectories and ground truths
-        (pairwise over states).
+    """
+    Efficiently compute max L2 norm between trajectories and ground truths (pairwise over states).
     :pram stacked_trajs: [num_modes, horizon_length, state_dim]
     :pram stacked_ground_truth: [num_modes, horizon_length, state_dim]
     :return: max L2 norms as [num_modes]
@@ -55,7 +55,8 @@ def max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray) -
 
 @returns_2d_array
 def final_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray) -> np.ndarray:
-    """Efficiently compute the L2 norm between the last points in the trajectory
+    """
+    Efficiently compute the L2 norm between the last points in the trajectory
     :param stacked_trajs: [num_modes, horizon_length, state_dim]
     :param stacked_ground_truth: [num_modes, horizon_length, state_dim]
     :return: mean L2 norms as [num_modes]
@@ -69,11 +70,12 @@ def final_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray)
 @returns_2d_array
 def miss_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
                        tolerance: float) -> np.array:
-    """Efficiently compute 'hit' metric between trajectories and ground truths.
+    """
+    Efficiently compute 'miss' metric between trajectories and ground truths.
     :param stacked_trajs: [num_modes, horizon_length, state_dim]
     :param stacked_ground_truth: [num_modes, horizon_length, state_dim]
-    :param tolerance: max distance (m) for a 'hit' to be True
-    :return: True iff there was a 'hit.' Size [num_modes]
+    :param tolerance: max distance (m) for a 'miss' to be True
+    :return: True iff there was a 'miss.' Size [num_modes]
     """
     return max_distances(stacked_trajs, stacked_ground_truth) >= tolerance
 
@@ -82,7 +84,8 @@ def miss_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarr
 def rank_metric_over_top_k_modes(metric_results: np.ndarray,
                                  mode_probabilities: np.ndarray,
                                  ranking_func: str) -> np.ndarray:
-    """Compute a metric over all trajectories ranked by probability of each trajectory.
+    """
+    Compute a metric over all trajectories ranked by probability of each trajectory.
     :param metric_results: 1-dimensional array of shape [batch_size, num_modes]
     :param mode_probabilities: 1-dimensional array of shape [batch_size, num_modes]
     :param ranking_func: Either 'min' or 'max'. How you want to metrics ranked over the top
@@ -108,7 +111,7 @@ def rank_metric_over_top_k_modes(metric_results: np.ndarray,
 def miss_rate_top_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
                     mode_probabilities: np.ndarray,
                     tolerance: float) -> np.ndarray:
-    """Compute the hit rate over the top k modes."""
+    """ Compute the miss rate over the top k modes. """
 
     miss_rate = miss_max_distances(stacked_trajs, stacked_ground_truth, tolerance)
     return rank_metric_over_top_k_modes(miss_rate, mode_probabilities, "min")
@@ -116,7 +119,7 @@ def miss_rate_top_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
 
 def min_ade_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
               mode_probabilities: np.ndarray) -> np.ndarray:
-    """Compute the min ade over the top k modes."""
+    """ Compute the min ade over the top k modes. """
 
     ade = mean_distances(stacked_trajs, stacked_ground_truth)
     return rank_metric_over_top_k_modes(ade, mode_probabilities, "min")
@@ -124,14 +127,15 @@ def min_ade_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
 
 def min_fde_k(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray,
               mode_probabilities: np.ndarray) -> np.ndarray:
-    """Compute the min fde over the top k modes."""
+    """ Compute the min fde over the top k modes. """
 
     fde = final_distances(stacked_trajs, stacked_ground_truth)
     return rank_metric_over_top_k_modes(fde, mode_probabilities, "min")
 
 
 def stack_ground_truth(ground_truth: np.ndarray, num_modes: int) -> np.ndarray:
-    """Make k identical copies of the ground truth to make computing the metrics across modes
+    """
+    Make k identical copies of the ground truth to make computing the metrics across modes
     easier.
     :param ground_truth: shape [horizon_length, state_dim]
     :param num_modes: number of modes in prediction
@@ -141,7 +145,7 @@ def stack_ground_truth(ground_truth: np.ndarray, num_modes: int) -> np.ndarray:
 
 
 class SerializableFunction(abc.ABC):
-    """Function that can be serialized/deserialized to/from json."""
+    """ Function that can be serialized/deserialized to/from json. """
 
     @abc.abstractmethod
     def serialize(self) -> Dict[str, Any]:
@@ -154,7 +158,7 @@ class SerializableFunction(abc.ABC):
 
 
 class Aggregator(SerializableFunction):
-    """Function that can aggregate many metrics across predictions."""
+    """ Function that can aggregate many metrics across predictions. """
 
     @abc.abstractmethod
     def __call__(self, array: np.ndarray, **kwargs) -> List[float]:
@@ -193,8 +197,9 @@ class Metric(SerializableFunction):
 
 def desired_number_of_modes(results: np.ndarray,
                             k_to_report: List[int]) -> np.ndarray:
-    """Ensures we return len(k_to_report) values even when results
-    has less modes than what we want."""
+    """
+    Ensures we return len(k_to_report) values even when results has less modes than what we want.
+    """
     return results[:, [min(k, results.shape[1]) - 1 for k in k_to_report]]
 
 
@@ -422,6 +427,7 @@ def flatten_metrics(results: Dict[str, Any], metrics: List[Metric]) -> Dict[str,
     the metric values.
     :param results: Mapping from metric function name to result of aggregators.
     :param metrics: List of metrics in the results.
+    :return: Dictionary mapping metric name to the metric value.
     """
 
     metric_names = {metric.name: metric for metric in metrics}
