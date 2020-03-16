@@ -1,4 +1,4 @@
-# NuScenes Prediction Challenge Docker Submission Process
+# nuScenes Prediction Challenge Docker Submission Process
 
 We will ask at least the top five teams ranked on the leader board to submit their code to us so we can
 evaluate their model on the private test set. To ensure reproducibility, we will run their code
@@ -14,17 +14,17 @@ will use. If you follow these steps, then if it runs on your machine, it will ru
 - cloned nuScenes-devkit repo https://github.com/nutonomy/nuscenes-devkit
 
 ## Usage
-- pull docker image. For CUDA 10.1 use:
+- Pull docker image. For CUDA 10.1 use:
 ```
 docker pull nuscenes/dev-challenge:10.1
 ```
 
-- create directory for output data
+- Create directory for output data
 ```
 mkdir -p ~/Documents/submissions
 ```
 
-- create home directory for the image (needed if you need to install extra packages).
+- Create home directory for the image (needed if you need to install extra packages).
 ```
 mkdir -p ~/Desktop/home_directory
 ```
@@ -35,7 +35,7 @@ run your model. Place your model weights in
 extra packages, add them (along with the **exact** version number) to
 `nuscenes/eval/predict/submission/extra_packages.txt`.
 
-- run docker container
+- Run docker container
 ```
 cd <NUSCENES ROOT DIR>
 docker run [ --gpus all ] -ti --rm \
@@ -53,7 +53,7 @@ If this is different from your local setup, you may want to add this options int
 --user `id -u`:`id -g` -v /etc/passwd:/etc/passwd -v /etc/group:/etc/group
 ```
 
-- execute your script inside docker container
+- Execute your script inside docker container
 ```
 source activate /home/nuscenes/.conda/envs/nuscenes
 

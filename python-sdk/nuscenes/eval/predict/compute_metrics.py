@@ -17,9 +17,11 @@ def compute_metrics(predictions: List[Dict[str, Any]],
                     helper: PredictHelper, config: PredictionConfig) -> Dict[str, Any]:
     """
     Computes metrics from a set of predictions.
-    :param predictions: Unserialized predictions in json file.
-    :param helper: Instance of PredictHelper that wraps the nuScenes test set.
+    :param predictions: List of prediction JSON objects.
+    :param helper: Instance of PredictHelper that wraps the nuScenes val set.
     :param config: Config file.
+    :return: Metrics. Nested dictionary where keys are metric names and value is a dictionary
+        mapping the Aggregator name to the results.
     """
     n_preds = len(predictions)
     containers = {metric.name: np.zeros((n_preds, metric.shape)) for metric in config.metrics}
@@ -51,7 +53,7 @@ def main(version: str, data_root: str, submission_path: str,
     helper = PredictHelper(nusc)
     config = load_prediction_config(helper, config_name)
     results = compute_metrics(predictions, helper, config)
-    json.dump(results, open(submission_path.replace('.json', '_metrics.json'), "w"))
+    json.dump(results, open(submission_path.replace('.json', '_metrics.json'), "w"), indent=2)
 
 
 if __name__ == "__main__":

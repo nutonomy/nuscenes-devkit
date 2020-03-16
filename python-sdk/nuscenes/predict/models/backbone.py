@@ -53,9 +53,9 @@ class ResNetBackbone(nn.Module):
     def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
         """
         Outputs features after last convolution.
-        :param input_tensor:  Shape [batch_size, n_channels, length, width]
+        :param input_tensor:  Shape [batch_size, n_channels, length, width].
         :return: Tensor of shape [batch_size, n_convolution_filters]. For resnet50,
-            the shape is [batch_size, 2048]
+            the shape is [batch_size, 2048].
         """
         backbone_features = self.backbone(input_tensor)
         return torch.flatten(backbone_features, start_dim=1)

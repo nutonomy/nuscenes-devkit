@@ -12,8 +12,8 @@ def add_foreground_to_image(base_image: np.ndarray,
                             foreground_image: np.ndarray) -> np.ndarray:
     """
     Overlays a foreground image on top of a base image without mixing colors. Type uint8.
-    :param base_image: Image that will be the background. Type uint8
-    :param foreground_image: Image that will be the forgreound.
+    :param base_image: Image that will be the background. Type uint8.
+    :param foreground_image: Image that will be the foreground.
     :return: Image Numpy array of type uint8.
     """
 

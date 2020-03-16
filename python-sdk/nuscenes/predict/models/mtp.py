@@ -78,9 +78,7 @@ class MTP(nn.Module):
 
 
 class MTPLoss:
-    """
-    Computes the loss for the MTP model.
-    """
+    """ Computes the loss for the MTP model. """
 
     def __init__(self,
                  num_modes: int,

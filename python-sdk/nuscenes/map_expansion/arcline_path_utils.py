@@ -1,7 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
-
 import math
 from typing import Dict, Any, Tuple, List
 
@@ -56,21 +55,21 @@ def compute_segment_sign(arcline_path: ArcLinePath) -> Tuple[int, int, int]:
     return segment_sign[0], segment_sign[1], segment_sign[2]
 
 
-def get_transformation_at_s(pose: Pose,
-                            s: float) -> Pose:
+def get_transformation_at_step(pose: Pose,
+                               step: float) -> Pose:
     """
     Get the affine transformation at s meters along the path.
     :param pose: Pose represented as tuple (x, y, yaw).
-    :param s: Length along the arcline path in range (0, length_of_arcline_path].
+    :param step: Length along the arcline path in range (0, length_of_arcline_path].
     :return: Transformation represented as pose tuple.
     """
 
-    theta = pose[2] * s
+    theta = pose[2] * step
     ctheta = math.cos(theta)
     stheta = math.sin(theta)
 
     if abs(pose[2]) < 1e-6:
-        return pose[0] * s, pose[1] * s, theta
+        return pose[0] * step, pose[1] * step, theta
     else:
         new_x = (pose[1] * (ctheta - 1.0) + pose[0] * stheta) / pose[2]
         new_y = (pose[0] * (1.0 - ctheta) + pose[1] * stheta) / pose[2]
@@ -108,19 +107,19 @@ def _get_lie_algebra(segment_sign: Tuple[int, int, int],
 
 
 def pose_at_length(arcline_path: ArcLinePath,
-                   l: float) -> Tuple[float, float, float]:
+                   pos: float) -> Tuple[float, float, float]:
     """
     Retrieves pose at l meters along the arcline path.
     :param arcline_path: Arcline path object.
-    :param l: Get the pose this many meters along the path.
+    :param pos: Get the pose this many meters along the path.
     :return: Pose tuple.
     """
 
     path_length = sum(arcline_path['segment_length'])
 
-    assert -1e-6 <= l <= path_length
+    assert -1e-6 <= pos <= path_length
 
-    l = max(0.0, min(l, path_length))
+    pos = max(0.0, min(pos, path_length))
 
     result = arcline_path['start_pose']
     segment_sign = compute_segment_sign(arcline_path)
@@ -131,14 +130,14 @@ def pose_at_length(arcline_path: ArcLinePath,
 
         length = arcline_path['segment_length'][i]
 
-        if l <= length:
-            transformation = get_transformation_at_s(break_points[i], l)
+        if pos <= length:
+            transformation = get_transformation_at_step(break_points[i], pos)
             result = apply_affine_transformation(result, transformation)
             break
 
-        transformation = get_transformation_at_s(break_points[i], length)
+        transformation = get_transformation_at_step(break_points[i], length)
         result = apply_affine_transformation(result, transformation)
-        l -= length
+        pos -= length
 
     return result
 
@@ -183,7 +182,7 @@ def discretize(arcline_path: ArcLinePath,
             g_s = step_along_path
             g_i += 1
 
-        transformation = get_transformation_at_s(poses[g_i], step_along_path - g_s)
+        transformation = get_transformation_at_step(poses[g_i], step_along_path - g_s)
         new_pose = apply_affine_transformation(temp_pose, transformation)
         discretization.append(new_pose)
 

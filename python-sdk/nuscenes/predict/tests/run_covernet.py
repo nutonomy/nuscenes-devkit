@@ -25,9 +25,7 @@ def generate_trajectory(theta: float) -> torch.Tensor:
 
 
 class Dataset(IterableDataset):
-    """
-    Implements an infinite dataset
-    """
+    """ Implements an infinite dataset of the same input image, agent state vector and ground truth label. """
 
     def __iter__(self,):
 

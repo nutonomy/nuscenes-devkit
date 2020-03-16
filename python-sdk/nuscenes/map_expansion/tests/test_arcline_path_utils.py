@@ -131,8 +131,3 @@ class TestUtils(unittest.TestCase):
 
         curvature = arcline_path_utils.get_curvature_at_distance_along_lane(53, self.curved_lane)
         self.assertEqual(curvature, 1 / self.left_path['radius'])
-
-
-
-
-

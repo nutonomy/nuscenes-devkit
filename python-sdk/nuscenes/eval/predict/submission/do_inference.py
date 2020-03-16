@@ -4,7 +4,7 @@
 import argparse
 import json
 import os
-from typing import List
+from typing import List, Any
 
 from nuscenes import NuScenes
 from nuscenes.eval.predict.config import load_prediction_config
@@ -15,7 +15,7 @@ from nuscenes.predict import PredictHelper
 from nuscenes.predict.models.physics import ConstantVelocityHeading
 
 
-def load_model(helper: PredictHelper, config: PredictionConfig, path_to_model_weights: str):
+def load_model(helper: PredictHelper, config: PredictionConfig, path_to_model_weights: str) -> Any:
     """
     Loads model with desired weights
     """
@@ -36,7 +36,7 @@ def do_inference_for_submission(helper: PredictHelper,
     :returns: List of predictions.
     """
 
-    #TODO: Fill in the path to the model weights here
+    # User: Fill in the path to the model weights here.
     path_to_model_weights = ""
 
     cv_heading = load_model(helper, config, path_to_model_weights)

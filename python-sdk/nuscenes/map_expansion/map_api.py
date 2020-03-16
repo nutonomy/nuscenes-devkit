@@ -115,7 +115,7 @@ class NuScenesMap:
     def _load_arcline_path(self,) -> Dict[str, List[ArcLinePath]]:
         """
         Returns a dictionary mapping arcline_path_3 token to arcline_path_3 record.
-        :return: Dictionary Mapping token to arcline_path_3
+        :return: Dictionary Mapping token to arcline_path_3.
         """
         return self.json_obj['arcline_path_3']
 
@@ -497,8 +497,8 @@ class NuScenesMap:
 
     def get_outgoing_lane_ids(self, lane_token: str) -> List[str]:
         """
-        Get the out-going lanes
-        :param lane_token: Token for the lane
+        Get the out-going lanes.
+        :param lane_token: Token for the lane.
         :return: List of lane tokens that start at the end of this lane.
         """
 
@@ -506,8 +506,8 @@ class NuScenesMap:
 
     def get_incoming_lane_ids(self, lane_token: str) -> List[str]:
         """
-        Get the incoming lanes
-        :param lane_token: Token for the lane
+        Get the incoming lanes.
+        :param lane_token: Token for the lane.
         :return: List of lane tokens that end at the start of this lane.
         """
 
@@ -516,8 +516,8 @@ class NuScenesMap:
     def get_lane(self, lane_token: str) -> List[ArcLinePath]:
         """
         Get the arc line path representation for a lane.
-        :param lane_token: Token for the lane
-        :return: Arc line path representation of the lane
+        :param lane_token: Token for the lane.
+        :return: Arc line path representation of the lane.
         """
 
         lane = self.arcline_path_3.get(lane_token)
@@ -526,16 +526,17 @@ class NuScenesMap:
 
         return lane
 
-    def get_closest_lane(self, x: float, y: float) -> str:
+    def get_closest_lane(self, x: float, y: float, radius: float = 5) -> str:
         """
-        Get closest lane id. The distance from a point (x, y) to a lane is the minimum l2 distance
-        from (x, y) to a point on the lane
-        :param x: X coordinate in global coordinate frame
-        :param y: Y Coordinate in global coordinate frame
-        :return: Lane id of closest lane
+        Get closest lane id within a radius of query point. The distance from a point (x, y) to a lane is
+        the minimum l2 distance from (x, y) to a point on the lane.
+        :param x: X coordinate in global coordinate frame.
+        :param y: Y Coordinate in global coordinate frame.
+        :param radius: Radius around point to consider.
+        :return: Lane id of closest lane within radius.
         """
 
-        lanes = self.get_records_in_radius(x, y, 5, ['lane', 'lane_connector'])
+        lanes = self.get_records_in_radius(x, y, radius, ['lane', 'lane_connector'])
         lanes = lanes['lane'] + lanes['lane_connector']
 
         discrete_points = self.discretize_lanes(lanes, 0.5)

@@ -147,7 +147,7 @@ def default_colors(category_name: str) -> Tuple[int, int, int]:
         return 255, 255, 0  # yellow
     elif 'object' in category_name:
         return 204, 0, 204  # violet
-    elif 'human' in category_name:
+    elif 'human' in category_name or 'animal' in category_name:
         return 255, 153, 51  # orange
     else:
         raise ValueError(f"Cannot map {category_name} to a color.")

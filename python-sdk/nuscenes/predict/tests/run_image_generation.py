@@ -37,7 +37,8 @@ class TestDataset(Dataset):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Run MTP to makesure it overfits on a single test case.')
+    parser = argparse.ArgumentParser(description="Makes sure image generation code can run on gpu "
+                                                 "with multiple workers")
     parser.add_argument('--data_root', type=str)
     parser.add_argument('--use_gpu', type=bool, help='Whether to use gpu', default=False)
     args = parser.parse_args()

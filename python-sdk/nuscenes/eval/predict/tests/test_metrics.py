@@ -216,14 +216,14 @@ class TestMetrics(unittest.TestCase):
             self.assertDictEqual(off_road_rate.serialize(), {'name': 'OffRoadRate',
                                                              'aggregators': [{'name': 'RowMean'}]})
 
-    def test_DeserializeMetric(self):
+    def test_deserialize_metric(self):
 
         config = {'name': 'MinADEK',
                   'k_to_report': [1, 5, 10],
                   'aggregators': [{'name': 'RowMean'}]}
 
         helper = MagicMock(spec=PredictHelper)
-        m = metrics.DeserializeMetric(config, helper)
+        m = metrics.deserialize_metric(config, helper)
         self.assertEqual(m.name, 'MinADEK')
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
@@ -232,7 +232,7 @@ class TestMetrics(unittest.TestCase):
                   'k_to_report': [1, 5, 10],
                   'aggregators': [{'name': 'RowMean'}]}
 
-        m = metrics.DeserializeMetric(config, helper)
+        m = metrics.deserialize_metric(config, helper)
         self.assertEqual(m.name, 'MinFDEK')
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
@@ -242,7 +242,7 @@ class TestMetrics(unittest.TestCase):
                   'tolerance': 2,
                   'aggregators': [{'name': 'RowMean'}]}
 
-        m = metrics.DeserializeMetric(config, helper)
+        m = metrics.deserialize_metric(config, helper)
         self.assertEqual(m.name, 'MissRateTopK_2')
         self.assertListEqual(m.k_to_report, [1, 5, 10])
         self.assertEqual(m.aggregators[0].name, 'RowMean')
@@ -251,7 +251,7 @@ class TestMetrics(unittest.TestCase):
             config = {'name': 'OffRoadRate',
                       'aggregators': [{'name': 'RowMean'}]}
 
-            m = metrics.DeserializeMetric(config, helper)
+            m = metrics.deserialize_metric(config, helper)
             self.assertEqual(m.name, 'OffRoadRate')
             self.assertEqual(m.aggregators[0].name, 'RowMean')
 

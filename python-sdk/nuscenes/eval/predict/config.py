@@ -4,23 +4,23 @@ import json
 import os
 from typing import List, Dict, Any
 
-from nuscenes.eval.predict.metrics import Metric, DeserializeMetric
+from nuscenes.eval.predict.metrics import Metric, deserialize_metric
 from nuscenes.predict import PredictHelper
 
 
 class PredictionConfig:
-    """
-    Data class that specifies the prediction evaluation settings.
-    Initialized with:
-    metrics: List of nuscenes.eval.predict.metric.Metric objects.
-    seconds: Number of seconds to predict for each agent.
-    frequency: Rate at which prediction is made, in Hz.
-    """
 
     def __init__(self,
                  metrics: List[Metric],
                  seconds: int = 6,
                  frequency: int = 2):
+        """
+        Data class that specifies the prediction evaluation settings.
+        Initialized with:
+        metrics: List of nuscenes.eval.predict.metric.Metric objects.
+        seconds: Number of seconds to predict for each agent.
+        frequency: Rate at which prediction is made, in Hz.
+        """
         self.metrics = metrics
         self.seconds = seconds
         self.frequency = frequency  # Hz
@@ -34,7 +34,7 @@ class PredictionConfig:
     @classmethod
     def deserialize(cls, content: Dict[str, Any], helper: PredictHelper):
         """ Initialize from serialized dictionary. """
-        return cls([DeserializeMetric(metric, helper) for metric in content['metrics']],
+        return cls([deserialize_metric(metric, helper) for metric in content['metrics']],
                    seconds=content['seconds'])
 
 

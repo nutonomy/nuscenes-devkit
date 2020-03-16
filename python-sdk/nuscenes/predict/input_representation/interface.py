@@ -7,7 +7,7 @@ import numpy as np
 
 
 class StaticLayerRepresentation(abc.ABC):
-    """Represents static map information as a numpy array."""
+    """ Represents static map information as a numpy array. """
 
     @abc.abstractmethod
     def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
@@ -15,7 +15,7 @@ class StaticLayerRepresentation(abc.ABC):
 
 
 class AgentRepresentation(abc.ABC):
-    """Represents information of agents in scene as numpy array."""
+    """ Represents information of agents in scene as numpy array. """
 
     @abc.abstractmethod
     def make_representation(self, instance_token: str, sample_token: str) -> np.ndarray:
@@ -23,7 +23,7 @@ class AgentRepresentation(abc.ABC):
 
 
 class Combinator(abc.ABC):
-    """Combines the StaticLayer and Agent representations into a single one."""
+    """ Combines the StaticLayer and Agent representations into a single one. """
 
     @abc.abstractmethod
     def combine(self, data: List[np.ndarray]) -> np.ndarray:

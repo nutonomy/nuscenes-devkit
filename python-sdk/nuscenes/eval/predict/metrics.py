@@ -14,8 +14,7 @@ from nuscenes.eval.predict.data_classes import Prediction
 
 
 def returns_2d_array(function):
-    """Makes sure that the metric returns an array of
-    shape [batch_size, num_modes]"""
+    """ Makes sure that the metric returns an array of shape [batch_size, num_modes]. """
 
     def _returns_array(*args, **kwargs):
         result = function(*args, **kwargs)
@@ -299,13 +298,14 @@ class OffRoadRate(Metric):
         self.helper = helper
         self.drivable_area_polygons = self.load_drivable_area_masks(helper)
         self.pixels_per_meter = 10
+        self.number_of_points = 200
 
     @staticmethod
     def load_drivable_area_masks(helper: PredictHelper) -> Dict[str, np.ndarray]:
         """
-        Loads the polygon representation of the drivable area for each map
-        :param helper: Instance of PredictHelper
-        :return: Mapping from map_name to drivable area polygon
+        Loads the polygon representation of the drivable area for each map.
+        :param helper: Instance of PredictHelper.
+        :return: Mapping from map_name to drivable area polygon.
         """
 
         maps: Dict[str, NuScenesMap] = load_all_maps(helper)
@@ -319,10 +319,8 @@ class OffRoadRate(Metric):
         return masks
 
     @staticmethod
-    def interpolate_path(mode: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Interpolate trajectory with a cubic spline if there are enough points.
-        """
+    def interpolate_path(mode: np.ndarray, number_of_points: int) -> Tuple[np.ndarray, np.ndarray]:
+        """ Interpolate trajectory with a cubic spline if there are enough points. """
 
         # interpolate.splprep needs unique points.
         # We use a loop as opposed to np.unique because
@@ -343,10 +341,17 @@ class OffRoadRate(Metric):
             return unique_points[:, 0], unique_points[:, 1]
         else:
             knots, _ = interpolate.splprep([unique_points[:, 0], unique_points[:, 1]], k=3, s=0.1)
-            x_interpolated, y_interpolated = interpolate.splev(np.linspace(0, 1, 200), knots)
+            x_interpolated, y_interpolated = interpolate.splev(np.linspace(0, 1, number_of_points), knots)
             return x_interpolated, y_interpolated
 
     def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
+        """
+        Computes the fraction of modes in prediction that are not entirely contained in the drivable area.
+        :param ground_truth: Not used. Included signature to adhere to Metric API.
+        :param prediction: Model prediction.
+        :return: Array of shape (1, ) containing the fraction of modes that are not entirely contained in the
+            drivable area.
+        """
         map_name = self.helper.get_map_name_from_sample_token(prediction.sample)
         drivable_area = self.drivable_area_polygons[map_name]
         max_row, max_col = drivable_area.shape
@@ -355,9 +360,9 @@ class OffRoadRate(Metric):
         for mode in prediction.prediction:
 
             # Fit a cubic spline to the trajectory and interpolate with 200 points
-            x_interpolated, y_interpolated = self.interpolate_path(mode)
+            x_interpolated, y_interpolated = self.interpolate_path(mode, self.number_of_points)
 
-            # x coordinate -> col y coordinate -> row
+            # x coordinate -> col, y coordinate -> row
             # Mask has already been flipped over y-axis
             index_row = (y_interpolated * self.pixels_per_meter).astype("int")
             index_col = (x_interpolated * self.pixels_per_meter).astype("int")
@@ -388,7 +393,7 @@ class OffRoadRate(Metric):
         return 1
 
 
-def DeserializeAggregator(config: Dict[str, Any]) -> Aggregator:
+def deserialize_aggregator(config: Dict[str, Any]) -> Aggregator:
     """ Helper for deserializing Aggregators. """
     if config['name'] == 'RowMean':
         return RowMean()
@@ -396,17 +401,17 @@ def DeserializeAggregator(config: Dict[str, Any]) -> Aggregator:
         raise ValueError(f"Cannot deserialize Aggregator {config['name']}.")
 
 
-def DeserializeMetric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
+def deserialize_metric(config: Dict[str, Any], helper: PredictHelper) -> Metric:
     """ Helper for deserializing Metrics. """
     if config['name'] == 'MinADEK':
-        return MinADEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
+        return MinADEK(config['k_to_report'], [deserialize_aggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'MinFDEK':
-        return MinFDEK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']])
+        return MinFDEK(config['k_to_report'], [deserialize_aggregator(agg) for agg in config['aggregators']])
     elif config['name'] == 'MissRateTopK':
-        return MissRateTopK(config['k_to_report'], [DeserializeAggregator(agg) for agg in config['aggregators']],
+        return MissRateTopK(config['k_to_report'], [deserialize_aggregator(agg) for agg in config['aggregators']],
                             tolerance=config['tolerance'])
     elif config['name'] == 'OffRoadRate':
-        return OffRoadRate(helper, [DeserializeAggregator(agg) for agg in config['aggregators']])
+        return OffRoadRate(helper, [deserialize_aggregator(agg) for agg in config['aggregators']])
     else:
         raise ValueError(f"Cannot deserialize function {config['name']}.")
 

@@ -50,23 +50,23 @@ class Prediction(MetricData):
     @staticmethod
     def is_valid(instance, sample, prediction, probabilities):
         if not isinstance(prediction, np.ndarray):
-            raise ValueError(f"prediction must be of type np.ndarray. Received {str(type(prediction))}.")
+            raise ValueError(f"Error: prediction must be of type np.ndarray. Received {str(type(prediction))}.")
         if not isinstance(probabilities, np.ndarray):
-            raise ValueError(f"probabilities must be of type np.ndarray. Recevied {type(probabilities)}.")
+            raise ValueError(f"Error: probabilities must be of type np.ndarray. Received {type(probabilities)}.")
         if not isinstance(instance, str):
-            raise ValueError(f"instance token must be of type string. Received {type(instance)}")
+            raise ValueError(f"Error: instance token must be of type string. Received {type(instance)}")
         if not isinstance(sample, str):
-            raise ValueError(f"sample token must be of type string. Received {type(sample)}.")
+            raise ValueError(f"Error: sample token must be of type string. Received {type(sample)}.")
         if prediction.ndim != 3:
-            raise ValueError("prediction must have three dimensions (number of modes, number of timesteps, 2).\n"
+            raise ValueError("Error: prediction must have three dimensions (number of modes, number of timesteps, 2).\n"
                              f"Received {prediction.ndim}")
         if probabilities.ndim != 1:
-            raise ValueError(f"probabilities must be a single dimension. Received {probabilities.ndim}.")
+            raise ValueError(f"Error: probabilities must be a single dimension. Received {probabilities.ndim}.")
         if len(probabilities) != prediction.shape[0]:
-            raise ValueError("There must be the same number of probabilities as predicted modes.\n"
+            raise ValueError("Error: there must be the same number of probabilities as predicted modes.\n"
                              f"Received {len(probabilities)} probabilities and {prediction.shape[0]} modes.")
         if prediction.shape[0] > MAX_NUMBER_OF_MODES:
-            raise ValueError("Prediction contains more than 25 modes.")
+            raise ValueError(f"Error: prediction contains more than {MAX_NUMBER_OF_MODES} modes.")
 
     def __repr__(self):
         return f"Prediction(instance={self.instance}, sample={self.sample},"\

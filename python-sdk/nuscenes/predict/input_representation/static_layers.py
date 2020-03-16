@@ -47,8 +47,8 @@ def get_patchbox(x_in_meters: float, y_in_meters: float,
     Gets the patchbox representing the area to crop the base image.
     :param x_in_meters: X coordinate.
     :param y_in_meters: Y coordiante.
-    :param image_side_length: Length of the image
-    :return: Patch box tuple
+    :param image_side_length: Length of the image.
+    :return: Patch box tuple.
     """
 
     patch_box = (x_in_meters, y_in_meters, image_side_length, image_side_length)
@@ -92,8 +92,8 @@ def get_lanes_in_radius(x: float, y: float, radius: float,
                         map_api: NuScenesMap) -> Dict[str, List[Tuple[float, float, float]]]:
     """
     Retrieves all the lanes and lane connectors in a radius of the query point.
-    :param x: x-coordinate of point in global coordinates
-    :param y: y-coordinate of point in global coordinates
+    :param x: x-coordinate of point in global coordinates.
+    :param y: y-coordinate of point in global coordinates.
     :param radius: Any lanes within radius meters of the (x, y) point will be returned.
     :param discretization_meters: How finely to discretize the lane. If 1 is given, for example,
         the lane will be discretized into a list of points such that the distances between points
@@ -113,8 +113,8 @@ def color_by_yaw(agent_yaw_in_radians: float,
                  lane_yaw_in_radians: float) -> Color:
     """
     Color the pose one the lane based on its yaw difference to the agent yaw.
-    :param agent_yaw_in_radians: Yaw of the agent with respect to the global frame
-    :param lane_yaw_in_radians: Yaw of the pose on the lane with respect to the global frame
+    :param agent_yaw_in_radians: Yaw of the agent with respect to the global frame.
+    :param lane_yaw_in_radians: Yaw of the pose on the lane with respect to the global frame.
     """
 
     # By adding pi, lanes in the same direction as the agent are colored blue.
@@ -143,9 +143,9 @@ def draw_lanes_on_image(image: np.ndarray,
     :param image: Image to draw lanes on. Preferably all-black or all-white image.
     :param lanes: Mapping from lane id to list of coordinate tuples in global coordinate system.
     :param agent_global_coords: Location of the agent in the global coordinate frame.
-    :param agent_yaw_in_radians:
+    :param agent_yaw_in_radians: Yaw of agent in radians.
     :param agent_pixels: Location of the agent in the image as (row_pixel, column_pixel).
-    :param resolution:
+    :param resolution: Resolution in meters/pixel.
     :param color_function: By default, lanes are colored by the yaw difference between the pose
     on the lane and the agent yaw. However, you can supply your own function to color the lanes.
     :return: Image (represented as np.ndarray) with lanes drawn.

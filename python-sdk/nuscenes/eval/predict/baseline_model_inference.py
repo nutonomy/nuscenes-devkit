@@ -1,6 +1,8 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
+
 """ Script for running baseline models on a given nuscenes-split. """
+
 import argparse
 import json
 import os
@@ -21,7 +23,6 @@ def main(version: str, data_root: str,
     :param split_name: NuScenes data split name, e.g. train, val, mini_train, etc.
     :param output_dir: Directory where predictions should be stored.
     :param config_name: Name of config file.
-    :return: None.
     """
 
     nusc = NuScenes(version=version, dataroot=data_root)

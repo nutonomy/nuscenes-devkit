@@ -13,10 +13,7 @@ ASV_DIM = 3
 
 
 class CoverNet(nn.Module):
-    """
-    Implementation of CoverNet
-    https://arxiv.org/pdf/1911.10298.pdf
-    """
+    """ Implementation of CoverNet https://arxiv.org/pdf/1911.10298.pdf """
 
     def __init__(self, backbone: nn.Module, num_modes: int,
                  n_hidden_layers: List[int] = None,
@@ -68,7 +65,7 @@ class CoverNet(nn.Module):
 
 def l1_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
     """
-    Computes the index of the closest trajectory in the lattice as measured by l1 distance
+    Computes the index of the closest trajectory in the lattice as measured by l1 distance.
     :param lattice: Lattice of pre-generated trajectories. Shape [num_modes, n_timesteps, state_dim]
     :param ground_truth: Ground truth trajectory of agent. Shape [1, n_timesteps, state_dim].
     :return: Index of closest mode in the lattice.
