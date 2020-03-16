@@ -249,12 +249,6 @@ Bounding Box color convention in example images:
     ![](https://www.nuscenes.org/public/images/taxonomy_imgs/police_vehicle_4.png)
 
  [Top](#overview)
-# Firetruck 
-+ All types of firetrucks. 
-
-    ![](https://www.nuscenes.org/public/images/taxonomy_imgs/firetruck_1.jpg)
-
- [Top](#overview)
 ## Ambulance 
 + All types of ambulances. 
 
