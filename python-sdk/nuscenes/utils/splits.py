@@ -2,9 +2,7 @@
 # Code written by Holger Caesar, 2018.
 
 from typing import Dict, List
-import json
-import os
-from itertools import chain
+
 from nuscenes import NuScenes
 
 train_detect = \

@@ -349,7 +349,7 @@ class NuScenesMap:
                                              figsize=figsize, n_row=n_row)
 
     def get_map_mask(self,
-                     patch_box: Tuple[float, float, float, float],
+                     patch_box: Optional[Tuple[float, float, float, float]],
                      patch_angle: float,
                      layer_names: List[str] = None,
                      canvas_size: Optional[Tuple[int, int]] = (100, 100)) -> np.ndarray:
@@ -747,7 +747,7 @@ class NuScenesMapExplorer:
         return np.array(map_mask)
 
     def get_map_mask(self,
-                     patch_box: Tuple[float, float, float, float],
+                     patch_box: Optional[Tuple[float, float, float, float]],
                      patch_angle: float,
                      layer_names: List[str] = None,
                      canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
@@ -1412,7 +1412,6 @@ class NuScenesMapExplorer:
 
         exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                            for token in polygon_record['exterior_node_tokens']]
-
 
         interiors = []
         for hole in polygon_record['holes']:

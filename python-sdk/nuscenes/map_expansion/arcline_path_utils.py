@@ -282,7 +282,3 @@ def get_curvature_at_distance_along_lane(distance_along_lane: float, lane: List[
         return 0
     else:
         return 1 / path['radius']
-
-
-
-

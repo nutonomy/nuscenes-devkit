@@ -270,7 +270,7 @@ class MissRateTopK(Metric):
     def __call__(self, ground_truth: np.ndarray, prediction: Prediction) -> np.ndarray:
         ground_truth = stack_ground_truth(ground_truth, prediction.number_of_modes)
         results = miss_rate_top_k(prediction.prediction, ground_truth,
-                                 prediction.probabilities, self.tolerance)
+                                  prediction.probabilities, self.tolerance)
         return desired_number_of_modes(results, self.k_to_report)
 
     def serialize(self) -> Dict[str, Any]:
