@@ -61,7 +61,7 @@ pip install -r submission/extra_packages.txt
 
 # Use v1.0-trainval and split_name val to run on the entire val set
 
-python submission/do_inference.py --version v1.0-mini \
+python do_inference.py --version v1.0-mini \
     --data_root /data/sets/nuscenes \
     --split_name mini_val \
     --output_dir /nuscenes-dev/Documents/submissions \

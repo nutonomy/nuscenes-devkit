@@ -1,6 +1,6 @@
 FROM nvidia/cuda:10.1-base-ubuntu18.04
 
-MAINTAINER valentyn.klindukh@nutonomy.com
+MAINTAINER nutonomy.com
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       curl \
