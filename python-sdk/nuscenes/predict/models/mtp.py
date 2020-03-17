@@ -1,9 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, Elena Corina Grigore 2020.
-"""
-Implementation of Multiple-Trajectory Prediction (MTP) model,
-based on https://arxiv.org/pdf/1809.10732.pdf.
-"""
+
 import math
 import random
 from typing import List, Tuple
@@ -19,7 +16,10 @@ ASV_DIM = 3
 
 
 class MTP(nn.Module):
-    """ Implements the MTP network. """
+    """
+    Implementation of Multiple-Trajectory Prediction (MTP) model
+    based on https://arxiv.org/pdf/1809.10732.pdf.
+    """
 
     def __init__(self, backbone: nn.Module, num_modes: int,
                  seconds: float = 6, frequency_in_hz: float = 2,
@@ -60,6 +60,9 @@ class MTP(nn.Module):
         :param image_tensor: Tensor of images shape [batch_size, n_channels, length, width].
         :param agent_state_vector: Tensor of floats representing the agent state.
             [batch_size, 3].
+        :returns: Tensor of dimension [batch_size, number_of_modes * number_of_predictions_per_mode + number_of_modes]
+            storing the predicted trajectory and mode probabilities. Mode probabilities are normalized to sum
+            to 1 during inference.
         """
 
         backbone_features = self.backbone(image_tensor)
@@ -168,7 +171,7 @@ class MTPLoss:
         Compute angle between the target trajectory (ground truth) and the predicted trajectories.
         :param target: Shape [1, n_timesteps, 2].
         :param trajectories: Shape [n_modes, n_timesteps, 2].
-        :return: List of angles.
+        :return: List of angle, index tuples.
         """
         angles_from_ground_truth = []
         for mode, mode_trajectory in enumerate(trajectories):

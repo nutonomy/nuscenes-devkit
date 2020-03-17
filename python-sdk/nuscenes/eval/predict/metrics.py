@@ -197,15 +197,18 @@ class Metric(SerializableFunction):
 
 def desired_number_of_modes(results: np.ndarray,
                             k_to_report: List[int]) -> np.ndarray:
-    """
-    Ensures we return len(k_to_report) values even when results has less modes than what we want.
-    """
+    """ Ensures we return len(k_to_report) values even when results has less modes than what we want. """
     return results[:, [min(k, results.shape[1]) - 1 for k in k_to_report]]
 
 
 class MinADEK(Metric):
 
     def __init__(self, k_to_report: List[int], aggregators: List[Aggregator]):
+        """
+        Computes the minimum average displacement error over the top k predictions.
+        :param k_to_report:  Will report the top k result for the k in this list.
+        :param aggregators: How to aggregate the results across the data set.
+        """
         super().__init__()
         self.k_to_report = k_to_report
         self._aggregators = aggregators
@@ -236,6 +239,11 @@ class MinADEK(Metric):
 class MinFDEK(Metric):
 
     def __init__(self, k_to_report, aggregators: List[Aggregator]):
+        """
+        Computes the minimum final displacement error over the top k predictions.
+        :param k_to_report:  Will report the top k result for the k in this list.
+        :param aggregators: How to aggregate the results across the data set.
+        """
         super().__init__()
         self.k_to_report = k_to_report
         self._aggregators = aggregators
@@ -267,6 +275,13 @@ class MissRateTopK(Metric):
 
     def __init__(self, k_to_report: List[int], aggregators: List[Aggregator],
                  tolerance: float = 2.):
+        """
+        If any point in the prediction is more than tolerance meters from the ground truth, it is a miss.
+        This metric computes the fraction of predictions that are misses over the top k most likely predictions.
+        :param k_to_report: Will report the top k result for the k in this list.
+        :param aggregators: How to aggregate the results across the data set.
+        :param tolerance: Threshold to consider if a prediction is a hit or not.
+        """
         self.k_to_report = k_to_report
         self._aggregators = aggregators
         self.tolerance = tolerance
@@ -299,6 +314,12 @@ class MissRateTopK(Metric):
 class OffRoadRate(Metric):
 
     def __init__(self, helper: PredictHelper, aggregators: List[Aggregator]):
+        """
+        The OffRoadRate is defined as the fraction of trajectories that are not entirely contained
+        in the drivable area of the map.
+        :param helper: Instance of PredictHelper. Used to determine the map version for each prediction.
+        :param aggregators: How to aggregate the results across the data set.
+        """
         self._aggregators = aggregators
         self.helper = helper
         self.drivable_area_polygons = self.load_drivable_area_masks(helper)

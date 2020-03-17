@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Freddy Boulton, Eric Wolff 2020.
+# Code written by Freddy Boulton, Eric Wolff, 2020.
 import json
 import os
 from typing import List, Dict, Any
