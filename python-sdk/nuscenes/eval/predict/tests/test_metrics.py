@@ -180,7 +180,7 @@ class TestAggregators(unittest.TestCase):
     def test_RowMean(self):
         rm = metrics.RowMean()
         value = rm(np.arange(20).reshape(2, 10))
-        self.assertListEqual(value, [5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+        self.assertListEqual(list(value), [5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
 
         self.assertDictEqual(rm.serialize(), {'name': 'RowMean'})
 
