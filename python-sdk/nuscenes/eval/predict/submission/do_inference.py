@@ -7,8 +7,8 @@ import os
 from typing import List, Any
 
 from nuscenes import NuScenes
-from nuscenes.eval.predict.config import load_prediction_config
 from nuscenes.eval.predict.config import PredictionConfig
+from nuscenes.eval.predict.config import load_prediction_config
 from nuscenes.eval.predict.data_classes import Prediction
 from nuscenes.eval.predict.splits import get_prediction_challenge_split
 from nuscenes.predict import PredictHelper

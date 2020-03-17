@@ -1,16 +1,13 @@
+import os
 import unittest
 from unittest.mock import MagicMock, patch
-from typing import Dict
-import json
-import os
 
 import numpy as np
-from shapely.geometry import shape, MultiPolygon
 
 from nuscenes import NuScenes
-from nuscenes.predict import PredictHelper
 from nuscenes.eval.predict import metrics
 from nuscenes.eval.predict.data_classes import Prediction
+from nuscenes.predict import PredictHelper
 
 
 class TestFunctions(unittest.TestCase):

@@ -3,6 +3,7 @@
 from typing import Dict, Any
 
 import numpy as np
+
 from nuscenes.eval.common.data_classes import MetricData
 
 MAX_NUMBER_OF_MODES = 25

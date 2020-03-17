@@ -7,6 +7,7 @@ from collections import defaultdict
 from typing import List, Dict, Any
 
 import numpy as np
+
 from nuscenes import NuScenes
 from nuscenes.eval.predict.config import PredictionConfig, load_prediction_config
 from nuscenes.eval.predict.data_classes import Prediction
