@@ -36,7 +36,7 @@ Geometry = Union[Polygon, LineString]
 class NuScenesMap:
     """
     NuScenesMap database class for querying and retrieving information from the semantic maps.
-    Before using this class please use the provided tutorial in `map_demo.ipynb`.
+    Before using this class please use the provided tutorial `map_expansion_tutorial.ipynb`.
 
     Below you can find the map origins (south eastern corner, in [lat, lon]) for each of the 4 maps in nuScenes:
     boston-seaport: [42.336849169438615, -71.05785369873047]
