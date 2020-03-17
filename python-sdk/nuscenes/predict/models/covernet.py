@@ -42,7 +42,8 @@ class CoverNet(nn.Module):
         backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)
         n_hidden_layers = [backbone_feature_dim + ASV_DIM] + n_hidden_layers + [num_modes]
 
-        linear_layers = [nn.Linear(in_dim, out_dim) for in_dim, out_dim in zip(n_hidden_layers[:-1], n_hidden_layers[1:])]
+        linear_layers = [nn.Linear(in_dim, out_dim)
+                         for in_dim, out_dim in zip(n_hidden_layers[:-1], n_hidden_layers[1:])]
 
         self.head = nn.ModuleList(linear_layers)
 
@@ -117,11 +118,3 @@ class ConstantLatticeLoss:
             batch_losses = torch.cat((batch_losses, classification_loss.unsqueeze(0)), 0)
 
         return batch_losses.mean()
-
-
-
-
-
-
-
-

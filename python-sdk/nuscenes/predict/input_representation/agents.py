@@ -15,7 +15,8 @@ from nuscenes.predict.input_representation.utils import convert_to_pixel_coords,
 History = Dict[str, List[Dict[str, Any]]]
 
 
-def pixels_to_box_corners(row_pixel: int, column_pixel: int,
+def pixels_to_box_corners(row_pixel: int,
+                          column_pixel: int,
                           length_in_pixels: float,
                           width_in_pixels: float,
                           yaw_in_radians: float) -> np.ndarray:
