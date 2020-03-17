@@ -4,10 +4,11 @@ import abc
 from typing import Tuple
 
 import numpy as np
+from pyquaternion import Quaternion
+
 from nuscenes.eval.common.utils import quaternion_yaw
 from nuscenes.eval.predict.data_classes import Prediction
 from nuscenes.predict import PredictHelper
-from pyquaternion import Quaternion
 
 KinematicsData = Tuple[float, float, float, float, float, float, float, float, float, float]
 

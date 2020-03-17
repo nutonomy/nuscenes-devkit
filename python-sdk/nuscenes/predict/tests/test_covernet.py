@@ -1,13 +1,14 @@
 # nuScenes dev-kit.
 # Code written by Freddy Boulton, 2020.
 
-import unittest
 import math
+import unittest
+
 import torch
 from torch.nn.functional import cross_entropy
 
-from nuscenes.predict.models.covernet import l1_distance, ConstantLatticeLoss, CoverNet
 from nuscenes.predict.models.backbone import ResNetBackbone
+from nuscenes.predict.models.covernet import l1_distance, ConstantLatticeLoss, CoverNet
 
 
 class TestCoverNet(unittest.TestCase):

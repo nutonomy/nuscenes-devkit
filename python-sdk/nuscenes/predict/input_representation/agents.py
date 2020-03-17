@@ -5,11 +5,12 @@ from typing import Any, Dict, List, Tuple, Callable
 
 import cv2
 import numpy as np
+from pyquaternion import Quaternion
+
 from nuscenes.predict import PredictHelper
 from nuscenes.predict.helper import quaternion_yaw
 from nuscenes.predict.input_representation.interface import AgentRepresentation
 from nuscenes.predict.input_representation.utils import convert_to_pixel_coords, get_crops, get_rotation_matrix
-from pyquaternion import Quaternion
 
 History = Dict[str, List[Dict[str, Any]]]
 

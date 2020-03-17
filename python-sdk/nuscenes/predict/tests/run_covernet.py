@@ -6,8 +6,8 @@ Regression test to see if CoverNet implementation can overfit on a single exampl
 """
 
 import argparse
-
 import math
+
 import numpy as np
 import torch
 import torch.optim as optim

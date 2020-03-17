@@ -6,6 +6,8 @@ from typing import Dict, List, Tuple, Callable
 
 import cv2
 import numpy as np
+from pyquaternion import Quaternion
+
 from nuscenes.eval.common.utils import quaternion_yaw
 from nuscenes.map_expansion.map_api import NuScenesMap
 from nuscenes.predict import PredictHelper
@@ -14,7 +16,6 @@ from nuscenes.predict.input_representation.combinators import Rasterizer
 from nuscenes.predict.input_representation.interface import \
     StaticLayerRepresentation
 from nuscenes.predict.input_representation.utils import get_crops, get_rotation_matrix, convert_to_pixel_coords
-from pyquaternion import Quaternion
 
 Color = Tuple[float, float, float]
 

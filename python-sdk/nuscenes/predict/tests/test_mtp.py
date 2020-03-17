@@ -1,10 +1,9 @@
 import unittest
 
 import torch
-from torchvision.models.resnet import BasicBlock, Bottleneck
 
-from nuscenes.predict.models import mtp
 from nuscenes.predict.models import backbone
+from nuscenes.predict.models import mtp
 
 
 class TestMTP(unittest.TestCase):

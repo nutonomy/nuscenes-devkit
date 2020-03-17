@@ -5,6 +5,7 @@ from typing import List
 
 import cv2
 import numpy as np
+
 from nuscenes.predict.input_representation.interface import Combinator
 
 

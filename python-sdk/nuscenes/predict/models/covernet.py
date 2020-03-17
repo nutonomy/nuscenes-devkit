@@ -4,9 +4,10 @@ from typing import List, Tuple, Callable, Union
 
 import numpy as np
 import torch
-from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 from torch import nn
 from torch.nn import functional as f
+
+from nuscenes.predict.models.backbone import calculate_backbone_feature_dim
 
 # Number of entries in Agent State Vector
 ASV_DIM = 3

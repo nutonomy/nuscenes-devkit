@@ -3,10 +3,11 @@
 
 import unittest
 
-import numpy as np
 import cv2
+import numpy as np
 
 from nuscenes.predict.input_representation.combinators import Rasterizer
+
 
 class TestRasterizer(unittest.TestCase):
 

@@ -1,15 +1,16 @@
 import argparse
 from typing import List
+
 import torch
-import numpy as np
-from torch.utils.data import DataLoader, Dataset
 import torch.optim as optim
+from torch.utils.data import DataLoader, Dataset
 
 from nuscenes import NuScenes
 from nuscenes.predict import PredictHelper
-from nuscenes.predict.models.mtp import MTP, MTPLoss
-from nuscenes.predict.models.backbone import ResNetBackbone
 from nuscenes.predict.input_representation.static_layers import StaticLayerRasterizer
+from nuscenes.predict.models.backbone import ResNetBackbone
+from nuscenes.predict.models.mtp import MTP, MTPLoss
+
 
 class TestDataset(Dataset):
 
