@@ -139,6 +139,7 @@ class Baseline(abc.ABC):
         :param sec_from_now: How many seconds into the future to make the prediction.
         :param helper: Instance of PredictHelper.
         """
+        assert sec_from_now % 0.5 == 0, f"Parameter sec from now must be divisible by 0.5. Received {sec_from_now}."
         self.helper = helper
         self.sec_from_now = sec_from_now
         self.sampled_at = 2  # 2 Hz between annotations.
@@ -175,6 +176,9 @@ class PhysicsOracle(Baseline):
         instance, sample = token.split("_")
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
         ground_truth = self.helper.get_future_for_agent(instance, sample, self.sec_from_now, in_agent_frame=False)
+
+        assert ground_truth.shape[0] == int(self.sec_from_now * self.sampled_at), ("Ground truth does not correspond "
+                                                                                   f"to {self.sec_from_now} seconds.")
 
         path_funs = [
             _constant_acceleration_and_heading,
