@@ -5,7 +5,7 @@ set -ex
 source activate nuscenes
 
 # Generate python script from Jupyter notebook and then copy into Docker image.
-jupyter nbconvert --to python python-sdk/tutorials/nuscenes_basics_tutorial.py || { echo "Failed to convert notebook to python script"; exit 1; }
+jupyter nbconvert --to python python-sdk/tutorials/nuscenes_basics_tutorial.ipynb || { echo "Failed to convert notebook to python script"; exit 1; }
 
 # Remove extraneous matplot inline command and comment out any render* methods.
 sed -i.bak "/get_ipython.*/d; s/\(nusc\.render.*\)/#\1/" python-sdk/tutorials/nuscenes_basics_tutorial.py || { echo "error in sed command"; exit 1; }
