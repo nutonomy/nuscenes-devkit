@@ -61,14 +61,17 @@ class NuScenesCanBus:
         ]
         self.all_messages = self.can_messages + self.derived_messages
 
-    def print_can_message_stats(self,
+    def print_all_message_stats(self,
                                 scene_name: str) -> None:
         """
         Prints the meta stats for each CAN message type of a particular scene.
         :param scene_name: The name of the scene, e.g. scene-0001.
         """
+        all_messages = {}
         for message_name in self.can_messages:
-            self.print_message_stats(scene_name, message_name)
+            messages = self.get_messages(scene_name, 'meta')
+            all_messages[message_name] = messages
+        print(json.dumps(all_messages, indent=2))
 
     def print_message_stats(self,
                             scene_name: str,

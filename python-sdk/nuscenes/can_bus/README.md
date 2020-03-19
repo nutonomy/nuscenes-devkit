@@ -27,7 +27,7 @@ Some data may be redundant across different messages.
 Finally we extract a snippet of the route that the vehicle is currently travelling on.
 
 ### Notation
-All messages of a particular type are captured in a file of the format *"scene_%04d_\*message\*.json"*.
+All messages of a particular type are captured in a file of the format `scene_0001_message.json`, where `0001` indicates the scene id and `message` the message name.
 The messages (except *route*) contain different keys and values.
 Below we notate the dimensionality as \[d\] to indicate that a value has d dimensions.
   
@@ -36,7 +36,7 @@ Here we store additional information that is derived from various [CAN bus messa
 These messages are timeless and therefore do not provide the `utime` timestamp common to the CAN bus messages.
 
 ### Meta
-(*scene_%04d_meta.json*)
+Format: `scene_0001_meta.json`
 
 This meta file summarizes all CAN bus messages (except *route*) and provides some statistics that may be helpful to understand the data.
 - message_count: \[1\] How many messages of this type were logged.
@@ -45,7 +45,7 @@ This meta file summarizes all CAN bus messages (except *route*) and provides som
 - var_stats: (dict) Contains the maximum, mean, minimum and standard deviation for both the raw values and the differences of two consecutive values.
 
 ### Route
-(*scene_%04d_route.json*)
+Format: `scene_0001_route.json`
 
 Our vehicles follow predefined routes through the city.
 The baseline route is the recommended navigation path for the vehicle to follow.
@@ -64,14 +64,18 @@ Each message has the following field:
 For the *Zoe Sensors* and *Zoe Vehicle Info* messages this info is not directly available and is therefore replaced by the timestamp when the CAN bus message was received.
 
 ### IMU 
-(100Hz, *scene_%04d_ms_imu.json*)
+Frequency: 100Hz
+
+Format: `scene_0001_imu.json`
 
 - linear_accel: \[3\] Acceleration vector (x, y, z) in the IMU frame in m/s/s.
 - q: \[4\] Quaternion that transforms from IMU coordinates to a fixed reference frame. The yaw of this reference frame is arbitrary, determined by the IMU. However, the x-y plane of the reference frame is perpendicular to gravity, and z points up. 
 - rotation_rate: \[3\] Angular velocity in rad/s around the x, y, and z axes, respectively, in the IMU coordinate frame.
 
 ### Pose
-(50Hz, *scene_%04d_pose.json*)
+Frequency: 50Hz
+
+Format: `scene_0001_pose.json`
 
 The current pose of the ego vehicle, sampled at 50Hz.
 - accel: \[3\] Acceleration vector in the ego vehicle frame in m/s/s.
@@ -81,12 +85,16 @@ The current pose of the ego vehicle, sampled at 50Hz.
 - vel: \[3\] The velocity in m/s, expressed in the ego vehicle frame.
  
 ### Steer Angle Feedback
-(100Hz, *scene_%04d_steeranglefeedback.json*)
+Frequency: 100Hz
+
+Format: `scene_0001_steeranglefeedback.json`
 
 - value: \[1\] Steering angle feedback in radians in range \[-7.7, 6.3\]. 0 indicates no steering, positive values indicate right turns, negative values left turns.
 
 ### Vehicle Monitor
-(2Hz, *scene_%04d_vehicle_monitor.json*)
+Frequency: 2Hz
+
+Format: `scene_0001_vehicle_monitor.json`
 
 - available_distance: \[1\] Available vehicle range given the current battery level in kilometers.
 - battery_level: \[1\] Current battery level in range \[0, 100\].
@@ -104,14 +112,18 @@ The current pose of the ego vehicle, sampled at 50Hz.
 - yaw_rate: \[1\] Yaw turning rate in degrees per second at a resolution of 0.1.
 
 ### Zoe Sensors
-(794-973Hz, *scene_%04d_zoesensors.json*)
+Frequency: 794-973Hz
+
+Format: `scene_0001_zoesensors.json`
 
 - brake_sensor: \[1\] Vehicle break sensor in range \[0.375,0.411\]. High values indicate breaking.
 - steering_sensor: \[1\] Vehicle steering sensor. Same as vehicle_monitor.steering.
 - throttle_sensor: \[1\] Vehicle throttle sensor. Same as vehicle_monitor.throttle.
 
 ### Zoe Vehicle Info
-(100Hz, *scene_%04d_zoe_veh_info.json*)
+Frequency: 100Hz
+
+Format: `scene_0001_zoe_veh_info.json`
 
 - FL_wheel_speed: \[1\] Front left wheel speed. The unit is rounds per minute with a resolution of 0.0417rpm.
 - FR_wheel_speed: \[1\] Front right wheel speed. The unit is rounds per minute with a resolution of 0.0417rpm.
