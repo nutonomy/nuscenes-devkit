@@ -12,9 +12,10 @@ jupyter nbconvert --to python python-sdk/tutorials/prediction_tutorial.ipynb || 
 
 # Remove extraneous matplot inline command and comment out any render* methods.
 sed -i.bak "/get_ipython.*/d; s/\(nusc\.render.*\)/#\1/" python-sdk/tutorials/nuscenes_basics_tutorial.py || { echo "error in sed command"; exit 1; }
+sed -i.bak "/get_ipython.*/d; s/\(plt.imshow.*\)/#\1/"  python-sdk/tutorials/prediction_tutorial.py || { echo "error in sed command"; exit 1; }
 
 # Run tutorial
 xvfb-run python python-sdk/tutorials/nuscenes_basics_tutorial.py
-xvfb-run python python-sdk/tutorials/can_bus_tutorial.py
-xvfb-run python python-sdk/tutorials/map_expansion_tutorial.py
+#xvfb-run python python-sdk/tutorials/can_bus_tutorial.py
+#xvfb-run python python-sdk/tutorials/map_expansion_tutorial.py
 xvfb-run python python-sdk/tutorials/prediction_tutorial.py
