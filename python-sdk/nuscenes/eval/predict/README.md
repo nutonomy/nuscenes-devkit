@@ -3,7 +3,6 @@ In this document we present the rules, submission process, and evaluation metric
 
 ## Overview
 - [Introduction](#introduction)
-- [Participation](#participation)
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
 - [Results format](#results-format)
