@@ -50,7 +50,7 @@ def get_track_box(annotation: Dict[str, Any],
     Get four corners of bounding box for agent in pixels.
     :param annotation: The annotation record of the agent.
     :param center_coordinates: (x, y) coordinates in global frame
-        of the center of the image
+        of the center of the image.
     :param center_pixels: (row_index, column_index) location of the center
         of the image in pixel coordinates.
     :param resolution: Resolution pixels/meter of the image.

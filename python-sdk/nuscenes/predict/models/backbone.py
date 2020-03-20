@@ -70,7 +70,7 @@ class MobileNetBackbone(nn.Module):
 
     def __init__(self, version: str):
         """
-        Inits MobileNetBackbone
+        Inits MobileNetBackbone.
         :param version: mobilenet version to use.
         """
         super().__init__()

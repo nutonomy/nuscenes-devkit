@@ -40,10 +40,10 @@ class PredictionConfig:
 
 def load_prediction_config(helper: PredictHelper, config_name: str = 'predict_2020_icra.json') -> PredictionConfig:
     """
-    Loads a PredictionConfig from json file stored in eval/predict/configs
+    Loads a PredictionConfig from json file stored in eval/predict/configs.
     :param helper: Instance of PredictHelper. Needed for OffRoadRate metric.
-    :param config_name: Name of json config file
-    :return: PredictionConfig
+    :param config_name: Name of json config file.
+    :return: PredictionConfig.
     """
     this_dir = os.path.dirname(os.path.abspath(__file__))
     cfg_path = os.path.join(this_dir, "configs", config_name)

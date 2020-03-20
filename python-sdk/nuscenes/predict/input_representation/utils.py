@@ -62,7 +62,7 @@ def get_rotation_matrix(image_shape: Tuple[int, int, int], yaw_in_radians: float
     """
     Gets a rotation matrix to rotate a three channel image so that
     yaw_in_radians points along the positive y-axis.
-    :param image_shape: (Length, width, n_channels)
+    :param image_shape: (Length, width, n_channels).
     :param yaw_in_radians: Angle to rotate the image by.
     :return: rotation matrix represented as np.ndarray
     :return: The rotation matrix.

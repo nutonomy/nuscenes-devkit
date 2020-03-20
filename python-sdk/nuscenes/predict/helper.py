@@ -40,8 +40,8 @@ def convert_global_coords_to_local(coordinates: np.ndarray,
     """
     Converts global coordinates to coordinates in the frame given by the rotation quaternion and
     centered at the translation vector. The rotation is meant to be a z-axis rotation.
-    :param coordinates: x,y locations. array of shape [n_steps, 2]
-    :param translation: Tuple of (x, y, z) location that is the center of the new frame
+    :param coordinates: x,y locations. array of shape [n_steps, 2].
+    :param translation: Tuple of (x, y, z) location that is the center of the new frame.
     :param rotation: Tuple representation of quaternion of new frame.
         Representation - cos(theta / 2) + (xi + yi + zi)sin(theta / 2).
     :return: x,y locations in frame stored in array of share [n_times, 2].
@@ -87,7 +87,7 @@ class PredictHelper:
     def _map_sample_and_instance_to_annotation(self) -> Dict[Tuple[str, str], str]:
         """
         Creates mapping to look up an annotation given a sample and instance in constant time.
-        :return: Mappig from (sample_token, instance_token) -> sample_annotation_token.
+        :return: Mapping from (sample_token, instance_token) -> sample_annotation_token.
         """
         mapping = {}
 
@@ -315,8 +315,8 @@ class PredictHelper:
         :param sample_token: Sample token.
         :param max_time_diff: If the time difference between now and the most recent annotation is larger
             than this param, function will return np.nan.
-        :param with_function: Function to apply to the annotations
-        :param **kwargs: Keyword arguments to give to with_function
+        :param with_function: Function to apply to the annotations.
+        :param **kwargs: Keyword arguments to give to with_function.
 
         """
         annotation = self.get_sample_annotation(instance_token, sample_token)

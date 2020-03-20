@@ -209,9 +209,9 @@ def discretize_lane(lane: List[ArcLinePath],
 
 def length_of_lane(lane: List[ArcLinePath]) -> float:
     """
-    Calculates the length of a lane in meters
-    :param lane: Lane
-    :return: Length of lane in meters
+    Calculates the length of a lane in meters.
+    :param lane: Lane.
+    :return: Length of lane in meters.
     """
 
     # Meters
@@ -223,8 +223,8 @@ def project_pose_to_lane(pose: Pose, lane: List[ArcLinePath], resolution_meters:
     Find the closest pose on a lane to a query pose and additionally return the
     distance along the lane for this pose. Note that this function does
     not take the heading of the query pose into account.
-    :param pose: Query pose
-    :param lane: Will find the closest pose on this lane
+    :param pose: Query pose.
+    :param lane: Will find the closest pose on this lane.
     :param resolution_meters: How finely to discretize the lane.
     :return: Tuple of the closest pose and the distance along the lane
     """
@@ -241,10 +241,10 @@ def project_pose_to_lane(pose: Pose, lane: List[ArcLinePath], resolution_meters:
 
 def _find_index(distance_along_lane: float, lengths: List[float]) -> int:
     """
-    Helper function for finding of path along lane corresponding to the distance_along_lane
-    :param distance_along_lane: Distance along the lane (in meters)
-    :param lengths: Cumulative distance at each end point along the paths in the lane
-    :return: Index of path
+    Helper function for finding of path along lane corresponding to the distance_along_lane.
+    :param distance_along_lane: Distance along the lane (in meters).
+    :param lengths: Cumulative distance at each end point along the paths in the lane.
+    :return: Index of path.
     """
 
     if len(lengths) == 1:
@@ -256,8 +256,8 @@ def _find_index(distance_along_lane: float, lengths: List[float]) -> int:
 def get_curvature_at_distance_along_lane(distance_along_lane: float, lane: List[ArcLinePath]) -> float:
     """
     Computes the unsigned curvature (1 / meters) at a distance along a lane.
-    :param distance_along_lane: Distance along the lane to calculate the curvature at
-    :param lane: Lane to query
+    :param distance_along_lane: Distance along the lane to calculate the curvature at.
+    :param lane: Lane to query.
     :return: Curvature, always non negative.
     """
 

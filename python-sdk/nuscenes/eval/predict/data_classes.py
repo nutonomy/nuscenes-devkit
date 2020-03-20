@@ -17,8 +17,8 @@ class Prediction(MetricData):
     Attributes:
         instance: Instance token for prediction.
         sample: Sample token for prediction.
-        prediction: Prediction of model [num_modes, n_timesteps, state_dim]
-        probabilities: Probabilities of each mode [num_modes]
+        prediction: Prediction of model [num_modes, n_timesteps, state_dim].
+        probabilities: Probabilities of each mode [num_modes].
     """
     def __init__(self, instance: str, sample: str, prediction: np.ndarray,
                  probabilities: np.ndarray):
@@ -34,7 +34,7 @@ class Prediction(MetricData):
         return self.prediction.shape[0]
 
     def serialize(self):
-        """Serialize to json."""
+        """ Serialize to json. """
         return {'instance': self.instance,
                 'sample': self.sample,
                 'prediction': self.prediction.tolist(),
@@ -42,7 +42,7 @@ class Prediction(MetricData):
 
     @classmethod
     def deserialize(cls, content: Dict[str, Any]):
-        """ Initialize from serialized content."""
+        """ Initialize from serialized content. """
         return cls(instance=content['instance'],
                    sample=content['sample'],
                    prediction=np.array(content['prediction']),

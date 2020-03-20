@@ -13,7 +13,7 @@ NUM_IN_TRAIN_VAL = 200
 
 def get_prediction_challenge_split(split: str, dataroot: str = '/data/sets/nuscenes') -> List[str]:
     """
-    Gets a list of {instance_token}_{sample_token} strings for each split
+    Gets a list of {instance_token}_{sample_token} strings for each split.
     :param split: One of 'mini_train', 'mini_val', 'train', 'val'.
     :param dataroot: Path to the nuScenes data set.
     :return: List of tokens belonging to the split. Format {instance_token}_{sample_token}.

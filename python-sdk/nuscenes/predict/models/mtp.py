@@ -18,7 +18,7 @@ ASV_DIM = 3
 class MTP(nn.Module):
     """
     Implementation of Multiple-Trajectory Prediction (MTP) model
-    based on https://arxiv.org/pdf/1809.10732.pdf.
+    based on https://arxiv.org/pdf/1809.10732.pdf
     """
 
     def __init__(self, backbone: nn.Module, num_modes: int,
@@ -89,7 +89,7 @@ class MTPLoss:
                  regression_loss_weight: float = 1.,
                  angle_threshold_degrees: float = 5.):
         """
-        Inits MTP loss
+        Inits MTP loss.
         :param num_modes: How many modes are being predicted for each agent.
         :param regression_loss_weight: Coefficient applied to the regression loss to
             balance classification and regression performance.

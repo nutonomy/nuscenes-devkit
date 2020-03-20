@@ -35,9 +35,9 @@ def mean_distances(stacked_trajs: np.ndarray,
                    stacked_ground_truth: np.ndarray) -> np.ndarray:
     """
     Efficiently compute mean L2 norm between trajectories and ground truths (pairwise over states).
-    :param stacked_trajs: [batch_size, num_modes, horizon_length, state_dim]
-    :param stacked_ground_truth: [batch_size, num_modes, horizon_length, state_dim]
-    :return: mean L2 norms as [batch_size, num_modes]
+    :param stacked_trajs: Array of [batch_size, num_modes, horizon_length, state_dim].
+    :param stacked_ground_truth: Array of [batch_size, num_modes, horizon_length, state_dim].
+    :return: Array of mean L2 norms as [batch_size, num_modes].
     """
     return np.mean(np.linalg.norm(stacked_trajs - stacked_ground_truth, axis=-1), axis=-1)
 
@@ -46,9 +46,9 @@ def mean_distances(stacked_trajs: np.ndarray,
 def max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray) -> np.ndarray:
     """
     Efficiently compute max L2 norm between trajectories and ground truths (pairwise over states).
-    :pram stacked_trajs: [num_modes, horizon_length, state_dim]
-    :pram stacked_ground_truth: [num_modes, horizon_length, state_dim]
-    :return: max L2 norms as [num_modes]
+    :pram stacked_trajs: Array of shape [num_modes, horizon_length, state_dim].
+    :pram stacked_ground_truth: Array of [num_modes, horizon_length, state_dim].
+    :return: Array of max L2 norms as [num_modes].
     """
     return np.max(np.linalg.norm(stacked_trajs - stacked_ground_truth, axis=-1), axis=-1)
 
@@ -56,10 +56,10 @@ def max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray) -
 @returns_2d_array
 def final_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarray) -> np.ndarray:
     """
-    Efficiently compute the L2 norm between the last points in the trajectory
-    :param stacked_trajs: [num_modes, horizon_length, state_dim]
-    :param stacked_ground_truth: [num_modes, horizon_length, state_dim]
-    :return: mean L2 norms as [num_modes]
+    Efficiently compute the L2 norm between the last points in the trajectory.
+    :param stacked_trajs: Array of shape [num_modes, horizon_length, state_dim].
+    :param stacked_ground_truth: Array of shape [num_modes, horizon_length, state_dim].
+    :return: mean L2 norms between final points. Array of shape [num_modes].
     """
     # We use take to index the elements in the last dimension so that we can also
     # apply this function for a batch
@@ -72,10 +72,10 @@ def miss_max_distances(stacked_trajs: np.ndarray, stacked_ground_truth: np.ndarr
                        tolerance: float) -> np.array:
     """
     Efficiently compute 'miss' metric between trajectories and ground truths.
-    :param stacked_trajs: [num_modes, horizon_length, state_dim]
-    :param stacked_ground_truth: [num_modes, horizon_length, state_dim]
-    :param tolerance: max distance (m) for a 'miss' to be True
-    :return: True iff there was a 'miss.' Size [num_modes]
+    :param stacked_trajs: Array of shape [num_modes, horizon_length, state_dim].
+    :param stacked_ground_truth: Array of shape [num_modes, horizon_length, state_dim].
+    :param tolerance: max distance (m) for a 'miss' to be True.
+    :return: True iff there was a 'miss.' Size [num_modes].
     """
     return max_distances(stacked_trajs, stacked_ground_truth) >= tolerance
 
@@ -86,11 +86,11 @@ def rank_metric_over_top_k_modes(metric_results: np.ndarray,
                                  ranking_func: str) -> np.ndarray:
     """
     Compute a metric over all trajectories ranked by probability of each trajectory.
-    :param metric_results: 1-dimensional array of shape [batch_size, num_modes]
-    :param mode_probabilities: 1-dimensional array of shape [batch_size, num_modes]
+    :param metric_results: 1-dimensional array of shape [batch_size, num_modes].
+    :param mode_probabilities: 1-dimensional array of shape [batch_size, num_modes].
     :param ranking_func: Either 'min' or 'max'. How you want to metrics ranked over the top
             k modes.
-    :return: Array of shape [num_modes]
+    :return: Array of shape [num_modes].
     """
 
     if ranking_func == "min":
@@ -137,9 +137,9 @@ def stack_ground_truth(ground_truth: np.ndarray, num_modes: int) -> np.ndarray:
     """
     Make k identical copies of the ground truth to make computing the metrics across modes
     easier.
-    :param ground_truth: shape [horizon_length, state_dim]
-    :param num_modes: number of modes in prediction
-    :return: shape [num_modes, horizon_length, state_dim]
+    :param ground_truth: Array of shape [horizon_length, state_dim].
+    :param num_modes: number of modes in prediction.
+    :return: Array of shape [num_modes, horizon_length, state_dim].
     """
     return np.repeat(np.expand_dims(ground_truth, 0), num_modes, axis=0)
 
