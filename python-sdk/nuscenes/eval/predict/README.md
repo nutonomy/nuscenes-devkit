@@ -32,7 +32,8 @@ Note that the evaluation server can still be used to benchmark your results afte
 * Every submission to the challenge must be accompanied by a technical report describing the method in sufficient detail to allow for independent verification.
 
 ### General rules
-* We release annotations for the train and val set, but not for the test set.
+* We release annotations for the train and val set, but not for the test set. We have created a hold out set for validation
+from the training set called the `train_val` set.
 * We release sensor data for train, val and test set.
 * Top leaderboard entries and their papers will be manually reviewed to ensure no cheating was done.
 * Each user or team can have at most one one account on the evaluation server.
@@ -40,7 +41,7 @@ Note that the evaluation server can still be used to benchmark your results afte
 * Any attempt to make more submissions than allowed will result in a permanent ban of the team or company from all nuScenes challenges.
 
 ## Results format
-Users must submit a json file with a list of predictions [`Predictions`](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/predict/data_classes.py) for each agent. A `Prediction` has the following components:
+Users must submit a json file with a list of [`Predictions`](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/predict/data_classes.py) for each agent. A `Prediction` has the following components:
 
 ```
 instance: Instance token for agent.
