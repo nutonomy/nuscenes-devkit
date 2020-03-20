@@ -47,7 +47,7 @@ def yaw_diff(gt_box: EvalBox, eval_box: EvalBox, period: float = 2*np.pi) -> flo
     return abs(angle_diff(yaw_gt, yaw_est, period))
 
 
-def angle_diff(x: float, y: float, period: float):
+def angle_diff(x: float, y: float, period: float) -> float:
     """
     Get the smallest angle difference between 2 angles: the angle from y to x.
     :param x: To angle.

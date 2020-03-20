@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
+from nuscenes.map_expansion.arcline_path_utils import discretize_lane, ArcLinePath
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
@@ -76,10 +77,13 @@ class NuScenesMap:
         self.non_geometric_polygon_layers = ['drivable_area', 'road_segment', 'road_block', 'lane', 'ped_crossing',
                                              'walkway', 'stop_line', 'carpark_area']
 
+        # We want to be able to search for lane connectors, but not render them.
+        self.lookup_polygon_layers = self.non_geometric_polygon_layers + ['lane_connector']
+
         # These are the non-geometric layers which have line strings as the geometric descriptors.
         self.non_geometric_line_layers = ['road_divider', 'lane_divider', 'traffic_light']
         self.non_geometric_layers = self.non_geometric_polygon_layers + self.non_geometric_line_layers
-        self.layer_names = self.geometric_layers + self.non_geometric_polygon_layers + self.non_geometric_line_layers
+        self.layer_names = self.geometric_layers + self.lookup_polygon_layers + self.non_geometric_line_layers
 
         with open(self.json_fname, 'r') as fh:
             self.json_obj = json.load(fh)
@@ -108,6 +112,16 @@ class NuScenesMap:
         """
         return self.json_obj[layer_name]
 
+    def _load_arcline_path(self,) -> Dict[str, List[ArcLinePath]]:
+        """
+        Returns a dictionary mapping arcline_path_3 token to arcline_path_3 record.
+        :return: Dictionary Mapping token to arcline_path_3.
+        """
+        return self.json_obj['arcline_path_3']
+
+    def _load_lane_connectivity(self) -> Dict[str, Dict[str, List[str]]]:
+        return self.json_obj['connectivity']
+
     def _load_layers(self) -> None:
         """ Loads each available layer. """
 
@@ -126,6 +140,9 @@ class NuScenesMap:
         self.road_divider = self._load_layer('road_divider')
         self.lane_divider = self._load_layer('lane_divider')
         self.traffic_light = self._load_layer('traffic_light')
+        self.arcline_path_3 = self._load_arcline_path()
+        self.lane_connector = self._load_layer('lane_connector')
+        self.connectivity = self._load_lane_connectivity()
 
     def _make_token2ind(self) -> None:
         """ Store the mapping from token to layer index for each layer. """
@@ -332,10 +349,10 @@ class NuScenesMap:
                                              figsize=figsize, n_row=n_row)
 
     def get_map_mask(self,
-                     patch_box: Tuple[float, float, float, float],
+                     patch_box: Optional[Tuple[float, float, float, float]],
                      patch_angle: float,
                      layer_names: List[str] = None,
-                     canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
+                     canvas_size: Optional[Tuple[int, int]] = (100, 100)) -> np.ndarray:
         """
         Return list of map mask layers of the specified patch.
         :param patch_box: Patch box defined as [x_center, y_center, height, width]. If None, this plots the entire map.
@@ -435,6 +452,106 @@ class NuScenesMap:
         :return: min_x, min_y, max_x, max_y of of the line representation.
         """
         return self.explorer.get_bounds(layer_name, token)
+
+    def get_records_in_radius(self, x: float, y: float, radius: float,
+                              layer_names: List[str], mode: str = 'intersect') -> Dict[str, List[str]]:
+        """
+        Get all the record tokens that intersect a square patch of side length 2*radius centered on (x,y).
+        :param x: X-coordinate in global frame.
+        :param y: y-coordinate in global frame.
+        :param radius: All records within radius meters of point (x, y) will be returned.
+        :param layer_names: Names of the layers that we want to retrieve. By default will always
+        look at the all non geometric layers.
+        :param mode: "intersect" will return all non geometric records that intersects the patch, "within" will return
+        all non geometric records that are within the patch.
+        :return: Dictionary of layer_name - tokens pairs.
+        """
+
+        patch = (x - radius, y - radius, x + radius, y + radius)
+        return self.explorer.get_records_in_patch(patch, layer_names, mode)
+
+    def discretize_lanes(self, tokens: List[str],
+                         resolution_meters: float) -> Dict[str, List[Tuple[float, float, float]]]:
+        """
+        Discretizes a list of lane/lane connector tokens.
+        :param tokens: List of lane and/or lane connector record tokens. Can be retrieved with
+            get_records_in_radius or get_records_in_patch.
+        :param resolution_meters: How finely to discretize the splines.
+        :return: Mapping from lane/lane connector token to sequence of poses along the lane.
+        """
+
+        return {ID: discretize_lane(self.arcline_path_3.get(ID, []), resolution_meters) for ID in tokens}
+
+    def _get_connected_lanes(self, lane_token: str, incoming_outgoing: str) -> List[str]:
+        """
+        Helper for getting the lanes connected to a given lane
+        :param lane_token: Token for the lane.
+        :param incoming_outgoing: Whether to get incoming or outgoing lanes
+        :return: List of lane tokens this lane is connected to.
+        """
+
+        if lane_token not in self.connectivity:
+            raise ValueError(f"{lane_token} is not a valid lane.")
+
+        return self.connectivity[lane_token][incoming_outgoing]
+
+    def get_outgoing_lane_ids(self, lane_token: str) -> List[str]:
+        """
+        Get the out-going lanes.
+        :param lane_token: Token for the lane.
+        :return: List of lane tokens that start at the end of this lane.
+        """
+
+        return self._get_connected_lanes(lane_token, 'outgoing')
+
+    def get_incoming_lane_ids(self, lane_token: str) -> List[str]:
+        """
+        Get the incoming lanes.
+        :param lane_token: Token for the lane.
+        :return: List of lane tokens that end at the start of this lane.
+        """
+
+        return self._get_connected_lanes(lane_token, 'incoming')
+
+    def get_lane(self, lane_token: str) -> List[ArcLinePath]:
+        """
+        Get the arc line path representation for a lane.
+        :param lane_token: Token for the lane.
+        :return: Arc line path representation of the lane.
+        """
+
+        lane = self.arcline_path_3.get(lane_token)
+        if not lane:
+            raise ValueError(f'Lane token {lane_token} is not a valid lane.')
+
+        return lane
+
+    def get_closest_lane(self, x: float, y: float, radius: float = 5) -> str:
+        """
+        Get closest lane id within a radius of query point. The distance from a point (x, y) to a lane is
+        the minimum l2 distance from (x, y) to a point on the lane.
+        :param x: X coordinate in global coordinate frame.
+        :param y: Y Coordinate in global coordinate frame.
+        :param radius: Radius around point to consider.
+        :return: Lane id of closest lane within radius.
+        """
+
+        lanes = self.get_records_in_radius(x, y, radius, ['lane', 'lane_connector'])
+        lanes = lanes['lane'] + lanes['lane_connector']
+
+        discrete_points = self.discretize_lanes(lanes, 0.5)
+
+        current_min = np.inf
+
+        min_id = ""
+        for lane_id, points in discrete_points.items():
+
+            distance = np.linalg.norm(np.array(points)[:, :2] - [x, y], axis=1).min()
+            if distance <= current_min:
+                current_min = distance
+                min_id = lane_id
+
+        return min_id
 
     def render_next_roads(self,
                           x: float,
@@ -631,7 +748,7 @@ class NuScenesMapExplorer:
         return np.array(map_mask)
 
     def get_map_mask(self,
-                     patch_box: Tuple[float, float, float, float],
+                     patch_box: Optional[Tuple[float, float, float, float]],
                      patch_angle: float,
                      layer_names: List[str] = None,
                      canvas_size: Tuple[int, int] = (100, 100)) -> np.ndarray:
@@ -1233,7 +1350,7 @@ class NuScenesMapExplorer:
         if mode not in ['intersect', 'within']:
             raise ValueError("Mode {} is not valid, choice=('intersect', 'within')".format(mode))
 
-        if layer_name in self.map_api.non_geometric_polygon_layers:
+        if layer_name in self.map_api.lookup_polygon_layers:
             return self._is_polygon_record_in_patch(token, layer_name, box_coords, mode)
         elif layer_name in self.map_api.non_geometric_line_layers:
             return self._is_line_record_in_patch(token, layer_name, box_coords,  mode)
@@ -1293,6 +1410,7 @@ class NuScenesMapExplorer:
         :return: The polygon wrapped in a shapely Polygon object.
         """
         polygon_record = self.map_api.get('polygon', polygon_token)
+
         exterior_coords = [(self.map_api.get('node', token)['x'], self.map_api.get('node', token)['y'])
                            for token in polygon_record['exterior_node_tokens']]
 
@@ -1406,7 +1524,7 @@ class NuScenesMapExplorer:
         otherwise, "within" will return True if the geometric object is within the patch and False otherwise.
         :return: Boolean value on whether a particular polygon record intersects or is within a particular patch.
         """
-        if layer_name not in self.map_api.non_geometric_polygon_layers:
+        if layer_name not in self.map_api.lookup_polygon_layers:
             raise ValueError('{} is not a polygonal layer'.format(layer_name))
 
         x_min, y_min, x_max, y_max = box_coords

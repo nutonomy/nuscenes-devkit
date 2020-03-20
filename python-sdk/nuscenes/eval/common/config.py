@@ -30,7 +30,7 @@ def config_factory(configuration_name: str) -> Union[DetectionConfig, TrackingCo
     if task == 'detection':
         cfg = DetectionConfig.deserialize(data)
     elif task == 'tracking':
-            cfg = TrackingConfig.deserialize(data)
+        cfg = TrackingConfig.deserialize(data)
     else:
         raise Exception('Error: Invalid config file name: %s' % configuration_name)
 
