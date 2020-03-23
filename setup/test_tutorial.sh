@@ -14,8 +14,8 @@ jupyter nbconvert --to python python-sdk/tutorials/prediction_tutorial.ipynb || 
 sed -i.bak "/get_ipython.*/d; s/\(nusc\.render.*\)/#\1/" python-sdk/tutorials/nuscenes_basics_tutorial.py || { echo "error in sed command"; exit 1; }
 sed -i.bak "/get_ipython.*/d; s/\(nusc_can.plot.*\)/#\1/"  python-sdk/tutorials/can_bus_tutorial.py || { echo "error in sed command"; exit 1; }
 sed -i.bak "/get_ipython.*/d; s/\(^plt.*\)/#\1/"  python-sdk/tutorials/can_bus_tutorial.py || { echo "error in sed command"; exit 1; }
-sed -i.bak "/get_ipython.*/d; s/\(nuc_map.render.*\)/#\1/"  python-sdk/tutorials/map_expansion_tutorial.py || { echo "error in sed command"; exit 1; }
-sed -i.bak "/get_ipython.*/d; s/\(nuc_map_bos.render.*\)/#\1/"  python-sdk/tutorials/map_expansion_tutorial.py || { echo "error in sed command"; exit 1; }
+sed -i.bak "/get_ipython.*/d; s/\(nusc_map.render.*\)/#\1/"  python-sdk/tutorials/map_expansion_tutorial.py || { echo "error in sed command"; exit 1; }
+sed -i.bak "/get_ipython.*/d; s/\(nusc_map_bos.render.*\)/#\1/"  python-sdk/tutorials/map_expansion_tutorial.py || { echo "error in sed command"; exit 1; }
 sed -i.bak "/get_ipython.*/d; s/\(plt.imshow.*\)/#\1/"  python-sdk/tutorials/prediction_tutorial.py || { echo "error in sed command"; exit 1; }
 
 # Run tutorial
