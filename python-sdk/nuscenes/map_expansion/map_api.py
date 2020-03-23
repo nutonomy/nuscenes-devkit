@@ -37,7 +37,7 @@ Geometry = Union[Polygon, LineString]
 class NuScenesMap:
     """
     NuScenesMap database class for querying and retrieving information from the semantic maps.
-    Before using this class please use the provided tutorial in `map_demo.ipynb`.
+    Before using this class please use the provided tutorial `map_expansion_tutorial.ipynb`.
 
     Below you can find the map origins (south eastern corner, in [lat, lon]) for each of the 4 maps in nuScenes:
     boston-seaport: [42.336849169438615, -71.05785369873047]
@@ -100,7 +100,7 @@ class NuScenesMap:
             self.version = self.json_obj['version']
         else:
             self.version = '1.0'
-        if self.version < '1.1':
+        if self.version < '1.2':
             raise Exception('Error: You are using an outdated map version! '
                             'Please go to https://www.nuscenes.org/download to download the latest map!')
 
