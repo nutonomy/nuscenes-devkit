@@ -24,6 +24,9 @@ The submission period will open April 1 and continue until May 28th, 2020.
 Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
 Note that the evaluation server can still be used to benchmark your results after the challenge period.
 
+*Update:* Due to the COVID-19 situation, participants are **not** required to attend in person
+to be eligible for the prizes.
+
 ## Submission rules
 ### Prediction-specific rules
 * The user can submit up to 25 proposed future trajectories, called `modes`, for each agent along with a probability the agent follows that proposal. Our metrics (explained below) will measure how well this proposed set of trajectories matches the ground truth.
