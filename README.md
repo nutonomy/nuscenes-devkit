@@ -11,6 +11,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Citation](#citation)
 
 ## Changelog
+- Mar. 24, 2020: Devkit v1.0.7: nuScenes prediction challenge code released.
 - Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
 - Dec. 11, 2019: Devkit v1.0.5: Remove weight factor from AMOTA tracking metrics.
 - Nov. 1, 2019: Tracking eval code released and detection eval code reorganized.
