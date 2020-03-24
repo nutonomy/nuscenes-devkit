@@ -11,6 +11,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Citation](#citation)
 
 ## Changelog
+- Mar. 24, 2020: Devkit v1.0.7: nuScenes prediction challenge code released.
 - Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
 - Dec. 11, 2019: Devkit v1.0.5: Remove weight factor from AMOTA tracking metrics.
 - Nov. 1, 2019: Tracking eval code released and detection eval code reorganized.
@@ -52,7 +53,7 @@ To install this expansion, please follow these steps:
 In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
 To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
-- Move the four .json files to your nuScenes maps folder (e.g. `/data/sets/nuscenes/maps`).
+- Move the .json files to your nuScenes `maps` folder.
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).

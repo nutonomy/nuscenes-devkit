@@ -30,12 +30,20 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
+### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
+The second nuScenes detection challenge will be held at [ICRA 2020](https://www.icra2020.org/).
+The submission period will open April 1 and continue until May 28th, 2020.
+Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
+Note that the previous [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) can still be used to benchmark your results after the challenge period.
+
+*Update:* Due to the COVID-19 situation, participants are **not** required to attend in person to be eligible for the prizes.
+
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge was held at CVPR 2019.
-Submission opened May 6 and closed June 12.
+Submission opened May 6 and closed June 12, 2019.
 Results and winners were announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 For more information see the [leaderboard](https://www.nuscenes.org/object-detection).
-Note that the detection server can still be used to benchmark your results.
+Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) can still be used to benchmark your results.
 
 ## Submission rules
 ### Detection-specific rules
