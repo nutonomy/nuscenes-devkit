@@ -18,6 +18,11 @@ will use. If you follow these steps, then if it runs on your machine, it will ru
 ```
 docker pull nuscenes/dev-challenge:10.1
 ```
+- Pull docker image. For CUDA 9.2 use:
+```
+docker pull nuscenes/dev-challenge:9.2
+```
+
 
 - Create directory for output data
 ```

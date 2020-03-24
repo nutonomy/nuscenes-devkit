@@ -1,4 +1,5 @@
-FROM nvidia/cuda:10.1-base-ubuntu18.04
+ARG FROM
+FROM ${FROM}
 
 MAINTAINER nutonomy.com
 
