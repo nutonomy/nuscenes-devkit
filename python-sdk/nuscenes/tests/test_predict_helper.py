@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 
 import numpy as np
 
-from nuscenes.predict import PredictHelper, convert_global_coords_to_local, convert_local_coords_to_global
+from nuscenes.prediction import PredictHelper, convert_global_coords_to_local, convert_local_coords_to_global
 
 
 class MockNuScenes:

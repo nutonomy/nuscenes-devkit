@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+    dev-10.1:
+        image: nuscenes/dev-challenge:10.1
+        build:
+            context: ../../../../../../
+            dockerfile: python-sdk/nuscenes/eval/prediction/docker_container/docker/Dockerfile
+            args:
+                FROM: nvidia/cuda:10.1-base-ubuntu18.04
+    dev-9.2:
+        image: nuscenes/dev-challenge:9.2
+        build:
+            context: ../../../../../../
+            dockerfile: python-sdk/nuscenes/eval/prediction/docker_container/docker/Dockerfile
+            args:
+                FROM: nvidia/cuda:9.2-base-ubuntu18.04
