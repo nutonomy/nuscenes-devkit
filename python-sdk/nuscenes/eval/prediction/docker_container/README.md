@@ -49,7 +49,7 @@ docker run [ --gpus all ] -ti --rm \
    -v <PATH TO nuscenes/eval/prediction/submission>:/nuscenes-dev/prediction \
    -v ~/Documents/:/nuscenes-dev/Documents \
    -v ~/Desktop/home_directory:/home/<username>
-   nuscenes/dev-challenge:latest
+   <name of image>
 ```
 
 NOTE: The docker image uses 1000:1000 uid:gid
