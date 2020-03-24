@@ -52,7 +52,7 @@ To install this expansion, please follow these steps:
 In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
 To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
-- Move the four .json files to your nuScenes maps folder (e.g. `/data/sets/nuscenes/maps`).
+- Move the .json files to your nuScenes maps folder (e.g. `/data/sets/nuscenes/maps`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
