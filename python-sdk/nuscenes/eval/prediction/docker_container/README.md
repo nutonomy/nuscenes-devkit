@@ -29,11 +29,11 @@ mkdir -p ~/Documents/submissions
 mkdir -p ~/Desktop/home_directory
 ```
 
-- Modify `do_inference.py` in `nuscenes/eval/predict/submission` to 
+- Modify `do_inference.py` in `nuscenes/eval/prediction/submission` to 
 run your model. Place your model weights in
-`nuscenes/eval/predict/submission` as well. If you need to install any
+`nuscenes/eval/prediction/submission` as well. If you need to install any
 extra packages, add them (along with the **exact** version number) to
-`nuscenes/eval/predict/submission/extra_packages.txt`.
+`nuscenes/eval/prediction/submission/extra_packages.txt`.
 
 - Run docker container
 ```
@@ -41,7 +41,7 @@ cd <NUSCENES ROOT DIR>
 docker run [ --gpus all ] -ti --rm \
    -v <PATH TO NUSCENES DATASET>:/data/sets/nuscenes \
    -v <PATH TO nuScenes-devkit ROOT DIR>/python-sdk:/nuscenes-dev/python-sdk \
-   -v <PATH TO nuscenes/eval/predict/submission>:/nuscenes-dev/predict \
+   -v <PATH TO nuscenes/eval/prediction/submission>:/nuscenes-dev/prediction \
    -v ~/Documents/:/nuscenes-dev/Documents \
    -v ~/Desktop/home_directory:/home/<username>
    nuscenes/dev-challenge:latest

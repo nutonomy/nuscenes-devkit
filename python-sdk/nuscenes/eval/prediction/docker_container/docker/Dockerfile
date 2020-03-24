@@ -25,7 +25,7 @@ RUN groupadd -g 1000 dev \
 
 USER dev
 
-WORKDIR /nuscenes-dev/predict
+WORKDIR /nuscenes-dev/prediction
 
 ENV PYTHONPATH=/nuscenes-dev/python-sdk
 
@@ -33,7 +33,7 @@ COPY setup/requirements.txt .
 
 RUN bash -c "conda create -y -n nuscenes python=3.7 \
     && source activate nuscenes \
-    && pip install --no-cache-dir -r /nuscenes-dev/predict/requirements.txt \
+    && pip install --no-cache-dir -r /nuscenes-dev/prediction/requirements.txt \
     && conda clean --yes --all"
 
-VOLUME [ '/nuscenes-dev/python-sdk', '/nuscenes-dev/predict', '/data/sets/nuscenes', '/nuscenes-dev/Documents' ]
+VOLUME [ '/nuscenes-dev/python-sdk', '/nuscenes-dev/prediction', '/data/sets/nuscenes', '/nuscenes-dev/Documents' ]
