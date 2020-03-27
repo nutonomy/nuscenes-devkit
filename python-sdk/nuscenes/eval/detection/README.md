@@ -1,5 +1,5 @@
 # nuScenes detection task
-![nuScenes Singapore Example](https://www.nuscenes.org/public/images/tasks.png)
+![nuScenes Detection logo](https://www.nuscenes.org/public/images/tasks.png)
 
 ## Overview
 - [Introduction](#introduction)
