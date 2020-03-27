@@ -1,4 +1,4 @@
-# nuScenes prediction challenge
+# nuScenes prediction task
 In this document we present the rules, submission process, and evaluation metrics of the nuScenes prediction task.
 
 ![logo](https://www.nuscenes.org/public/images/prediction.png)
