@@ -1,6 +1,4 @@
-# nuScenes tracking task
-In this document we present the rules, result format, classes, evaluation metrics and challenge tracks of the nuScenes tracking task.
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/475) for the **EvalAI tracking evaluation server**. 
+# nuScenes tracking task 
 ![nuScenes Tracking logo](https://www.nuscenes.org/public/images/tracking_challenge.png)
 
 ## Overview
@@ -50,6 +48,8 @@ To allow users to benchmark the performance of their method against the communit
 Additionally we organize a number of challenges at leading Computer Vision conference workshops.
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
+
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/475) for the **EvalAI tracking evaluation server**.
 
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
