@@ -1,5 +1,5 @@
 # nuScenes prediction task
-!![nuScenes Prediction logo](https://www.nuscenes.org/public/images/prediction.png)
+![nuScenes Prediction logo](https://www.nuscenes.org/public/images/prediction.png)
 
 ## Overview
 - [Introduction](#introduction)
