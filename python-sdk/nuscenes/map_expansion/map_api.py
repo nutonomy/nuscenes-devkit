@@ -39,7 +39,7 @@ class NuScenesMap:
     NuScenesMap database class for querying and retrieving information from the semantic maps.
     Before using this class please use the provided tutorial `map_expansion_tutorial.ipynb`.
 
-    Below you can find the map origins (south eastern corner, in [lat, lon]) for each of the 4 maps in nuScenes:
+    Below you can find the map origins (south western corner, in [lat, lon]) for each of the 4 maps in nuScenes:
     boston-seaport: [42.336849169438615, -71.05785369873047]
     singapore-onenorth: [1.2882100868743724, 103.78475189208984]
     singapore-hollandvillage: [1.2993652317780957, 103.78217697143555]
