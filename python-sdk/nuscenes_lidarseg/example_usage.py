@@ -8,6 +8,8 @@ def main():
     nusc_ls = NuScenesLidarseg(dataroot='/home/whyekit/Desktop/nuscenes-lidarseg',
                                dataroot_nuscenes='/home/whyekit/Desktop/nuscenes')
 
+    nusc_ls.list_lidarseg_categories()
+
     lidar_seg_annots = nusc_ls.lidarseg
 
     in_mini = []
