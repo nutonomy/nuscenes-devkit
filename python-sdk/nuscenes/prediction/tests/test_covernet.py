@@ -8,7 +8,7 @@ import torch
 from torch.nn.functional import cross_entropy
 
 from nuscenes.prediction.models.backbone import ResNetBackbone
-from nuscenes.prediction.models.covernet import l1_distance, ConstantLatticeLoss, CoverNet
+from nuscenes.prediction.models.covernet import mean_pointwise_l2_distance, ConstantLatticeLoss, CoverNet
 
 
 class TestCoverNet(unittest.TestCase):
@@ -36,15 +36,15 @@ class TestConstantLatticeLoss(unittest.TestCase):
 
         # Should select the first mode
         ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) + 2
-        self.assertEqual(l1_distance(lattice, ground_truth), 0)
+        self.assertEqual(mean_pointwise_l2_distance(lattice, ground_truth), 0)
 
         # Should select the second mode
         ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) * 3 + 4
-        self.assertEqual(l1_distance(lattice, ground_truth), 1)
+        self.assertEqual(mean_pointwise_l2_distance(lattice, ground_truth), 1)
 
         # Should select the third mode
         ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) * 6 + 10
-        self.assertEqual(l1_distance(lattice, ground_truth), 2)
+        self.assertEqual(mean_pointwise_l2_distance(lattice, ground_truth), 2)
 
     def test_constant_lattice_loss(self):
 
@@ -75,7 +75,7 @@ class TestConstantLatticeLoss(unittest.TestCase):
 
         answer = cross_entropy(logits, torch.LongTensor([1, 1, 2, 0, 0]))
 
-        loss = ConstantLatticeLoss(lattice, l1_distance)
+        loss = ConstantLatticeLoss(lattice, mean_pointwise_l2_distance)
         loss_value = loss(logits, ground_truth)
 
         self.assertAlmostEqual(float(loss_value.detach().numpy()), float(answer.detach().numpy()))
