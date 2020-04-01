@@ -65,7 +65,7 @@ class CoverNet(nn.Module):
         return logits
 
 
-def l1_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
+def mean_pointwise_l2_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
     """
     Computes the index of the closest trajectory in the lattice as measured by l1 distance.
     :param lattice: Lattice of pre-generated trajectories. Shape [num_modes, n_timesteps, state_dim]
@@ -73,7 +73,7 @@ def l1_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tens
     :return: Index of closest mode in the lattice.
     """
     stacked_ground_truth = ground_truth.repeat(lattice.shape[0], 1, 1)
-    return f.l1_loss(lattice, stacked_ground_truth, reduction='none').sum(dim=2).mean(dim=1).argmin()
+    return torch.pow(lattice - stacked_ground_truth, 2).sum(dim=2).sqrt().mean(dim=1).argmin()
 
 
 class ConstantLatticeLoss:
@@ -82,7 +82,7 @@ class ConstantLatticeLoss:
     """
 
     def __init__(self, lattice: Union[np.ndarray, torch.Tensor],
-                 similarity_function: Callable[[torch.Tensor, torch.Tensor], int] = l1_distance):
+                 similarity_function: Callable[[torch.Tensor, torch.Tensor], int] = mean_pointwise_l2_distance):
         """
         Inits the loss.
         :param lattice: numpy array of shape [n_modes, n_timesteps, state_dim]
