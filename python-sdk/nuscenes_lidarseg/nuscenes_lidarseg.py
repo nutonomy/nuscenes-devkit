@@ -43,6 +43,7 @@ class NuScenesLidarseg(NuScenes):
         self.lidarseg = self.__load_table__('lidarseg')
         self.categories = self.__load_table__('lidarseg_category')
         self.colormap = [category['color'] for category in self.categories]
+        print (self.categories[1]['label'], self.colormap[1])
 
         if verbose:
             for table in self.table_names:

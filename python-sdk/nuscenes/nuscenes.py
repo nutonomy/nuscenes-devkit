@@ -72,6 +72,10 @@ class NuScenes:
         self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
 
+        # If available, also load the lidarseg annotations.
+        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
+            self.lidarseg = self.__load_table__('lidarseg')
+
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
             self.image_annotations = self.__load_table__('image_annotations')
@@ -402,10 +406,11 @@ class NuScenes:
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
-                           use_flat_vehicle_coordinates: bool = True) -> None:
+                           use_flat_vehicle_coordinates: bool = True, show_lidarseg_labels: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
-                                         use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
+                                         use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
+                                         show_lidarseg_labels=show_lidarseg_labels)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -755,7 +760,8 @@ class NuScenesExplorer:
                            nsweeps: int = 1,
                            out_path: str = None,
                            underlay_map: bool = True,
-                           use_flat_vehicle_coordinates: bool = True) -> None:
+                           use_flat_vehicle_coordinates: bool = True,
+                           show_lidarseg_labels: bool = False) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -765,12 +771,34 @@ class NuScenesExplorer:
         :param ax: Axes onto which to render.
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
-        :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
+        :param underlay_map: When set to true, lidar data is plotted onto the map. This can be slow.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
             aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
             can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
             setting is more correct and rotates the plot by ~90 degrees.
+        :param show_lidarseg_labels: When set to True, the lidar data is colored with the segmentation labels. When set
+            to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
         """
+
+        # TO-DO create utils class to get colormap
+        # ---------- coloring ----------##
+        import colorsys
+        num_classes = 39
+        # Generate colors for drawing bounding boxes.
+        hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
+        colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+        np.random.seed(2020)  # Fixed seed for consistent colors across runs.
+        np.random.shuffle(colormap)  # Shuffle colors to decorrelate adjacent classes.
+        np.random.seed(None)  # Reset seed to default.
+        colormap = [(0, 0, 0)] + colormap
+        colormap = np.array(colormap)
+        # ---------- /coloring ---------- #
+
+        if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
+            print ('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
+                   'vehicle instead of segmentation labels.')
+            show_lidarseg_labels = False
+
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
@@ -783,9 +811,16 @@ class NuScenesExplorer:
             ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
-                # Get aggregated lidar point cloud in lidar frame.
-                pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
-                velocities = None
+                if show_lidarseg_labels:
+                    pcl_path = osp.join(self.nusc.dataroot, ref_sd_record['filename'])
+                    pc = LidarPointCloud.from_file(pcl_path)
+
+                    lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg', sample_data_token + '_lidarseg.bin')
+                    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+                else:
+                    # Get aggregated lidar point cloud in lidar frame.
+                    pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
+                    velocities = None
             else:
                 # Get aggregated radar point cloud in reference frame.
                 # The point cloud is transformed to the reference frame for visualization purposes.
@@ -835,8 +870,12 @@ class NuScenesExplorer:
             # Show point cloud.
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+            if show_lidarseg_labels:
+                colors = colormap[points_label]
+            else:
+                colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
             point_scale = 0.2 if sensor_modality == 'lidar' else 3.0
+
             scatter = ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
 
             # Show velocities.
@@ -899,6 +938,8 @@ class NuScenesExplorer:
 
         if out_path is not None:
             plt.savefig(out_path)
+
+        plt.show()
 
     def render_annotation(self,
                           anntoken: str,
