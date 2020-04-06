@@ -869,9 +869,14 @@ class NuScenesExplorer:
         # ---------- /coloring ---------- #
 
         if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-            print ('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
+            print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
                    'vehicle instead of segmentation labels.')
             show_lidarseg_labels = False
+
+        if show_lidarseg_labels and nsweeps > 1:
+            print('WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps will be'
+                  'defaulted to 1')
+            nsweeps = 1
 
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
