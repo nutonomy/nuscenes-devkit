@@ -1,13 +1,11 @@
-# import sys
-# sys.path.insert(0, '/home/whyekit/Desktop/nuscenes-devkit/nuscenes/')
+print('__file__={0:<35} | __name__={1:<20} | __package__={2:<20}'.format(__file__,__name__,str(__package__)))
 
 from nuscenes import NuScenes
 
 
 def main():
-    nusc = NuScenes(version='v1.0-mini', dataroot='/home/whyekit/Desktop/nuscenes', verbose=True)
+    nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes', verbose=True)
 
-    '''
     lidar_seg_annots = nusc.lidarseg
 
     in_mini = []
@@ -24,7 +22,7 @@ def main():
         except:
             continue
 
-    to_check = 310
+    to_check = 257
     print(in_lidarseg[to_check])
     print(in_mini[to_check])
 
@@ -32,9 +30,8 @@ def main():
     print('%d of lidarseg annotations exist in v1.0-mini' % count)
 
     sample_data_token = in_mini[to_check]['token']
-    '''
-    sample_data_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
-    nusc.render_sample_data(sample_data_token) #, show_lidarseg_labels=False)
+    # sample_data_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
+    nusc.render_sample_data(sample_data_token, show_lidarseg_labels=True)
 
 
 def eg_seperated():

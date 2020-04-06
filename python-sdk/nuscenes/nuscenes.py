@@ -75,6 +75,7 @@ class NuScenes:
         # If available, also load the lidarseg annotations.
         if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
             self.lidarseg = self.__load_table__('lidarseg')
+            self.table_names.append('lidarseg')
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
