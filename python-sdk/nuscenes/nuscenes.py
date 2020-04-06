@@ -161,6 +161,10 @@ class NuScenes:
         for log_record in self.log:
             log_record['map_token'] = log_to_map[log_record['token']]
 
+        self.classname_to_idx = dict()
+        for i, lidarseg_record in enumerate(self.category):
+            self.classname_to_idx[lidarseg_record['name']] = i
+
         if verbose:
             print("Done reverse indexing in {:.1f} seconds.\n======".format(time.time() - start_time))
 
@@ -481,6 +485,34 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 1]), np.std(stats[:, 1]),
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
+
+        print ('Calculating stats for NuScenes-lidarseg...')
+        start_time = time.time()
+        # TO-DO: is number of lidar annotations in NuScenes == number of annotations in NuScenes-lidarseg?
+        # There are more classes for lidarseg than NuScenes bbox annotations (e.g. animals, police etc.)
+        lidarseg_counts = dict((v, 0) for v in self.nusc.classname_to_idx)
+        # print (lidarseg_counts)
+
+        for record_lidarseg in self.nusc.lidarseg:
+            lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
+                                                record_lidarseg['sample_data_token'] + '_lidarseg.bin')
+            points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+            indices = np.bincount(points_label)
+            ii = np.nonzero(indices)[0]
+            for class_idx, class_count in zip(ii, indices[ii]):
+                # print(class_idx, class_count)
+                try: # TO-DO: map proper indices between scale and NuScenes
+                    lidarseg_counts[self.nusc.category[class_idx]['name']] += class_count
+                except:
+                    continue
+        # print(lidarseg_counts)
+
+        # Print stats
+        for classname, freq in sorted(lidarseg_counts.items()):
+            print('{:27} nbr_points={:9}'.format(classname[:27], freq))
+
+        print ('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
+            len(self.nusc.lidarseg), time.time() - start_time))
 
     def list_attributes(self) -> None:
         """ Prints attributes and counts. """
