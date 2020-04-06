@@ -593,7 +593,8 @@ class NuScenesExplorer:
         depths = pc.points[2, :]
 
         if render_intensity:
-            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render intensity for lidar!'
+            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render intensity for lidar, ' \
+                                                              'not %s!' % pointsensor['sensor_modality']
             # Retrieve the color from the intensities.
             # Performs arbitary scaling to achieve more visually pleasing results.
             intensities = pc.points[3, :]
@@ -602,7 +603,8 @@ class NuScenesExplorer:
             intensities = np.maximum(0, intensities - 0.5)
             coloring = intensities
         elif show_lidarseg_labels:
-            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render lidarseg labels for lidar!'
+            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render lidarseg labels for lidar, ' \
+                                                              'not %s!' % pointsensor['sensor_modality']
             lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg', pointsensor_token + '_lidarseg.bin')
             points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
@@ -661,8 +663,8 @@ class NuScenesExplorer:
         """
 
         if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-            print ('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
-                   'vehicle instead of segmentation labels.')
+            print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
+                  'vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
             show_lidarseg_labels = False
 
         sample_record = self.nusc.get('sample', sample_token)
