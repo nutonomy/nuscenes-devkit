@@ -30,8 +30,15 @@ def main():
     print('%d of lidarseg annotations exist in v1.0-mini' % count)
 
     sample_data_token = in_mini[to_check]['token']
+    # print (in_mini[to_check])
     # sample_data_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
-    nusc.render_sample_data(sample_data_token, show_lidarseg_labels=True)
+    # nusc.render_sample_data(sample_data_token,
+    #                         show_lidarseg_labels=True)
+
+    sample_token = in_mini[to_check]['sample_token']
+    nusc.render_pointcloud_in_image(sample_token,
+                                    pointsensor_channel='LIDAR_TOP',
+                                    show_lidarseg_labels=True)
 
 
 def eg_seperated():
