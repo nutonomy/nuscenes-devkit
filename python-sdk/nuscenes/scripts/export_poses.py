@@ -128,7 +128,7 @@ def export_kml(coordinates_per_location: Dict[str, Dict[str, List[Dict[str, floa
                 f'            <coordinates>\n'
 
             for coordinate in coordinates:
-                coordinates_str = str(coordinate['longitude']) + ',' + str(coordinate['latitude']) + ',' + str(0)
+                coordinates_str = '%.10f,%.10f,%d' % (coordinate['longitude'], coordinate['latitude'], 0)
                 result += f'              {coordinates_str}\n'
 
             result += \
@@ -180,7 +180,7 @@ def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -
         os.makedirs(dest_dir)
 
     # Write to json.
-    output_path = f'{output_prefix}-{version}.{format}'
+    output_path = f'{output_prefix}_{version}.{format}'
     if format == 'json':
         with open(output_path, 'w') as fh:
             json.dump(coordinates_per_location, fh, sort_keys=True, indent=4)
