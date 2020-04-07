@@ -2,7 +2,7 @@
 # Code contributed by jean-lucas, 2020.
 
 """
-Exports the nuScenes ego poses as "GPS" coordinates (lat/lon) for each scene into JSON and KML formatted files.
+Exports the nuScenes ego poses as "GPS" coordinates (lat/lon) for each scene into JSON or KML formatted files.
 """
 
 
@@ -151,11 +151,12 @@ def export_kml(coordinates_per_location: Dict[str, Dict[str, List[Dict[str, floa
 
 def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -> None:
     """
-    Extract the latlon coordinates for each available pose and write the results to a JSON file organized by scene name.
+    Extract the latlon coordinates for each available pose and write the results to a file.
+    The file is organized by location and scene_name.
     :param dataroot: Path of the nuScenes dataset.
     :param version: NuScenes version.
     :param format: The output file format, kml or json.
-    :param output_prefix: Where to save the json output file (without the file extension).
+    :param output_prefix: Where to save the output file (without the file extension).
     """
     # Init nuScenes.
     nusc = NuScenes(dataroot=dataroot, version=version, verbose=False)
