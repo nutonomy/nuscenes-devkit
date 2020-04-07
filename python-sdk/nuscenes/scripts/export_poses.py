@@ -162,13 +162,13 @@ def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -
     nusc = NuScenes(dataroot=dataroot, version=version, verbose=False)
 
     coordinates_per_location = {}
+    print(f'Extracting coordinates...')
     for scene in tqdm(nusc.scene):
         scene_name = scene['name']
         scene_token = scene['token']
         location = nusc.get('log', scene['log_token'])['location']  # Needed to extract the reference coordinate.
         poses = get_poses(nusc, scene_token)  # For each pose, we will extract the corresponding coordinate.
-        
-        print(f'Extracting coordinates for {scene_name} in {location}.')
+
         coordinates = derive_latlon(location, poses)
         if location not in coordinates_per_location:
             coordinates_per_location[location] = {}
@@ -180,16 +180,17 @@ def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -
         os.makedirs(dest_dir)
 
     # Write to json.
+    output_path = f'{output_prefix}-{version}.{format}'
     if format == 'json':
-        with open(output_prefix + '.json', 'w') as fh:
+        with open(output_path, 'w') as fh:
             json.dump(coordinates_per_location, fh, sort_keys=True, indent=4)
     elif format == 'kml':
         # Write to kml.
-        export_kml(coordinates_per_location, output_prefix + '.kml')
+        export_kml(coordinates_per_location, output_path)
     else:
         raise Exception('Error: Invalid output format: %s' % format)
 
-    print(f"Saved the latlon coordinates in {output_prefix}")
+    print(f"Saved the coordinates in {output_path}")
 
 
 if __name__ == '__main__':
@@ -197,7 +198,7 @@ if __name__ == '__main__':
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes', help="Path where nuScenes is saved.")
     parser.add_argument('--version', type=str, default='v1.0-mini', help='Dataset version.')
-    parser.add_argument('--output_prefix', type=str, default='latlon_coordinates-v1.0-mini',
+    parser.add_argument('--output_prefix', type=str, default='latlon',
                         help='Output file path without file extension.')
     parser.add_argument('--format', type=str, default='kml', help='Output format (kml or json).')
     args = parser.parse_args()
