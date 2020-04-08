@@ -55,8 +55,8 @@ def get_coordinate(ref_lat: float, ref_lon: float, bearing: float, dist: float) 
     to the reference coordinate. For reference, please see: https://www.movable-type.co.uk/scripts/latlong.html.
     :param ref_lat: Latitude of the reference coordinate in degrees, ie: 42.3368.
     :param ref_lon: Longitude of the reference coordinate in degrees, ie: 71.0578.
-    :param bearing: The angle the target point makes with the reference coordinate in radians, clockwise from north.
-    :param dist: The distance (in meters from the reference point to the target point.
+    :param bearing: The clockwise angle in radians between target point, reference point and the axis pointing north.
+    :param dist: The distance in meters from the reference point to the target point.
     :return: A tuple of lat and lon.
     """
     lat, lon = math.radians(ref_lat), math.radians(ref_lon)
@@ -73,7 +73,7 @@ def get_coordinate(ref_lat: float, ref_lon: float, bearing: float, dist: float) 
     return math.degrees(target_lat), math.degrees(target_lon)
 
 
-def derive_latlon(location: str, poses: List[dict]) -> List[Dict[str, float]]:
+def derive_latlon(location: str, poses: List[Dict[str, float]]) -> List[Dict[str, float]]:
     """
     For each pose value, extract its respective lat/lon coordinate and timestamp.
     
@@ -82,8 +82,8 @@ def derive_latlon(location: str, poses: List[dict]) -> List[Dict[str, float]]:
         2. The origin of the global poses is also in the south-western corner (and identical to 1).
 
     :param location: The name of the map the poses correspond to, ie: 'boston-seaport'.
-    :param poses: All pose dictionaries of a scene.
-    :return: A list of lat/lon coordinate dicts for each pose.
+    :param poses: All nuScenes egopose dictionaries of a scene.
+    :return: A list of dicts (lat/lon coordinates and timestamps) for each pose.
     """
     assert location in REFERENCE_COORDINATES.keys(), \
         f'Error: The given location: {location}, has no available reference.'
@@ -149,13 +149,13 @@ def export_kml(coordinates_per_location: Dict[str, Dict[str, List[Dict[str, floa
         f.write(result)
 
 
-def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -> None:
+def main(dataroot: str, version: str, output_prefix: str, output_format: str = 'kml') -> None:
     """
     Extract the latlon coordinates for each available pose and write the results to a file.
     The file is organized by location and scene_name.
     :param dataroot: Path of the nuScenes dataset.
     :param version: NuScenes version.
-    :param format: The output file format, kml or json.
+    :param output_format: The output file format, kml or json.
     :param output_prefix: Where to save the output file (without the file extension).
     """
     # Init nuScenes.
@@ -164,11 +164,13 @@ def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -
     coordinates_per_location = {}
     print(f'Extracting coordinates...')
     for scene in tqdm(nusc.scene):
+        # Retrieve nuScenes poses.
         scene_name = scene['name']
         scene_token = scene['token']
         location = nusc.get('log', scene['log_token'])['location']  # Needed to extract the reference coordinate.
         poses = get_poses(nusc, scene_token)  # For each pose, we will extract the corresponding coordinate.
 
+        # Compute and store coordinates.
         coordinates = derive_latlon(location, poses)
         if location not in coordinates_per_location:
             coordinates_per_location[location] = {}
@@ -180,15 +182,15 @@ def main(dataroot: str, version: str, output_prefix: str, format: str = 'kml') -
         os.makedirs(dest_dir)
 
     # Write to json.
-    output_path = f'{output_prefix}_{version}.{format}'
-    if format == 'json':
+    output_path = f'{output_prefix}_{version}.{output_format}'
+    if output_format == 'json':
         with open(output_path, 'w') as fh:
             json.dump(coordinates_per_location, fh, sort_keys=True, indent=4)
-    elif format == 'kml':
+    elif output_format == 'kml':
         # Write to kml.
         export_kml(coordinates_per_location, output_path)
     else:
-        raise Exception('Error: Invalid output format: %s' % format)
+        raise Exception('Error: Invalid output format: %s' % output_format)
 
     print(f"Saved the coordinates in {output_path}")
 
@@ -200,7 +202,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', type=str, default='v1.0-mini', help='Dataset version.')
     parser.add_argument('--output_prefix', type=str, default='latlon',
                         help='Output file path without file extension.')
-    parser.add_argument('--format', type=str, default='kml', help='Output format (kml or json).')
+    parser.add_argument('--output_format', type=str, default='kml', help='Output format (kml or json).')
     args = parser.parse_args()
 
     main(args.dataroot, args.version, args.output_prefix, args.format)
