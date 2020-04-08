@@ -39,6 +39,14 @@ Eventually you should have the following folder structure:
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
+## Prediction Challenge
+In March 2020 we released code for the nuScenes prediction challenge.
+To get started:
+- Download the version 1.2 of the map expansion (see below).
+- Download the trajectory sets for [CoverNet](https://arxiv.org/abs/1911.10298) from [here](https://www.nuscenes.org/public/nuscenes-prediction-challenge-trajectory-sets.zip).
+- Go through the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/prediction_tutorial.ipynb).
+- For information on how submissions will be scored, visit the challenge [website](https://www.nuscenes.org/prediction).
+
 ## CAN bus expansion
 In February 2020 we published the CAN bus expansion.
 It contains low-level vehicle data about the vehicle route, IMU, pose, steering angle feedback, battery, brakes, gear position, signals, wheel speeds, throttle, torque, solar sensors, odometry and more.
