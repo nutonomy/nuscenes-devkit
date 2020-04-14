@@ -400,11 +400,13 @@ class NuScenes:
     def render_pointcloud_in_image(self, sample_token: str, dot_size: int = 5, pointsensor_channel: str = 'LIDAR_TOP',
                                    camera_channel: str = 'CAM_FRONT', out_path: str = None,
                                    render_intensity: bool = False,
-                                   show_lidarseg_labels: bool = False) -> None:
+                                   show_lidarseg_labels: bool = False,
+                                   filter_lidarseg_labels: List = None) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel, out_path=out_path,
                                                  render_intensity=render_intensity,
-                                                 show_lidarseg_labels=show_lidarseg_labels)
+                                                 show_lidarseg_labels=show_lidarseg_labels,
+                                                 filter_lidarseg_labels=filter_lidarseg_labels)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
                       out_path: str = None) -> None:
@@ -574,7 +576,8 @@ class NuScenesExplorer:
                                 camera_token: str,
                                 min_dist: float = 1.0,
                                 render_intensity: bool = False,
-                                show_lidarseg_labels: bool = False) -> Tuple:
+                                show_lidarseg_labels: bool = False,
+                                filter_lidarseg_labels: List = None) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -583,12 +586,18 @@ class NuScenesExplorer:
         :param min_dist: Distance from the camera below which points are discarded.
         :param render_intensity: Whether to render lidar intensity instead of point depth.
         :param show_lidarseg_labels: Whether to render lidar intensity instead of point depth.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
         if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
             print ('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
                    'vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
             show_lidarseg_labels = False
+
+        if show_lidarseg_labels and render_intensity:
+            print('WARNING: You have set both render_intensity and show_lidarseg_labels to True; point cloud will be '
+                  'colored according to the lidar segmentation labels.')
+            render_intensity = False
 
         cam = self.nusc.get('sample_data', camera_token)
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
@@ -653,6 +662,16 @@ class NuScenesExplorer:
             colormap = [(0, 0, 0)] + colormap
             colormap = np.array(colormap)
             # ---------- /coloring ---------- #
+            if filter_lidarseg_labels:
+                for i in range(len(colormap)):
+                    if i not in filter_lidarseg_labels: # 1, 8, 31, 32, 38, 37, 40, 41:
+                        colormap[i] = [1.0, 1.0, 1.0]  # hide labels by converting to white
+
+                # convert RGB colormap to an RGBA array, with the alpha channel set to zero
+                # wherever the R, G and B channels are all equal to 1.0
+                alpha = np.array([~np.all(colormap == 1.0, axis=1) * 1.0])
+                colormap = np.concatenate((colormap, alpha.T), axis=1)
+
             coloring = colormap[points_label]
         else:
             # Retrieve the color from the depth.
@@ -682,7 +701,8 @@ class NuScenesExplorer:
                                    camera_channel: str = 'CAM_FRONT',
                                    out_path: str = None,
                                    render_intensity: bool = False,
-                                   show_lidarseg_labels: bool = False) -> None:
+                                   show_lidarseg_labels: bool = False,
+                                   filter_lidarseg_labels: List = None) -> None:
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -692,13 +712,8 @@ class NuScenesExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         :param render_intensity: Whether to render lidar intensity instead of point depth.
         :param show_lidarseg_labels: Whether to render lidarseg labels instead of point depth.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
         """
-
-        if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-            print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
-                  'vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
-            show_lidarseg_labels = False
-
         sample_record = self.nusc.get('sample', sample_token)
 
         # Here we just grab the front camera and the point sensor.
@@ -707,7 +722,8 @@ class NuScenesExplorer:
 
         points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
                                                             render_intensity=render_intensity,
-                                                            show_lidarseg_labels=show_lidarseg_labels)
+                                                            show_lidarseg_labels=show_lidarseg_labels,
+                                                            filter_lidarseg_labels=filter_lidarseg_labels)
         plt.figure(figsize=(9, 16))
         plt.imshow(im)
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
@@ -857,16 +873,19 @@ class NuScenesExplorer:
         # TO-DO create utils class to get colormap
         # ---------- coloring ----------##
         import colorsys
-        num_classes = 39
+        num_classes = 41  # TO-DO: function to get num_classes; likely from self.nusc.list_categories
         # Generate colors for drawing bounding boxes.
         hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
         colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
         np.random.seed(2020)  # Fixed seed for consistent colors across runs.
         np.random.shuffle(colormap)  # Shuffle colors to decorrelate adjacent classes.
         np.random.seed(None)  # Reset seed to default.
-        colormap = [(0, 0, 0)] + colormap
+        colormap = [(0, 0, 0)] + colormap   # class 0 is unused (for now); # noise --> 0, traffic light --> man_made in future
         colormap = np.array(colormap)
         # ---------- /coloring ---------- #
+        # for i in range(len(colormap)):
+        #     if i not in [40, 41]: # 1, 8, 31, 32, 38, 37:
+        #         colormap[i] = [1.0, 1.0, 1.0]  # hide labels by converting to white
 
         if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
             print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
