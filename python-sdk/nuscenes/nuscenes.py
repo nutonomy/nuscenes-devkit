@@ -22,6 +22,7 @@ from tqdm import tqdm
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
+from nuscenes.utils.lidarseg_utils import filter_colormap
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -586,7 +587,8 @@ class NuScenesExplorer:
         :param min_dist: Distance from the camera below which points are discarded.
         :param render_intensity: Whether to render lidar intensity instead of point depth.
         :param show_lidarseg_labels: Whether to render lidar intensity instead of point depth.
-        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+            or the list is empty, all classes will be displayed.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
         if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
@@ -663,15 +665,7 @@ class NuScenesExplorer:
             colormap = np.array(colormap)
             # ---------- /coloring ---------- #
             if filter_lidarseg_labels:
-                for i in range(len(colormap)):
-                    if i not in filter_lidarseg_labels: # 1, 8, 31, 32, 38, 37, 40, 41:
-                        colormap[i] = [1.0, 1.0, 1.0]  # hide labels by converting to white
-
-                # convert RGB colormap to an RGBA array, with the alpha channel set to zero
-                # wherever the R, G and B channels are all equal to 1.0
-                alpha = np.array([~np.all(colormap == 1.0, axis=1) * 1.0])
-                colormap = np.concatenate((colormap, alpha.T), axis=1)
-
+                colormap = filter_colormap(colormap, filter_lidarseg_labels)
             coloring = colormap[points_label]
         else:
             # Retrieve the color from the depth.

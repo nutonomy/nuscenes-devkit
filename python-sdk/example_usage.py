@@ -21,7 +21,7 @@ def main():
                                     camera_channel='CAM_FRONT',
                                     render_intensity=True,
                                     show_lidarseg_labels=True,
-                                    filter_lidarseg_labels=[32, 1, 36]
+                                    filter_lidarseg_labels=[32, 1]
                                     )
 
     import sys
