@@ -2,6 +2,78 @@ import numpy as np
 import colorsys
 
 
+def get_colormap() -> np.array:
+    default = [255, 0, 0]
+
+    classname_to_color = { # RGB
+        "human.pedestrian.adult": [255, 30, 30],
+        "human.pedestrian.child": default,
+        "human.pedestrian.wheelchair": default,
+        "human.pedestrian.stroller": default,
+        "human.pedestrian.personal_mobility": default,
+        "human.pedestrian.police_officer": default,
+        "human.pedestrian.construction_worker": default,
+        "animal": default,
+        "vehicle.car": [100, 150, 245],
+        "vehicle.motorcycle": [30, 60, 150],
+        "vehicle.bicycle": [100, 230, 245],
+        "vehicle.bus.bendy": default,
+        "vehicle.bus.rigid": default,
+        "vehicle.truck": [80, 30, 180],
+        "vehicle.construction": default,
+        "vehicle.emergency.ambulance": default,
+        "vehicle.emergency.police": default,
+        "vehicle.trailer": default,
+        "movable_object.barrier": default,
+        "movable_object.trafficcone": default,
+        "movable_object.pushable_pullable": default,
+        "movable_object.debris": default,
+        "static_object.bicycle_rack": default,
+    }
+
+    classname_scale_to_color = { # RGB
+        "train": [0, 0, 255],
+        "firetruck": default,
+        "other_police": default,
+        "driveable_surface": [255, 0, 255],
+        "sidewalk": [75, 0, 75],
+        "terrain_natural_surface": [150, 240, 80],
+        "other_flat": [175, 0, 75],
+        "man_made": default,
+        "foliage_including_tree_and_bushes": [0, 175, 0],
+        "other_static_object": default,
+        "noise": [0, 0, 0]  # black
+    }
+
+    coloring = dict(classname_to_color.copy())
+    coloring.update(classname_scale_to_color)
+    # Note that if classname_scale_to_color and classname_to_color have overlapping keys, the
+    # final value will be taken from classname_scale_to_color.
+    print (coloring)
+
+    colormap = []
+    for k, v in coloring.items():
+        colormap.append(v)
+
+    colormap = np.array(colormap) / 255  # normalize RGB values to be between 0 and 1 for each channel
+
+    return colormap
+
+
+def get_arbitrary_colormap(num_classes) -> np.array:
+    hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
+    colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+
+    np.random.seed(2020)  # Fix seed for consistent colors across runs
+    np.random.shuffle(colormap)  # Shuffle colors to de-correlate adjacent classes
+    np.random.seed(None)  # Reset seed to default
+
+    colormap = [(0, 0, 0)] + colormap  # TO-DO no need to add a zero class once lidarseg labels start with 0
+    colormap = np.array(colormap)  # colormap is RGB with values for each channel normalized between 0 and 1
+
+    return colormap
+
+
 def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.array:
     """
     Given a colormap (in RGB) and a list of classes to display, return a colormap (in RGBA) with the opacity

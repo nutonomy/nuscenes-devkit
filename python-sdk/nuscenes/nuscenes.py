@@ -22,7 +22,7 @@ from tqdm import tqdm
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
-from nuscenes.utils.lidarseg_utils import filter_colormap
+from nuscenes.utils.lidarseg_utils import filter_colormap, get_arbitrary_colormap
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -651,18 +651,10 @@ class NuScenesExplorer:
             lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg', pointsensor_token + '_lidarseg.bin')
             points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
-            # TO-DO create utils class to get colormap
             # ---------- coloring ----------##
-            import colorsys
-            num_classes = 39
-            # Generate colors for drawing bounding boxes.
-            hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
-            colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-            np.random.seed(2020)  # Fixed seed for consistent colors across runs.
-            np.random.shuffle(colormap)  # Shuffle colors to decorrelate adjacent classes.
-            np.random.seed(None)  # Reset seed to default.
-            colormap = [(0, 0, 0)] + colormap
-            colormap = np.array(colormap)
+            num_classes = 41
+            colormap = get_arbitrary_colormap(num_classes)
+            print('Created {} colors'.format(len(colormap)))
             # ---------- /coloring ---------- #
             if filter_lidarseg_labels:
                 colormap = filter_colormap(colormap, filter_lidarseg_labels)
