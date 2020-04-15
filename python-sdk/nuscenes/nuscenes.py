@@ -416,11 +416,14 @@ class NuScenes:
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
-                           use_flat_vehicle_coordinates: bool = True, show_lidarseg_labels: bool = True) -> None:
+                           use_flat_vehicle_coordinates: bool = True,
+                           show_lidarseg_labels: bool = True,
+                           filter_lidarseg_labels: List = None) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
                                          use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
-                                         show_lidarseg_labels=show_lidarseg_labels)
+                                         show_lidarseg_labels=show_lidarseg_labels,
+                                         filter_lidarseg_labels=filter_lidarseg_labels)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -716,7 +719,8 @@ class NuScenesExplorer:
         plt.axis('off')
 
         if out_path is not None:
-            plt.savefig(out_path)
+            print('hey')
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
         plt.show()
 
@@ -837,7 +841,8 @@ class NuScenesExplorer:
                            out_path: str = None,
                            underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
-                           show_lidarseg_labels: bool = False) -> None:
+                           show_lidarseg_labels: bool = False,
+                           filter_lidarseg_labels: List = None) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -854,24 +859,9 @@ class NuScenesExplorer:
             setting is more correct and rotates the plot by ~90 degrees.
         :param show_lidarseg_labels: When set to True, the lidar data is colored with the segmentation labels. When set
             to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+            or the list is empty, all classes will be displayed.
         """
-
-        # TO-DO create utils class to get colormap
-        # ---------- coloring ----------##
-        import colorsys
-        num_classes = 41  # TO-DO: function to get num_classes; likely from self.nusc.list_categories
-        # Generate colors for drawing bounding boxes.
-        hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
-        colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-        np.random.seed(2020)  # Fixed seed for consistent colors across runs.
-        np.random.shuffle(colormap)  # Shuffle colors to decorrelate adjacent classes.
-        np.random.seed(None)  # Reset seed to default.
-        colormap = [(0, 0, 0)] + colormap   # class 0 is unused (for now); # noise --> 0, traffic light --> man_made in future
-        colormap = np.array(colormap)
-        # ---------- /coloring ---------- #
-        # for i in range(len(colormap)):
-        #     if i not in [40, 41]: # 1, 8, 31, 32, 38, 37:
-        #         colormap[i] = [1.0, 1.0, 1.0]  # hide labels by converting to white
 
         if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
             print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
@@ -955,6 +945,13 @@ class NuScenesExplorer:
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
             if show_lidarseg_labels:
+                # ---------- coloring ----------##
+                num_classes = 41
+                colormap = get_arbitrary_colormap(num_classes)
+                print('Created {} colors'.format(len(colormap)))
+                # ---------- /coloring ---------- #
+                if filter_lidarseg_labels:
+                    colormap = filter_colormap(colormap, filter_lidarseg_labels)
                 colors = colormap[points_label]
             else:
                 colors = np.minimum(1, dists / axes_limit / np.sqrt(2))

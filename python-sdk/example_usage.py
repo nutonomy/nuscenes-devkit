@@ -107,7 +107,8 @@ def test_viz(nusc):
     sample_data_token = sample['data']['LIDAR_TOP']
 
     nusc.render_sample_data(sample_data_token,
-                            show_lidarseg_labels=True)
+                            show_lidarseg_labels=True,
+                            filter_lidarseg_labels=[32, 1])
     # ---------- /render lidarseg labels in BEV of pc ----------
 
     # ---------- render lidarseg labels in image ----------
