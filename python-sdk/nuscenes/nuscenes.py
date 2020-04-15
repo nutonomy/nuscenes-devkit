@@ -719,8 +719,7 @@ class NuScenesExplorer:
         plt.axis('off')
 
         if out_path is not None:
-            print('hey')
-            plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
 
         plt.show()
 

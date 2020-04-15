@@ -117,7 +117,8 @@ def test_viz(nusc):
                                     camera_channel='CAM_FRONT',
                                     render_intensity=True,
                                     show_lidarseg_labels=True,
-                                    filter_lidarseg_labels=[32, 1])
+                                    filter_lidarseg_labels=[32, 1],
+                                    out_path=os.path.expanduser('~/Desktop/test.png'))
     # ---------- /render lidarseg labels in image ----------
 
 
