@@ -657,7 +657,7 @@ class NuScenesExplorer:
             # ---------- coloring ----------##
             num_classes = 41
             colormap = get_arbitrary_colormap(num_classes)
-            print('Created {} colors'.format(len(colormap)))
+            # print('Created {} colors'.format(len(colormap)))
             # ---------- /coloring ---------- #
             if filter_lidarseg_labels:
                 colormap = filter_colormap(colormap, filter_lidarseg_labels)
@@ -721,7 +721,7 @@ class NuScenesExplorer:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
 
-        plt.show()
+        # plt.show()
 
     def render_sample(self,
                       token: str,

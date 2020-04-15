@@ -1,6 +1,7 @@
 print('__file__={0:<35} | __name__={1:<20} | __package__={2:<20}'.format(__file__,__name__,str(__package__)))
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 from nuscenes import NuScenes
 from tqdm import tqdm
@@ -53,6 +54,49 @@ def main():
     print(len(out))
 
     nusc.render_sample_data(sample_data_token, show_lidarseg_labels=True, underlay_map=True, with_anns=True)
+
+
+def render_scene_with_pointclouds(nusc, scene, camera_channel, filter_lidarseg_labels, out_folder) -> None:
+    if not os.path.isdir(out_folder):
+        os.mkdir(out_folder)
+
+    total_num_samples = scene['nbr_samples']
+    first_sample_token = scene['first_sample_token']
+    last_sample_token = scene['last_sample_token']
+
+    current_token = first_sample_token
+    keep_looping = True
+    i = 0
+    while keep_looping:
+        if current_token == last_sample_token:
+            keep_looping = False
+
+        sample_record = nusc.get('sample', current_token)
+
+        # ---------- get filename of image ----------
+        camera_token = sample_record['data'][camera_channel]
+        cam = nusc.get('sample_data', camera_token)
+        filename = os.path.basename(cam['filename'])
+        # ---------- /get filename of image ----------
+
+        # ---------- render lidarseg labels in image ----------
+        nusc.render_pointcloud_in_image(sample_record['token'],
+                                        pointsensor_channel='LIDAR_TOP',
+                                        camera_channel=camera_channel,
+                                        render_intensity=False,
+                                        show_lidarseg_labels=True,
+                                        filter_lidarseg_labels=filter_lidarseg_labels,
+                                        out_path=os.path.join(out_folder, filename))
+        plt.close('all')  # To prevent figures from accumulating in memory
+        # ---------- /render lidarseg labels in image ----------
+
+        next_token = sample_record['next']
+        current_token = next_token
+
+        i += 1
+
+    print(total_num_samples, i)
+    assert total_num_samples == i
 
 
 def make_mini_from_lidarseg(nusc):
@@ -125,5 +169,8 @@ def test_viz(nusc):
 if __name__ == '__main__':
     nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
 
+    render_scene_with_pointclouds(nusc, nusc.scene[0], 'CAM_BACK', [32, 1, 36],
+                                  os.path.expanduser('~/Desktop/CAM_BACK'))
+
     # main()
-    test_viz(nusc)
+    # test_viz(nusc)
