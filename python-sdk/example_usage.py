@@ -15,18 +15,6 @@ def main():
     # for classname, freq in sorted(lidarseg_counts.items()):
     #     print('{:27} nbr_points={:9}'.format(classname[:27], freq))
 
-    sample_token = '9c7c7d5d109c40fcaecd3c422d37b4f6'
-    nusc.render_pointcloud_in_image(sample_token,
-                                    pointsensor_channel='LIDAR_TOP',
-                                    camera_channel='CAM_FRONT',
-                                    render_intensity=True,
-                                    show_lidarseg_labels=True,
-                                    filter_lidarseg_labels=[32, 1]
-                                    )
-
-    import sys
-    sys.exit()
-
     '''
     {
         "token": "36b7b02f0f034f0595e3437a85554151",
@@ -66,77 +54,13 @@ def main():
 
     nusc.render_sample_data(sample_data_token, show_lidarseg_labels=True, underlay_map=True, with_anns=True)
 
-# def splitter(lidarseg_full):
 
-
-def qwert():
-    nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
-    try_single = False
-
-    if not try_single:
-        lidar_seg_annots = nusc.lidarseg
-
-        in_mini = []
-        in_lidarseg = []
-
-        count = 0
-        for i in range(len(lidar_seg_annots)):
-            try_lidar_tok = lidar_seg_annots[i]['sample_data_token']
-
-            try:
-                entry = nusc.get('sample_data', try_lidar_tok)
-                in_mini.append(entry)
-                in_lidarseg.append((lidar_seg_annots[i]))
-                count += 1
-            except:
-                continue
-
-        # to_check = 257
-        to_check = 63
-        print(in_lidarseg[to_check])
-        print(in_mini[to_check])
-        sample = nusc.get('sample', in_mini[to_check]['sample_token'])
-        print (sample)
-        scene = nusc.get('scene', sample['scene_token'])
-        print(scene)
-        print(scene['name'])
-
-        assert len(in_mini) == count
-        print('%d of lidarseg annotations exist in v1.0-mini' % count)
-
-    if not try_single:
-        sample_data_token = in_mini[to_check]['token']
-    else:
-        sample_data_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
-    # nusc.render_sample_data(sample_data_token,
-    #                         show_lidarseg_labels=True)
-
-    if not try_single:
-        sample_token = in_mini[to_check]['sample_token']
-    else:
-        sample_token = '9c7c7d5d109c40fcaecd3c422d37b4f6'
-    nusc.render_pointcloud_in_image(sample_token,
-                                    pointsensor_channel='LIDAR_TOP',
-                                    # pointsensor_channel='RADAR_FRONT',
-                                    camera_channel='CAM_FRONT',
-                                    render_intensity=True,
-                                    show_lidarseg_labels=True)
-
-
-def eg_seperated():
-    from nuscenes_lidarseg import NuScenesLidarseg
-
-    nusc = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
-
-    nusc_ls = NuScenesLidarseg(dataroot='/data/sets/nuscenes-lidarseg',
-                               dataroot_nuscenes='/data/sets/Desktop/nuscenes')
-
-    nusc_ls.list_lidarseg_categories()
-
-    lidar_seg_annots = nusc_ls.lidarseg
+def make_mini_from_lidarseg(nusc):
+    lidar_seg_annots = nusc.lidarseg
 
     in_mini = []
     in_lidarseg = []
+
     count = 0
     for i in range(len(lidar_seg_annots)):
         try_lidar_tok = lidar_seg_annots[i]['sample_data_token']
@@ -149,18 +73,55 @@ def eg_seperated():
         except:
             continue
 
-    to_check = 310
-    print(in_lidarseg[to_check])
-    print(in_mini[to_check])
-
     assert len(in_mini) == count
     print('%d of lidarseg annotations exist in v1.0-mini' % count)
 
-    sample_data_token = in_mini[to_check]['token']
+    return in_mini, in_lidarseg
 
-    nusc_ls.render_sample_lidarseg_data(sample_data_token)
+
+def get_single_sample_token(nusc, in_mini, to_check=257):
+    # print(in_lidarseg[to_check])
+    print(in_mini[to_check])
+
+    sample = nusc.get('sample', in_mini[to_check]['sample_token'])
+    # print(sample)
+    scene = nusc.get('scene', sample['scene_token'])
+    # print(scene)
+    print(scene['name'])
+
+    sample_token = in_mini[to_check]['sample_token']
+
+    return sample_token
+
+
+def test_viz(nusc):
+    in_mini, in_lidarseg = make_mini_from_lidarseg(nusc)
+
+    to_check = 63
+    sample_token = get_single_sample_token(nusc, in_mini, to_check)
+    # sample_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
+    sample_token = '9c7c7d5d109c40fcaecd3c422d37b4f6'
+
+    # ---------- render lidarseg labels in BEV of pc ----------
+    sample = nusc.get('sample', sample_token)
+    sample_data_token = sample['data']['LIDAR_TOP']
+
+    nusc.render_sample_data(sample_data_token,
+                            show_lidarseg_labels=True)
+    # ---------- /render lidarseg labels in BEV of pc ----------
+
+    # ---------- render lidarseg labels in image ----------
+    nusc.render_pointcloud_in_image(sample_token,
+                                    pointsensor_channel='LIDAR_TOP',
+                                    camera_channel='CAM_FRONT',
+                                    render_intensity=True,
+                                    show_lidarseg_labels=True,
+                                    filter_lidarseg_labels=[32, 1])
+    # ---------- /render lidarseg labels in image ----------
 
 
 if __name__ == '__main__':
-    main()
-    # qwert()
+    nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
+
+    # main()
+    test_viz(nusc)
