@@ -143,16 +143,17 @@ def test_viz(nusc):
 
     to_check = 63
     sample_token = get_single_sample_token(nusc, in_mini, to_check)
-    # sample_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
-    sample_token = '9c7c7d5d109c40fcaecd3c422d37b4f6'
+    # sample_token = '9c7c7d5d109c40fcaecd3c422d37b4f6'
 
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
     sample_data_token = sample['data']['LIDAR_TOP']
-
+    # sample_data_token = "b367d4bddc8641b7bc69d7566d126f28"  # CAM_FRONT_LEFT
+    # sample_data_token = "03be4e37936943d2bd991b5351baf82c"  # CAM_BACK
     nusc.render_sample_data(sample_data_token,
                             show_lidarseg_labels=True,
-                            filter_lidarseg_labels=[32, 1])
+                            filter_lidarseg_labels=[32, 1],
+                            out_path=os.path.expanduser('~/Desktop/test1.png'))
     # ---------- /render lidarseg labels in BEV of pc ----------
 
     # ---------- render lidarseg labels in image ----------
@@ -162,15 +163,20 @@ def test_viz(nusc):
                                     render_intensity=True,
                                     show_lidarseg_labels=True,
                                     filter_lidarseg_labels=[32, 1],
-                                    out_path=os.path.expanduser('~/Desktop/test.png'))
+                                    out_path=os.path.expanduser('~/Desktop/test2.png'))
     # ---------- /render lidarseg labels in image ----------
+
+    # ---------- render sample (i.e. lidar, radar and all cameras) ----------
+    # note: lidarseg labels will not be rendered
+    nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'))
+    # ---------- /render sample (i.e. lidar, radar and all cameras) ----------
 
 
 if __name__ == '__main__':
     nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
 
-    render_scene_with_pointclouds(nusc, nusc.scene[0], 'CAM_BACK', [32, 1, 36],
-                                  os.path.expanduser('~/Desktop/CAM_BACK'))
+    # render_scene_with_pointclouds(nusc, nusc.scene[0], 'CAM_BACK', [32, 1, 36],
+    #                               os.path.expanduser('~/Desktop/CAM_BACK'))
 
     # main()
-    # test_viz(nusc)
+    test_viz(nusc)

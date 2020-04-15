@@ -861,17 +861,6 @@ class NuScenesExplorer:
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
         """
-
-        if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-            print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
-                   'vehicle instead of segmentation labels.')
-            show_lidarseg_labels = False
-
-        if show_lidarseg_labels and nsweeps > 1:
-            print('WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps will be'
-                  'defaulted to 1')
-            nsweeps = 1
-
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
@@ -884,6 +873,18 @@ class NuScenesExplorer:
             ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
+                if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
+                    print(
+                        'WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
+                        'vehicle instead of segmentation labels.')
+                    show_lidarseg_labels = False
+
+                if show_lidarseg_labels and nsweeps > 1:
+                    print(
+                        'WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps will be'
+                        'defaulted to 1')
+                    nsweeps = 1
+
                 if show_lidarseg_labels:
                     pcl_path = osp.join(self.nusc.dataroot, ref_sd_record['filename'])
                     pc = LidarPointCloud.from_file(pcl_path)
@@ -1019,7 +1020,7 @@ class NuScenesExplorer:
         if out_path is not None:
             plt.savefig(out_path)
 
-        plt.show()
+        # plt.show()
 
     def render_annotation(self,
                           anntoken: str,
