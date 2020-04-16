@@ -594,20 +594,28 @@ class NuScenesExplorer:
             or the list is empty, all classes will be displayed.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
-        if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-            print ('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
-                   'vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
-            show_lidarseg_labels = False
-
-        if show_lidarseg_labels and render_intensity:
-            print('WARNING: You have set both render_intensity and show_lidarseg_labels to True; point cloud will be '
-                  'colored according to the lidar segmentation labels.')
-            render_intensity = False
 
         cam = self.nusc.get('sample_data', camera_token)
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
         pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
         if pointsensor['sensor_modality'] == 'lidar':
+            if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
+                print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
+                      'vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
+                show_lidarseg_labels = False
+
+            if show_lidarseg_labels and pointsensor['is_key_frame'] is not True:
+                # Ensure that lidar pointcloud is from a keyframe
+                print('ERROR: Only pointclouds which are keyframes have lidar segmentation labels. Rendering '
+                      'will be aborted.')
+                quit()
+
+            if show_lidarseg_labels and render_intensity:
+                print(
+                    'WARNING: You have set both render_intensity and show_lidarseg_labels to True; point cloud will be '
+                    'colored according to the lidar segmentation labels.')
+                render_intensity = False
+
             pc = LidarPointCloud.from_file(pcl_path)
         else:
             pc = RadarPointCloud.from_file(pcl_path)
@@ -874,15 +882,19 @@ class NuScenesExplorer:
 
             if sensor_modality == 'lidar':
                 if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-                    print(
-                        'WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
-                        'vehicle instead of segmentation labels.')
+                    print('WARNING: You have no lidarseg data; point cloud will be colored according to distance '
+                          'from ego vehicle instead of segmentation labels.')
                     show_lidarseg_labels = False
 
+                if show_lidarseg_labels and sd_record['is_key_frame'] is not True:
+                    # Ensure that lidar pointcloud is from a keyframe
+                    print('ERROR: Only pointclouds which are keyframes have lidar segmentation labels. Rendering '
+                          'will be aborted.')
+                    quit()
+
                 if show_lidarseg_labels and nsweeps > 1:
-                    print(
-                        'WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps will be'
-                        'defaulted to 1')
+                    print('WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps '
+                          'will be defaulted to 1')
                     nsweeps = 1
 
                 if show_lidarseg_labels:

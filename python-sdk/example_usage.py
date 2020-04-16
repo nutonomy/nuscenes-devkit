@@ -56,13 +56,19 @@ def main():
     nusc.render_sample_data(sample_data_token, show_lidarseg_labels=True, underlay_map=True, with_anns=True)
 
 
-def render_scene_with_pointclouds(nusc, scene, camera_channel, filter_lidarseg_labels, out_folder) -> None:
+def render_scene_channel_with_pointclouds(nusc, scene_token, camera_channel, filter_lidarseg_labels, out_folder) -> None:
+    valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
+                      'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+    assert camera_channel in valid_channels, 'Input camera channel {} not valid.'.format(camera_channel)
+
     if not os.path.isdir(out_folder):
         os.mkdir(out_folder)
 
-    total_num_samples = scene['nbr_samples']
-    first_sample_token = scene['first_sample_token']
-    last_sample_token = scene['last_sample_token']
+    scene_record = nusc.get('scene', scene_token)
+
+    total_num_samples = scene_record['nbr_samples']
+    first_sample_token = scene_record['first_sample_token']
+    last_sample_token = scene_record['last_sample_token']
 
     current_token = first_sample_token
     keep_looping = True
@@ -148,8 +154,11 @@ def test_viz(nusc):
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
     sample_data_token = sample['data']['LIDAR_TOP']
+
     # sample_data_token = "b367d4bddc8641b7bc69d7566d126f28"  # CAM_FRONT_LEFT
     # sample_data_token = "03be4e37936943d2bd991b5351baf82c"  # CAM_BACK
+    # sample_data_token = "2abaed501018421fb4e6adc52b99db12"  # LIDAR but sample_data_token is not from a key_frame
+
     nusc.render_sample_data(sample_data_token,
                             show_lidarseg_labels=True,
                             filter_lidarseg_labels=[32, 1],
@@ -171,12 +180,22 @@ def test_viz(nusc):
     nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'))
     # ---------- /render sample (i.e. lidar, radar and all cameras) ----------
 
+    # ---------- render scene for a given sensor ----------
+    nusc.render_scene_channel(nusc.scene[0]['token'],
+                              channel='CAM_FRONT',
+                              out_path=os.path.expanduser('~/Desktop/test4.avi'))
+    # ---------- /render scene for a given sensor ----------
+
 
 if __name__ == '__main__':
     nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
 
-    # render_scene_with_pointclouds(nusc, nusc.scene[0], 'CAM_BACK', [32, 1, 36],
-    #                               os.path.expanduser('~/Desktop/CAM_BACK'))
+    # nusc.render_scene_channel(nusc.scene[0]['token'],
+    #                           channel='CAM_FRONT',
+    #                           out_path=os.path.expanduser('~/Desktop/test4.avi'))
+
+    # render_scene_channel_with_pointclouds(nusc, nusc.scene[0]['token'], 'CAM_FRONT_LEFT', [32, 1, 36],
+    #                                       os.path.expanduser('~/Desktop/CAM_FRONT_LEFT'))
 
     # main()
     test_viz(nusc)
