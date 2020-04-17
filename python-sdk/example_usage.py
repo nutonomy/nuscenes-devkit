@@ -1,14 +1,14 @@
 print('__file__={0:<35} | __name__={1:<20} | __package__={2:<20}'.format(__file__,__name__,str(__package__)))
+from functools import partial
+import multiprocessing as mp
 import os
+import time
 
 import matplotlib.pyplot as plt
-import numpy as np
 from nuscenes import NuScenes
-from tqdm import tqdm
 
-def main():
-    root = '/home/whye/Desktop/nuscenes_o'
-    nusc = NuScenes(version='v1.0-mini', dataroot=root, verbose=True)
+
+def main(nusc_class):
     # nusc.list_categories()
     # print (nusc.lidarseg[0])
     # print (nusc.sample_annotation[0])
@@ -16,47 +16,56 @@ def main():
     # for classname, freq in sorted(lidarseg_counts.items()):
     #     print('{:27} nbr_points={:9}'.format(classname[:27], freq))
 
-    '''
-    {
-        "token": "36b7b02f0f034f0595e3437a85554151",
-        "log_token": "08ba46dd716d42a69d108638fef5bbb9",
-        "nbr_samples": 40,
-        "first_sample_token": "305227a63e184c378cc9e36fd60382ca",
-        "last_sample_token": "b8fc5f72c1d84318a66ff9dac7308fef",
-        "name": "scene-0248",
-        "description": "Wait at intersection, many peds"
-    },
-    '''
-
-    # sample_data_token = 'd9ee706fc0e1481a82e1d1d2788b38f1'
-
-    my_scene = nusc.get('scene', "36b7b02f0f034f0595e3437a85554151")
-    my_sample = nusc.get('sample', my_scene['first_sample_token'])
-    sample_data_token = my_sample['data']['LIDAR_TOP']
-
-    def get_stats(points_label):
-        lidarseg_counts = [0] * (max(points_label) + 1)
-
-        indices = np.bincount(points_label)
-        ii = np.nonzero(indices)[0]
-
-        for class_idx, class_count in zip(ii, indices[ii]):
-            # print(class_idx, class_count)
-            lidarseg_counts[class_idx] += class_count  # increment the count for the particular class name
-        # print(lidarseg_counts)
-
-        return lidarseg_counts
-
-    lidarseg_labels_filename = os.path.join('/home/whye/Desktop/nuscenes_o', 'lidarseg', sample_data_token + '_lidarseg.bin')
-    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-    out = get_stats(points_label)
-    print(out)
-    print(len(out))
-
-    nusc.render_sample_data(sample_data_token, show_lidarseg_labels=True, underlay_map=True, with_anns=True)
+    render_cams_with_lidarseg_for_all_scenes(nusc_class, os.path.expanduser('~/Desktop/testing'), [32])
 
 
-def render_scene_channel_with_pointclouds(nusc, scene_token, camera_channel, filter_lidarseg_labels, out_folder) -> None:
+def render_cams_with_lidarseg_for_all_scenes(nusc, out_root, filter_classes=None, do_multiprocessing=True) -> None:
+    assert os.path.isdir(out_root), 'ERROR: {} does not exist.'.format(out_root)
+
+    cam_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
+                    'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+
+    for cam_channel in cam_channels:
+        print('Working on {}...'.format(cam_channel))
+        out_subfolder = os.path.join(out_root, cam_channel)
+
+        start_time = time.time()
+        procs = []
+        func = partial(render_scene_channel_with_pointclouds,
+                       nusc=nusc, camera_channel=cam_channel,
+                       filter_lidarseg_labels=filter_classes,
+                       out_folder=out_subfolder)
+
+        for scene_entry in nusc.scene:
+            if do_multiprocessing:
+                proc = mp.Process(target=func, args=(scene_entry['token'],))
+                procs.append(proc)
+                proc.start()
+            else:
+                render_scene_channel_with_pointclouds(scene_entry['token'], nusc, cam_channel, filter_classes,
+                                                      out_subfolder)
+
+        if do_multiprocessing:
+            for proc in procs:
+                proc.join()
+                proc.close()
+
+        num_converted = len([name for name in os.listdir(out_subfolder)])
+
+        print('Rendered {} scenes for {} in {:.3f} minutes'.format(
+            num_converted, cam_channel, (time.time() - start_time) / 60))
+
+        samples_folder = os.path.join(nusc.dataroot, 'samples', cam_channel)
+        num_originals = len([name for name in os.listdir(samples_folder)
+                             if os.path.splitext(name)[1] in ['.jpg', '.png', '.JPG', '.PNG']])
+
+        assert num_converted == num_originals, 'ERROR: There were {} originals in {} but {} were converted and' \
+                                               'stored at {}. Pls check.'.format(num_originals, samples_folder,
+                                                                                 num_converted, out_subfolder)
+
+
+def render_scene_channel_with_pointclouds(scene_token, nusc, camera_channel, filter_lidarseg_labels,
+                                          out_folder) -> None:
     valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                       'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
     assert camera_channel in valid_channels, 'Input camera channel {} not valid.'.format(camera_channel)
@@ -101,8 +110,8 @@ def render_scene_channel_with_pointclouds(nusc, scene_token, camera_channel, fil
 
         i += 1
 
-    print(total_num_samples, i)
-    assert total_num_samples == i
+    assert total_num_samples == i, 'ERROR: There were supposed to be {} frames, ' \
+                                   'but only {} frames were rendered'.format(total_num_samples, i)
 
 
 def make_mini_from_lidarseg(nusc):
@@ -186,16 +195,14 @@ def test_viz(nusc):
                               out_path=os.path.expanduser('~/Desktop/test4.avi'))
     # ---------- /render scene for a given sensor ----------
 
+    # ---------- render scene for a given cam sensor with lidarseg labels ----------
+    render_scene_channel_with_pointclouds(nusc, nusc.scene[0]['token'], 'CAM_FRONT_LEFT', [32, 1, 36],
+                                          os.path.expanduser('~/Desktop/CAM_FRONT_LEFT'))
+    # ---------- /render scene for a given cam sensor with lidarseg labels ----------
+
 
 if __name__ == '__main__':
-    nusc = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
+    nusc_class = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
 
-    # nusc.render_scene_channel(nusc.scene[0]['token'],
-    #                           channel='CAM_FRONT',
-    #                           out_path=os.path.expanduser('~/Desktop/test4.avi'))
-
-    # render_scene_channel_with_pointclouds(nusc, nusc.scene[0]['token'], 'CAM_FRONT_LEFT', [32, 1, 36],
-    #                                       os.path.expanduser('~/Desktop/CAM_FRONT_LEFT'))
-
-    # main()
-    test_viz(nusc)
+    main(nusc_class)
+    # test_viz(nusc)
