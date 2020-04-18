@@ -1070,15 +1070,12 @@ class NuScenesMapExplorer:
                     if len(points) == 0 or points.shape[1] < 3:
                         continue
 
-                    # Grab the depths before performing the projection (z axis points away from the camera).
-                    depths = points[2, :]
-
                     # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
                     points = view_points(points, cam_intrinsic, normalize=True)
 
                     # Skip polygons where all points are outside the image.
                     # Leave a margin of 1 pixel for aesthetic reasons.
-                    inside = np.ones(depths.shape[0], dtype=bool)
+                    inside = np.ones(points.shape[1], dtype=bool)
                     inside = np.logical_and(inside, points[0, :] > 1)
                     inside = np.logical_and(inside, points[0, :] < im.size[0] - 1)
                     inside = np.logical_and(inside, points[1, :] > 1)
