@@ -410,8 +410,9 @@ class NuScenes:
                                                  filter_lidarseg_labels=filter_lidarseg_labels)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
-                      out_path: str = None) -> None:
-        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps, out_path=out_path)
+                      out_path: str = None, show_lidarseg_labels: bool = False) -> None:
+        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps,
+                                    out_path=out_path, show_lidarseg_labels=show_lidarseg_labels)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
@@ -699,7 +700,8 @@ class NuScenesExplorer:
                                    out_path: str = None,
                                    render_intensity: bool = False,
                                    show_lidarseg_labels: bool = False,
-                                   filter_lidarseg_labels: List = None) -> None:
+                                   filter_lidarseg_labels: List = None,
+                                   ax: Axes = None) -> None:
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -710,6 +712,7 @@ class NuScenesExplorer:
         :param render_intensity: Whether to render lidar intensity instead of point depth.
         :param show_lidarseg_labels: Whether to render lidarseg labels instead of point depth.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
+        :param ax: Axes onto which to render.
         """
         sample_record = self.nusc.get('sample', sample_token)
 
@@ -721,10 +724,19 @@ class NuScenesExplorer:
                                                             render_intensity=render_intensity,
                                                             show_lidarseg_labels=show_lidarseg_labels,
                                                             filter_lidarseg_labels=filter_lidarseg_labels)
-        plt.figure(figsize=(9, 16))
-        plt.imshow(im)
-        plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
-        plt.axis('off')
+        # plt.figure(figsize=(9, 16))
+        # plt.imshow(im)
+        # plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
+        # plt.axis('off')
+
+        # Init axes.
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=(9, 16))
+        else:  # set title on if rendering as part of render_sample
+            ax.set_title(camera_channel)
+        ax.imshow(im)
+        ax.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
+        ax.axis('off')
 
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
@@ -735,30 +747,37 @@ class NuScenesExplorer:
                       token: str,
                       box_vis_level: BoxVisibility = BoxVisibility.ANY,
                       nsweeps: int = 1,
-                      out_path: str = None) -> None:
+                      out_path: str = None,
+                      show_lidarseg_labels: bool = False) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param show_lidarseg_labels: Whether to show lidar segmentations labels or not.
         """
         record = self.nusc.get('sample', token)
 
         # Separate RADAR from LIDAR and vision.
         radar_data = {}
-        nonradar_data = {}
+        camera_data = {}
+        lidar_data = {}
         for channel, token in record['data'].items():
             sd_record = self.nusc.get('sample_data', token)
             sensor_modality = sd_record['sensor_modality']
-            if sensor_modality in ['lidar', 'camera']:
-                nonradar_data[channel] = token
+            # if sensor_modality in ['lidar', 'camera']:
+            if sensor_modality == 'camera':
+                camera_data[channel] = token
+            elif sensor_modality == 'lidar':
+                lidar_data[channel] = token
             else:
                 radar_data[channel] = token
 
         # Create plots.
         num_radar_plots = 1 if len(radar_data) > 0 else 0
-        n = num_radar_plots + len(nonradar_data)
+        num_lidar_plots = 1 if len(lidar_data) > 0 else 0
+        n = num_radar_plots + len(camera_data) + num_lidar_plots
         cols = 2
         fig, axes = plt.subplots(int(np.ceil(n/cols)), cols, figsize=(16, 24))
 
@@ -769,9 +788,28 @@ class NuScenesExplorer:
                 self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
             ax.set_title('Fused RADARs')
 
+        if len(lidar_data) > 0:
+            for (_, sd_token), ax in zip(lidar_data.items(), axes.flatten()[num_radar_plots:]):
+                self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        show_lidarseg_labels=show_lidarseg_labels)
+
         # Plot camera and lidar in separate subplots.
-        for (_, sd_token), ax in zip(nonradar_data.items(), axes.flatten()[num_radar_plots:]):
-            self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
+        for (_, sd_token), ax in zip(camera_data.items(), axes.flatten()[num_radar_plots + num_lidar_plots:]):
+            if not show_lidarseg_labels:
+                self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        show_lidarseg_labels=False)
+            else:
+                sd_record = self.nusc.get('sample_data', sd_token)
+                sensor_channel = sd_record['channel']
+                valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
+                                  'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+                assert sensor_channel in valid_channels, 'Input camera channel {} not valid.'.format(sensor_channel)
+
+                self.render_pointcloud_in_image(record['token'],
+                                                pointsensor_channel='LIDAR_TOP',
+                                                camera_channel=sensor_channel,
+                                                show_lidarseg_labels=show_lidarseg_labels,
+                                                ax=ax)
 
         # Change plot settings and write to disk.
         axes.flatten()[-1].axis('off')
@@ -960,7 +998,7 @@ class NuScenesExplorer:
                 # ---------- coloring ----------##
                 num_classes = 41
                 colormap = get_arbitrary_colormap(num_classes)
-                print('Created {} colors'.format(len(colormap)))
+                # print('Created {} colors'.format(len(colormap)))
                 # ---------- /coloring ---------- #
                 if filter_lidarseg_labels:
                     colormap = filter_colormap(colormap, filter_lidarseg_labels)

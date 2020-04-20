@@ -185,8 +185,8 @@ def test_viz(nusc):
     # ---------- /render lidarseg labels in image ----------
 
     # ---------- render sample (i.e. lidar, radar and all cameras) ----------
-    # note: lidarseg labels will not be rendered
-    nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'))
+    nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'),
+                       show_lidarseg_labels=True)
     # ---------- /render sample (i.e. lidar, radar and all cameras) ----------
 
     # ---------- render scene for a given sensor ----------
@@ -204,5 +204,5 @@ def test_viz(nusc):
 if __name__ == '__main__':
     nusc_class = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
 
-    main(nusc_class)
-    # test_viz(nusc)
+    # main(nusc_class)
+    test_viz(nusc_class)
