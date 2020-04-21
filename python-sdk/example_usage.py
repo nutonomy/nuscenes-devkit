@@ -1,11 +1,14 @@
 print('__file__={0:<35} | __name__={1:<20} | __package__={2:<20}'.format(__file__,__name__,str(__package__)))
 from functools import partial
+import json
 import multiprocessing as mp
 import os
 import time
 
 import matplotlib.pyplot as plt
+import numpy as np
 from nuscenes import NuScenes
+from tqdm import tqdm
 
 
 def main(nusc_class):
@@ -16,7 +19,23 @@ def main(nusc_class):
     # for classname, freq in sorted(lidarseg_counts.items()):
     #     print('{:27} nbr_points={:9}'.format(classname[:27], freq))
 
-    render_cams_with_lidarseg_for_all_scenes(nusc_class, os.path.expanduser('~/Desktop/testing'), [32])
+    classes = [40, 41]  # [40, 41]
+    out_folder = os.path.expanduser('~/Desktop/for_VOs')
+
+    for class_to_render in classes:
+        print('Checking {}...'.format(class_to_render))
+        out_folder_class = os.path.join(out_folder, str(class_to_render))
+        if not os.path.exists(out_folder_class):
+            os.makedirs(out_folder_class)
+
+        render_cams_with_lidarseg_for_all_scenes(nusc_class, out_folder_class, [class_to_render])
+
+
+def load_table(path_to_json) -> dict:
+    """ Loads a table. """
+    with open(path_to_json) as f:
+        table = json.load(f)
+    return table
 
 
 def render_cams_with_lidarseg_for_all_scenes(nusc, out_root, filter_classes=None, do_multiprocessing=True) -> None:
@@ -52,16 +71,17 @@ def render_cams_with_lidarseg_for_all_scenes(nusc, out_root, filter_classes=None
 
         num_converted = len([name for name in os.listdir(out_subfolder)])
 
-        print('Rendered {} scenes for {} in {:.3f} minutes'.format(
+        print('Rendered {} images for {} in {:.3f} minutes'.format(
             num_converted, cam_channel, (time.time() - start_time) / 60))
 
         samples_folder = os.path.join(nusc.dataroot, 'samples', cam_channel)
         num_originals = len([name for name in os.listdir(samples_folder)
                              if os.path.splitext(name)[1] in ['.jpg', '.png', '.JPG', '.PNG']])
 
-        assert num_converted == num_originals, 'ERROR: There were {} originals in {} but {} were converted and' \
-                                               'stored at {}. Pls check.'.format(num_originals, samples_folder,
-                                                                                 num_converted, out_subfolder)
+        # TODO uncomment after done with VOs
+        # assert num_converted == num_originals, 'ERROR: There were {} originals in {} but {} were converted and ' \
+        #                                        'stored at {}. Pls check.'.format(num_originals, samples_folder,
+        #                                                                          num_converted, out_subfolder)
 
 
 def render_scene_channel_with_pointclouds(scene_token, nusc, camera_channel, filter_lidarseg_labels,
@@ -196,13 +216,12 @@ def test_viz(nusc):
     # ---------- /render scene for a given sensor ----------
 
     # ---------- render scene for a given cam sensor with lidarseg labels ----------
-    render_scene_channel_with_pointclouds(nusc, nusc.scene[0]['token'], 'CAM_FRONT_LEFT', [32, 1, 36],
+    render_scene_channel_with_pointclouds(nusc.scene[0]['token'], nusc, 'CAM_FRONT_LEFT', [32, 1, 36],
                                           os.path.expanduser('~/Desktop/CAM_FRONT_LEFT'))
     # ---------- /render scene for a given cam sensor with lidarseg labels ----------
-
 
 if __name__ == '__main__':
     nusc_class = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
 
-    # main(nusc_class)
-    test_viz(nusc_class)
+    main(nusc_class)
+    # test_viz(nusc_class)

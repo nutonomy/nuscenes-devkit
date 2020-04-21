@@ -663,7 +663,8 @@ class NuScenesExplorer:
             lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg', pointsensor_token + '_lidarseg.bin')
             points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
-            # ---------- coloring ----------##
+            # ---------- coloring ---------- #
+            # TODO update colormap
             num_classes = 41
             colormap = get_arbitrary_colormap(num_classes)
             # print('Created {} colors'.format(len(colormap)))
@@ -689,6 +690,12 @@ class NuScenesExplorer:
         mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
         points = points[:, mask]
         coloring = coloring[mask]
+        # TODO remove below hack
+        # ////////// hack to prevent rendering images which have no labels ////////// #
+        # check if any column is all zeros (the alpha col should be zero)
+        if (~coloring.any(axis=0)).any():
+            return None, None, None
+        # ///////////////////////////////////////////////////////////////////////////
 
         return points, coloring, im
 
@@ -728,6 +735,12 @@ class NuScenesExplorer:
         # plt.imshow(im)
         # plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
         # plt.axis('off')
+
+        # TODO remove below hack
+        # ////////// hack to prevent rendering images which have no labels ////////// #
+        if points is None:
+            return
+        # ///////////////////////////////////////////////////////////////////////////
 
         # Init axes.
         if ax is None:
