@@ -111,7 +111,7 @@ def render_scene_channel_with_pointclouds(scene_token, nusc, camera_channel, fil
         # ---------- get filename of image ----------
         camera_token = sample_record['data'][camera_channel]
         cam = nusc.get('sample_data', camera_token)
-        filename = os.path.basename(cam['filename'])
+        filename = '0' + scene_record['name'][5:] + '_' + os.path.basename(cam['filename']) # TODO remove scene after done with VOs
         # ---------- /get filename of image ----------
 
         # ---------- render lidarseg labels in image ----------
