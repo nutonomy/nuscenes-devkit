@@ -8,7 +8,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from nuscenes import NuScenes
-from tqdm import tqdm
+import tqdm
 
 
 def main(nusc_class):
@@ -19,16 +19,33 @@ def main(nusc_class):
     # for classname, freq in sorted(lidarseg_counts.items()):
     #     print('{:27} nbr_points={:9}'.format(classname[:27], freq))
 
-    classes = [40, 41]  # [40, 41]
+    classes = [32, 36]
     out_folder = os.path.expanduser('~/Desktop/for_VOs')
-
+    scene_tokens = ['de943e246dad4ad686de98008a634ecf', '6e81ee0f64274490a403bbd6482c2bf9']
     for class_to_render in classes:
-        print('Checking {}...'.format(class_to_render))
+        print('Checking class {}...'.format(class_to_render))
         out_folder_class = os.path.join(out_folder, str(class_to_render))
         if not os.path.exists(out_folder_class):
             os.makedirs(out_folder_class)
+        for scene_token in scene_tokens:
+            render_scene_with_pointclouds_for_all_cameras(scene_token, nusc_class, [class_to_render], out_folder_class,
+                                                          )
 
-        render_cams_with_lidarseg_for_all_scenes(nusc_class, out_folder_class, [class_to_render])
+        # render_cams_with_lidarseg_for_all_scenes(nusc_class, out_folder_class, [class_to_render])
+
+
+def render_scene_with_pointclouds_for_all_cameras(scene_token, nusc, filter_lidarseg_labels, out_folder,
+                                                  ) -> None:
+    cam_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
+                    'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+
+    start_time = time.time()
+
+    for cam_channel in tqdm.tqdm(cam_channels):
+        render_scene_channel_with_pointclouds(scene_token, nusc, cam_channel, filter_lidarseg_labels,
+                                              os.path.join(out_folder, cam_channel))
+
+    print('Rendered scene with token {} in {:.1f} minutes'.format(scene_token, (time.time() - start_time) / 60))
 
 
 def load_table(path_to_json) -> dict:
@@ -220,8 +237,9 @@ def test_viz(nusc):
                                           os.path.expanduser('~/Desktop/CAM_FRONT_LEFT'))
     # ---------- /render scene for a given cam sensor with lidarseg labels ----------
 
+
 if __name__ == '__main__':
-    nusc_class = NuScenes(version='v1.0-mini', dataroot='/home/whye/Desktop/nuscenes_o', verbose=True)
+    nusc_class = NuScenes(version='v1.0-trainval', dataroot='/data/sets/nuscenes', verbose=True)
 
     main(nusc_class)
     # test_viz(nusc_class)
