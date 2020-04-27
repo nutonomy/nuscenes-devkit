@@ -4,7 +4,13 @@ import sys
 import os.path as osp
 import json
 import time
-from typing import Any
+from typing import Any, List, Dict
+
+import PIL
+import PIL.ImageDraw
+import PIL.ImageFont
+
+from utils import default_color, annotation_name, mask_decode  # TODO: remove PyCharm warning
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -43,13 +49,22 @@ class NuImages:
 
         # Explicitly assign tables to help the IDE determine valid class members.
         if not lazy:
-            self.attribute = self.__load_table__('attribute')
-            self.camera = self.__load_table__('camera')
-            self.category = self.__load_table__('category')
-            self.image = self.__load_table__('image')
-            self.log = self.__load_table__('log')
-            self.object_ann = self.__load_table__('object_ann')
-            self.surface_ann = self.__load_table__('surface_ann')
+            for table in self.table_names:
+                self.__setattr__(table, self.__load_table__(table))
+
+            # self.attribute = self.__load_table__('attribute')  # Verify that these are still needed
+            # self.camera = self.__load_table__('camera')
+            # self.category = self.__load_table__('category')
+            # self.image = self.__load_table__('image')
+            # self.log = self.__load_table__('log')
+            # self.object_ann = self.__load_table__('object_ann')
+            # self.surface_ann = self.__load_table__('surface_ann')
+        self._token2ind: Dict[str, dict] = dict()
+        for table in self.table_names:
+            self._token2ind[table] = None
+
+        # Initialize NuImagesExplorer class
+        self.explorer = NuImagesExplorer(self)
 
     def __getattr__(self, attr_name: str) -> Any:
         """
@@ -64,6 +79,32 @@ class NuImages:
         else:
             raise AttributeError("Error: %r object has no attribute %r" % (self.__class__.__name__, attr_name))
 
+    def get(self, table_name: str, token: str) -> dict:
+        """
+        Returns a record from table in constant runtime.
+        :param table_name: Table name.
+        :param token: Token of the record.
+        :return: Table record. See README.md for record details for each table.
+        """
+        assert table_name in self.table_names, "Table {} not found".format(table_name)
+
+        return getattr(self, table_name)[self.getind(table_name, token)]
+
+    def getind(self, table_name: str, token: str) -> int:
+        """
+        This returns the index of the record in a table in constant runtime.
+        :param table_name: Table name.
+        :param token: Token of the record.
+        :return: The index of the record in table, table is an array.
+        """
+        # Lazy loading: Compute reverse indices.
+        if self._token2ind[table_name] is None:
+            self._token2ind[table_name] = dict()
+            for ind, member in enumerate(getattr(self, table_name)):
+                self._token2ind[table_name][member['token']] = ind
+
+        return self._token2ind[table_name][token]
+
     @property
     def table_root(self) -> str:
         """ Returns the folder where the tables are stored for the relevant version. """
@@ -76,8 +117,102 @@ class NuImages:
             table = json.load(f)
         end_time = time.time()
 
-        # Print a message to stdout
+        # Print a message to stdout.
         if self.verbose:
             print("Loaded {} {}(s) in {:.3f}s,".format(len(table), table_name, end_time - start_time))
 
         return table
+
+
+class NuImagesExplorer:
+    """
+    Helper class to list and visualize NuImages data.
+    These are meant to serve as tutorials and templates for working with the data.
+    """
+
+    def __init__(self, nuim: NuImages):
+        self.nuim = nuim
+
+    def list_attributes(self) -> None:
+        pass # TODO
+
+    def list_cameras(self) -> None:
+        pass # TODO
+
+    def list_categories(self) -> None:
+        pass # TODO
+
+    def list_images(self) -> None:
+        pass # TODO
+
+    def list_image(self, image_token: str) -> None:
+        pass # TODO
+
+    def list_logs(self) -> None:
+        pass # TODO
+
+    def render_image(self,
+               image_token: str,
+               with_annotations: bool = True,
+               with_attributes: bool = False,
+               box_tokens: List[str] = None,
+               surface_tokens: List[str] = None) -> PIL.Image:
+        """
+        Draws an image with annotations overlaid.
+        :param with_annotations: Whether to draw all annotations.
+        :param with_attributes: Whether to include attributes in the label tags.
+        :param box_tokens: List of bounding box annotation tokens. If given only these annotations are drawn.
+        :param surface_tokens: List of surface annotation tokens. If given only these annotations are drawn.
+        :return: Image object.
+        """
+        # Get image data.
+        image = self.nuim.get('image', image_token)
+        im_path = osp.join(self.nuim.dataroot, image['filename_jpg'])
+        im = PIL.Image.open(im_path)
+        if not with_annotations:
+            return im
+
+        # Initialize drawing.
+        #try:
+        #    font = PIL.ImageFont.truetype('Ubuntu-B.ttf', 15)
+        #except OSError:
+        font = PIL.ImageFont.load_default()
+        draw = PIL.ImageDraw.Draw(im, 'RGBA')
+
+        # Load object instances.
+        object_anns = [o for o in self.nuim.object_ann if o['image_token'] == image_token]
+        if box_tokens is not None:
+            object_anns = [o for o in object_anns if o['token'] in box_tokens]
+
+        # Draw object instances.
+        for ann in object_anns:
+            # Get color, box, mask and name.
+            category_token = ann['category_token']
+            category_name = self.nuim.get('category', category_token)
+            color = default_color(category_name)
+            bbox = ann['bbox']
+            mask = mask_decode(ann['mask'])
+            name = annotation_name(self.nuim.attribute, category_name, with_attributes=with_attributes)
+
+            # Draw rectangle, text and mask.
+            draw.rectangle(bbox, outline=color)
+            draw.text((bbox[0], bbox[1]), name, font=font)
+            if mask:
+                draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+
+        # Load stuff / background regions.
+        surface_anns = [o for o in self.nuim.surface_ann if o['image_token'] == image_token]
+        if surface_tokens is not None:
+            surface_anns = [o for o in object_anns if o['token'] in surface_tokens]
+
+        # Draw stuff / background regions.
+        for ann in surface_anns:
+            # Get color and mask
+            category_token = ann['category_token']
+            category_name = self.nuim.get('category', category_token)
+            color = default_color(category_name)
+            mask = mask_decode(ann['mask'])
+
+            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+
+        return im
