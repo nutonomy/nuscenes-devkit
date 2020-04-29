@@ -1,4 +1,5 @@
 from typing import Tuple
+import base64
 
 import numpy as np
 from pycocotools import mask as cocomask
@@ -45,4 +46,5 @@ def annotation_name(attributes: dict,
 
 
 def mask_decode(mask: dict) -> np.ndarray:
+    mask['counts'] = base64.b64decode(mask['counts'])
     return cocomask.decode(mask)

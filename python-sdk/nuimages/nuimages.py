@@ -203,8 +203,7 @@ class NuImagesExplorer:
             # Draw rectangle, text and mask.
             draw.rectangle(bbox, outline=color)
             draw.text((bbox[0], bbox[1]), name, font=font)
-            if mask:
-                draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Load stuff / background regions.
         surface_anns = [o for o in self.nuim.surface_ann if o['image_token'] == image_token]
@@ -219,8 +218,7 @@ class NuImagesExplorer:
             color = default_color(category_name)
             mask = mask_decode(ann['mask'])
 
-            if mask:
-                draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Plot the image
         if ax is None:
