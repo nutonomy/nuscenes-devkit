@@ -185,6 +185,21 @@ class NuImagesExplorer:
         font = PIL.ImageFont.load_default()
         draw = PIL.ImageDraw.Draw(im, 'RGBA')
 
+        # Load stuff / background regions.
+        surface_anns = [o for o in self.nuim.surface_ann if o['image_token'] == image_token]
+        if surface_tokens is not None:
+            surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
+
+        # Draw stuff / background regions.
+        for ann in surface_anns:
+            # Get color and mask
+            category_token = ann['category_token']
+            category_name = self.nuim.get('category', category_token)['name']
+            color = default_color(category_name)
+            mask = mask_decode(ann['mask'])
+
+            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+
         # Load object instances.
         object_anns = [o for o in self.nuim.object_ann if o['image_token'] == image_token]
         if box_tokens is not None:
@@ -194,7 +209,7 @@ class NuImagesExplorer:
         for ann in object_anns:
             # Get color, box, mask and name.
             category_token = ann['category_token']
-            category_name = self.nuim.get('category', category_token)
+            category_name = self.nuim.get('category', category_token)['name']
             color = default_color(category_name)
             bbox = ann['bbox']
             mask = mask_decode(ann['mask'])
@@ -205,21 +220,6 @@ class NuImagesExplorer:
             draw.text((bbox[0], bbox[1]), name, font=font)
             draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-        # Load stuff / background regions.
-        surface_anns = [o for o in self.nuim.surface_ann if o['image_token'] == image_token]
-        if surface_tokens is not None:
-            surface_anns = [o for o in object_anns if o['token'] in surface_tokens]
-
-        # Draw stuff / background regions.
-        for ann in surface_anns:
-            # Get color and mask
-            category_token = ann['category_token']
-            category_name = self.nuim.get('category', category_token)
-            color = default_color(category_name)
-            mask = mask_decode(ann['mask'])
-
-            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
-
         # Plot the image
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(9, 16))
@@ -228,5 +228,6 @@ class NuImagesExplorer:
         ax.set_xlim(0, width)
         ax.set_ylim(height, 0)
         ax.set_title(image_token)
+        ax.axis('off')
 
         return im
