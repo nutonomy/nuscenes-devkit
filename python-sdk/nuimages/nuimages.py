@@ -12,7 +12,7 @@ import PIL.ImageFont
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from utils import default_color, annotation_name, mask_decode  # TODO: remove PyCharm warning
+from nuimages.utils import default_color, annotation_name, mask_decode
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -49,15 +49,6 @@ class NuImages:
         if verbose:
             print("======\nLoading NuScenes tables for version {}...".format(self.version))
 
-        # Explicitly init tables to help the IDE determine valid class members.
-        self.attribute = None
-        self.camera = None
-        self.category = None
-        self.image = None
-        self.log = None
-        self.object_ann = None
-        self.surface_ann = None
-
         # Init reverse indexing.
         self._token2ind: Dict[str, dict] = dict()
         for table in self.table_names:
@@ -65,8 +56,14 @@ class NuImages:
 
         # Load tables directly if requested.
         if not lazy:
-            for table in self.table_names:
-                self.__setattr__(table, self.__load_table__(table))
+            # Explicitly init tables to help the IDE determine valid class members.
+            self.attribute = self.__load_table__('attribute')
+            self.camera = self.__load_table__('camera')
+            self.category = self.__load_table__('category')
+            self.image = self.__load_table__('image')
+            self.log = self.__load_table__('log')
+            self.object_ann = self.__load_table__('object_ann')
+            self.surface_ann = self.__load_table__('surface_ann')
 
         # Initialize NuImagesExplorer class.
         self.explorer = NuImagesExplorer(self)
@@ -118,7 +115,9 @@ class NuImages:
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
         start_time = time.time()
-        with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
+        table_path = osp.join(self.table_root, '{}.json'.format(table_name))
+        assert osp.exists(table_path), 'Error: Table %s does not exist!' % table_name
+        with open(table_path) as f:
             table = json.load(f)
         end_time = time.time()
 
