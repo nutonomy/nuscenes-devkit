@@ -43,5 +43,6 @@ def annotation_name(attributes: dict,
 
     return outstr
 
+
 def mask_decode(mask: dict) -> np.ndarray:
     return cocomask.decode(mask)

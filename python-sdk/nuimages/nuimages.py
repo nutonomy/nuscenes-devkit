@@ -9,6 +9,8 @@ from typing import Any, List, Dict
 import PIL
 import PIL.ImageDraw
 import PIL.ImageFont
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 from utils import default_color, annotation_name, mask_decode  # TODO: remove PyCharm warning
 
@@ -156,13 +158,15 @@ class NuImagesExplorer:
                with_annotations: bool = True,
                with_attributes: bool = False,
                box_tokens: List[str] = None,
-               surface_tokens: List[str] = None) -> PIL.Image:
+               surface_tokens: List[str] = None,
+               ax: Axes = None) -> PIL.Image:
         """
         Draws an image with annotations overlaid.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
         :param box_tokens: List of bounding box annotation tokens. If given only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given only these annotations are drawn.
+        :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
         :return: Image object.
         """
         # Get image data.
@@ -213,6 +217,16 @@ class NuImagesExplorer:
             color = default_color(category_name)
             mask = mask_decode(ann['mask'])
 
-            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+            if mask:
+                draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+
+        # Plot the image
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=(9, 16))
+        ax.imshow(im)
+        (width, height) = im.size
+        ax.set_xlim(0, width)
+        ax.set_ylim(height, 0)
+        ax.set_title(image_token)
 
         return im
