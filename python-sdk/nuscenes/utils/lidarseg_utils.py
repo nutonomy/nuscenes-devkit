@@ -1,5 +1,44 @@
+from typing import Tuple
+
+import cv2
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy as np
 import colorsys
+
+
+def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int] = (640, 360), dpi: int = 100):
+    """
+    Converts a scatter plot in matplotlib to an image in cv2. This is useful as cv2 is unable to do
+    scatter plats.
+    :param points: A numPy array (of size [2 x num_points] and type float) representing the pointcloud.
+    :param coloring: A numPy array (of size [num_points] containing the color (in RGB, normalized
+                     between 0 and 1) for each point.
+    :param im: An image (e.g. a camera view) to put the scatter plot on.
+    :param imsize: Size of image to render. The larger the slower this will run.
+    :param dpi: Resolution of the output figure.
+    :return: cv2 image with the scatter plot.
+    """
+
+    # ---------- render lidarseg labels in image ----------
+    fig = plt.figure(figsize=(imsize[0] / dpi, imsize[1] / dpi), dpi=dpi)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    fig.add_axes(ax)
+
+    ax.imshow(im)
+    ax.scatter(points[0, :], points[1, :], c=coloring, s=5)
+    # ax.axis('off')
+    # ---------- /render lidarseg labels in image ----------
+
+    # ---------- convert from pyplot to cv2 ----------
+    canvas = FigureCanvas(fig)
+    canvas.draw()
+    mat = np.array(canvas.renderer._renderer)  # put pixel buffer in numpy array
+    mat = cv2.cvtColor(mat, cv2.COLOR_RGB2BGR)
+    mat = cv2.resize(mat, imsize)
+    # ---------- /convert from pyplot to cv2 ----------
+
+    return mat
 
 
 def get_colormap() -> np.array:

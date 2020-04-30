@@ -11,6 +11,42 @@ from nuscenes import NuScenes
 import tqdm
 
 
+def get_sample_lidarseg_stats(self, sample_token: str, mapping):
+    if not hasattr(self.nusc, 'lidarseg'):
+        print('WARNING: You have no lidarseg data; under able to get statistics for segmentation of the point cloud.')
+        quit()
+    sample_rec = self.nusc.get('sample', sample_token)
+    ref_sd_token = sample_rec['data']['LIDAR_TOP']
+    ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
+
+    lidarseg_labels_filename = os.path.join(self.nusc.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
+    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+    lidarseg_stats = get_stats(points_label)
+
+
+def get_stats(points_label: np.array, mapping = None) -> np.array:
+    """
+    Get frequency of each label in a point cloud.
+    :param mapping: A list of dictionaries containing the details of the classes (e.g. name, label).
+    :param points_label: A numPy array which contains the labels of the point cloud; e.g. np.array([2, 1, 34, ..., 38])
+    :returns: An array which contains the counts of each label in the point cloud. The index of the point cloud
+              corresponds to the index of the class label. E.g. [0, 2345, 12, 451] means that there are no points in class 0,
+              there are 2345 points in class 1, there are 12 points in class 2 etc.
+    """
+
+    lidarseg_counts = [0] * len(mapping)
+
+    indices = np.bincount(points_label)
+    ii = np.nonzero(indices)[0]
+
+    for class_idx, class_count in zip(ii, indices[ii]):
+        # print(class_idx, class_count)
+        lidarseg_counts[class_idx] += class_count  # increment the count for the particular class name
+    # print(lidarseg_counts)
+
+    return lidarseg_counts
+
+
 def main(nusc_class):
     # nusc.list_categories()
     # print (nusc.lidarseg[0])
@@ -133,6 +169,14 @@ def test_viz(nusc):
     # sample_token = '9c7c7d5d109c40fcaecd3c422d37b4f6'
 
     # nusc.render_scene_channel(nusc.scene[-1]['token'], 'CAM_FRONT', (1280, 720))
+    # nusc.render_scene(nusc.scene[0]['token'])
+    # ---------- render scene for all cameras with lidarseg labels ----------
+    nusc.render_scene_with_pointclouds_for_all_cameras(nusc.scene[3]['token'],
+                                                       out_path = os.path.expanduser('~/Desktop/all_cams_lidarseg.avi'),
+                                                       filter_lidarseg_labels=[32, 1],
+                                                       imsize=(640, 360))
+    # ---------- /render scene for all cameras with lidarseg labels ----------
+    quit()
 
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
@@ -155,7 +199,9 @@ def test_viz(nusc):
                                     render_intensity=True,
                                     show_lidarseg_labels=True,
                                     filter_lidarseg_labels=[32, 1],
-                                    out_path=os.path.expanduser('~/Desktop/test2.png'))
+                                    out_path=os.path.expanduser('~/Desktop/test2.png'),
+                                    render_if_no_points=False,
+                                    verbose=True)
     # ---------- /render lidarseg labels in image ----------
 
     # ---------- render sample (i.e. lidar, radar and all cameras) ----------
@@ -171,19 +217,23 @@ def test_viz(nusc):
 
     # ---------- render scene for a given cam sensor with lidarseg labels ----------
     nusc.render_camera_channel_with_pointclouds(nusc.scene[0]['token'], 'CAM_BACK',
-                                                os.path.expanduser('~/Desktop/testing/my_rendered_scene.avi'),
-                                                [32, 1], (1280, 720))
+                                                out_folder=os.path.expanduser('~/Desktop/testing/my_rendered_scene.avi'),
+                                                filter_lidarseg_labels=[6],  # [32, 1],
+                                                render_if_no_points=True,
+                                                verbose=True,
+                                                imsize=(1280, 720))
     # ---------- /render scene for a given cam sensor with lidarseg labels ----------
 
     # ---------- render scene for all cameras with lidarseg labels ----------
     nusc.render_scene_with_pointclouds_for_all_cameras(nusc.scene[0]['token'],
-                                                       os.path.expanduser('~/Desktop/testing'),
-                                                       [32,1], (1280, 720))
+                                                       out_path=os.path.expanduser('~/Desktop/all_cams_lidarseg.avi'),
+                                                       filter_lidarseg_labels=[32, 1],
+                                                       imsize=(640, 360))
     # ---------- /render scene for all cameras with lidarseg labels ----------
 
 
 if __name__ == '__main__':
-    nusc_class = NuScenes(version='v1.0-trainval', dataroot='/data/sets/nuscenes', verbose=True)
+    nusc_class = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
 
-    main(nusc_class)
-    # test_viz(nusc_class)
+    # main(nusc_class)
+    test_viz(nusc_class)
