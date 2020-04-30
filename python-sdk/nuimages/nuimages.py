@@ -4,7 +4,7 @@ import sys
 import os.path as osp
 import json
 import time
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict
 from collections import defaultdict
 
 import PIL
@@ -106,11 +106,15 @@ class NuImages:
 
     @property
     def table_root(self) -> str:
-        """ Returns the folder where the tables are stored for the relevant version. """
+        """
+        Returns the folder where the tables are stored for the relevant version.
+        """
         return osp.join(self.dataroot, self.version)
 
     def load_table(self, table_name) -> None:
-        """ Load a table, if it isn't already loaded. """
+        """
+        Load a table, if it isn't already loaded.
+        """
 
         if table_name in self.__dict__.keys():
             return
@@ -119,7 +123,9 @@ class NuImages:
             self.__setattr__(table_name, table)
 
     def __load_table__(self, table_name) -> List[dict]:
-        """ Load a table and return it. """
+        """
+        Load a table and return it.
+        """
 
         start_time = time.time()
         table_path = osp.join(self.table_root, '{}.json'.format(table_name))
@@ -176,7 +182,7 @@ class NuImages:
             image_freqs[camera['channel']] += 1
 
         # Print to stdout.
-        format_str = '{:6} {:6} {:24}'
+        format_str = '{:7} {:6} {:24}'
         print()
         print(format_str.format('Cameras', 'Images', 'Channel'))
         for channel in camera_freqs.keys():
@@ -185,7 +191,7 @@ class NuImages:
             print(format_str.format(
                 camera_freq, image_freq, channel))
 
-    def list_categories(self) -> None:
+    def list_categories(self, image_tokens: List[str] = None) -> None:
         """
         List all categories and the number of object_anns and surface_anns for them.
         """
@@ -198,32 +204,57 @@ class NuImages:
         # Count object_anns and surface_anns.
         object_freqs = defaultdict(lambda: 0)
         surface_freqs = defaultdict(lambda: 0)
+        if image_tokens is not None:
+            image_tokens = set(image_tokens)
         for object_ann in self.object_ann:
-            object_freqs[object_ann['category_token']] += 1
+            if image_tokens is None or object_ann['image_token'] in image_tokens:
+                object_freqs[object_ann['category_token']] += 1
         for surface_ann in self.surface_ann:
-            surface_freqs[surface_ann['category_token']] += 1
+            if image_tokens is None or surface_ann['image_token'] in image_tokens:
+                surface_freqs[surface_ann['category_token']] += 1
 
         # Print to stdout.
-        format_str = '{:6} {:6} {:24.24} {:48.48}'
+        format_str = '{:11} {:12} {:24.24} {:48.48}'
         print()
         print(format_str.format('Object_anns', 'Surface_anns', 'Name', 'Description'))
         for category in self.category:
             category_token = category['token']
             object_freq = object_freqs[category_token]
             surface_freq = surface_freqs[category_token]
+
+            # Skip empty categories.
+            if object_freq == 0 and surface_freq == 0:
+                continue
+
             name = category['name']
             description = category['description']
             print(format_str.format(
                 object_freq, surface_freq, name, description))
 
-    def list_images(self) -> None:
-        pass # TODO
-
-    def list_image(self, image_token: str) -> None:
-        pass # TODO
-
     def list_logs(self) -> None:
-        pass # TODO
+        """
+        List all logs and the number of images per log.
+        """
+        # Load data if in lazy load to avoid confusing outputs.
+        if self.lazy:
+            self.load_table('image')
+            self.load_table('log')
+
+        # Count images.
+        image_freqs = defaultdict(lambda: 0)
+        for image in self.image:
+            image_freqs[image['log_token']] += 1
+
+        # Print to stdout.
+        format_str = '{:6} {:29} {:24}'
+        print()
+        print(format_str.format('Images', 'Log', 'Location'))
+        for log in self.log:
+            image_freq = image_freqs[log['token']]
+            logfile = log['logfile']
+            location = log['location']
+            print(format_str.format(
+                image_freq, logfile, location))
 
     def render_image(self,
                image_token: str,
@@ -231,6 +262,7 @@ class NuImages:
                with_attributes: bool = False,
                box_tokens: List[str] = None,
                surface_tokens: List[str] = None,
+               render_scale: float = 2.0,
                ax: Axes = None) -> PIL.Image:
         """
         Draws an image with annotations overlaid.
@@ -239,6 +271,7 @@ class NuImages:
         :param box_tokens: List of bounding box annotation tokens. If given only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given only these annotations are drawn.
         :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
+        :param render_scale: The scale at which the image will be rendered.
         :return: Image object.
         """
         # Get image data.
@@ -249,9 +282,6 @@ class NuImages:
             return im
 
         # Initialize drawing.
-        #try:
-        #    font = PIL.ImageFont.truetype('Ubuntu-B.ttf', 15)
-        #except OSError:
         font = PIL.ImageFont.load_default()
         draw = PIL.ImageDraw.Draw(im, 'RGBA')
 
@@ -290,9 +320,9 @@ class NuImages:
             draw.text((bbox[0], bbox[1]), name, font=font)
             draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-        # Plot the image
+        # Plot the image.
         if ax is None:
-            _, ax = plt.subplots(1, 1, figsize=(9, 16))
+            _, ax = plt.subplots(1, 1, figsize=(9 * render_scale, 16 * render_scale))
         ax.imshow(im)
         (width, height) = im.size
         ax.set_xlim(0, width)
