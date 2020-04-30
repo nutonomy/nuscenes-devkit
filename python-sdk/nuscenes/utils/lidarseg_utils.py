@@ -1,10 +1,31 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy as np
 import colorsys
+
+
+def get_stats(points_label: np.array, num_classes: int) -> List[int]:
+    """
+    Get frequency of each label in a point cloud.
+    :param num_classes: The number of classes.
+    :param points_label: A numPy array which contains the labels of the point cloud; e.g. np.array([2, 1, 34, ..., 38])
+    :returns: An array which contains the counts of each label in the point cloud. The index of the point cloud
+              corresponds to the index of the class label. E.g. [0, 2345, 12, 451] means that there are no points in
+              class 0, there are 2345 points in class 1, there are 12 points in class 2 etc.
+    """
+
+    lidarseg_counts = [0] * num_classes
+
+    indices = np.bincount(points_label)
+    ii = np.nonzero(indices)[0]
+
+    for class_idx, class_count in zip(ii, indices[ii]):
+        lidarseg_counts[class_idx] += class_count  # increment the count for the particular class name
+
+    return lidarseg_counts
 
 
 def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int] = (640, 360), dpi: int = 100):

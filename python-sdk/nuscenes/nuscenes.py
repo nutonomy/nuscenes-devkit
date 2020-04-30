@@ -24,7 +24,7 @@ from tqdm import tqdm
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
-from nuscenes.utils.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2
+from nuscenes.utils.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -387,6 +387,41 @@ class NuScenes:
             return np.array([np.nan, np.nan, np.nan])
         else:
             return pos_diff / time_diff
+
+    def get_sample_lidarseg_stats(self, sample_token: str, mapping: dict, sort_counts: bool = True) -> None:
+        """
+        TODO: docstring
+        :param sample_token:
+        :param mapping:
+                {1: 'class1', 2: 'class2', 3: 'class3', ...}
+        :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
+                            the stats will be printed alphabetically according to class name.
+        """
+        assert hasattr(self, 'lidarseg'), 'WARNING: You have no lidarseg data; unable to get ' \
+                                          'statistics for segmentation of the point cloud.'
+
+        idx2classnames = [name for _, name in mapping.items()]
+
+        sample_rec = self.get('sample', sample_token)
+        ref_sd_token = sample_rec['data']['LIDAR_TOP']
+        ref_sd_record = self.get('sample_data', ref_sd_token)
+
+        # Ensure that lidar pointcloud is from a keyframe
+        assert ref_sd_record['is_key_frame'] is True, 'ERROR: Only pointclouds which are keyframes have ' \
+                                                      'lidar segmentation labels. Rendering aborted.'
+
+        lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
+        points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+        lidarseg_counts = get_stats(points_label, len(mapping))
+
+        print('===== Statistics for {} ====='.format(sample_token))
+        if sort_counts:
+            for count, class_name in sorted(zip(lidarseg_counts, idx2classnames)):
+                print('{:35} n={:12,}'.format(class_name, count))
+        else:
+            for class_name, count in sorted(zip(idx2classnames, lidarseg_counts)):
+                print('{:35} n={:12,}'.format(class_name, count))
+        print('======')
 
     def list_categories(self) -> None:
         self.explorer.list_categories()

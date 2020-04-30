@@ -1,109 +1,12 @@
 print('__file__={0:<35} | __name__={1:<20} | __package__={2:<20}'.format(__file__,__name__,str(__package__)))
-from functools import partial
+import argparse
 import json
-import multiprocessing as mp
 import os
-import time
 
-import matplotlib.pyplot as plt
-import numpy as np
 from nuscenes import NuScenes
-import tqdm
-
-
-def get_sample_lidarseg_stats(self, sample_token: str, mapping):
-    assert hasattr(self.nusc, 'lidarseg'), 'WARNING: You have no lidarseg data; unable to get ' \
-                                           'statistics for segmentation of the point cloud.'
-
-    sample_rec = self.nusc.get('sample', sample_token)
-    ref_sd_token = sample_rec['data']['LIDAR_TOP']
-    ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
-
-    lidarseg_labels_filename = os.path.join(self.nusc.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
-    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-    lidarseg_stats = get_stats(points_label)
-
-
-def get_stats(points_label: np.array, mapping = None) -> np.array:
-    """
-    Get frequency of each label in a point cloud.
-    :param mapping: A list of dictionaries containing the details of the classes (e.g. name, label).
-    :param points_label: A numPy array which contains the labels of the point cloud; e.g. np.array([2, 1, 34, ..., 38])
-    :returns: An array which contains the counts of each label in the point cloud. The index of the point cloud
-              corresponds to the index of the class label. E.g. [0, 2345, 12, 451] means that there are no points in class 0,
-              there are 2345 points in class 1, there are 12 points in class 2 etc.
-    """
-
-    lidarseg_counts = [0] * len(mapping)
-
-    indices = np.bincount(points_label)
-    ii = np.nonzero(indices)[0]
-
-    for class_idx, class_count in zip(ii, indices[ii]):
-        # print(class_idx, class_count)
-        lidarseg_counts[class_idx] += class_count  # increment the count for the particular class name
-    # print(lidarseg_counts)
-
-    return lidarseg_counts
 
 
 def main(nusc):
-    # nusc.list_categories()
-    # print (nusc.lidarseg[0])
-    # print (nusc.sample_annotation[0])
-
-    # for classname, freq in sorted(lidarseg_counts.items()):
-    #     print('{:27} nbr_points={:9}'.format(classname[:27], freq))
-    get_stats()
-
-
-def load_table(path_to_json) -> dict:
-    """ Loads a table. """
-    with open(path_to_json) as f:
-        table = json.load(f)
-    return table
-
-
-def make_mini_from_lidarseg(nusc):
-    lidar_seg_annots = nusc.lidarseg
-
-    in_mini = []
-    in_lidarseg = []
-
-    count = 0
-    for i in range(len(lidar_seg_annots)):
-        try_lidar_tok = lidar_seg_annots[i]['sample_data_token']
-
-        try:
-            entry = nusc.get('sample_data', try_lidar_tok)
-            in_mini.append(entry)
-            in_lidarseg.append((lidar_seg_annots[i]))
-            count += 1
-        except:
-            continue
-
-    assert len(in_mini) == count
-    print('%d of lidarseg annotations exist in v1.0-mini' % count)
-
-    return in_mini, in_lidarseg
-
-
-def get_single_sample_token(nusc, in_mini, to_check=257):
-    # print(in_lidarseg[to_check])
-    print(in_mini[to_check])
-
-    sample = nusc.get('sample', in_mini[to_check]['sample_token'])
-    # print(sample)
-    scene = nusc.get('scene', sample['scene_token'])
-    # print(scene)
-    print(scene['name'])
-
-    sample_token = in_mini[to_check]['sample_token']
-
-    return sample_token
-
-
-def test_viz(nusc):
     in_mini, in_lidarseg = make_mini_from_lidarseg(nusc)
 
     to_check = 8
@@ -113,6 +16,11 @@ def test_viz(nusc):
     # nusc.render_scene_channel(nusc.scene[-1]['token'], 'CAM_FRONT', (1280, 720))
     # nusc.render_scene(nusc.scene[0]['token'])
 
+    mapping_temp = dict()  # Psuedo mapping
+    for i in range(41):
+        mapping_temp[i] = str(i)
+    nusc.get_sample_lidarseg_stats(sample_token, mapping_temp, sort_counts=True)
+    quit()
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
     sample_data_token = sample['data']['LIDAR_TOP']
@@ -161,8 +69,60 @@ def test_viz(nusc):
     # ---------- /render scene for all cameras with lidarseg labels ----------
 
 
-if __name__ == '__main__':
-    nusc_class = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
+def load_table(path_to_json) -> dict:
+    """ Loads a table. """
+    with open(path_to_json) as f:
+        table = json.load(f)
+    return table
 
-    main(nusc_class)
-    # test_viz(nusc_class)
+
+def make_mini_from_lidarseg(nusc):
+    lidar_seg_annots = nusc.lidarseg
+
+    in_mini = []
+    in_lidarseg = []
+
+    count = 0
+    for i in range(len(lidar_seg_annots)):
+        try_lidar_tok = lidar_seg_annots[i]['sample_data_token']
+
+        try:
+            entry = nusc.get('sample_data', try_lidar_tok)
+            in_mini.append(entry)
+            in_lidarseg.append((lidar_seg_annots[i]))
+            count += 1
+        except:
+            continue
+
+    assert len(in_mini) == count
+    print('%d of lidarseg annotations exist in v1.0-mini' % count)
+
+    return in_mini, in_lidarseg
+
+
+def get_single_sample_token(nusc, in_mini, to_check=257):
+    # print(in_lidarseg[to_check])
+    print(in_mini[to_check])
+
+    sample = nusc.get('sample', in_mini[to_check]['sample_token'])
+    # print(sample)
+    scene = nusc.get('scene', sample['scene_token'])
+    # print(scene)
+    print(scene['name'])
+
+    sample_token = in_mini[to_check]['sample_token']
+
+    return sample_token
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Test drive the visualizations for the nuScenes-lidarseg devkit')
+    parser.add_argument('-d', '--data_dir', type=str, default='/data/sets/nuscenes',
+                        help='Path to where the lidarseg dataset is.')
+    parser.add_argument('-v', '--version', type=str, default='v1.0-mini',
+                        help='Version of nuScenes; only v1.0-trainval, v1.0-test or v1.0-mini.')
+    args = parser.parse_args()
+
+    nusc_obj = NuScenes(version=args.version, dataroot=args.data_dir, verbose=True)
+
+    main(nusc_obj)
