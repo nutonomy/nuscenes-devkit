@@ -65,9 +65,6 @@ class NuImages:
             self.object_ann = self.__load_table__('object_ann')
             self.surface_ann = self.__load_table__('surface_ann')
 
-        # Initialize NuImagesExplorer class.
-        self.explorer = NuImagesExplorer(self)
-
     def __getattr__(self, attr_name: str) -> Any:
         """
         Implement lazy loading for the database tables. Otherwise throw the default error.
@@ -128,15 +125,6 @@ class NuImages:
         return table
 
 
-class NuImagesExplorer:
-    """
-    Helper class to list and visualize NuImages data.
-    These are meant to serve as tutorials and templates for working with the data.
-    """
-
-    def __init__(self, nuim: NuImages):
-        self.nuim = nuim
-
     def list_attributes(self) -> None:
         pass # TODO
 
@@ -172,8 +160,8 @@ class NuImagesExplorer:
         :return: Image object.
         """
         # Get image data.
-        image = self.nuim.get('image', image_token)
-        im_path = osp.join(self.nuim.dataroot, image['filename_jpg'])
+        image = self.get('image', image_token)
+        im_path = osp.join(self.dataroot, image['filename_jpg'])
         im = PIL.Image.open(im_path)
         if not with_annotations:
             return im
@@ -186,7 +174,7 @@ class NuImagesExplorer:
         draw = PIL.ImageDraw.Draw(im, 'RGBA')
 
         # Load stuff / background regions.
-        surface_anns = [o for o in self.nuim.surface_ann if o['image_token'] == image_token]
+        surface_anns = [o for o in self.surface_ann if o['image_token'] == image_token]
         if surface_tokens is not None:
             surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
@@ -194,14 +182,14 @@ class NuImagesExplorer:
         for ann in surface_anns:
             # Get color and mask
             category_token = ann['category_token']
-            category_name = self.nuim.get('category', category_token)['name']
+            category_name = self.get('category', category_token)['name']
             color = default_color(category_name)
             mask = mask_decode(ann['mask'])
 
             draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Load object instances.
-        object_anns = [o for o in self.nuim.object_ann if o['image_token'] == image_token]
+        object_anns = [o for o in self.object_ann if o['image_token'] == image_token]
         if box_tokens is not None:
             object_anns = [o for o in object_anns if o['token'] in box_tokens]
 
@@ -209,11 +197,11 @@ class NuImagesExplorer:
         for ann in object_anns:
             # Get color, box, mask and name.
             category_token = ann['category_token']
-            category_name = self.nuim.get('category', category_token)['name']
+            category_name = self.get('category', category_token)['name']
             color = default_color(category_name)
             bbox = ann['bbox']
             mask = mask_decode(ann['mask'])
-            name = annotation_name(self.nuim.attribute, category_name, with_attributes=with_attributes)
+            name = annotation_name(self.attribute, category_name, with_attributes=with_attributes)
 
             # Draw rectangle, text and mask.
             draw.rectangle(bbox, outline=color)
