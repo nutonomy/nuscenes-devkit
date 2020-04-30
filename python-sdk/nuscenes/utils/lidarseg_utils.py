@@ -99,15 +99,20 @@ def get_colormap() -> np.array:
     return colormap
 
 
-def get_arbitrary_colormap(num_classes) -> np.array:
+def get_arbitrary_colormap(num_classes, random_seed: int = 2020) -> np.array:
+    """
+    Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
+    :param num_classes: Number of colors to create.
+    :param random_seed: The random see to use.
+    """
     hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
     colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
 
-    np.random.seed(2020)  # Fix seed for consistent colors across runs
+    np.random.seed(random_seed)  # Fix seed for consistent colors across runs
     np.random.shuffle(colormap)  # Shuffle colors to de-correlate adjacent classes
     np.random.seed(None)  # Reset seed to default
 
-    colormap = [(0, 0, 0)] + colormap  # TO-DO no need to add a zero class once lidarseg labels start with 0
+    colormap = [(0, 0, 0)] + colormap  # TODO no need to add a zero class once lidarseg labels start with 0
     colormap = np.array(colormap)  # colormap is RGB with values for each channel normalized between 0 and 1
 
     return colormap

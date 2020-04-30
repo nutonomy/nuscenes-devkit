@@ -416,9 +416,9 @@ class NuScenes:
                                                  verbose=verbose)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
-                      out_path: str = None, show_lidarseg_labels: bool = False) -> None:
+                      out_path: str = None, show_lidarseg_labels: bool = False, verbose: bool = True) -> None:
         self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps,
-                                    out_path=out_path, show_lidarseg_labels=show_lidarseg_labels)
+                                    out_path=out_path, show_lidarseg_labels=show_lidarseg_labels, verbose=verbose)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
@@ -456,7 +456,7 @@ class NuScenes:
     def render_camera_channel_with_pointclouds(self, scene_token: str, camera_channel: str, out_folder: str = None,
                                                filter_lidarseg_labels: Iterable[int] = None,
                                                render_if_no_points: bool = True, verbose=True,
-                                               imsize: Tuple[int, int] = (640, 360), freq: float = 10) -> None:
+                                               imsize: Tuple[int, int] = (640, 360), freq: float = 2) -> None:
         self.explorer.render_camera_channel_with_pointclouds(scene_token, camera_channel, out_folder,
                                                              filter_lidarseg_labels,
                                                              render_if_no_points, verbose,
@@ -626,24 +626,22 @@ class NuScenesExplorer:
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
         pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
         if pointsensor['sensor_modality'] == 'lidar':
-            if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-                print('WARNING: You have no lidarseg data; point cloud will be colored according to distance from ego '
-                      'vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
-                show_lidarseg_labels = False
+            if show_lidarseg_labels:
+                if not hasattr(self.nusc, 'lidarseg'):
+                    print('WARNING: You have no lidarseg data; point cloud will be colored according to distance '
+                          'from ego vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
+                    show_lidarseg_labels = False
 
-            if show_lidarseg_labels and pointsensor['is_key_frame'] is not True:
                 # Ensure that lidar pointcloud is from a keyframe
-                print('ERROR: Only pointclouds which are keyframes have lidar segmentation labels. Rendering '
-                      'will be aborted.')
-                quit()
+                assert pointsensor['is_key_frame'] is True, 'ERROR: Only pointclouds which are keyframes have ' \
+                                                            'lidar segmentation labels. Rendering aborted.'
 
-            if show_lidarseg_labels and render_intensity:
-                print(
-                    'WARNING: You have set both render_intensity and show_lidarseg_labels to True; point cloud will be '
-                    'colored according to the lidar segmentation labels.')
-                render_intensity = False
+                if render_intensity:
+                    print('WARNING: You have set both render_intensity and show_lidarseg_labels to True; point cloud '
+                          'will be colored according to the lidar segmentation labels.')
+                    render_intensity = False
 
-            pc = LidarPointCloud.from_file(pcl_path)
+                pc = LidarPointCloud.from_file(pcl_path)
         else:
             pc = RadarPointCloud.from_file(pcl_path)
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
@@ -789,7 +787,8 @@ class NuScenesExplorer:
                       box_vis_level: BoxVisibility = BoxVisibility.ANY,
                       nsweeps: int = 1,
                       out_path: str = None,
-                      show_lidarseg_labels: bool = False) -> None:
+                      show_lidarseg_labels: bool = False,
+                      verbose: bool = True) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
@@ -797,6 +796,7 @@ class NuScenesExplorer:
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
         :param show_lidarseg_labels: Whether to show lidar segmentations labels or not.
+        :param verbose: Whether to show the rendered sample in a window or not.
         """
         record = self.nusc.get('sample', token)
 
@@ -829,12 +829,13 @@ class NuScenesExplorer:
                 self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
             ax.set_title('Fused RADARs')
 
+        # Plot lidar into a single subplot
         if len(lidar_data) > 0:
             for (_, sd_token), ax in zip(lidar_data.items(), axes.flatten()[num_radar_plots:]):
                 self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
                                         show_lidarseg_labels=show_lidarseg_labels)
 
-        # Plot camera and lidar in separate subplots.
+        # Plot cameras in separate subplots.
         for (_, sd_token), ax in zip(camera_data.items(), axes.flatten()[num_radar_plots + num_lidar_plots:]):
             if not show_lidarseg_labels:
                 self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
@@ -850,14 +851,18 @@ class NuScenesExplorer:
                                                 pointsensor_channel='LIDAR_TOP',
                                                 camera_channel=sensor_channel,
                                                 show_lidarseg_labels=show_lidarseg_labels,
-                                                ax=ax)
+                                                ax=ax, verbose=False)
 
         # Change plot settings and write to disk.
         axes.flatten()[-1].axis('off')
         plt.tight_layout()
         fig.subplots_adjust(wspace=0, hspace=0)
+
         if out_path is not None:
             plt.savefig(out_path)
+
+        if verbose:
+            plt.show()
 
     def render_ego_centric_map(self,
                                sample_data_token: str,
@@ -960,23 +965,21 @@ class NuScenesExplorer:
             ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
-                if show_lidarseg_labels and not hasattr(self.nusc, 'lidarseg'):
-                    print('WARNING: You have no lidarseg data; point cloud will be colored according to distance '
-                          'from ego vehicle instead of segmentation labels.')
-                    show_lidarseg_labels = False
-
-                if show_lidarseg_labels and sd_record['is_key_frame'] is not True:
-                    # Ensure that lidar pointcloud is from a keyframe
-                    print('ERROR: Only pointclouds which are keyframes have lidar segmentation labels. Rendering '
-                          'will be aborted.')
-                    quit()
-
-                if show_lidarseg_labels and nsweeps > 1:
-                    print('WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps '
-                          'will be defaulted to 1')
-                    nsweeps = 1
-
                 if show_lidarseg_labels:
+                    if not hasattr(self.nusc, 'lidarseg'):
+                        print('WARNING: You have no lidarseg data; point cloud will be colored according to distance '
+                              'from ego vehicle instead of segmentation labels.')
+                        show_lidarseg_labels = False
+
+                    # Ensure that lidar pointcloud is from a keyframe
+                    assert sd_record['is_key_frame'] is True, 'ERROR: Only pointclouds which are keyframes have ' \
+                                                              'lidar segmentation labels. Rendering aborted.'
+
+                    if nsweeps > 1:
+                        print('WARNING: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps '
+                              'will be defaulted to 1')
+                        nsweeps = 1
+
                     pcl_path = osp.join(self.nusc.dataroot, ref_sd_record['filename'])
                     pc = LidarPointCloud.from_file(pcl_path)
 
@@ -1521,7 +1524,7 @@ class NuScenesExplorer:
                                                render_if_no_points: bool = True,
                                                verbose: bool = True,
                                                imsize: Tuple[int, int] = (640, 360),
-                                               freq: float = 10) -> None:
+                                               freq: float = 2) -> None:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.

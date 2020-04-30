@@ -12,9 +12,9 @@ import tqdm
 
 
 def get_sample_lidarseg_stats(self, sample_token: str, mapping):
-    if not hasattr(self.nusc, 'lidarseg'):
-        print('WARNING: You have no lidarseg data; under able to get statistics for segmentation of the point cloud.')
-        quit()
+    assert hasattr(self.nusc, 'lidarseg'), 'WARNING: You have no lidarseg data; unable to get ' \
+                                           'statistics for segmentation of the point cloud.'
+
     sample_rec = self.nusc.get('sample', sample_token)
     ref_sd_token = sample_rec['data']['LIDAR_TOP']
     ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
@@ -47,25 +47,14 @@ def get_stats(points_label: np.array, mapping = None) -> np.array:
     return lidarseg_counts
 
 
-def main(nusc_class):
+def main(nusc):
     # nusc.list_categories()
     # print (nusc.lidarseg[0])
     # print (nusc.sample_annotation[0])
 
     # for classname, freq in sorted(lidarseg_counts.items()):
     #     print('{:27} nbr_points={:9}'.format(classname[:27], freq))
-
-    classes = [40, 41]
-    out_folder = os.path.expanduser('~/Desktop/for_VOs')
-    scene_tokens = ['de943e246dad4ad686de98008a634ecf', '6e81ee0f64274490a403bbd6482c2bf9']
-    for class_to_render in classes:
-        print('Checking class {}...'.format(class_to_render))
-        out_folder_class = os.path.join(out_folder, str(class_to_render))
-        if not os.path.exists(out_folder_class):
-            os.makedirs(out_folder_class)
-        for scene_token in scene_tokens:
-            nusc_class.render_scene_with_pointclouds_for_all_cameras(scene_token, out_folder_class,
-                                                                     [class_to_render], (1280, 720))
+    get_stats()
 
 
 def load_table(path_to_json) -> dict:
@@ -73,53 +62,6 @@ def load_table(path_to_json) -> dict:
     with open(path_to_json) as f:
         table = json.load(f)
     return table
-
-'''
-def render_cams_with_lidarseg_for_all_scenes(nusc, out_root, filter_classes=None, do_multiprocessing=True) -> None:
-    assert os.path.isdir(out_root), 'ERROR: {} does not exist.'.format(out_root)
-
-    cam_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
-                    'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
-
-    for cam_channel in cam_channels:
-        print('Working on {}...'.format(cam_channel))
-        out_subfolder = os.path.join(out_root, cam_channel)
-
-        start_time = time.time()
-        procs = []
-        func = partial(render_scene_channel_with_pointclouds,
-                       nusc=nusc, camera_channel=cam_channel,
-                       filter_lidarseg_labels=filter_classes,
-                       out_folder=out_subfolder)
-
-        for scene_entry in nusc.scene:
-            if do_multiprocessing:
-                proc = mp.Process(target=func, args=(scene_entry['token'],))
-                procs.append(proc)
-                proc.start()
-            else:
-                render_scene_channel_with_pointclouds(scene_entry['token'], nusc, cam_channel, filter_classes,
-                                                      out_subfolder)
-
-        if do_multiprocessing:
-            for proc in procs:
-                proc.join()
-                proc.close()
-
-        num_converted = len([name for name in os.listdir(out_subfolder)])
-
-        print('Rendered {} images for {} in {:.3f} minutes'.format(
-            num_converted, cam_channel, (time.time() - start_time) / 60))
-
-        samples_folder = os.path.join(nusc.dataroot, 'samples', cam_channel)
-        num_originals = len([name for name in os.listdir(samples_folder)
-                             if os.path.splitext(name)[1] in ['.jpg', '.png', '.JPG', '.PNG']])
-
-        # TODO uncomment after done with VOs
-        # assert num_converted == num_originals, 'ERROR: There were {} originals in {} but {} were converted and ' \
-        #                                        'stored at {}. Pls check.'.format(num_originals, samples_folder,
-        #                                                                          num_converted, out_subfolder)
-'''
 
 
 def make_mini_from_lidarseg(nusc):
@@ -170,13 +112,6 @@ def test_viz(nusc):
 
     # nusc.render_scene_channel(nusc.scene[-1]['token'], 'CAM_FRONT', (1280, 720))
     # nusc.render_scene(nusc.scene[0]['token'])
-    # ---------- render scene for all cameras with lidarseg labels ----------
-    nusc.render_scene_with_pointclouds_for_all_cameras(nusc.scene[3]['token'],
-                                                       out_path = os.path.expanduser('~/Desktop/all_cams_lidarseg.avi'),
-                                                       filter_lidarseg_labels=[32, 1],
-                                                       imsize=(640, 360))
-    # ---------- /render scene for all cameras with lidarseg labels ----------
-    quit()
 
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
@@ -206,18 +141,12 @@ def test_viz(nusc):
 
     # ---------- render sample (i.e. lidar, radar and all cameras) ----------
     nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'),
-                       show_lidarseg_labels=True)
+                       show_lidarseg_labels=True, verbose=False)
     # ---------- /render sample (i.e. lidar, radar and all cameras) ----------
-
-    # ---------- render scene for a given sensor ----------
-    nusc.render_scene_channel(nusc.scene[0]['token'],
-                              channel='CAM_FRONT',
-                              out_path=os.path.expanduser('~/Desktop/test4.avi'))
-    # ---------- /render scene for a given sensor ----------
 
     # ---------- render scene for a given cam sensor with lidarseg labels ----------
     nusc.render_camera_channel_with_pointclouds(nusc.scene[0]['token'], 'CAM_BACK',
-                                                out_folder=os.path.expanduser('~/Desktop/testing/my_rendered_scene.avi'),
+                                                out_folder=os.path.expanduser('~/Desktop/my_rendered_scene.avi'),
                                                 filter_lidarseg_labels=[6],  # [32, 1],
                                                 render_if_no_points=True,
                                                 verbose=True,
@@ -235,5 +164,5 @@ def test_viz(nusc):
 if __name__ == '__main__':
     nusc_class = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
 
-    # main(nusc_class)
-    test_viz(nusc_class)
+    main(nusc_class)
+    # test_viz(nusc_class)
