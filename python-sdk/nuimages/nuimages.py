@@ -5,6 +5,7 @@ import os.path as osp
 import json
 import time
 from typing import Any, List, Dict
+from collections import defaultdict
 
 import PIL
 import PIL.ImageDraw
@@ -29,7 +30,7 @@ class NuImages:
                  version: str = 'v0.1',  # TODO: Add split
                  dataroot: str = '/data/sets/nuimages',
                  lazy: bool = True,
-                 verbose: bool = True):
+                 verbose: bool = False):
         """
         Loads database and creates reverse indexes and shortcuts.
         :param version: Version to load (e.g. "v0.1", ...).
@@ -124,9 +125,25 @@ class NuImages:
 
         return table
 
-
     def list_attributes(self) -> None:
-        pass # TODO
+        """
+        List all attributes and the number of annotations with each attribute.
+        """
+
+        # Count attributes.
+        attribute_freqs = defaultdict(lambda: 0)
+        for object_ann in self.object_ann:
+            for attribute_token in object_ann['attribute_tokens']:
+                attribute_freqs[attribute_token] += 1
+
+        # Print to stdout.
+        print('')
+        print('Listing attributes...')
+        format_str = '{:11} {:24.24} {:48.48}'
+        print(format_str.format('Annotations', 'Name', 'Description'))
+        for attribute in self.attribute:
+            print(format_str.format(
+                attribute_freqs[attribute['token']], attribute['name'], attribute['description']))
 
     def list_cameras(self) -> None:
         pass # TODO
