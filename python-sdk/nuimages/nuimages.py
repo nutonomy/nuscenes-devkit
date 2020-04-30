@@ -4,7 +4,7 @@ import sys
 import os.path as osp
 import json
 import time
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 from collections import defaultdict
 
 import PIL
@@ -58,13 +58,13 @@ class NuImages:
         # Load tables directly if requested.
         if not lazy:
             # Explicitly init tables to help the IDE determine valid class members.
-            self.__load_table__('attribute')
-            self.__load_table__('camera')
-            self.__load_table__('category')
-            self.__load_table__('image')
-            self.__load_table__('log')
-            self.__load_table__('object_ann')
-            self.__load_table__('surface_ann')
+            self.attribute = self.__load_table__('attribute')
+            self.camera = self.__load_table__('camera')
+            self.category = self.__load_table__('category')
+            self.image = self.__load_table__('image')
+            self.log = self.__load_table__('log')
+            self.object_ann = self.__load_table__('object_ann')
+            self.surface_ann = self.__load_table__('surface_ann')
 
     def __getattr__(self, attr_name: str) -> Any:
         """
@@ -73,7 +73,7 @@ class NuImages:
         :return: The dictionary that represents that table.
         """
         if attr_name in self.table_names:
-            self.__load_table__(attr_name)
+            self.load_table(attr_name)
             return self.__getattribute__(attr_name)
         else:
             raise AttributeError("Error: %r object has no attribute %r" % (self.__class__.__name__, attr_name))
@@ -109,25 +109,30 @@ class NuImages:
         """ Returns the folder where the tables are stored for the relevant version. """
         return osp.join(self.dataroot, self.version)
 
-    def __load_table__(self, table_name) -> None:
-        """ Loads a table. """
+    def load_table(self, table_name) -> None:
+        """ Load a table, if it isn't already loaded. """
 
-        # Check if the table is already loaded.
         if table_name in self.__dict__.keys():
             return
         else:
-            start_time = time.time()
-            table_path = osp.join(self.table_root, '{}.json'.format(table_name))
-            assert osp.exists(table_path), 'Error: Table %s does not exist!' % table_name
-            with open(table_path) as f:
-                table = json.load(f)
-            end_time = time.time()
-
-            # Print a message to stdout.
-            if self.verbose:
-                print("Loaded {} {}(s) in {:.3f}s,".format(len(table), table_name, end_time - start_time))
-
+            table = self.__load_table__(table_name)
             self.__setattr__(table_name, table)
+
+    def __load_table__(self, table_name) -> List[dict]:
+        """ Load a table and return it. """
+
+        start_time = time.time()
+        table_path = osp.join(self.table_root, '{}.json'.format(table_name))
+        assert osp.exists(table_path), 'Error: Table %s does not exist!' % table_name
+        with open(table_path) as f:
+            table = json.load(f)
+        end_time = time.time()
+
+        # Print a message to stdout.
+        if self.verbose:
+            print("Loaded {} {}(s) in {:.3f}s,".format(len(table), table_name, end_time - start_time))
+
+        return table
 
     def list_attributes(self) -> None:
         """
@@ -135,8 +140,8 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.__load_table__('attribute')
-            self.__load_table__('object_ann')
+            self.load_table('attribute')
+            self.load_table('object_ann')
 
         # Count attributes.
         attribute_freqs = defaultdict(lambda: 0)
@@ -158,14 +163,14 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.__load_table__('image')
-            self.__load_table__('camera')
+            self.load_table('image')
+            self.load_table('camera')
 
         # Count cameras.
         camera_freqs = defaultdict(lambda: 0)
+        image_freqs = defaultdict(lambda: 0)
         for camera in self.camera:
             camera_freqs[camera['channel']] += 1
-        image_freqs = defaultdict(lambda: 0)
         for image in self.image:
             camera = self.get('camera', image['camera_token'])
             image_freqs[camera['channel']] += 1
@@ -181,7 +186,35 @@ class NuImages:
                 camera_freq, image_freq, channel))
 
     def list_categories(self) -> None:
-        pass # TODO
+        """
+        List all categories and the number of object_anns and surface_anns for them.
+        """
+        # Load data if in lazy load to avoid confusing outputs.
+        if self.lazy:
+            self.load_table('object_ann')
+            self.load_table('surface_ann')
+            self.load_table('category')
+
+        # Count object_anns and surface_anns.
+        object_freqs = defaultdict(lambda: 0)
+        surface_freqs = defaultdict(lambda: 0)
+        for object_ann in self.object_ann:
+            object_freqs[object_ann['category_token']] += 1
+        for surface_ann in self.surface_ann:
+            surface_freqs[surface_ann['category_token']] += 1
+
+        # Print to stdout.
+        format_str = '{:6} {:6} {:24.24} {:48.48}'
+        print()
+        print(format_str.format('Object_anns', 'Surface_anns', 'Name', 'Description'))
+        for category in self.category:
+            category_token = category['token']
+            object_freq = object_freqs[category_token]
+            surface_freq = surface_freqs[category_token]
+            name = category['name']
+            description = category['description']
+            print(format_str.format(
+                object_freq, surface_freq, name, description))
 
     def list_images(self) -> None:
         pass # TODO
