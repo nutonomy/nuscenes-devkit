@@ -9,7 +9,11 @@ from pycocotools import mask as cocomask
 
 
 def default_color(category_name: str) -> Tuple[int, int, int]:
-    """ Provides a default colors based on the category names. """
+    """
+    Provides a default colors based on the category names.
+    :param category_name: The name of the category.
+    :returns: A tuple of RGB values.
+    """
     if 'cycle' in category_name:
         return 255, 61, 99  # Red
     elif 'vehicle' in category_name:
@@ -26,7 +30,7 @@ def annotation_name(attributes: List[dict],
                     category_name: str,
                     with_attributes: bool = False) -> str:
     """
-    Returns the "name" of an annotation, including or not attribute states.
+    Returns the "name" of an annotation, optionally including the attributes.
     :param attributes: The attribute dictionary.
     :param category_name: Name of the object category.
     :param with_attributes: Whether to print the attributes alongside the category name.

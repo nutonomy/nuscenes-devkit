@@ -29,13 +29,13 @@ class NuImages:
     """
 
     def __init__(self,
-                 version: str = 'v0.1',  # TODO: Add split
+                 version: str = 'v0.1-train',
                  dataroot: str = '/data/sets/nuimages',
                  lazy: bool = True,
                  verbose: bool = False):
         """
         Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v0.1", ...).
+        :param version: Version to load (e.g. "v0.1-train", "v0.1-val").
         :param dataroot: Path to the tables and data.
         :param lazy: Whether to use lazy loading for the database tables.
         :param verbose: Whether to print status messages during load.
@@ -50,7 +50,7 @@ class NuImages:
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
         if verbose:
-            print("======\nLoading NuScenes tables for version {}...".format(self.version))
+            print("======\nLoading nuImages tables for version {}...".format(self.version))
 
         # Init reverse indexing.
         self._token2ind: Dict[str, Optional[dict]] = dict()
@@ -127,6 +127,8 @@ class NuImages:
     def __load_table__(self, table_name) -> List[dict]:
         """
         Load a table and return it.
+        :param table_name: The name of the table to load.
+        :returns: The table dictionary.
         """
 
         start_time = time.time()
@@ -196,6 +198,7 @@ class NuImages:
     def list_categories(self, image_tokens: List[str] = None) -> None:
         """
         List all categories and the number of object_anns and surface_anns for them.
+        :param image_tokens: A list of image tokens for which category stats will be shown.
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
