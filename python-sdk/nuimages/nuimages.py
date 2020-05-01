@@ -1,10 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
+
 import sys
 import os.path as osp
 import json
 import time
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
 from collections import defaultdict
 
 import PIL
@@ -52,7 +53,7 @@ class NuImages:
             print("======\nLoading NuScenes tables for version {}...".format(self.version))
 
         # Init reverse indexing.
-        self._token2ind: Dict[str, dict] = dict()
+        self._token2ind: Dict[str, Optional[dict]] = dict()
         for table in self.table_names:
             self._token2ind[table] = None
 
@@ -258,21 +259,22 @@ class NuImages:
                 image_freq, logfile, location))
 
     def render_image(self,
-               image_token: str,
-               with_annotations: bool = True,
-               with_attributes: bool = False,
-               box_tokens: List[str] = None,
-               surface_tokens: List[str] = None,
-               render_scale: float = 2.0,
-               ax: Axes = None) -> PIL.Image:
+                     image_token: str,
+                     with_annotations: bool = True,
+                     with_attributes: bool = False,
+                     box_tokens: List[str] = None,
+                     surface_tokens: List[str] = None,
+                     render_scale: float = 2.0,
+                     ax: Axes = None) -> PIL.Image:
         """
         Draws an image with annotations overlaid.
+        :param image_token: The token of the image to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
-        :param box_tokens: List of bounding box annotation tokens. If given only these annotations are drawn.
-        :param surface_tokens: List of surface annotation tokens. If given only these annotations are drawn.
-        :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
+        :param box_tokens: List of bounding box annotation tokens. If given, only these annotations are drawn.
+        :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered.
+        :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
         :return: Image object.
         """
         # Get image data.
