@@ -1733,7 +1733,8 @@ class NuScenesExplorer:
 
         slate = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
         save_as_vid = False
-        if out_path is not None and os.path.splitext(out_path)[-1] == '.avi':
+        if out_path is not None:
+            assert os.path.splitext(out_path)[-1] == '.avi', 'ERROR: Video can only be saved in .avi format.'
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(out_path, fourcc, freq, slate.shape[1::-1])
             save_as_vid = True
