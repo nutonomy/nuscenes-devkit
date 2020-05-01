@@ -103,6 +103,7 @@ To install the required packages, run the following command in your favourite vi
 ```
 pip install -r setup/requirements.txt
 ```
+**Note:** The requirements file is internally divided into base requirements (`base`) and requirements specific to certain products or challenges (`nuimages`, `prediction` and `tracking`). If you only plan to use a subset of the codebase, feel free to comment out the lines that you do not need.
 
 ## Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder.
