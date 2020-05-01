@@ -80,6 +80,12 @@ class NuScenes:
             self.lidarseg = self.__load_table__('lidarseg')
             self.table_names.append('lidarseg')
 
+            # TODO: once mapping is finalized and labels are converted, loading should be done from a master json
+            lidaseg_categories = self.__load_table__('category_lidarseg')
+            self.lidarseg_idx2name_mapping = dict()
+            for lidarseg_category in lidaseg_categories:
+                self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
+
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
             self.image_annotations = self.__load_table__('image_annotations')
@@ -388,19 +394,16 @@ class NuScenes:
         else:
             return pos_diff / time_diff
 
-    def get_sample_lidarseg_stats(self, sample_token: str, mapping: dict, sort_counts: bool = True) -> None:
+    def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True) -> None:
         """
-        TODO: docstring
-        :param sample_token:
-        :param mapping:
-                {1: 'class1', 2: 'class2', 3: 'class3', ...}
+        Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
+        points in the pointcloud will not be printed.
+        :param sample_token: Sample token.
         :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
                             the stats will be printed alphabetically according to class name.
         """
         assert hasattr(self, 'lidarseg'), 'WARNING: You have no lidarseg data; unable to get ' \
                                           'statistics for segmentation of the point cloud.'
-
-        idx2classnames = [name for _, name in mapping.items()]
 
         sample_rec = self.get('sample', sample_token)
         ref_sd_token = sample_rec['data']['LIDAR_TOP']
@@ -412,15 +415,24 @@ class NuScenes:
 
         lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
         points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-        lidarseg_counts = get_stats(points_label, len(mapping))
+        lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping) + 1)
+        # TODO: remove +1 once classes start from index 0
 
         print('===== Statistics for {} ====='.format(sample_token))
+
+        lidarseg_counts_dict = dict()
+        for i in range(1, len(lidarseg_counts)):  # TODO: remove 1 once classes start from index 0
+            lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
+
         if sort_counts:
-            for count, class_name in sorted(zip(lidarseg_counts, idx2classnames)):
-                print('{:35} n={:12,}'.format(class_name, count))
+            for class_name, count in sorted(lidarseg_counts_dict.items(), key=lambda item: item[1]):
+                if count > 0:
+                    print('{:35} n={:12,}'.format(class_name, count))
         else:
-            for class_name, count in sorted(zip(idx2classnames, lidarseg_counts)):
-                print('{:35} n={:12,}'.format(class_name, count))
+            for class_name, count in sorted(lidarseg_counts_dict.items()):
+                if count > 0:
+                    print('{:35} n={:12,}'.format(class_name, count))
+
         print('======')
 
     def list_categories(self) -> None:
@@ -460,12 +472,12 @@ class NuScenes:
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg_labels: bool = True,
-                           filter_lidarseg_labels: List = None) -> None:
+                           filter_lidarseg_labels: List = None, verbose: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
                                          use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
                                          show_lidarseg_labels=show_lidarseg_labels,
-                                         filter_lidarseg_labels=filter_lidarseg_labels)
+                                         filter_lidarseg_labels=filter_lidarseg_labels, verbose=verbose)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -968,7 +980,8 @@ class NuScenesExplorer:
                            underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg_labels: bool = False,
-                           filter_lidarseg_labels: List = None) -> None:
+                           filter_lidarseg_labels: List = None,
+                           verbose: bool = True) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -987,6 +1000,7 @@ class NuScenesExplorer:
             to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
+        :param verbose: Whether to display the image after it is rendered.
         """
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
@@ -1149,9 +1163,10 @@ class NuScenesExplorer:
         ax.set_aspect('equal')
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
 
-        # plt.show()
+        if verbose:
+            plt.show()
 
     def render_annotation(self,
                           anntoken: str,

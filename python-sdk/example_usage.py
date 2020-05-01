@@ -16,46 +16,48 @@ def main(nusc):
     # nusc.render_scene_channel(nusc.scene[-1]['token'], 'CAM_FRONT', (1280, 720))
     # nusc.render_scene(nusc.scene[0]['token'])
 
-    mapping_temp = dict()  # Psuedo mapping
-    for i in range(41):
-        mapping_temp[i] = str(i)
-    nusc.get_sample_lidarseg_stats(sample_token, mapping_temp, sort_counts=True)
-    quit()
+    # ---------- get stats of a given lidarseg keyframe ----------
+    nusc.get_sample_lidarseg_stats(sample_token, sort_counts=True)
+    # ---------- /get stats of a given lidarseg keyframe ----------
+
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
     sample_data_token = sample['data']['LIDAR_TOP']
 
+    # sample_data_token = sample['data']['CAM_BACK']  # filter [4, 5] to see semi-truck with trailer
     # sample_data_token = "b367d4bddc8641b7bc69d7566d126f28"  # CAM_FRONT_LEFT
     # sample_data_token = "03be4e37936943d2bd991b5351baf82c"  # CAM_BACK
     # sample_data_token = "2abaed501018421fb4e6adc52b99db12"  # LIDAR but sample_data_token is not from a key_frame
 
     nusc.render_sample_data(sample_data_token,
+                            with_anns=False,
                             show_lidarseg_labels=True,
-                            filter_lidarseg_labels=[32, 1],
-                            out_path=os.path.expanduser('~/Desktop/test1.png'))
+                            filter_lidarseg_labels=[3, 32, 4, 5],
+                            # out_path=os.path.expanduser('~/Desktop/test1.png')
+                            )
     # ---------- /render lidarseg labels in BEV of pc ----------
 
     # ---------- render lidarseg labels in image ----------
     nusc.render_pointcloud_in_image(sample_token,
                                     pointsensor_channel='LIDAR_TOP',
-                                    camera_channel='CAM_FRONT',
+                                    camera_channel='CAM_BACK',
                                     render_intensity=True,
                                     show_lidarseg_labels=True,
-                                    filter_lidarseg_labels=[32, 1],
-                                    out_path=os.path.expanduser('~/Desktop/test2.png'),
+                                    filter_lidarseg_labels=[3, 4, 5],  # [32, 1],
+                                    # out_path=os.path.expanduser('~/Desktop/test2.png'),
                                     render_if_no_points=False,
                                     verbose=True)
     # ---------- /render lidarseg labels in image ----------
-
+    """
     # ---------- render sample (i.e. lidar, radar and all cameras) ----------
     nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'),
                        show_lidarseg_labels=True, verbose=False)
     # ---------- /render sample (i.e. lidar, radar and all cameras) ----------
-
+    
     # ---------- render scene for a given cam sensor with lidarseg labels ----------
     nusc.render_camera_channel_with_pointclouds(nusc.scene[0]['token'], 'CAM_BACK',
                                                 out_folder=os.path.expanduser('~/Desktop/my_rendered_scene.avi'),
-                                                filter_lidarseg_labels=[6],  # [32, 1],
+                                                filter_lidarseg_labels=[6, 36],  # [32, 1],
                                                 render_if_no_points=True,
                                                 verbose=True,
                                                 imsize=(1280, 720))
@@ -67,7 +69,7 @@ def main(nusc):
                                                        filter_lidarseg_labels=[32, 1],
                                                        imsize=(640, 360))
     # ---------- /render scene for all cameras with lidarseg labels ----------
-
+    """
 
 def load_table(path_to_json) -> dict:
     """ Loads a table. """
