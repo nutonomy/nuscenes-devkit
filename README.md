@@ -47,7 +47,7 @@ For an advanced installation, see [installation](https://github.com/nutonomy/nus
 ### nuImages setup
 Note that until the release of nuImages v1.0, the files will not be available for public download.
 For the devkit to work you will need to download *all* archives.
-Please unpack the archives to the `/data/sets/images` folder \*without\* overwriting folders that occur in multiple archives.
+Please unpack the archives to the `/data/sets/nuimages` folder \*without\* overwriting folders that occur in multiple archives.
 Eventually you should have the following folder structure:
 ```
 /data/sets/nuimages
