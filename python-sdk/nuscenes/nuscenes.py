@@ -463,9 +463,11 @@ class NuScenes:
                                                  verbose=verbose)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
-                      out_path: str = None, show_lidarseg_labels: bool = False, verbose: bool = True) -> None:
+                      out_path: str = None, show_lidarseg_labels: bool = False,
+                      filter_lidarseg_labels: List = None, verbose: bool = True) -> None:
         self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps,
-                                    out_path=out_path, show_lidarseg_labels=show_lidarseg_labels, verbose=verbose)
+                                    out_path=out_path, show_lidarseg_labels=show_lidarseg_labels,
+                                    filter_lidarseg_labels=filter_lidarseg_labels, verbose=verbose)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
@@ -835,6 +837,7 @@ class NuScenesExplorer:
                       nsweeps: int = 1,
                       out_path: str = None,
                       show_lidarseg_labels: bool = False,
+                      filter_lidarseg_labels: List = None,
                       verbose: bool = True) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
@@ -843,6 +846,7 @@ class NuScenesExplorer:
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
         :param show_lidarseg_labels: Whether to show lidar segmentations labels or not.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
         :param verbose: Whether to show the rendered sample in a window or not.
         """
         record = self.nusc.get('sample', token)
@@ -873,20 +877,22 @@ class NuScenesExplorer:
         if len(radar_data) > 0:
             ax = axes[0, 0]
             for i, (_, sd_token) in enumerate(radar_data.items()):
-                self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
+                self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        verbose=False)
             ax.set_title('Fused RADARs')
 
         # Plot lidar into a single subplot
         if len(lidar_data) > 0:
             for (_, sd_token), ax in zip(lidar_data.items(), axes.flatten()[num_radar_plots:]):
                 self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
-                                        show_lidarseg_labels=show_lidarseg_labels)
+                                        show_lidarseg_labels=show_lidarseg_labels,
+                                        filter_lidarseg_labels=filter_lidarseg_labels, verbose=False)
 
         # Plot cameras in separate subplots.
         for (_, sd_token), ax in zip(camera_data.items(), axes.flatten()[num_radar_plots + num_lidar_plots:]):
             if not show_lidarseg_labels:
                 self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
-                                        show_lidarseg_labels=False)
+                                        show_lidarseg_labels=False, verbose=False)
             else:
                 sd_record = self.nusc.get('sample_data', sd_token)
                 sensor_channel = sd_record['channel']
@@ -898,6 +904,7 @@ class NuScenesExplorer:
                                                 pointsensor_channel='LIDAR_TOP',
                                                 camera_channel=sensor_channel,
                                                 show_lidarseg_labels=show_lidarseg_labels,
+                                                filter_lidarseg_labels=filter_lidarseg_labels,
                                                 ax=ax, verbose=False)
 
         # Change plot settings and write to disk.

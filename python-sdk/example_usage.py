@@ -48,12 +48,12 @@ def main(nusc):
                                     render_if_no_points=False,
                                     verbose=True)
     # ---------- /render lidarseg labels in image ----------
-    """
+
     # ---------- render sample (i.e. lidar, radar and all cameras) ----------
-    nusc.render_sample(sample_token, out_path=os.path.expanduser('~/Desktop/test3.png'),
-                       show_lidarseg_labels=True, verbose=False)
+    nusc.render_sample(sample_token,  # out_path=os.path.expanduser('~/Desktop/test3.png'),
+                       show_lidarseg_labels=True, filter_lidarseg_labels=[3, 4, 5], verbose=True)
     # ---------- /render sample (i.e. lidar, radar and all cameras) ----------
-    
+
     # ---------- render scene for a given cam sensor with lidarseg labels ----------
     nusc.render_camera_channel_with_pointclouds(nusc.scene[0]['token'], 'CAM_BACK',
                                                 out_folder=os.path.expanduser('~/Desktop/my_rendered_scene.avi'),
@@ -69,7 +69,7 @@ def main(nusc):
                                                        filter_lidarseg_labels=[32, 1],
                                                        imsize=(640, 360))
     # ---------- /render scene for all cameras with lidarseg labels ----------
-    """
+
 
 def load_table(path_to_json) -> dict:
     """ Loads a table. """
