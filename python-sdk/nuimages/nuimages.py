@@ -10,6 +10,7 @@ from collections import defaultdict
 import PIL
 import PIL.ImageDraw
 import PIL.ImageFont
+import PIL.Image
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
@@ -296,6 +297,8 @@ class NuImages:
             category_token = ann['category_token']
             category_name = self.get('category', category_token)['name']
             color = default_color(category_name)
+            if ann['mask'] is None:
+                continue
             mask = mask_decode(ann['mask'])
 
             draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
@@ -312,8 +315,12 @@ class NuImages:
             category_name = self.get('category', category_token)['name']
             color = default_color(category_name)
             bbox = ann['bbox']
+            attr_tokens = ann['attribute_tokens']
+            attributes = [self.get('attribute', at) for at in attr_tokens]
+            name = annotation_name(attributes, category_name, with_attributes=with_attributes)
+            if ann['mask'] is None:
+                continue
             mask = mask_decode(ann['mask'])
-            name = annotation_name(self.attribute, category_name, with_attributes=with_attributes)
 
             # Draw rectangle, text and mask.
             draw.rectangle(bbox, outline=color)
