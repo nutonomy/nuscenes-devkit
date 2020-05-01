@@ -28,6 +28,16 @@ def get_stats(points_label: np.array, num_classes: int) -> List[int]:
     return lidarseg_counts
 
 
+def get_key_from_value(dictionary: dict, target_value: str):
+    """
+    Get the key belonging to a desired value in a dictionary. If there are multiple values which match the target_value,
+    only the first key will be returned.
+    :param dictionary: The dictionary to act on.
+    :param target_value: The desired value.
+    """
+    return list(dictionary.keys())[list(dictionary.values()).index(target_value)]
+
+
 def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int] = (640, 360), dpi: int = 100):
     """
     Converts a scatter plot in matplotlib to an image in cv2. This is useful as cv2 is unable to do

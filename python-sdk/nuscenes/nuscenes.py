@@ -24,7 +24,8 @@ from tqdm import tqdm
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
-from nuscenes.utils.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats
+from nuscenes.utils.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2
+from nuscenes.utils.lidarseg_utils import get_stats, get_key_from_value
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -427,11 +428,13 @@ class NuScenes:
         if sort_counts:
             for class_name, count in sorted(lidarseg_counts_dict.items(), key=lambda item: item[1]):
                 if count > 0:
-                    print('{:35} n={:12,}'.format(class_name, count))
+                    idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
+                    print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
         else:
             for class_name, count in sorted(lidarseg_counts_dict.items()):
                 if count > 0:
-                    print('{:35} n={:12,}'.format(class_name, count))
+                    idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
+                    print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
 
         print('======')
 
