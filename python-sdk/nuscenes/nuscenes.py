@@ -426,15 +426,14 @@ class NuScenes:
             lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
         if sort_counts:
-            for class_name, count in sorted(lidarseg_counts_dict.items(), key=lambda item: item[1]):
-                if count > 0:
-                    idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
-                    print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
+            out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
         else:
-            for class_name, count in sorted(lidarseg_counts_dict.items()):
-                if count > 0:
-                    idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
-                    print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
+            out = sorted(lidarseg_counts_dict.items())
+
+        for class_name, count in out:
+            if count > 0:
+                idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
+                print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
 
         print('======')
 
@@ -456,6 +455,7 @@ class NuScenes:
                                    show_lidarseg_labels: bool = False,
                                    filter_lidarseg_labels: List = None,
                                    render_if_no_points: bool = True,
+                                   show_lidarseg_legend: bool = False,
                                    verbose: bool = True) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel, out_path=out_path,
@@ -463,6 +463,7 @@ class NuScenes:
                                                  show_lidarseg_labels=show_lidarseg_labels,
                                                  filter_lidarseg_labels=filter_lidarseg_labels,
                                                  render_if_no_points=render_if_no_points,
+                                                 show_lidarseg_legend=show_lidarseg_legend,
                                                  verbose=verbose)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
@@ -693,7 +694,7 @@ class NuScenesExplorer:
                           'will be colored according to the lidar segmentation labels.')
                     render_intensity = False
 
-                pc = LidarPointCloud.from_file(pcl_path)
+            pc = LidarPointCloud.from_file(pcl_path)
         else:
             pc = RadarPointCloud.from_file(pcl_path)
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
@@ -770,7 +771,7 @@ class NuScenesExplorer:
         # Prevent rendering images which have no lidarseg labels in it. To check if there are no lidarseg
         # labels in an image, we check if any column in the coloring is all zeros (the alpha column will
         # be all zeroes if so)
-        if not render_if_no_points and (~coloring.any(axis=0)).any():
+        if show_lidarseg_labels and not render_if_no_points and (~coloring.any(axis=0)).any():
             return None, None, None
 
         return points, coloring, im
@@ -786,6 +787,7 @@ class NuScenesExplorer:
                                    filter_lidarseg_labels: List = None,
                                    ax: Axes = None,
                                    render_if_no_points: bool = True,
+                                   show_lidarseg_legend: bool = False,
                                    verbose: bool = True):
         """
         Scatter-plots a point-cloud on top of image.
@@ -799,6 +801,7 @@ class NuScenesExplorer:
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
         :param ax: Axes onto which to render.
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
+        :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param verbose: Whether to display the image in a window.
         """
         sample_record = self.nusc.get('sample', sample_token)
@@ -813,11 +816,12 @@ class NuScenesExplorer:
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
                                                             render_if_no_points=render_if_no_points)
 
-        # Prevent rendering images which have no lidarseg labels
-        if not render_if_no_points and points is None:
-            if verbose:
-                print('No points for {} in image (sample_token = {})'.format(pointsensor_channel, sample_token))
-            return
+        if pointsensor_channel == 'LIDAR_TOP':
+            # Prevent rendering images which have no lidarseg labels
+            if not render_if_no_points and points is None:
+                if verbose:
+                    print('No points for {} in image (sample_token = {})'.format(pointsensor_channel, sample_token))
+                return
 
         # Init axes.
         if ax is None:
@@ -828,9 +832,24 @@ class NuScenesExplorer:
         ax.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
         ax.axis('off')
 
+        # ---------- produce a legend with the unique colors from the scatter ----------
+        if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg_legend:
+            import matplotlib.patches as mpatches
+            recs = []
+            classes_final = []
+            # TODO removed unused when label starts from 0
+            classes = ['unused'] + [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
+            color_legend = get_arbitrary_colormap(len(classes) - 1)  # TODO remove -1 when label starts from 0
+            for i in range(len(classes)):
+                # create legend only for labels user desires to see, if user has specified a lidarseg filter
+                if filter_lidarseg_labels is None or i in filter_lidarseg_labels:
+                    recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_legend[i]))
+                    classes_final.append(classes[i])
+            plt.legend(recs, classes_final, loc='lower left', ncol=3)
+        # ---------- produce a legend with the unique colors from the scatter ----------
+
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
-
         if verbose:
             plt.show()
 

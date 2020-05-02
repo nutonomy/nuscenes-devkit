@@ -19,7 +19,7 @@ def main(nusc):
     # ---------- get stats of a given lidarseg keyframe ----------
     nusc.get_sample_lidarseg_stats(sample_token, sort_counts=True)
     # ---------- /get stats of a given lidarseg keyframe ----------
-
+    """
     # ---------- render lidarseg labels in BEV of pc ----------
     sample = nusc.get('sample', sample_token)
     sample_data_token = sample['data']['LIDAR_TOP']
@@ -36,7 +36,7 @@ def main(nusc):
                             # out_path=os.path.expanduser('~/Desktop/test1.png')
                             )
     # ---------- /render lidarseg labels in BEV of pc ----------
-
+    """
     # ---------- render lidarseg labels in image ----------
     nusc.render_pointcloud_in_image(sample_token,
                                     pointsensor_channel='LIDAR_TOP',
@@ -44,8 +44,9 @@ def main(nusc):
                                     render_intensity=True,
                                     show_lidarseg_labels=True,
                                     filter_lidarseg_labels=[3, 4, 5],  # [32, 1],
-                                    # out_path=os.path.expanduser('~/Desktop/test2.png'),
+                                    out_path=os.path.expanduser('~/Desktop/test2.png'),
                                     render_if_no_points=False,
+                                    show_lidarseg_legend=True,
                                     verbose=True)
     # ---------- /render lidarseg labels in image ----------
 
