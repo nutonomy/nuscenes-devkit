@@ -1,0 +1,1 @@
+pycocotools  #git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI    # A newer version of pycocotools, as the pip package has issues with numpy 1.18, see https://github.com/cocodataset/cocoapi/pull/354
