@@ -880,7 +880,7 @@ class NuScenesExplorer:
         for channel, token in record['data'].items():
             sd_record = self.nusc.get('sample_data', token)
             sensor_modality = sd_record['sensor_modality']
-            # if sensor_modality in ['lidar', 'camera']:
+
             if sensor_modality == 'camera':
                 camera_data[channel] = token
             elif sensor_modality == 'lidar':
@@ -1118,7 +1118,7 @@ class NuScenesExplorer:
             # Show point cloud.
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-            if show_lidarseg_labels:
+            if sensor_modality == 'lidar' and show_lidarseg_labels:
                 # ---------- coloring ----------##
                 num_classes = 41
                 colormap = get_arbitrary_colormap(num_classes)
