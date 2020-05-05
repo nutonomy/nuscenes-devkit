@@ -35,15 +35,15 @@ class TestConstantLatticeLoss(unittest.TestCase):
         lattice[2] = torch.arange(1, 13).reshape(6, 2) * 6
 
         # Should select the first mode
-        ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) + 2
+        ground_truth = torch.arange(1, 13, dtype=torch.float).reshape(6, 2).unsqueeze(0) + 2
         self.assertEqual(mean_pointwise_l2_distance(lattice, ground_truth), 0)
 
         # Should select the second mode
-        ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) * 3 + 4
+        ground_truth = torch.arange(1, 13, dtype=torch.float).reshape(6, 2).unsqueeze(0) * 3 + 4
         self.assertEqual(mean_pointwise_l2_distance(lattice, ground_truth), 1)
 
         # Should select the third mode
-        ground_truth = torch.arange(1, 13).reshape(6, 2).unsqueeze(0) * 6 + 10
+        ground_truth = torch.arange(1, 13, dtype=torch.float).reshape(6, 2).unsqueeze(0) * 6 + 10
         self.assertEqual(mean_pointwise_l2_distance(lattice, ground_truth), 2)
 
     def test_constant_lattice_loss(self):
@@ -51,8 +51,8 @@ class TestConstantLatticeLoss(unittest.TestCase):
 
         def generate_trajectory(theta: float) -> torch.Tensor:
             trajectory = torch.zeros(6, 2)
-            trajectory[:, 0] = torch.arange(6) * math.cos(theta)
-            trajectory[:, 1] = torch.arange(6) * math.sin(theta)
+            trajectory[:, 0] = torch.arange(6, dtype=torch.float) * math.cos(theta)
+            trajectory[:, 1] = torch.arange(6, dtype=torch.float) * math.sin(theta)
             return trajectory
 
         lattice = torch.zeros(3, 6, 2)
