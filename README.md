@@ -44,7 +44,7 @@ In March 2020 we released code for the nuScenes prediction challenge.
 To get started:
 - Download the version 1.2 of the map expansion (see below).
 - Download the trajectory sets for [CoverNet](https://arxiv.org/abs/1911.10298) from [here](https://www.nuscenes.org/public/nuscenes-prediction-challenge-trajectory-sets.zip).
-- Go through the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/prediction_tutorial.ipynb).
+- Go through the [prediction tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/prediction_tutorial.ipynb).
 - For information on how submissions will be scored, visit the challenge [website](https://www.nuscenes.org/prediction).
 
 ## CAN bus expansion
@@ -55,7 +55,7 @@ To install this expansion, please follow these steps:
 - Move the can_bus folder to your nuScenes root directory (e.g. `/data/sets/nuscenes/can_bus`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
-- Get started with the [readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/can_bus_tutorial.ipynb).
+- Get started with the [CAN bus readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/can_bus_tutorial.ipynb).
 
 ## Map expansion
 In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
@@ -64,7 +64,7 @@ To install this expansion, please follow these steps:
 - Move the .json files to your nuScenes `maps` folder.
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
-- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/map_expansion_tutorial.ipynb).
+- Get started with the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/map_expansion_tutorial.ipynb).
 
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7.
