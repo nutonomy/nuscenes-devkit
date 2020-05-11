@@ -13,10 +13,19 @@ The goal of the nuScenes prediction task is to predict the future trajectories o
 A trajectory is a sequence of x-y locations. For this challenge, the predictions are 6-seconds long and sampled at
 2 hertz.
 
+## Participation
+The nuScenes prediction [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/591) is open all year round for submission.
+To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/591).
+Then upload your zipped result file including all of the required [meta data](#results-format).
+After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/prediction) shown above.
+This is the only way to benchmark your method against the test dataset. 
+
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we will host a single leaderboard all year round.
 Additionally, we intend to organize a number of challenges at leading Computer Vision and Machine Learning conference workshops.
 Users that submit their results during the challenge period are eligible for awards. These awards may be different for each challenge.
+
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/591) for the **EvalAI prediction evaluation server**.
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
