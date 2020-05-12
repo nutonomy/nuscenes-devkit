@@ -1,5 +1,5 @@
 # nuScenes dev-kit.
-# Code written by Oscar Beijbom, 2018.
+# Code written by Oscar Beijbom, Holger Caesar & Whye Kit Fong, 2020.
 
 import json
 import math
@@ -12,7 +12,6 @@ from typing import Tuple, List, Iterable
 
 import cv2
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy as np
 import sklearn.metrics
 from PIL import Image
@@ -24,8 +23,8 @@ from tqdm import tqdm
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
-from nuscenes.utils.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2
-from nuscenes.utils.lidarseg_utils import get_stats, get_key_from_value
+from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
+    get_key_from_value
 
 PYTHON_VERSION = sys.version_info[0]
 

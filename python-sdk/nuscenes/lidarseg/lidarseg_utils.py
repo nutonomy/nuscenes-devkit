@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Whye Kit Fong, 2020.
+
 from typing import List, Tuple
 
 import cv2
@@ -19,7 +22,7 @@ def get_stats(points_label: np.array, num_classes: int) -> List[int]:
 
     lidarseg_counts = [0] * num_classes
 
-    indices = np.bincount(points_label)
+    indices: np.ndarray = np.bincount(points_label)
     ii = np.nonzero(indices)[0]
 
     for class_idx, class_count in zip(ii, indices[ii]):
@@ -51,23 +54,20 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     :return: cv2 image with the scatter plot.
     """
 
-    # ---------- render lidarseg labels in image ----------
+    # Render lidarseg labels in image
     fig = plt.figure(figsize=(imsize[0] / dpi, imsize[1] / dpi), dpi=dpi)
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     fig.add_axes(ax)
 
     ax.imshow(im)
     ax.scatter(points[0, :], points[1, :], c=coloring, s=5)
-    # ax.axis('off')
-    # ---------- /render lidarseg labels in image ----------
 
-    # ---------- convert from pyplot to cv2 ----------
+    # Convert from pyplot to cv2
     canvas = FigureCanvas(fig)
     canvas.draw()
     mat = np.array(canvas.renderer._renderer)  # put pixel buffer in numpy array
     mat = cv2.cvtColor(mat, cv2.COLOR_RGB2BGR)
     mat = cv2.resize(mat, imsize)
-    # ---------- /convert from pyplot to cv2 ----------
 
     return mat
 
@@ -75,7 +75,7 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
 def get_colormap() -> np.array:
     default = [255, 0, 0]
 
-    classname_to_color = { # RGB
+    classname_to_color = {  # RGB
         "human.pedestrian.adult": [255, 30, 30],
         "human.pedestrian.child": default,
         "human.pedestrian.wheelchair": default,
@@ -119,7 +119,7 @@ def get_colormap() -> np.array:
     coloring.update(classname_scale_to_color)
     # Note that if classname_scale_to_color and classname_to_color have overlapping keys, the
     # final value will be taken from classname_scale_to_color.
-    print (coloring)
+    print(coloring)
 
     colormap = []
     for k, v in coloring.items():
@@ -144,7 +144,7 @@ def get_arbitrary_colormap(num_classes, random_seed: int = 2020) -> np.array:
     np.random.seed(None)  # Reset seed to default
 
     colormap = [(0, 0, 0)] + colormap  # TODO no need to add a zero class once lidarseg labels start with 0
-    colormap = np.array(colormap)  # colormap is RGB with values for each channel normalized between 0 and 1
+    colormap = np.array(colormap)  # Colormap is RGB with values for each channel normalized between 0 and 1
 
     return colormap
 
@@ -173,3 +173,41 @@ def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.arra
     colormap = np.concatenate((colormap, alpha.T), axis=1)
 
     return colormap
+
+def make_mini_from_lidarseg(nusc):
+    lidar_seg_annots = nusc.lidarseg
+
+    in_mini = []
+    in_lidarseg = []
+
+    count = 0
+    for i in range(len(lidar_seg_annots)):
+        try_lidar_tok = lidar_seg_annots[i]['sample_data_token']
+
+        try:
+            entry = nusc.get('sample_data', try_lidar_tok)
+            in_mini.append(entry)
+            in_lidarseg.append((lidar_seg_annots[i]))
+            count += 1
+        except:
+            continue
+
+    assert len(in_mini) == count
+    print('%d of lidarseg annotations exist in v1.0-mini' % count)
+
+    return in_mini, in_lidarseg
+
+
+def get_single_sample_token(nusc, in_mini, to_check=257):
+    # print(in_lidarseg[to_check])
+    print(in_mini[to_check])
+
+    sample = nusc.get('sample', in_mini[to_check]['sample_token'])
+    # print(sample)
+    scene = nusc.get('scene', sample['scene_token'])
+    # print(scene)
+    print(scene['name'])
+
+    sample_token = in_mini[to_check]['sample_token']
+
+    return sample_token
