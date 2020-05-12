@@ -20,11 +20,11 @@ from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
+from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
+    get_key_from_value
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
-from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
-    get_key_from_value
 
 PYTHON_VERSION = sys.version_info[0]
 

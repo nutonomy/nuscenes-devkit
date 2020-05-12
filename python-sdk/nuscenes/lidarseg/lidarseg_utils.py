@@ -1,13 +1,13 @@
 # nuScenes dev-kit.
 # Code written by Whye Kit Fong, 2020.
 
+import colorsys
 from typing import List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy as np
-import colorsys
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 
 def get_stats(points_label: np.array, num_classes: int) -> List[int]:
@@ -130,7 +130,7 @@ def get_colormap() -> np.array:
     return colormap
 
 
-def get_arbitrary_colormap(num_classes, random_seed: int = 2020) -> np.array:
+def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.array:
     """
     Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
     :param num_classes: Number of colors to create.
@@ -174,6 +174,7 @@ def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.arra
 
     return colormap
 
+
 def make_mini_from_lidarseg(nusc):
     lidar_seg_annots = nusc.lidarseg
 
@@ -198,7 +199,7 @@ def make_mini_from_lidarseg(nusc):
     return in_mini, in_lidarseg
 
 
-def get_single_sample_token(nusc, in_mini, to_check=257):
+def get_single_sample_token(nusc, in_mini, to_check: int = 257) -> str:
     # print(in_lidarseg[to_check])
     print(in_mini[to_check])
 
