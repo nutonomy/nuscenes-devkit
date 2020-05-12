@@ -813,7 +813,7 @@ class NuScenesExplorer:
         ax.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
         ax.axis('off')
 
-        # Produce a legend with the unique colors from the scatter
+        # Produce a legend with the unique colors from the scatter.
         if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg_legend:
             import matplotlib.patches as mpatches
             recs = []
@@ -1029,7 +1029,7 @@ class NuScenesExplorer:
 
                     # Ensure that lidar pointcloud is from a keyframe.
                     assert sd_record['is_key_frame'], \
-                        'ERROR: Only pointclouds which are keyframes have lidar segmentation labels. Rendering aborted.'
+                        'Error: Only pointclouds which are keyframes have lidar segmentation labels. Rendering aborted.'
 
                     assert nsweeps == 1, \
                         'Error: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps should ' \
@@ -1636,7 +1636,7 @@ class NuScenesExplorer:
 
             sample_record = self.nusc.get('sample', current_token)
 
-            # Set filename of the image
+            # Set filename of the image.
             camera_token = sample_record['data'][camera_channel]
             cam = self.nusc.get('sample_data', camera_token)
             filename = '0' + scene_record['name'][5:] + '_' + os.path.basename(cam['filename'])
