@@ -679,19 +679,14 @@ class NuScenesExplorer:
         pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
         if pointsensor['sensor_modality'] == 'lidar':
             if show_lidarseg_labels:
-                if not hasattr(self.nusc, 'lidarseg'):
-                    print('WARNING: You have no lidarseg data; point cloud will be colored according to distance '
-                          'from ego vehicle (or intensity, if render_intensity = True) instead of segmentation labels.')
-                    show_lidarseg_labels = False
+                assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
 
                 # Ensure that lidar pointcloud is from a keyframe
-                assert pointsensor['is_key_frame'] is True, 'ERROR: Only pointclouds which are keyframes have ' \
-                                                            'lidar segmentation labels. Rendering aborted.'
+                assert pointsensor['is_key_frame'], \
+                    'Error: Only pointclouds which are keyframes have lidar segmentation labels. Rendering aborted.'
 
-                if render_intensity:
-                    print('WARNING: You have set both render_intensity and show_lidarseg_labels to True; point cloud '
-                          'will be colored according to the lidar segmentation labels.')
-                    render_intensity = False
+                assert not render_intensity, 'Error: Invalid options selected. You can only selected either' \
+                                             'render_intensity or show_lidarseg_labels, not both.'
 
             pc = LidarPointCloud.from_file(pcl_path)
         else:
