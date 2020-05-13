@@ -473,7 +473,7 @@ class NuScenes:
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
-                           show_lidarseg_labels: bool = True,
+                           show_lidarseg_labels: bool = False,
                            filter_lidarseg_labels: List = None, verbose: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
