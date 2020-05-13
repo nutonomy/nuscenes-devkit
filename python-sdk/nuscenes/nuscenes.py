@@ -76,8 +76,8 @@ class NuScenes:
         self.map = self.__load_table__('map')
 
         # If available, also load the lidarseg annotations.
-        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
-            self.lidarseg = self.__load_table__('lidarseg')
+        if osp.exists(osp.join(self.table_root, 'lidarseg_' + self.version + '.json')):
+            self.lidarseg = self.__load_table__('lidarseg_' + self.version)
             self.table_names.append('lidarseg')
 
             lidaseg_categories = self.__load_table__('category_lidarseg')
@@ -433,6 +433,9 @@ class NuScenes:
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
+    def  list_lidarseg_categories(self) -> None:
+        self.explorer.list_lidarseg_categories()
+
     def list_attributes(self) -> None:
         self.explorer.list_attributes()
 
@@ -563,6 +566,11 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
 
+    def list_lidarseg_categories(self) -> None:
+        """
+        Print categories and counts of the lidarseg data. These stats only cover
+        the split specified in nusc.version.
+        """
         print('Calculating stats for NuScenes-lidarseg...')
         start_time = time.time()
 
@@ -578,9 +586,15 @@ class NuScenesExplorer:
             for class_idx, class_count in zip(ii, indices[ii]):
                 lidarseg_counts[class_idx] += class_count
 
+        lidarseg_counts_dict = dict()
+        for i in range(len(lidarseg_counts)):
+            lidarseg_counts_dict[self.nusc.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
+
+        out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
         # Print frequency counts of each class in the lidarseg dataset.
-        for classname, freq in sorted(lidarseg_counts.items()):
-            print('{:27} nbr_points={:9}'.format(classname[:27], freq))
+        for class_name, count in out:
+            idx = get_key_from_value(self.nusc.lidarseg_idx2name_mapping, class_name)
+            print('{:3}  {:35} nbr_points={:12,}'.format(idx, class_name, count))
 
         print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
             len(self.nusc.lidarseg), time.time() - start_time))
@@ -1684,10 +1698,9 @@ class NuScenesExplorer:
         cv2.destroyAllWindows()
 
         if save_as_vid:
+            assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
+                                           'but only {} keyframes were processed'.format(total_num_samples, i)
             out.release()
-
-        assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
-                                       'but only {} keyframes were processed'.format(total_num_samples, i)
 
     def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
                                                       filter_lidarseg_labels: Iterable[int] = None,
