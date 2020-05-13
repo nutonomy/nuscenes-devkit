@@ -41,7 +41,7 @@ to be eligible for the prizes.
 * The user can submit up to 25 proposed future trajectories, called `modes`, for each agent along with a probability the agent follows that proposal. Our metrics (explained below) will measure how well this proposed set of trajectories matches the ground truth.
 * Up to two seconds of past history can be used to predict the future trajectory for each agent.
 * Unlike previous challenges, the leaderboard will be ranked according to performance on the nuScenes val set. This is because we cannot release the annotations on the test set, so users would not be able to run their models on the test set and then submit their predictions to the server. To prevent overfitting on the val set, the top 5 submissions on the leaderboard will be asked to send us their code and we will run their model on the test set. The winners will be chosen based on their performance on the test set, not the val set.
-* Every submission to the challenge must be accompanied by a technical report describing the method in sufficient detail to allow for independent verification.
+* Every submission to the challenge must be accompanied by a brief technical report (no more than 1-2 pages) describing the method in sufficient detail to allow for independent verification.
 
 ### General rules
 * We release annotations for the train and val set, but not for the test set. We have created a hold out set for validation
