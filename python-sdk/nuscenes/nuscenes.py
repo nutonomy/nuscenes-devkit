@@ -1801,7 +1801,6 @@ class NuScenesExplorer:
         cv2.destroyAllWindows()
 
         if save_as_vid:
+            assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
+                                           'but only {} keyframes were processed'.format(total_num_samples, i)
             out.release()
-
-        assert total_num_samples == i, 'ERROR: There were supposed to be {} keyframes, ' \
-                                       'but only {} keyframes were processed'.format(total_num_samples, i)
