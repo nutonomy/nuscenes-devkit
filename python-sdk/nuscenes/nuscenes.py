@@ -80,7 +80,6 @@ class NuScenes:
             self.lidarseg = self.__load_table__('lidarseg')
             self.table_names.append('lidarseg')
 
-            # TODO: once mapping is finalized and labels are converted, loading should be done from a master json
             lidaseg_categories = self.__load_table__('category_lidarseg')
             self.lidarseg_idx2name_mapping = dict()
             for lidarseg_category in lidaseg_categories:
@@ -412,12 +411,11 @@ class NuScenes:
         lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
         points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
         lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping))
-        # TODO: remove +1 once classes start from index 0
 
         print('===== Statistics for {} ====='.format(sample_token))
 
         lidarseg_counts_dict = dict()
-        for i in range(len(lidarseg_counts)):  # TODO: remove 1 once classes start from index 0
+        for i in range(len(lidarseg_counts)):
             lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
         if sort_counts:
@@ -569,7 +567,7 @@ class NuScenesExplorer:
         start_time = time.time()
 
         # Initialize an array of zeroes, one for each class name.
-        lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)  # TODO remove + 1 once labels start from 0
+        lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)
 
         for record_lidarseg in self.nusc.lidarseg:
             lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
@@ -818,9 +816,8 @@ class NuScenesExplorer:
             import matplotlib.patches as mpatches
             recs = []
             classes_final = []
-            # TODO remove unused when label starts from 0
             classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-            color_legend = get_arbitrary_colormap(len(classes))  # TODO remove -1 when label starts from 0
+            color_legend = get_arbitrary_colormap(len(classes))
             for i in range(len(classes)):
                 # Create legend only for labels which the user wants to see,
                 # if the user has specified a lidarseg filter.
