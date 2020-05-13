@@ -532,15 +532,15 @@ class NuScenesExplorer:
         This method works for the general nuScenes categories, as well as the nuScenes detection categories.
         """
         if 'bicycle' in category_name or 'motorcycle' in category_name:
-            return 255, 61, 99  # Red
+            return 255, 61, 99  # Red.
         elif 'vehicle' in category_name or category_name in ['bus', 'car', 'construction_vehicle', 'trailer', 'truck']:
-            return 255, 158, 0  # Orange
+            return 255, 158, 0  # Orange.
         elif 'pedestrian' in category_name:
-            return 0, 0, 230  # Blue
+            return 0, 0, 230  # Blue.
         elif 'cone' in category_name or 'barrier' in category_name:
-            return 0, 0, 0  # Black
+            return 0, 0, 0  # Black.
         else:
-            return 255, 0, 255  # Magenta
+            return 255, 0, 255  # Magenta.
 
     def list_categories(self) -> None:
         """ Print categories, counts and stats. These stats only cover the split specified in nusc.version. """
@@ -799,7 +799,8 @@ class NuScenesExplorer:
             # Prevent rendering images which have no lidarseg labels.
             if not render_if_no_points and points is None:
                 if verbose:
-                    print('No points for {} in image (sample_token = {})'.format(pointsensor_channel, sample_token))
+                    print('No points in {} which are present in '
+                          '{} image (sample_token = {})'.format(pointsensor_channel, camera_channel, sample_token))
                 return
 
         # Init axes.
@@ -1597,11 +1598,16 @@ class NuScenesExplorer:
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                           'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
         assert camera_channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(camera_channel)
-        assert imsize[0] / imsize[1] == 16 / 9, "Error: Aspect ratio should be 16/9."
+        assert imsize[0] / imsize[1] == 16 / 9, 'Error: Aspect ratio should be 16/9.'
 
-        save_as_vid = False
-        if out_folder is not None and os.path.splitext(out_folder)[-1] == '.avi':
-            save_as_vid = True
+        if out_folder is not None:
+            if os.path.splitext(out_folder)[-1] == '.avi':
+                save_as_vid = True
+            else:
+                assert os.path.isdir(out_folder), 'Error: {} does not exist.'.format(out_folder)
+                save_as_vid = False
+        else:
+            save_as_vid = False
 
         scene_record = self.nusc.get('scene', scene_token)
 
