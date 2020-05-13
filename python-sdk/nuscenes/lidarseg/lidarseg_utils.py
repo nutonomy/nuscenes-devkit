@@ -71,7 +71,7 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     return mat
 
 
-def get_colormap() -> np.array:
+def get_colormap() -> np.ndarray:
     default = [255, 0, 0]
 
     classname_to_color = {  # RGB.
@@ -121,7 +121,7 @@ def get_colormap() -> np.array:
     return colormap
 
 
-def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.array:
+def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.ndarray:
     """
     Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
     :param num_classes: Number of colors to create.
