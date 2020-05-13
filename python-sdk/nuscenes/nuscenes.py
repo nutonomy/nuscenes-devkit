@@ -411,13 +411,13 @@ class NuScenes:
 
         lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
         points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-        lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping) + 1)
+        lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping))
         # TODO: remove +1 once classes start from index 0
 
         print('===== Statistics for {} ====='.format(sample_token))
 
         lidarseg_counts_dict = dict()
-        for i in range(1, len(lidarseg_counts)):  # TODO: remove 1 once classes start from index 0
+        for i in range(len(lidarseg_counts)):  # TODO: remove 1 once classes start from index 0
             lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
         if sort_counts:
@@ -569,7 +569,7 @@ class NuScenesExplorer:
         start_time = time.time()
 
         # Initialize an array of zeroes, one for each class name.
-        lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)  # TODO remove [0] once labels start from 0
+        lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)  # TODO remove + 1 once labels start from 0
 
         for record_lidarseg in self.nusc.lidarseg:
             lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
@@ -675,7 +675,7 @@ class NuScenesExplorer:
                 assert pointsensor['is_key_frame'], \
                     'Error: Only pointclouds which are keyframes have lidar segmentation labels. Rendering aborted.'
 
-                assert not render_intensity, 'Error: Invalid options selected. You can only select either' \
+                assert not render_intensity, 'Error: Invalid options selected. You can only select either ' \
                                              'render_intensity or show_lidarseg_labels, not both.'
 
             pc = LidarPointCloud.from_file(pcl_path)
@@ -818,9 +818,9 @@ class NuScenesExplorer:
             import matplotlib.patches as mpatches
             recs = []
             classes_final = []
-            # TODO removed unused when label starts from 0
-            classes = ['unused'] + [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-            color_legend = get_arbitrary_colormap(len(classes) - 1)  # TODO remove -1 when label starts from 0
+            # TODO remove unused when label starts from 0
+            classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
+            color_legend = get_arbitrary_colormap(len(classes))  # TODO remove -1 when label starts from 0
             for i in range(len(classes)):
                 # Create legend only for labels which the user wants to see,
                 # if the user has specified a lidarseg filter.
