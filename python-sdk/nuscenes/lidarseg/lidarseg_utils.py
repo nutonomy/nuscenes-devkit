@@ -125,7 +125,7 @@ def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.ndar
     """
     Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
     :param num_classes: Number of colors to create.
-    :param random_seed: The random see to use.
+    :param random_seed: The random seed to use.
     """
     num_classes = num_classes - 1  # No need colormap for class 0 as it will be fixed as black further down.
 
@@ -142,7 +142,7 @@ def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.ndar
     return colormap
 
 
-def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.array:
+def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.ndarray:
     """
     Given a colormap (in RGB) and a list of classes to display, return a colormap (in RGBA) with the opacity
     of the labels to be display set to 1.0 and those to be hidden set to 0.0
