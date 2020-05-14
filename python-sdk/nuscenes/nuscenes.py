@@ -1,13 +1,14 @@
 # nuScenes dev-kit.
-# Code written by Oscar Beijbom, 2018.
+# Code written by Oscar Beijbom, Holger Caesar & Fong Whye Kit, 2020.
 
 import json
 import math
+import os
 import os.path as osp
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List
+from typing import Tuple, List, Iterable
 
 import cv2
 import matplotlib.pyplot as plt
@@ -19,6 +20,8 @@ from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
+from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
+    get_key_from_value
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -48,6 +51,7 @@ class NuScenes:
         """
         self.version = version
         self.dataroot = dataroot
+        self.verbose = verbose
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
                             'ego_pose', 'log', 'scene', 'sample', 'sample_data', 'sample_annotation', 'map']
 
@@ -72,6 +76,19 @@ class NuScenes:
         self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
 
+        # If available, also load the lidarseg annotations.
+        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
+            if self.verbose:
+                print('Loading nuScenes-lidarseg...')
+
+            self.lidarseg = self.__load_table__('lidarseg')
+            self.table_names.append('lidarseg')
+
+            lidarseg_categories = self.__load_table__('category_lidarseg')
+            self.lidarseg_idx2name_mapping = dict()
+            for lidarseg_category in lidarseg_categories:
+                self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
+
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
             self.image_annotations = self.__load_table__('image_annotations')
@@ -88,7 +105,7 @@ class NuScenes:
         # Make reverse indexes for common lookups.
         self.__make_reverse_index__(verbose)
 
-        # Initialize NuScenesExplorer class
+        # Initialize NuScenesExplorer class.
         self.explorer = NuScenesExplorer(self)
 
     @property
@@ -376,8 +393,52 @@ class NuScenes:
         else:
             return pos_diff / time_diff
 
+    def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True) -> None:
+        """
+        Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
+        points in the pointcloud will not be printed.
+        :param sample_token: Sample token.
+        :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
+                            the stats will be printed alphabetically according to class name.
+        """
+        assert hasattr(self, 'lidarseg'), 'Error: You have no lidarseg data; unable to get ' \
+                                          'statistics for segmentation of the point cloud.'
+
+        sample_rec = self.get('sample', sample_token)
+        ref_sd_token = sample_rec['data']['LIDAR_TOP']
+        ref_sd_record = self.get('sample_data', ref_sd_token)
+
+        # Ensure that lidar pointcloud is from a keyframe.
+        assert ref_sd_record['is_key_frame'], 'Error: Only pointclouds which are keyframes have ' \
+                                              'lidar segmentation labels. Rendering aborted.'
+
+        lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
+        points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+        lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping))
+
+        print('===== Statistics for {} ====='.format(sample_token))
+
+        lidarseg_counts_dict = dict()
+        for i in range(len(lidarseg_counts)):
+            lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
+
+        if sort_counts:
+            out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
+        else:
+            out = sorted(lidarseg_counts_dict.items())
+
+        for class_name, count in out:
+            if count > 0:
+                idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
+                print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
+
+        print('======')
+
     def list_categories(self) -> None:
         self.explorer.list_categories()
+
+    def list_lidarseg_categories(self) -> None:
+        self.explorer.list_lidarseg_categories()
 
     def list_attributes(self) -> None:
         self.explorer.list_attributes()
@@ -390,22 +451,39 @@ class NuScenes:
 
     def render_pointcloud_in_image(self, sample_token: str, dot_size: int = 5, pointsensor_channel: str = 'LIDAR_TOP',
                                    camera_channel: str = 'CAM_FRONT', out_path: str = None,
-                                   render_intensity: bool = False) -> None:
+                                   render_intensity: bool = False,
+                                   show_lidarseg_labels: bool = False,
+                                   filter_lidarseg_labels: List = None,
+                                   render_if_no_points: bool = True,
+                                   show_lidarseg_legend: bool = False,
+                                   verbose: bool = True) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel, out_path=out_path,
-                                                 render_intensity=render_intensity)
+                                                 render_intensity=render_intensity,
+                                                 show_lidarseg_labels=show_lidarseg_labels,
+                                                 filter_lidarseg_labels=filter_lidarseg_labels,
+                                                 render_if_no_points=render_if_no_points,
+                                                 show_lidarseg_legend=show_lidarseg_legend,
+                                                 verbose=verbose)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
-                      out_path: str = None) -> None:
-        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps, out_path=out_path)
+                      out_path: str = None, show_lidarseg_labels: bool = False,
+                      filter_lidarseg_labels: List = None, verbose: bool = True) -> None:
+        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps,
+                                    out_path=out_path, show_lidarseg_labels=show_lidarseg_labels,
+                                    filter_lidarseg_labels=filter_lidarseg_labels, verbose=verbose)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
-                           use_flat_vehicle_coordinates: bool = True) -> None:
+                           use_flat_vehicle_coordinates: bool = True,
+                           show_lidarseg_labels: bool = False,
+                           filter_lidarseg_labels: List = None, verbose: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
-                                         use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
+                                         use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
+                                         show_lidarseg_labels=show_lidarseg_labels,
+                                         filter_lidarseg_labels=filter_lidarseg_labels, verbose=verbose)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -428,6 +506,24 @@ class NuScenes:
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
         self.explorer.render_egoposes_on_map(log_location, scene_tokens, out_path=out_path)
 
+    def render_camera_channel_with_pointclouds(self, scene_token: str, camera_channel: str, out_folder: str = None,
+                                               filter_lidarseg_labels: Iterable[int] = None,
+                                               render_if_no_points: bool = True, verbose=True,
+                                               imsize: Tuple[int, int] = (640, 360), freq: float = 2) -> None:
+        self.explorer.render_camera_channel_with_pointclouds(scene_token, camera_channel, out_folder,
+                                                             filter_lidarseg_labels,
+                                                             render_if_no_points, verbose,
+                                                             imsize, freq)
+
+    def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
+                                                      filter_lidarseg_labels: Iterable[int] = None,
+                                                      imsize: Tuple[int, int] = (640, 360), freq: float = 2,
+                                                      verbose: bool = True) -> None:
+        self.explorer.render_scene_with_pointclouds_for_all_cameras(scene_token, out_path,
+                                                                    filter_lidarseg_labels,
+                                                                    imsize, freq,
+                                                                    verbose)
+
 
 class NuScenesExplorer:
     """ Helper class to list and visualize NuScenes data. These are meant to serve as tutorials and templates for
@@ -443,28 +539,28 @@ class NuScenesExplorer:
         This method works for the general nuScenes categories, as well as the nuScenes detection categories.
         """
         if 'bicycle' in category_name or 'motorcycle' in category_name:
-            return 255, 61, 99  # Red
+            return 255, 61, 99  # Red.
         elif 'vehicle' in category_name or category_name in ['bus', 'car', 'construction_vehicle', 'trailer', 'truck']:
-            return 255, 158, 0  # Orange
+            return 255, 158, 0  # Orange.
         elif 'pedestrian' in category_name:
-            return 0, 0, 230  # Blue
+            return 0, 0, 230  # Blue.
         elif 'cone' in category_name or 'barrier' in category_name:
-            return 0, 0, 0  # Black
+            return 0, 0, 0  # Black.
         else:
-            return 255, 0, 255  # Magenta
+            return 255, 0, 255  # Magenta.
 
     def list_categories(self) -> None:
         """ Print categories, counts and stats. These stats only cover the split specified in nusc.version. """
         print('Category stats for split %s:' % self.nusc.version)
 
-        # Add all annotations
+        # Add all annotations.
         categories = dict()
         for record in self.nusc.sample_annotation:
             if record['category_name'] not in categories:
                 categories[record['category_name']] = []
             categories[record['category_name']].append(record['size'] + [record['size'][1] / record['size'][0]])
 
-        # Print stats
+        # Print stats.
         for name, stats in sorted(categories.items()):
             stats = np.array(stats)
             print('{:27} n={:5}, width={:5.2f}\u00B1{:.2f}, len={:5.2f}\u00B1{:.2f}, height={:5.2f}\u00B1{:.2f}, '
@@ -473,6 +569,39 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 1]), np.std(stats[:, 1]),
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
+
+    def list_lidarseg_categories(self) -> None:
+        """
+        Print categories and counts of the lidarseg data. These stats only cover
+        the split specified in nusc.version.
+        """
+        print('Calculating stats for nuScenes-lidarseg...')
+        start_time = time.time()
+
+        # Initialize an array of zeroes, one for each class name.
+        lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)
+
+        for record_lidarseg in self.nusc.lidarseg:
+            lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
+                                                record_lidarseg['sample_data_token'] + '_lidarseg.bin')
+            points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+            indices = np.bincount(points_label)
+            ii = np.nonzero(indices)[0]
+            for class_idx, class_count in zip(ii, indices[ii]):
+                lidarseg_counts[class_idx] += class_count
+
+        lidarseg_counts_dict = dict()
+        for i in range(len(lidarseg_counts)):
+            lidarseg_counts_dict[self.nusc.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
+
+        out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
+        # Print frequency counts of each class in the lidarseg dataset.
+        for class_name, count in out:
+            idx = get_key_from_value(self.nusc.lidarseg_idx2name_mapping, class_name)
+            print('{:3}  {:35} nbr_points={:12,}'.format(idx, class_name, count))
+
+        print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
+            len(self.nusc.lidarseg), time.time() - start_time))
 
     def list_attributes(self) -> None:
         """ Prints attributes and counts. """
@@ -533,7 +662,10 @@ class NuScenesExplorer:
                                 pointsensor_token: str,
                                 camera_token: str,
                                 min_dist: float = 1.0,
-                                render_intensity: bool = False) -> Tuple:
+                                render_intensity: bool = False,
+                                show_lidarseg_labels: bool = False,
+                                filter_lidarseg_labels: List = None,
+                                render_if_no_points: bool = True) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -541,12 +673,27 @@ class NuScenesExplorer:
         :param camera_token: Camera sample_data token.
         :param min_dist: Distance from the camera below which points are discarded.
         :param render_intensity: Whether to render lidar intensity instead of point depth.
+        :param show_lidarseg_labels: Whether to render lidar intensity instead of point depth.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+            or the list is empty, all classes will be displayed.
+        :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
+
         cam = self.nusc.get('sample_data', camera_token)
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
         pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
         if pointsensor['sensor_modality'] == 'lidar':
+            if show_lidarseg_labels:
+                assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
+                # Ensure that lidar pointcloud is from a keyframe.
+                assert pointsensor['is_key_frame'], \
+                    'Error: Only pointclouds which are keyframes have lidar segmentation labels. Rendering aborted.'
+
+                assert not render_intensity, 'Error: Invalid options selected. You can only select either ' \
+                                             'render_intensity or show_lidarseg_labels, not both.'
+
             pc = LidarPointCloud.from_file(pcl_path)
         else:
             pc = RadarPointCloud.from_file(pcl_path)
@@ -578,7 +725,8 @@ class NuScenesExplorer:
         depths = pc.points[2, :]
 
         if render_intensity:
-            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render intensity for lidar!'
+            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render intensity for lidar, ' \
+                                                              'not %s!' % pointsensor['sensor_modality']
             # Retrieve the color from the intensities.
             # Performs arbitary scaling to achieve more visually pleasing results.
             intensities = pc.points[3, :]
@@ -586,6 +734,18 @@ class NuScenesExplorer:
             intensities = intensities ** 0.1
             intensities = np.maximum(0, intensities - 0.5)
             coloring = intensities
+        elif show_lidarseg_labels:
+            assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render lidarseg labels for lidar, ' \
+                                                              'not %s!' % pointsensor['sensor_modality']
+            lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg', pointsensor_token + '_lidarseg.bin')
+            points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+
+            # Create colormap for the lidarseg labels.
+            num_classes = len(self.nusc.lidarseg_idx2name_mapping)
+            colormap = get_arbitrary_colormap(num_classes)
+            if filter_lidarseg_labels:
+                colormap = filter_colormap(colormap, filter_lidarseg_labels)
+            coloring = colormap[points_label]
         else:
             # Retrieve the color from the depth.
             coloring = depths
@@ -605,6 +765,12 @@ class NuScenesExplorer:
         points = points[:, mask]
         coloring = coloring[mask]
 
+        # Prevent rendering images which have no lidarseg labels in it. To check if there are no lidarseg
+        # labels in an image, we check if any column in the coloring is all zeros (the alpha column will
+        # be all zeroes if so).
+        if show_lidarseg_labels and not render_if_no_points and (~coloring.any(axis=0)).any():
+            return None, None, None
+
         return points, coloring, im
 
     def render_pointcloud_in_image(self,
@@ -613,7 +779,13 @@ class NuScenesExplorer:
                                    pointsensor_channel: str = 'LIDAR_TOP',
                                    camera_channel: str = 'CAM_FRONT',
                                    out_path: str = None,
-                                   render_intensity: bool = False) -> None:
+                                   render_intensity: bool = False,
+                                   show_lidarseg_labels: bool = False,
+                                   filter_lidarseg_labels: List = None,
+                                   ax: Axes = None,
+                                   render_if_no_points: bool = True,
+                                   show_lidarseg_legend: bool = False,
+                                   verbose: bool = True):
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -622,6 +794,12 @@ class NuScenesExplorer:
         :param camera_channel: Camera channel name, e.g. 'CAM_FRONT'.
         :param out_path: Optional path to save the rendered figure to disk.
         :param render_intensity: Whether to render lidar intensity instead of point depth.
+        :param show_lidarseg_labels: Whether to render lidarseg labels instead of point depth.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
+        :param ax: Axes onto which to render.
+        :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
+        :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
+        :param verbose: Whether to display the image in a window.
         """
         sample_record = self.nusc.get('sample', sample_token)
 
@@ -630,63 +808,134 @@ class NuScenesExplorer:
         camera_token = sample_record['data'][camera_channel]
 
         points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
-                                                            render_intensity=render_intensity)
-        plt.figure(figsize=(9, 16))
-        plt.imshow(im)
-        plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
-        plt.axis('off')
+                                                            render_intensity=render_intensity,
+                                                            show_lidarseg_labels=show_lidarseg_labels,
+                                                            filter_lidarseg_labels=filter_lidarseg_labels,
+                                                            render_if_no_points=render_if_no_points)
+
+        if pointsensor_channel == 'LIDAR_TOP':
+            # Prevent rendering images which have no lidarseg labels.
+            if not render_if_no_points and points is None:
+                if verbose:
+                    print('No points in {} which are present in '
+                          '{} image (sample_token = {})'.format(pointsensor_channel, camera_channel, sample_token))
+                return
+
+        # Init axes.
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=(9, 16))
+        else:  # Set title on if rendering as part of render_sample.
+            ax.set_title(camera_channel)
+        ax.imshow(im)
+        ax.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
+        ax.axis('off')
+
+        # Produce a legend with the unique colors from the scatter.
+        if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg_legend:
+            import matplotlib.patches as mpatches
+            recs = []
+            classes_final = []
+            classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
+            color_legend = get_arbitrary_colormap(len(classes))
+            for i in range(len(classes)):
+                # Create legend only for labels which the user wants to see,
+                # if the user has specified a lidarseg filter.
+                if filter_lidarseg_labels is None or i in filter_lidarseg_labels:
+                    recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_legend[i]))
+                    classes_final.append(classes[i])
+            plt.legend(recs, classes_final, loc='lower left', ncol=3)
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
+        if verbose:
+            plt.show()
 
     def render_sample(self,
                       token: str,
                       box_vis_level: BoxVisibility = BoxVisibility.ANY,
                       nsweeps: int = 1,
-                      out_path: str = None) -> None:
+                      out_path: str = None,
+                      show_lidarseg_labels: bool = False,
+                      filter_lidarseg_labels: List = None,
+                      verbose: bool = True) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
+        :param show_lidarseg_labels: Whether to show lidar segmentations labels or not.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
+        :param verbose: Whether to show the rendered sample in a window or not.
         """
         record = self.nusc.get('sample', token)
 
         # Separate RADAR from LIDAR and vision.
         radar_data = {}
-        nonradar_data = {}
+        camera_data = {}
+        lidar_data = {}
         for channel, token in record['data'].items():
             sd_record = self.nusc.get('sample_data', token)
             sensor_modality = sd_record['sensor_modality']
-            if sensor_modality in ['lidar', 'camera']:
-                nonradar_data[channel] = token
+
+            if sensor_modality == 'camera':
+                camera_data[channel] = token
+            elif sensor_modality == 'lidar':
+                lidar_data[channel] = token
             else:
                 radar_data[channel] = token
 
         # Create plots.
         num_radar_plots = 1 if len(radar_data) > 0 else 0
-        n = num_radar_plots + len(nonradar_data)
+        num_lidar_plots = 1 if len(lidar_data) > 0 else 0
+        n = num_radar_plots + len(camera_data) + num_lidar_plots
         cols = 2
-        fig, axes = plt.subplots(int(np.ceil(n/cols)), cols, figsize=(16, 24))
+        fig, axes = plt.subplots(int(np.ceil(n / cols)), cols, figsize=(16, 24))
 
         # Plot radars into a single subplot.
         if len(radar_data) > 0:
             ax = axes[0, 0]
             for i, (_, sd_token) in enumerate(radar_data.items()):
-                self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
+                self.render_sample_data(sd_token, with_anns=i == 0, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        verbose=False)
             ax.set_title('Fused RADARs')
 
-        # Plot camera and lidar in separate subplots.
-        for (_, sd_token), ax in zip(nonradar_data.items(), axes.flatten()[num_radar_plots:]):
-            self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps)
+        # Plot lidar into a single subplot.
+        if len(lidar_data) > 0:
+            for (_, sd_token), ax in zip(lidar_data.items(), axes.flatten()[num_radar_plots:]):
+                self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        show_lidarseg_labels=show_lidarseg_labels,
+                                        filter_lidarseg_labels=filter_lidarseg_labels, verbose=False)
+
+        # Plot cameras in separate subplots.
+        for (_, sd_token), ax in zip(camera_data.items(), axes.flatten()[num_radar_plots + num_lidar_plots:]):
+            if not show_lidarseg_labels:
+                self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        show_lidarseg_labels=False, verbose=False)
+            else:
+                sd_record = self.nusc.get('sample_data', sd_token)
+                sensor_channel = sd_record['channel']
+                valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
+                                  'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+                assert sensor_channel in valid_channels, 'Input camera channel {} not valid.'.format(sensor_channel)
+
+                self.render_pointcloud_in_image(record['token'],
+                                                pointsensor_channel='LIDAR_TOP',
+                                                camera_channel=sensor_channel,
+                                                show_lidarseg_labels=show_lidarseg_labels,
+                                                filter_lidarseg_labels=filter_lidarseg_labels,
+                                                ax=ax, verbose=False)
 
         # Change plot settings and write to disk.
         axes.flatten()[-1].axis('off')
         plt.tight_layout()
         fig.subplots_adjust(wspace=0, hspace=0)
+
         if out_path is not None:
             plt.savefig(out_path)
+
+        if verbose:
+            plt.show()
 
     def render_ego_centric_map(self,
                                sample_data_token: str,
@@ -732,7 +981,7 @@ class NuScenesExplorer:
         yaw_deg = -math.degrees(ypr_rad[0])
         rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
 
-        # Cop image.
+        # Crop image.
         ego_centric_map = crop_image(rotated_cropped, rotated_cropped.shape[1] / 2,
                                      rotated_cropped.shape[0] / 2,
                                      scaled_limit_px)
@@ -755,7 +1004,10 @@ class NuScenesExplorer:
                            nsweeps: int = 1,
                            out_path: str = None,
                            underlay_map: bool = True,
-                           use_flat_vehicle_coordinates: bool = True) -> None:
+                           use_flat_vehicle_coordinates: bool = True,
+                           show_lidarseg_labels: bool = False,
+                           filter_lidarseg_labels: List = None,
+                           verbose: bool = True) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -765,11 +1017,16 @@ class NuScenesExplorer:
         :param ax: Axes onto which to render.
         :param nsweeps: Number of sweeps for lidar and radar.
         :param out_path: Optional path to save the rendered figure to disk.
-        :param underlay_map: When set to true, LIDAR data is plotted onto the map. This can be slow.
+        :param underlay_map: When set to true, lidar data is plotted onto the map. This can be slow.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
             aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
             can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
             setting is more correct and rotates the plot by ~90 degrees.
+        :param show_lidarseg_labels: When set to True, the lidar data is colored with the segmentation labels. When set
+            to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+            or the list is empty, all classes will be displayed.
+        :param verbose: Whether to display the image after it is rendered.
         """
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
@@ -783,9 +1040,25 @@ class NuScenesExplorer:
             ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
-                # Get aggregated lidar point cloud in lidar frame.
-                pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan, nsweeps=nsweeps)
-                velocities = None
+                if show_lidarseg_labels:
+                    assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
+                    # Ensure that lidar pointcloud is from a keyframe.
+                    assert sd_record['is_key_frame'], \
+                        'Error: Only pointclouds which are keyframes have lidar segmentation labels. Rendering aborted.'
+
+                    assert nsweeps == 1, \
+                        'Error: Only pointclouds which are keyframes have lidar segmentation labels; nsweeps should ' \
+                        'be set to 1.'
+
+                    # Load a single lidar point cloud.
+                    pcl_path = osp.join(self.nusc.dataroot, ref_sd_record['filename'])
+                    pc = LidarPointCloud.from_file(pcl_path)
+                else:
+                    # Get aggregated lidar point cloud in lidar frame.
+                    pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan,
+                                                                     nsweeps=nsweeps)
+                    velocities = None
             else:
                 # Get aggregated radar point cloud in reference frame.
                 # The point cloud is transformed to the reference frame for visualization purposes.
@@ -835,8 +1108,22 @@ class NuScenesExplorer:
             # Show point cloud.
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+            if sensor_modality == 'lidar' and show_lidarseg_labels:
+                # Load labels for pointcloud.
+                lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
+                                                    sample_data_token + '_lidarseg.bin')
+                points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+
+                # Create colormap for the lidarseg labels.
+                num_classes = len(self.nusc.lidarseg_idx2name_mapping)
+                colormap = get_arbitrary_colormap(num_classes)
+                if filter_lidarseg_labels:
+                    colormap = filter_colormap(colormap, filter_lidarseg_labels)
+                colors = colormap[points_label]
+            else:
+                colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
             point_scale = 0.2 if sensor_modality == 'lidar' else 3.0
+
             scatter = ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
 
             # Show velocities.
@@ -898,7 +1185,10 @@ class NuScenesExplorer:
         ax.set_aspect('equal')
 
         if out_path is not None:
-            plt.savefig(out_path)
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
+
+        if verbose:
+            plt.show()
 
     def render_annotation(self,
                           anntoken: str,
@@ -918,11 +1208,11 @@ class NuScenesExplorer:
         """
         ann_record = self.nusc.get('sample_annotation', anntoken)
         sample_record = self.nusc.get('sample', ann_record['sample_token'])
-        assert 'LIDAR_TOP' in sample_record['data'].keys(), 'No LIDAR_TOP in data, cant render'
+        assert 'LIDAR_TOP' in sample_record['data'].keys(), 'Error: No LIDAR_TOP in data, unable to render.'
 
         fig, axes = plt.subplots(1, 2, figsize=(18, 9))
 
-        # Figure out which camera the object is fully visible in (this may return nothing)
+        # Figure out which camera the object is fully visible in (this may return nothing).
         boxes, cam = [], []
         cams = [key for key in sample_record['data'].keys() if 'CAM' in key]
         for cam in cams:
@@ -930,12 +1220,13 @@ class NuScenesExplorer:
                                                     selected_anntokens=[anntoken])
             if len(boxes) > 0:
                 break  # We found an image that matches. Let's abort.
-        assert len(boxes) > 0, "Could not find image where annotation is visible. Try using e.g. BoxVisibility.ANY."
-        assert len(boxes) < 2, "Found multiple annotations. Something is wrong!"
+        assert len(boxes) > 0, 'Error: Could not find image where annotation is visible. ' \
+                               'Try using e.g. BoxVisibility.ANY.'
+        assert len(boxes) < 2, 'Error: Found multiple annotations. Something is wrong!'
 
         cam = sample_record['data'][cam]
 
-        # Plot LIDAR view
+        # Plot LIDAR view.
         lidar = sample_record['data']['LIDAR_TOP']
         data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(lidar, selected_anntokens=[anntoken])
         LidarPointCloud.from_file(data_path).render_height(axes[0], view=view)
@@ -948,7 +1239,7 @@ class NuScenesExplorer:
             axes[0].axis('off')
             axes[0].set_aspect('equal')
 
-        # Plot CAMERA view
+        # Plot CAMERA view.
         data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(cam, selected_anntokens=[anntoken])
         im = Image.open(data_path)
         axes[1].imshow(im)
@@ -1041,7 +1332,7 @@ class NuScenesExplorer:
         first_sample_rec = self.nusc.get('sample', scene_rec['first_sample_token'])
         last_sample_rec = self.nusc.get('sample', scene_rec['last_sample_token'])
 
-        # Set some display parameters
+        # Set some display parameters.
         layout = {
             'CAM_FRONT_LEFT': (0, 0),
             'CAM_FRONT': (imsize[0], 0),
@@ -1066,7 +1357,7 @@ class NuScenesExplorer:
         else:
             out = None
 
-        # Load first sample_data record for each channel
+        # Load first sample_data record for each channel.
         current_recs = {}  # Holds the current record to be displayed by channel.
         prev_recs = {}  # Hold the previous displayed record by channel.
         for channel in layout:
@@ -1095,7 +1386,7 @@ class NuScenesExplorer:
                     impath, boxes, camera_intrinsic = self.nusc.get_sample_data(sd_rec['token'],
                                                                                 box_vis_level=BoxVisibility.ANY)
 
-                    # Load and render
+                    # Load and render.
                     if not osp.exists(impath):
                         raise Exception('Error: Missing image %s' % impath)
                     im = cv2.imread(impath)
@@ -1108,7 +1399,7 @@ class NuScenesExplorer:
                         im = im[:, ::-1, :]
 
                     canvas[layout[channel][1]: layout[channel][1] + imsize[1],
-                           layout[channel][0]:layout[channel][0] + imsize[0], :] = im
+                    layout[channel][0]:layout[channel][0] + imsize[0], :] = im
 
                     prev_recs[channel] = sd_rec  # Store here so we don't render the same image twice.
 
@@ -1144,22 +1435,21 @@ class NuScenesExplorer:
         :param imsize: Size of image to render. The larger the slower this will run.
         :param out_path: Optional path to write a video file of the rendered frames.
         """
-
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                           'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
 
-        assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
-        assert channel in valid_channels, 'Input channel {} not valid.'.format(channel)
+        assert imsize[0] / imsize[1] == 16 / 9, "Error: Aspect ratio should be 16/9."
+        assert channel in valid_channels, 'Error: Input channel {} not valid.'.format(channel)
 
         if out_path is not None:
             assert osp.splitext(out_path)[-1] == '.avi'
 
-        # Get records from DB
+        # Get records from DB.
         scene_rec = self.nusc.get('scene', scene_token)
         sample_rec = self.nusc.get('sample', scene_rec['first_sample_token'])
         sd_rec = self.nusc.get('sample_data', sample_rec['data'][channel])
 
-        # Open CV init
+        # Open CV init.
         name = '{}: {} (Space to pause, ESC to exit)'.format(scene_rec['name'], channel)
         cv2.namedWindow(name)
         cv2.moveWindow(name, 0, 0)
@@ -1173,11 +1463,11 @@ class NuScenesExplorer:
         has_more_frames = True
         while has_more_frames:
 
-            # Get data from DB
+            # Get data from DB.
             impath, boxes, camera_intrinsic = self.nusc.get_sample_data(sd_rec['token'],
                                                                         box_vis_level=BoxVisibility.ANY)
 
-            # Load and render
+            # Load and render.
             if not osp.exists(impath):
                 raise Exception('Error: Missing image %s' % impath)
             im = cv2.imread(impath)
@@ -1185,7 +1475,7 @@ class NuScenesExplorer:
                 c = self.get_color(box.name)
                 box.render_cv2(im, view=camera_intrinsic, normalize=True, colors=(c, c, c))
 
-            # Render
+            # Render.
             im = cv2.resize(im, imsize)
             cv2.imshow(name, im)
             if out_path is not None:
@@ -1195,7 +1485,7 @@ class NuScenesExplorer:
             if key == 32:  # If space is pressed, pause.
                 key = cv2.waitKey()
 
-            if key == 27:  # if ESC is pressed, exit
+            if key == 27:  # If ESC is pressed, exit.
                 cv2.destroyAllWindows()
                 break
 
@@ -1225,11 +1515,11 @@ class NuScenesExplorer:
         :param color_bg: Color of the non-semantic prior in RGB format (ignored if map is RGB).
         :param out_path: Optional path to save the rendered figure to disk.
         """
-        # Get logs by location
+        # Get logs by location.
         log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
-        # Filter scenes
+        # Filter scenes.
         scene_tokens_location = [e['token'] for e in self.nusc.scene if e['log_token'] in log_tokens]
         if scene_tokens is not None:
             scene_tokens_location = [t for t in scene_tokens_location if t in scene_tokens]
@@ -1257,7 +1547,7 @@ class NuScenesExplorer:
                 sample_data_record = self.nusc.get('sample_data', sample_record['data']['LIDAR_TOP'])
                 pose_record = self.nusc.get('ego_pose', sample_data_record['ego_pose_token'])
 
-                # Calculate the pose on the map and append
+                # Calculate the pose on the map and append.
                 map_poses.append(np.concatenate(
                     map_mask.to_pixel_coords(pose_record['translation'][0], pose_record['translation'][1])))
 
@@ -1300,3 +1590,221 @@ class NuScenesExplorer:
 
         if out_path is not None:
             plt.savefig(out_path)
+
+    def render_camera_channel_with_pointclouds(self, scene_token: str, camera_channel: str, out_folder: str = None,
+                                               filter_lidarseg_labels: Iterable[int] = None,
+                                               render_if_no_points: bool = True,
+                                               verbose: bool = True,
+                                               imsize: Tuple[int, int] = (640, 360),
+                                               freq: float = 2) -> None:
+        """
+        Renders a full scene with labelled lidar pointclouds for a particular camera channel.
+        :param scene_token: Unique identifier of scene to render.
+        :param camera_channel: Channel to render.
+        :param out_folder: Optional path to save the rendered figure to disk. The filename of each image will be
+                           same as the original image's. If .avi is specified (e.g. '~/Desktop/my_rendered_scene.avi),
+                           a video will be written instead of saving individual frames as images. Each image name wil
+                           follow this format: <0-scene_number>_<original_file_name>.jpg
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+                                       or the list is empty, all classes will be displayed.
+        :param imsize: Size of image to render. The larger the slower this will run.
+        :param freq: Display frequency (Hz).
+        :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
+        :param verbose: Whether to show the frames as they are being rendered.
+        """
+
+        valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
+                          'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+        assert camera_channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(camera_channel)
+        assert imsize[0] / imsize[1] == 16 / 9, 'Error: Aspect ratio should be 16/9.'
+
+        if out_folder is not None:
+            if os.path.splitext(out_folder)[-1] == '.avi':
+                save_as_vid = True
+            else:
+                assert os.path.isdir(out_folder), 'Error: {} does not exist.'.format(out_folder)
+                save_as_vid = False
+        else:
+            save_as_vid = False
+
+        scene_record = self.nusc.get('scene', scene_token)
+
+        total_num_samples = scene_record['nbr_samples']
+        first_sample_token = scene_record['first_sample_token']
+        last_sample_token = scene_record['last_sample_token']
+
+        current_token = first_sample_token
+        keep_looping = True
+        i = 0
+
+        # Open CV init.
+        if verbose:
+            name = '{}: {} (Space to pause, ESC to exit)'.format(scene_record['name'], camera_channel)
+            cv2.namedWindow(name)
+            cv2.moveWindow(name, 0, 0)
+        else:
+            name = None
+
+        if save_as_vid:
+            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+            out = cv2.VideoWriter(out_folder, fourcc, freq, imsize)
+        else:
+            out = None
+
+        while keep_looping:
+            if current_token == last_sample_token:
+                keep_looping = False
+
+            sample_record = self.nusc.get('sample', current_token)
+
+            # Set filename of the image.
+            camera_token = sample_record['data'][camera_channel]
+            cam = self.nusc.get('sample_data', camera_token)
+            filename = '0' + scene_record['name'][5:] + '_' + os.path.basename(cam['filename'])
+
+            pointsensor_token = sample_record['data']['LIDAR_TOP']
+            camera_token = sample_record['data'][camera_channel]
+
+            points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
+                                                                render_intensity=False,
+                                                                show_lidarseg_labels=True,
+                                                                filter_lidarseg_labels=filter_lidarseg_labels,
+                                                                render_if_no_points=render_if_no_points)
+
+            if im is not None:
+                mat = plt_to_cv2(points, coloring, im, imsize)
+
+                if verbose:
+                    cv2.imshow(name, mat)
+
+                    key = cv2.waitKey(1)
+                    if key == 32:  # If space is pressed, pause.
+                        key = cv2.waitKey()
+
+                    if key == 27:  # if ESC is pressed, exit.
+                        cv2.destroyAllWindows()
+                        break
+
+                plt.close('all')  # To prevent figures from accumulating in memory.
+
+                if save_as_vid:
+                    out.write(mat)
+                elif out_folder:
+                    cv2.imwrite(os.path.join(out_folder, filename), mat)
+                else:
+                    pass
+
+            next_token = sample_record['next']
+            current_token = next_token
+
+            i += 1
+
+        cv2.destroyAllWindows()
+
+        if save_as_vid:
+            assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
+                                           'but only {} keyframes were processed'.format(total_num_samples, i)
+            out.release()
+
+    def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
+                                                      filter_lidarseg_labels: Iterable[int] = None,
+                                                      imsize: Tuple[int, int] = (640, 360), freq: float = 2,
+                                                      verbose: bool = True) -> None:
+        """
+        Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
+        :param scene_token: Unique identifier of scene to render.
+        :param out_path: Optional path to write a video file of the rendered frames.
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+            or the list is empty, all classes will be displayed.
+        :param freq: Display frequency (Hz).
+        :param imsize: Size of image to render. The larger the slower this will run.
+        :param verbose: Whether to show the frames as they are being rendered.
+        """
+        assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
+
+        # Get records from DB.
+        scene_record = self.nusc.get('scene', scene_token)
+
+        total_num_samples = scene_record['nbr_samples']
+        first_sample_token = scene_record['first_sample_token']
+        last_sample_token = scene_record['last_sample_token']
+
+        current_token = first_sample_token
+
+        # Set some display parameters.
+        layout = {
+            'CAM_FRONT_LEFT': (0, 0),
+            'CAM_FRONT': (imsize[0], 0),
+            'CAM_FRONT_RIGHT': (2 * imsize[0], 0),
+            'CAM_BACK_LEFT': (0, imsize[1]),
+            'CAM_BACK': (imsize[0], imsize[1]),
+            'CAM_BACK_RIGHT': (2 * imsize[0], imsize[1]),
+        }
+
+        window_name = '{} (Space to pause, ESC to exit)'.format(scene_record['name'])
+        cv2.namedWindow(window_name)
+        cv2.moveWindow(window_name, 0, 0)
+
+        slate = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
+        save_as_vid = False
+        if out_path is not None:
+            assert os.path.splitext(out_path)[-1] == '.avi', 'Error: Video can only be saved in .avi format.'
+            fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+            out = cv2.VideoWriter(out_path, fourcc, freq, slate.shape[1::-1])
+            save_as_vid = True
+        else:
+            out = None
+
+        keep_looping = True
+        i = 0
+        while keep_looping:
+            if current_token == last_sample_token:
+                keep_looping = False
+
+            sample_record = self.nusc.get('sample', current_token)
+
+            for camera_channel in layout:
+                pointsensor_token = sample_record['data']['LIDAR_TOP']
+                camera_token = sample_record['data'][camera_channel]
+
+                # render_if_no_points has to be true or the rendering will fail as some cameras will
+                # have points and others will not.
+                points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
+                                                                    render_intensity=False,
+                                                                    show_lidarseg_labels=True,
+                                                                    filter_lidarseg_labels=filter_lidarseg_labels,
+                                                                    render_if_no_points=True)
+
+                if im is not None:
+                    mat = plt_to_cv2(points, coloring, im, imsize)
+
+                    slate[layout[camera_channel][1]: layout[camera_channel][1] + imsize[1],
+                    layout[camera_channel][0]:layout[camera_channel][0] + imsize[0], :] = mat
+
+            if verbose:
+                cv2.imshow(window_name, slate)
+
+                key = cv2.waitKey(1)
+                if key == 32:  # If space is pressed, pause.
+                    key = cv2.waitKey()
+
+                if key == 27:  # if ESC is pressed, exit.
+                    cv2.destroyAllWindows()
+                    break
+
+            plt.close('all')  # To prevent figures from accumulating in memory.
+
+            if save_as_vid:
+                out.write(slate)
+
+            next_token = sample_record['next']
+            current_token = next_token
+
+            i += 1
+
+        cv2.destroyAllWindows()
+
+        if save_as_vid:
+            assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
+                                           'but only {} keyframes were processed'.format(total_num_samples, i)
+            out.release()
