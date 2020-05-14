@@ -76,7 +76,7 @@ class NuScenes:
         self.map = self.__load_table__('map')
 
         # If available, also load the lidarseg annotations.
-        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
+        if osp.exists(osp.join(self.table_root, version, 'lidarseg.json')):
             self.lidarseg = self.__load_table__('lidarseg')
             self.table_names.append('lidarseg')
 
@@ -572,7 +572,7 @@ class NuScenesExplorer:
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
         """
-        print('Calculating stats for NuScenes-lidarseg...')
+        print('Calculating stats for nuScenes-lidarseg...')
         start_time = time.time()
 
         # Initialize an array of zeroes, one for each class name.
