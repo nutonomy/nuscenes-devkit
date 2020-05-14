@@ -76,14 +76,15 @@ class NuScenes:
         self.map = self.__load_table__('map')
 
         # If available, also load the lidarseg annotations.
-        if osp.exists(osp.join(self.table_root, 'lidarseg_' + self.version + '.json')):
-            self.lidarseg = self.__load_table__('lidarseg_' + self.version)
+        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
+            self.lidarseg = self.__load_table__('lidarseg')
             self.table_names.append('lidarseg')
 
-            lidaseg_categories = self.__load_table__('category_lidarseg')
+            lidarseg_categories = self.__load_table__('category_lidarseg')
             self.lidarseg_idx2name_mapping = dict()
-            for lidarseg_category in lidaseg_categories:
+            for lidarseg_category in lidarseg_categories:
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
+            self.table_names.append('category_lidarseg')
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
