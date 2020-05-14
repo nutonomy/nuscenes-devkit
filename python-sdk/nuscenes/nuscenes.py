@@ -51,6 +51,7 @@ class NuScenes:
         """
         self.version = version
         self.dataroot = dataroot
+        self.verbose = verbose
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
                             'ego_pose', 'log', 'scene', 'sample', 'sample_data', 'sample_annotation', 'map']
 
@@ -76,7 +77,10 @@ class NuScenes:
         self.map = self.__load_table__('map')
 
         # If available, also load the lidarseg annotations.
-        if osp.exists(osp.join(self.table_root, version, 'lidarseg.json')):
+        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
+            if self.verbose:
+                print('Loading nuScenes-lidarseg...')
+
             self.lidarseg = self.__load_table__('lidarseg')
             self.table_names.append('lidarseg')
 
