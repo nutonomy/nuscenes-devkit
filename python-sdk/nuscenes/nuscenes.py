@@ -88,7 +88,6 @@ class NuScenes:
             self.lidarseg_idx2name_mapping = dict()
             for lidarseg_category in lidarseg_categories:
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
-            self.table_names.append('category_lidarseg')
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
@@ -438,7 +437,7 @@ class NuScenes:
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
-    def  list_lidarseg_categories(self) -> None:
+    def list_lidarseg_categories(self) -> None:
         self.explorer.list_lidarseg_categories()
 
     def list_attributes(self) -> None:
