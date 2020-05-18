@@ -29,7 +29,7 @@ Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/591) for th
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
-The submission period will open April 1 and continue until May 28th, 2020.
+This challenge will be focused on predicting trajectories for vehicles. The submission period will open April 1 and continue until May 28th, 2020.
 Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
 Note that the evaluation server can still be used to benchmark your results after the challenge period.
 
