@@ -393,13 +393,17 @@ class NuScenes:
         else:
             return pos_diff / time_diff
 
-    def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True) -> None:
+    def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True,
+                                  show_lidarseg_preds: str = None) -> None:
         """
         Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
         points in the pointcloud will not be printed.
         :param sample_token: Sample token.
         :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
                             the stats will be printed alphabetically according to class name.
+        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
+                                    prediction should be named as <sensor_sample_data_token>.bin.
+
         """
         assert hasattr(self, 'lidarseg'), 'Error: You have no lidarseg data; unable to get ' \
                                           'statistics for segmentation of the point cloud.'
@@ -412,11 +416,21 @@ class NuScenes:
         assert ref_sd_record['is_key_frame'], 'Error: Only pointclouds which are keyframes have ' \
                                               'lidar segmentation labels. Rendering aborted.'
 
-        lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
+        if show_lidarseg_preds:
+            lidarseg_labels_filename = osp.join(show_lidarseg_preds, 'lidarseg_preds',
+                                                ref_sd_token + '.bin')
+            assert os.path.exists(lidarseg_labels_filename), \
+                'Error: Predictions for sample token {} (lidar sample data token {}) ' \
+                'do not exist at {}.'.format(sample_token, ref_sd_token, lidarseg_labels_filename)
+
+            header = '===== Statistics for ' + sample_token + ' (predictions) ====='
+        else:
+            lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
+            header = '===== Statistics for ' + sample_token + ' ====='
+        print(header)
+
         points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
         lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping))
-
-        print('===== Statistics for {} ====='.format(sample_token))
 
         lidarseg_counts_dict = dict()
         for i in range(len(lidarseg_counts)):
@@ -432,7 +446,7 @@ class NuScenes:
                 idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
                 print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
 
-        print('======')
+        print('=' * len(header))
 
     def list_categories(self) -> None:
         self.explorer.list_categories()
@@ -681,7 +695,7 @@ class NuScenesExplorer:
             or the list is empty, all classes will be displayed.
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                      prediction should be named as <sample_data_token>.bin.
+                                    prediction should be named as <sensor_sample_data_token>.bin.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
 
@@ -744,12 +758,12 @@ class NuScenesExplorer:
                                                               'not %s!' % pointsensor['sensor_modality']
 
             if show_lidarseg_preds:
-                # sample_token = self.nusc.get('sample_data', pointsensor_token)['sample_token']
+                sample_token = self.nusc.get('sample_data', pointsensor_token)['sample_token']
                 lidarseg_labels_filename = osp.join(show_lidarseg_preds, 'lidarseg_preds',
                                                     pointsensor_token + '.bin')
                 assert os.path.exists(lidarseg_labels_filename), \
-                    'Error: Predictions for sample token {} ' \
-                    'do not exist at {}.'.format(pointsensor_token, lidarseg_labels_filename)
+                    'Error: Predictions for sample token {} (lidar sample data token {}) ' \
+                    'do not exist at {}.'.format(sample_token, pointsensor_token, lidarseg_labels_filename)
             else:
                 lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
                                                     pointsensor_token + '_lidarseg.bin')
@@ -817,7 +831,7 @@ class NuScenesExplorer:
         :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param verbose: Whether to display the image in a window.
         :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sample_data_token>.bin.
+                                    prediction should be named as <sensor_sample_data_token>.bin.
 
         """
         sample_record = self.nusc.get('sample', sample_token)
@@ -843,7 +857,11 @@ class NuScenesExplorer:
 
         # Init axes.
         if ax is None:
-            _, ax = plt.subplots(1, 1, figsize=(9, 16))
+            fig, ax = plt.subplots(1, 1, figsize=(9, 16))
+            if show_lidarseg_preds:
+                fig.canvas.set_window_title(sample_token + '(predictions)')
+            else:
+                fig.canvas.set_window_title(sample_token)
         else:  # Set title on if rendering as part of render_sample.
             ax.set_title(camera_channel)
         ax.imshow(im)
