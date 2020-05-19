@@ -456,7 +456,8 @@ class NuScenes:
                                    filter_lidarseg_labels: List = None,
                                    render_if_no_points: bool = True,
                                    show_lidarseg_legend: bool = False,
-                                   verbose: bool = True) -> None:
+                                   verbose: bool = True,
+                                   show_lidarseg_preds: str = None) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel, out_path=out_path,
                                                  render_intensity=render_intensity,
@@ -464,7 +465,8 @@ class NuScenes:
                                                  filter_lidarseg_labels=filter_lidarseg_labels,
                                                  render_if_no_points=render_if_no_points,
                                                  show_lidarseg_legend=show_lidarseg_legend,
-                                                 verbose=verbose)
+                                                 verbose=verbose,
+                                                 show_lidarseg_preds=show_lidarseg_preds)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
                       out_path: str = None, show_lidarseg_labels: bool = False,
@@ -665,7 +667,8 @@ class NuScenesExplorer:
                                 render_intensity: bool = False,
                                 show_lidarseg_labels: bool = False,
                                 filter_lidarseg_labels: List = None,
-                                render_if_no_points: bool = True) -> Tuple:
+                                render_if_no_points: bool = True,
+                                show_lidarseg_preds: str = None) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -677,6 +680,8 @@ class NuScenesExplorer:
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
+        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
+                                      prediction should be named as <sample_data_token>.bin.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
 
@@ -737,7 +742,17 @@ class NuScenesExplorer:
         elif show_lidarseg_labels:
             assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render lidarseg labels for lidar, ' \
                                                               'not %s!' % pointsensor['sensor_modality']
-            lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg', pointsensor_token + '_lidarseg.bin')
+
+            if show_lidarseg_preds:
+                # sample_token = self.nusc.get('sample_data', pointsensor_token)['sample_token']
+                lidarseg_labels_filename = osp.join(show_lidarseg_preds, 'lidarseg_preds',
+                                                    pointsensor_token + '.bin')
+                assert os.path.exists(lidarseg_labels_filename), \
+                    'Error: Predictions for sample token {} ' \
+                    'do not exist at {}.'.format(pointsensor_token, lidarseg_labels_filename)
+            else:
+                lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
+                                                    pointsensor_token + '_lidarseg.bin')
             points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
             # Create colormap for the lidarseg labels.
@@ -785,7 +800,8 @@ class NuScenesExplorer:
                                    ax: Axes = None,
                                    render_if_no_points: bool = True,
                                    show_lidarseg_legend: bool = False,
-                                   verbose: bool = True):
+                                   verbose: bool = True,
+                                   show_lidarseg_preds: str = None):
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -800,6 +816,9 @@ class NuScenesExplorer:
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param verbose: Whether to display the image in a window.
+        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
+                                    prediction should be named as <sample_data_token>.bin.
+
         """
         sample_record = self.nusc.get('sample', sample_token)
 
@@ -811,7 +830,8 @@ class NuScenesExplorer:
                                                             render_intensity=render_intensity,
                                                             show_lidarseg_labels=show_lidarseg_labels,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
-                                                            render_if_no_points=render_if_no_points)
+                                                            render_if_no_points=render_if_no_points,
+                                                            show_lidarseg_preds=show_lidarseg_preds)
 
         if pointsensor_channel == 'LIDAR_TOP':
             # Prevent rendering images which have no lidarseg labels.
