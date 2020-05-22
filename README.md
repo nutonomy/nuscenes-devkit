@@ -93,6 +93,20 @@ jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_basics_tuto
 - See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
 - See the [FAQs](https://github.com/nutonomy/nuscenes-devkit/blob/master/faqs.md).
 
+## Known issues
+Great care has been taken to collate the nuScenes dataset and many users have praised the quality of the data and annotations.
+However, some minor issues remain:
+
+**Maps**:
+- For *singapore-hollandvillage* and *singapore-queenstown* the traffic light poses are all 0 (except for tz).
+- For *boston-seaport*, the ego poses of 3 scenes (499, 515, 517) are slightly incorrect and 2 scenes (501, 502) are outside the annotated area. 
+- For *singapore-onenorth* some of the center line paths have small gaps in them.
+- For *singapore-onenorth*, the ego poses of about 10 scenes were off the drivable surface. This has been **resolved in map v1.1**.
+
+**Annotations**:
+- A small number of 3d bounding boxes is annotated despite the object being temporarily occluded. For this reason we make sure to **filter objects without lidar or radar points** in the nuScenes benchmarks. See [issue 366](https://github.com/nutonomy/nuscenes-devkit/issues/366).
+
+
 ## Citation
 Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):
 ```
