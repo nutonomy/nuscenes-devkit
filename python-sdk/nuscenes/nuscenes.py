@@ -394,14 +394,14 @@ class NuScenes:
             return pos_diff / time_diff
 
     def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True,
-                                  show_lidarseg_preds: str = None) -> None:
+                                  lidarseg_preds_bin_path: str = None) -> None:
         """
         Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
         points in the pointcloud will not be printed.
         :param sample_token: Sample token.
         :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
                             the stats will be printed alphabetically according to class name.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
                                     prediction should be named as <sensor_sample_data_token>.bin.
 
         """
@@ -416,11 +416,11 @@ class NuScenes:
         assert ref_sd_record['is_key_frame'], 'Error: Only pointclouds which are keyframes have ' \
                                               'lidar segmentation labels. Rendering aborted.'
 
-        if show_lidarseg_preds:
-            lidarseg_labels_filename = osp.join(show_lidarseg_preds, ref_sd_token + '.bin')
+        if lidarseg_preds_bin_path:
+            lidarseg_labels_filename = lidarseg_preds_bin_path
             assert os.path.exists(lidarseg_labels_filename), \
-                'Error: Predictions for sample token {} (lidar sample data token {}) ' \
-                'do not exist at {}.'.format(sample_token, ref_sd_token, lidarseg_labels_filename)
+                'Error: Unable to find {} to load the predictions for sample token {} ' \
+                '(lidar sample data token {}) from.'.format(lidarseg_labels_filename, sample_token, ref_sd_token)
 
             header = '===== Statistics for ' + sample_token + ' (predictions) ====='
         else:
@@ -473,7 +473,7 @@ class NuScenes:
                                    render_if_no_points: bool = True,
                                    show_lidarseg_legend: bool = False,
                                    verbose: bool = True,
-                                   show_lidarseg_preds: str = None) -> None:
+                                   lidarseg_preds_bin_path: str = None) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel, out_path=out_path,
                                                  render_intensity=render_intensity,
@@ -482,16 +482,16 @@ class NuScenes:
                                                  render_if_no_points=render_if_no_points,
                                                  show_lidarseg_legend=show_lidarseg_legend,
                                                  verbose=verbose,
-                                                 show_lidarseg_preds=show_lidarseg_preds)
+                                                 lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
     def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
                       out_path: str = None, show_lidarseg_labels: bool = False,
                       filter_lidarseg_labels: List = None,
-                      show_lidarseg_preds: str = None, verbose: bool = True) -> None:
+                      lidarseg_preds_bin_path: str = None, verbose: bool = True) -> None:
         self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps,
                                     out_path=out_path, show_lidarseg_labels=show_lidarseg_labels,
                                     filter_lidarseg_labels=filter_lidarseg_labels,
-                                    show_lidarseg_preds=show_lidarseg_preds, verbose=verbose)
+                                    lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
@@ -499,13 +499,13 @@ class NuScenes:
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg_labels: bool = False,
                            filter_lidarseg_labels: List = None,
-                           show_lidarseg_preds: str = None, verbose: bool = True) -> None:
+                           lidarseg_preds_bin_path: str = None, verbose: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
                                          use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
                                          show_lidarseg_labels=show_lidarseg_labels,
                                          filter_lidarseg_labels=filter_lidarseg_labels,
-                                         show_lidarseg_preds=show_lidarseg_preds, verbose=verbose)
+                                         lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -532,23 +532,23 @@ class NuScenes:
                                                filter_lidarseg_labels: Iterable[int] = None,
                                                render_if_no_points: bool = True, verbose=True,
                                                imsize: Tuple[int, int] = (640, 360), freq: float = 2,
-                                               show_lidarseg_preds: str = None) -> None:
+                                               lidarseg_preds_bin_path: str = None) -> None:
         self.explorer.render_camera_channel_with_pointclouds(scene_token, camera_channel, out_folder=out_folder,
                                                              filter_lidarseg_labels=filter_lidarseg_labels,
                                                              render_if_no_points=render_if_no_points, verbose=verbose,
                                                              imsize=imsize, freq=freq,
-                                                             show_lidarseg_preds=show_lidarseg_preds)
+                                                             lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
     def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
                                                       filter_lidarseg_labels: Iterable[int] = None,
                                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                                       verbose: bool = True,
-                                                      show_lidarseg_preds: str = None) -> None:
+                                                      lidarseg_preds_bin_path: str = None) -> None:
         self.explorer.render_scene_with_pointclouds_for_all_cameras(scene_token, out_path=out_path,
                                                                     filter_lidarseg_labels=filter_lidarseg_labels,
                                                                     imsize=imsize, freq=freq,
                                                                     verbose=verbose,
-                                                                    show_lidarseg_preds=show_lidarseg_preds)
+                                                                    lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
 
 class NuScenesExplorer:
@@ -691,7 +691,7 @@ class NuScenesExplorer:
                                 render_intensity: bool = False,
                                 show_lidarseg_labels: bool = False,
                                 filter_lidarseg_labels: List = None,
-                                show_lidarseg_preds: str = None) -> Tuple:
+                                lidarseg_preds_bin_path: str = None) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
         plane.
@@ -702,7 +702,7 @@ class NuScenesExplorer:
         :param show_lidarseg_labels: Whether to render lidar intensity instead of point depth.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
                                     prediction should be named as <sensor_sample_data_token>.bin.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
@@ -765,12 +765,12 @@ class NuScenesExplorer:
             assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render lidarseg labels for lidar, ' \
                                                               'not %s!' % pointsensor['sensor_modality']
 
-            if show_lidarseg_preds:
+            if lidarseg_preds_bin_path:
                 sample_token = self.nusc.get('sample_data', pointsensor_token)['sample_token']
-                lidarseg_labels_filename = osp.join(show_lidarseg_preds, pointsensor_token + '.bin')
+                lidarseg_labels_filename = lidarseg_preds_bin_path
                 assert os.path.exists(lidarseg_labels_filename), \
-                    'Error: Predictions for sample token {} (lidar sample data token {}) ' \
-                    'do not exist at {}.'.format(sample_token, pointsensor_token, lidarseg_labels_filename)
+                    'Error: Unable to find {} to load the predictions for sample token {} (lidar ' \
+                    'sample data token {}) from.'.format(lidarseg_labels_filename, sample_token, pointsensor_token)
             else:
                 if len(self.nusc.lidarseg) > 0:  # Ensure lidarseg.json is not empty (e.g. in case of v1.0-test).
                     lidarseg_labels_filename = osp.join(self.nusc.dataroot,
@@ -825,7 +825,7 @@ class NuScenesExplorer:
                                    render_if_no_points: bool = True,
                                    show_lidarseg_legend: bool = False,
                                    verbose: bool = True,
-                                   show_lidarseg_preds: str = None):
+                                   lidarseg_preds_bin_path: str = None):
         """
         Scatter-plots a point-cloud on top of image.
         :param sample_token: Sample token.
@@ -840,8 +840,8 @@ class NuScenesExplorer:
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param verbose: Whether to display the image in a window.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
+                                        prediction should be named as <sensor_sample_data_token>.bin.
 
         """
         sample_record = self.nusc.get('sample', sample_token)
@@ -854,7 +854,7 @@ class NuScenesExplorer:
                                                             render_intensity=render_intensity,
                                                             show_lidarseg_labels=show_lidarseg_labels,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
-                                                            show_lidarseg_preds=show_lidarseg_preds)
+                                                            lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
         # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
         # the users do not appear within the image). To check if there are no lidarseg labels belonging to the desired
@@ -874,7 +874,7 @@ class NuScenesExplorer:
         # Init axes.
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=(9, 16))
-            if show_lidarseg_preds:
+            if lidarseg_preds_bin_path:
                 fig.canvas.set_window_title(sample_token + '(predictions)')
             else:
                 fig.canvas.set_window_title(sample_token)
@@ -911,7 +911,7 @@ class NuScenesExplorer:
                       out_path: str = None,
                       show_lidarseg_labels: bool = False,
                       filter_lidarseg_labels: List = None,
-                      show_lidarseg_preds: str = None,
+                      lidarseg_preds_bin_path: str = None,
                       verbose: bool = True) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
@@ -921,8 +921,8 @@ class NuScenesExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         :param show_lidarseg_labels: Whether to show lidar segmentations labels or not.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
+                                        prediction should be named as <sensor_sample_data_token>.bin.
         :param verbose: Whether to show the rendered sample in a window or not.
         """
         record = self.nusc.get('sample', token)
@@ -963,7 +963,7 @@ class NuScenesExplorer:
                 self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
                                         show_lidarseg_labels=show_lidarseg_labels,
                                         filter_lidarseg_labels=filter_lidarseg_labels,
-                                        show_lidarseg_preds=show_lidarseg_preds,
+                                        lidarseg_preds_bin_path=lidarseg_preds_bin_path,
                                         verbose=False)
 
         # Plot cameras in separate subplots.
@@ -984,7 +984,7 @@ class NuScenesExplorer:
                                                 show_lidarseg_labels=show_lidarseg_labels,
                                                 filter_lidarseg_labels=filter_lidarseg_labels,
                                                 ax=ax, verbose=False,
-                                                show_lidarseg_preds=show_lidarseg_preds)
+                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
         # Change plot settings and write to disk.
         axes.flatten()[-1].axis('off')
@@ -1067,7 +1067,7 @@ class NuScenesExplorer:
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg_labels: bool = False,
                            filter_lidarseg_labels: List = None,
-                           show_lidarseg_preds: str = None,
+                           lidarseg_preds_bin_path: str = None,
                            verbose: bool = True) -> None:
         """
         Render sample data onto axis.
@@ -1087,8 +1087,8 @@ class NuScenesExplorer:
             to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
+                                        prediction should be named as <sensor_sample_data_token>.bin.
         :param verbose: Whether to display the image after it is rendered.
         """
         # Get sensor modality.
@@ -1173,12 +1173,12 @@ class NuScenesExplorer:
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
             if sensor_modality == 'lidar' and show_lidarseg_labels:
                 # Load labels for pointcloud.
-                if show_lidarseg_preds:
+                if lidarseg_preds_bin_path:
                     sample_token = self.nusc.get('sample_data', sample_data_token)['sample_token']
-                    lidarseg_labels_filename = osp.join(show_lidarseg_preds, sample_data_token + '.bin')
+                    lidarseg_labels_filename = lidarseg_preds_bin_path
                     assert os.path.exists(lidarseg_labels_filename), \
-                        'Error: Predictions for sample token {} (lidar sample data token {}) ' \
-                        'do not exist at {}.'.format(sample_token, sample_data_token, lidarseg_labels_filename)
+                        'Error: Unable to find {} to load the predictions for sample token {} (lidar ' \
+                        'sample data token {}) from.'.format(lidarseg_labels_filename, sample_token, sample_data_token)
                 else:
                     if len(self.nusc.lidarseg) > 0:  # Ensure lidarseg.json is not empty (e.g. in case of v1.0-test).
                         lidarseg_labels_filename = osp.join(self.nusc.dataroot,
@@ -1261,7 +1261,7 @@ class NuScenesExplorer:
 
         ax.axis('off')
         ax.set_title('{} {labels_type}'.format(
-            sd_record['channel'], labels_type='(predictions)' if show_lidarseg_preds else ''))
+            sd_record['channel'], labels_type='(predictions)' if lidarseg_preds_bin_path else ''))
         ax.set_aspect('equal')
 
         if out_path is not None:
@@ -1677,7 +1677,7 @@ class NuScenesExplorer:
                                                verbose: bool = True,
                                                imsize: Tuple[int, int] = (640, 360),
                                                freq: float = 2,
-                                               show_lidarseg_preds: str = None) -> None:
+                                               lidarseg_preds_bin_path: str = None) -> None:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.
@@ -1692,8 +1692,8 @@ class NuScenesExplorer:
         :param freq: Display frequency (Hz).
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param verbose: Whether to show the frames as they are being rendered.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
+                                        prediction should be named as <sensor_sample_data_token>.bin.
         """
 
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
@@ -1723,7 +1723,7 @@ class NuScenesExplorer:
         # Open CV init.
         if verbose:
             name = '{}: {} {labels_type} (Space to pause, ESC to exit)'.format(
-                scene_record['name'], camera_channel, labels_type="(predictions)" if show_lidarseg_preds else "")
+                scene_record['name'], camera_channel, labels_type="(predictions)" if lidarseg_preds_bin_path else "")
             cv2.namedWindow(name)
             cv2.moveWindow(name, 0, 0)
         else:
@@ -1753,7 +1753,7 @@ class NuScenesExplorer:
                                                                 render_intensity=False,
                                                                 show_lidarseg_labels=True,
                                                                 filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                show_lidarseg_preds=show_lidarseg_preds)
+                                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
             # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
             # the users do not appear within the image). To check if there are no lidarseg labels belonging to the
@@ -1801,7 +1801,7 @@ class NuScenesExplorer:
                                                       filter_lidarseg_labels: Iterable[int] = None,
                                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                                       verbose: bool = True,
-                                                      show_lidarseg_preds: str = None) -> None:
+                                                      lidarseg_preds_bin_path: str = None) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
         :param scene_token: Unique identifier of scene to render.
@@ -1811,8 +1811,8 @@ class NuScenesExplorer:
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
         :param verbose: Whether to show the frames as they are being rendered.
-        :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
+                                        prediction should be named as <sensor_sample_data_token>.bin.
         """
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
 
@@ -1836,7 +1836,7 @@ class NuScenesExplorer:
         }
 
         window_name = '{} {labels_type} (Space to pause, ESC to exit)'.format(
-            scene_record['name'], labels_type="(predictions)" if show_lidarseg_preds else "")
+            scene_record['name'], labels_type="(predictions)" if lidarseg_preds_bin_path else "")
         cv2.namedWindow(window_name)
         cv2.moveWindow(window_name, 0, 0)
 
@@ -1868,7 +1868,7 @@ class NuScenesExplorer:
                                                                     render_intensity=False,
                                                                     show_lidarseg_labels=True,
                                                                     filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                    show_lidarseg_preds=show_lidarseg_preds)
+                                                                    lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
                 if im is not None:
                     mat = plt_to_cv2(points, coloring, im, imsize)
