@@ -401,9 +401,8 @@ class NuScenes:
         :param sample_token: Sample token.
         :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
                             the stats will be printed alphabetically according to class name.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
-
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         """
         assert hasattr(self, 'lidarseg'), 'Error: You have no lidarseg data; unable to get ' \
                                           'statistics for segmentation of the point cloud.'
@@ -702,8 +701,8 @@ class NuScenesExplorer:
         :param show_lidarseg_labels: Whether to render lidar intensity instead of point depth.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                    prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
 
@@ -840,8 +839,8 @@ class NuScenesExplorer:
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param verbose: Whether to display the image in a window.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                        prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
 
         """
         sample_record = self.nusc.get('sample', sample_token)
@@ -921,8 +920,8 @@ class NuScenesExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         :param show_lidarseg_labels: Whether to show lidar segmentations labels or not.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                        prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         :param verbose: Whether to show the rendered sample in a window or not.
         """
         record = self.nusc.get('sample', token)
@@ -1087,8 +1086,8 @@ class NuScenesExplorer:
             to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                        prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         :param verbose: Whether to display the image after it is rendered.
         """
         # Get sensor modality.
@@ -1692,8 +1691,8 @@ class NuScenesExplorer:
         :param freq: Display frequency (Hz).
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param verbose: Whether to show the frames as they are being rendered.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                        prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         """
 
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
@@ -1811,8 +1810,8 @@ class NuScenesExplorer:
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
         :param verbose: Whether to show the frames as they are being rendered.
-        :param lidarseg_preds_bin_path: A path to the folder where the user's lidarseg predictions are located (each
-                                        prediction should be named as <sensor_sample_data_token>.bin.
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         """
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
 
