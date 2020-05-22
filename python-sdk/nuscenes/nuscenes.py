@@ -424,7 +424,10 @@ class NuScenes:
 
             header = '===== Statistics for ' + sample_token + ' (predictions) ====='
         else:
-            lidarseg_labels_filename = os.path.join(self.dataroot, 'lidarseg', ref_sd_token + '_lidarseg.bin')
+            lidar_sd_token = self.get('sample', sample_token)['data']['LIDAR_TOP']
+            lidarseg_labels_filename = os.path.join(self.dataroot,
+                                                    self.get('lidarseg', lidar_sd_token)['filename'])
+
             header = '===== Statistics for ' + sample_token + ' ====='
         print(header)
 
@@ -603,10 +606,10 @@ class NuScenesExplorer:
 
         # Initialize an array of zeroes, one for each class name.
         lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)
-
+        print('blah')
         for record_lidarseg in self.nusc.lidarseg:
-            lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
-                                                record_lidarseg['sample_data_token'] + '_lidarseg.bin')
+            lidarseg_labels_filename = osp.join(self.nusc.dataroot, record_lidarseg['filename'])
+
             points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
             indices = np.bincount(points_label)
             ii = np.nonzero(indices)[0]
@@ -688,7 +691,6 @@ class NuScenesExplorer:
                                 render_intensity: bool = False,
                                 show_lidarseg_labels: bool = False,
                                 filter_lidarseg_labels: List = None,
-                                render_if_no_points: bool = True,
                                 show_lidarseg_preds: str = None) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
@@ -700,7 +702,6 @@ class NuScenesExplorer:
         :param show_lidarseg_labels: Whether to render lidar intensity instead of point depth.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
-        :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param show_lidarseg_preds: A path to the folder where the user's lidarseg predictions are located (each
                                     prediction should be named as <sensor_sample_data_token>.bin.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
@@ -771,16 +772,25 @@ class NuScenesExplorer:
                     'Error: Predictions for sample token {} (lidar sample data token {}) ' \
                     'do not exist at {}.'.format(sample_token, pointsensor_token, lidarseg_labels_filename)
             else:
-                lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
-                                                    pointsensor_token + '_lidarseg.bin')
-            points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+                if len(self.nusc.lidarseg) > 0:  # Ensure lidarseg.json is not empty (e.g. in case of v1.0-test).
+                    lidarseg_labels_filename = osp.join(self.nusc.dataroot,
+                                                        self.nusc.get('lidarseg', pointsensor_token)['filename'])
+                else:
+                    lidarseg_labels_filename = None
 
-            # Create colormap for the lidarseg labels.
-            num_classes = len(self.nusc.lidarseg_idx2name_mapping)
-            colormap = get_arbitrary_colormap(num_classes)
-            if filter_lidarseg_labels:
-                colormap = filter_colormap(colormap, filter_lidarseg_labels)
-            coloring = colormap[points_label]
+            if lidarseg_labels_filename:
+                points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+
+                # Create colormap for the lidarseg labels.
+                num_classes = len(self.nusc.lidarseg_idx2name_mapping)
+                colormap = get_arbitrary_colormap(num_classes)
+                if filter_lidarseg_labels:
+                    colormap = filter_colormap(colormap, filter_lidarseg_labels)
+                coloring = colormap[points_label]
+            else:
+                coloring = depths
+                print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
+                      'from the ego vehicle instead.'.format(self.nusc.version))
         else:
             # Retrieve the color from the depth.
             coloring = depths
@@ -799,12 +809,6 @@ class NuScenesExplorer:
         mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
         points = points[:, mask]
         coloring = coloring[mask]
-
-        # Prevent rendering images which have no lidarseg labels in it. To check if there are no lidarseg
-        # labels in an image, we check if any column in the coloring is all zeros (the alpha column will
-        # be all zeroes if so).
-        if show_lidarseg_labels and not render_if_no_points and (~coloring.any(axis=0)).any():
-            return None, None, None
 
         return points, coloring, im
 
@@ -850,8 +854,14 @@ class NuScenesExplorer:
                                                             render_intensity=render_intensity,
                                                             show_lidarseg_labels=show_lidarseg_labels,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
-                                                            render_if_no_points=render_if_no_points,
                                                             show_lidarseg_preds=show_lidarseg_preds)
+
+        # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
+        # the users do not appear within the image). To check if there are no lidarseg labels belonging to the desired
+        # classes in an image, we check if any column in the coloring is all zeros (the alpha column will be all
+        # zeroes if so).
+        if show_lidarseg_labels and not render_if_no_points and (~coloring.any(axis=0)).any():
+            points, coloring, im = None, None, None
 
         if pointsensor_channel == 'LIDAR_TOP':
             # Prevent rendering images which have no lidarseg labels.
@@ -1170,16 +1180,25 @@ class NuScenesExplorer:
                         'Error: Predictions for sample token {} (lidar sample data token {}) ' \
                         'do not exist at {}.'.format(sample_token, sample_data_token, lidarseg_labels_filename)
                 else:
-                    lidarseg_labels_filename = osp.join(self.nusc.dataroot, 'lidarseg',
-                                                        sample_data_token + '_lidarseg.bin')
-                points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+                    if len(self.nusc.lidarseg) > 0:  # Ensure lidarseg.json is not empty (e.g. in case of v1.0-test).
+                        lidarseg_labels_filename = osp.join(self.nusc.dataroot,
+                                                            self.nusc.get('lidarseg', sample_data_token)['filename'])
+                    else:
+                        lidarseg_labels_filename = None
 
-                # Create colormap for the lidarseg labels.
-                num_classes = len(self.nusc.lidarseg_idx2name_mapping)
-                colormap = get_arbitrary_colormap(num_classes)
-                if filter_lidarseg_labels:
-                    colormap = filter_colormap(colormap, filter_lidarseg_labels)
-                colors = colormap[points_label]
+                if lidarseg_labels_filename:
+                    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+
+                    # Create colormap for the lidarseg labels.
+                    num_classes = len(self.nusc.lidarseg_idx2name_mapping)
+                    colormap = get_arbitrary_colormap(num_classes)
+                    if filter_lidarseg_labels:
+                        colormap = filter_colormap(colormap, filter_lidarseg_labels)
+                    colors = colormap[points_label]
+                else:
+                    colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+                    print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
+                          'from the ego vehicle instead.'.format(self.nusc.version))
             else:
                 colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
             point_scale = 0.2 if sensor_modality == 'lidar' else 3.0
@@ -1734,8 +1753,14 @@ class NuScenesExplorer:
                                                                 render_intensity=False,
                                                                 show_lidarseg_labels=True,
                                                                 filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                render_if_no_points=render_if_no_points,
                                                                 show_lidarseg_preds=show_lidarseg_preds)
+
+            # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
+            # the users do not appear within the image). To check if there are no lidarseg labels belonging to the
+            # desired classes in an image, we check if any column in the coloring is all zeros (the alpha column will
+            # be all zeroes if so).
+            if not render_if_no_points and (~coloring.any(axis=0)).any():
+                points, coloring, im = None, None, None
 
             if im is not None:
                 mat = plt_to_cv2(points, coloring, im, imsize)
@@ -1843,7 +1868,6 @@ class NuScenesExplorer:
                                                                     render_intensity=False,
                                                                     show_lidarseg_labels=True,
                                                                     filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                    render_if_no_points=True,
                                                                     show_lidarseg_preds=show_lidarseg_preds)
 
                 if im is not None:
