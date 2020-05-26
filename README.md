@@ -66,6 +66,15 @@ To install this expansion, please follow these steps:
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
 
+## nuScenes-lidarseg expansion
+In June 2020 we published a nusScenes-lidarseg expansion which contains semantic labels of various pointclouds.
+To install this expansion, please follow these steps:
+- Download the expansion from the [Download page](https://www.nuscenes.org/download),
+- Move the `lidarseg` and `v1.0-*` folders to your root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
+- Get the latest version of the nuscenes-devkit.
+- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
+- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/nuscenes_lidarseg_tutorial.ipynb).
+
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7.
 To install Python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md#install-python).
