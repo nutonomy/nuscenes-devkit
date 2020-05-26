@@ -8,6 +8,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Map expansion](#map-expansion)
 - [Devkit setup](#devkit-setup)
 - [Getting started](#getting-started)
+- [Known issues](#known-issues)
 - [Citation](#citation)
 
 ## Changelog
@@ -105,7 +106,6 @@ However, some minor issues remain:
 
 **Annotations**:
 - A small number of 3d bounding boxes is annotated despite the object being temporarily occluded. For this reason we make sure to **filter objects without lidar or radar points** in the nuScenes benchmarks. See [issue 366](https://github.com/nutonomy/nuscenes-devkit/issues/366).
-
 
 ## Citation
 Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):
