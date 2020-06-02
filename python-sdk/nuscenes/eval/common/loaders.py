@@ -216,8 +216,11 @@ def filter_eval_boxes(nusc: NuScenes,
     """
     # Retrieve box type.
     assert len(eval_boxes.boxes) > 0
-    first_key = list(eval_boxes.boxes.keys())[0]
-    box = eval_boxes.boxes[first_key][0]
+    box = None
+    for val in eval_boxes.boxes.values():
+        if len(val) > 0:
+            box = val[0]
+            break
     if isinstance(box, DetectionBox):
         class_field = 'detection_name'
     elif isinstance(box, TrackingBox):
