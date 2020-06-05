@@ -165,3 +165,35 @@ def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.ndar
     colormap = np.concatenate((colormap, alpha.T), axis=1)
 
     return colormap
+
+
+def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> List:
+    """
+    Find the class labels which are present in a pointcloud which has been projected onto an image.
+    :param color_legend: A list of arrays in which each array corresponds to the RGB values of a class.
+    :param coloring: A list of arrays in which each array corresponds to the RGB values of a point in the portion of
+                     the pointcloud projected onto the image.
+    :return <List: n> List of class indices which are present in the image.
+    """
+
+    def __arreq_in_list(myarr, list_arrays) -> bool:
+        """
+        Check if an array is in a list of arrays.
+        :param: myarr: An array.
+        :param: list_arrays: A list of arrays.
+        :return <bool> Whether the given array is in the list of arrays.
+        """
+        # Credits: https://stackoverflow.com/questions/23979146/check-if-numpy-array-is-in-list-of-numpy-arrays
+        return next((True for elem in list_arrays if np.array_equal(elem, myarr)), False)
+
+    filter_lidarseg_labels = []
+
+    # Get only the distinct colors present in the pointcloud so that we will not need to compare each color in
+    # the color legend with every single point in the pointcloud later.
+    distinct_colors = set(tuple(c) for c in coloring)
+
+    for i, color in enumerate(color_legend):
+        if __arreq_in_list(color, distinct_colors):
+            filter_lidarseg_labels.append(i)
+
+    return filter_lidarseg_labels

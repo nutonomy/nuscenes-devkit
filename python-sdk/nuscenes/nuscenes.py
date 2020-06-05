@@ -21,7 +21,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
-    get_key_from_value
+    get_key_from_value, get_labels_in_coloring
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -888,15 +888,21 @@ class NuScenesExplorer:
         ax.axis('off')
 
         # Produce a legend with the unique colors from the scatter.
-        if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg_legend:
+        if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg_labels and show_lidarseg_legend:
             import matplotlib.patches as mpatches
             recs = []
             classes_final = []
             classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
             color_legend = get_arbitrary_colormap(len(classes))
+
+            # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
+            # after it has been projected onto the image; this will allow displaying the legend only for classes which
+            # are present in the image (instead of all the classes).
+            if filter_lidarseg_labels is None:
+                filter_lidarseg_labels = get_labels_in_coloring(color_legend, coloring)
+
             for i in range(len(classes)):
-                # Create legend only for labels which the user wants to see,
-                # if the user has specified a lidarseg filter.
+                # Create legend only for labels specified in the lidarseg filter.
                 if filter_lidarseg_labels is None or i in filter_lidarseg_labels:
                     recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_legend[i]))
                     classes_final.append(classes[i])
