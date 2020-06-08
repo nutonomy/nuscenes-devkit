@@ -82,6 +82,11 @@ class NuScenes:
                 print('Loading nuScenes-lidarseg...')
 
             self.lidarseg = self.__load_table__('lidarseg')
+            num_lidarseg_recs = len(self.lidarseg)
+            num_bin_files = len([name for name in os.listdir(os.path.join(self.dataroot, 'lidarseg', self.version))
+                                 if name.endswith('.bin')])
+            assert num_lidarseg_recs == num_bin_files, \
+                'Error: There are {} .bin files but {} lidarseg records.'.format(num_bin_files, num_lidarseg_recs)
             self.table_names.append('lidarseg')
 
             lidarseg_categories = self.__load_table__('category_lidarseg')
