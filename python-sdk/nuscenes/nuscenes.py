@@ -910,8 +910,10 @@ class NuScenesExplorer:
                 # Create legend only for labels specified in the lidarseg filter.
                 if filter_lidarseg_labels is None or i in filter_lidarseg_labels:
                     recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_legend[i]))
-                    classes_final.append(classes[i])
-            plt.legend(recs, classes_final, loc='lower left', ncol=3)
+
+                    # Truncate class names to only first 25 chars so that legend is not excessively long.
+                    classes_final.append(classes[i][:25])
+            plt.legend(recs, classes_final, loc='upper center', ncol=3)
 
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
