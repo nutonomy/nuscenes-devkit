@@ -12,6 +12,7 @@ from typing import Tuple, List, Iterable
 
 import cv2
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import sklearn.metrics
 from PIL import Image
@@ -894,7 +895,6 @@ class NuScenesExplorer:
 
         # Produce a legend with the unique colors from the scatter.
         if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg_labels and show_lidarseg_legend:
-            import matplotlib.patches as mpatches
             recs = []
             classes_final = []
             classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
