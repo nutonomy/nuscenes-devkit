@@ -15,7 +15,7 @@ def get_stats(points_label: np.array, num_classes: int) -> List[int]:
     Get frequency of each label in a point cloud.
     :param num_classes: The number of classes.
     :param points_label: A numPy array which contains the labels of the point cloud; e.g. np.array([2, 1, 34, ..., 38])
-    :returns: An array which contains the counts of each label in the point cloud. The index of the point cloud
+    :return: An array which contains the counts of each label in the point cloud. The index of the point cloud
               corresponds to the index of the class label. E.g. [0, 2345, 12, 451] means that there are no points in
               class 0, there are 2345 points in class 1, there are 12 points in class 2 etc.
     """
@@ -148,7 +148,7 @@ def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.ndar
     of the labels to be display set to 1.0 and those to be hidden set to 0.0
     :param colormap: [n x 3] array where each row consist of the RGB values for the corresponding class index
     :param classes_to_display: An array of classes to display (e.g. [1, 8, 32]). The array need not be ordered.
-    :return (colormap <np.float: n, 4)>).
+    :return: (colormap <np.float: n, 4)>).
 
     colormap = np.array([[R1, G1, B1],             colormap = np.array([[1.0, 1.0, 1.0, 0.0],
                          [R2, G2, B2],   ------>                        [R2,  G2,  B2,  1.0],
@@ -165,3 +165,35 @@ def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.ndar
     colormap = np.concatenate((colormap, alpha.T), axis=1)
 
     return colormap
+
+
+def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> List[int]:
+    """
+    Find the class labels which are present in a pointcloud which has been projected onto an image.
+    :param color_legend: A list of arrays in which each array corresponds to the RGB values of a class.
+    :param coloring: A list of arrays in which each array corresponds to the RGB values of a point in the portion of
+                     the pointcloud projected onto the image.
+    :return: List of class indices which are present in the image.
+    """
+
+    def _array_in_list(arr: List, list_arrays: List) -> bool:
+        """
+        Check if an array is in a list of arrays.
+        :param: arr: An array.
+        :param: list_arrays: A list of arrays.
+        :return: Whether the given array is in the list of arrays.
+        """
+        # Credits: https://stackoverflow.com/questions/23979146/check-if-numpy-array-is-in-list-of-numpy-arrays
+        return next((True for elem in list_arrays if np.array_equal(elem, arr)), False)
+
+    filter_lidarseg_labels = []
+
+    # Get only the distinct colors present in the pointcloud so that we will not need to compare each color in
+    # the color legend with every single point in the pointcloud later.
+    distinct_colors = list(set(tuple(c) for c in coloring))
+
+    for i, color in enumerate(color_legend):
+        if _array_in_list(color, distinct_colors):
+            filter_lidarseg_labels.append(i)
+
+    return filter_lidarseg_labels
