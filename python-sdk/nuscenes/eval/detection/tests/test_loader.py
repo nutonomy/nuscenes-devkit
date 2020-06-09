@@ -9,6 +9,7 @@ from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.common.loaders import filter_eval_boxes
 from nuscenes.eval.detection.data_classes import DetectionBox
+from nuscenes.eval.common.loaders import _get_box_class_field
 
 
 class TestLoader(unittest.TestCase):
@@ -168,6 +169,25 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(filtered_boxes.boxes[sample_token][0].ego_dist, 25.0)
         self.assertEqual(filtered_boxes.boxes[sample_token][1].ego_dist, 45.0)
         self.assertEqual(filtered_boxes.boxes[sample_token][2].num_pts, 1)
+
+    def test_get_box_class_field(self):
+        eval_boxes = EvalBoxes()
+        box1 = DetectionBox(sample_token='box1',
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='bicycle',
+                            ego_translation=(25.0, 0.0, 0.0))
+
+        box2 = DetectionBox(sample_token='box2',
+                            translation=(683.681, 1592.002, 0.809),
+                            size=(1, 1, 1),
+                            detection_name='motorcycle',
+                            ego_translation=(45.0, 0.0, 0.0))
+        eval_boxes.add_boxes('sample1', [])
+        eval_boxes.add_boxes('sample2', [box1, box2])
+
+        class_field = _get_box_class_field(eval_boxes)
+        self.assertEqual(class_field, 'detection_name')
 
 
 if __name__ == '__main__':

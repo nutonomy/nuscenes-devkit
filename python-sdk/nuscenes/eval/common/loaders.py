@@ -214,16 +214,8 @@ def filter_eval_boxes(nusc: NuScenes,
     :param max_dist: Maps the detection name to the eval distance threshold for that class.
     :param verbose: Whether to print to stdout.
     """
-    # Retrieve box type.
-    assert len(eval_boxes.boxes) > 0
-    first_key = list(eval_boxes.boxes.keys())[0]
-    box = eval_boxes.boxes[first_key][0]
-    if isinstance(box, DetectionBox):
-        class_field = 'detection_name'
-    elif isinstance(box, TrackingBox):
-        class_field = 'tracking_name'
-    else:
-        raise Exception('Error: Invalid box type: %s' % box)
+    # Retrieve box type for detectipn/tracking boxes.
+    class_field = _get_box_class_field(eval_boxes)
 
     # Accumulators for number of filtered boxes.
     total, dist_filter, point_filter, bike_rack_filter = 0, 0, 0, 0
@@ -266,3 +258,27 @@ def filter_eval_boxes(nusc: NuScenes,
         print("=> After bike rack filtering: %d" % bike_rack_filter)
 
     return eval_boxes
+
+
+def _get_box_class_field(eval_boxes: EvalBoxes) -> str:
+    """
+    Retrieve the name of the class field in the boxes.
+    This parses through all boxes until it finds a valid box.
+    If there are no valid boxes, this function throws an exception.
+    :param eval_boxes: The EvalBoxes used for evaluation.
+    :return: The name of the class field in the boxes, e.g. detection_name or tracking_name.
+    """
+    assert len(eval_boxes.boxes) > 0
+    box = None
+    for val in eval_boxes.boxes.values():
+        if len(val) > 0:
+            box = val[0]
+            break
+    if isinstance(box, DetectionBox):
+        class_field = 'detection_name'
+    elif isinstance(box, TrackingBox):
+        class_field = 'tracking_name'
+    else:
+        raise Exception('Error: Invalid box type: %s' % box)
+
+    return class_field
