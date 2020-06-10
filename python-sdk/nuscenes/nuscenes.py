@@ -1918,6 +1918,7 @@ class NuScenesExplorer:
                     key = cv2.waitKey()
 
                 if key == 27:  # if ESC is pressed, exit.
+                    plt.close('all')  # To prevent figures from accumulating in memory.
                     # If rendering is stopped halfway, save whatever has been rendered so far into a video
                     # (if save_as_vid = True).
                     if save_as_vid:
