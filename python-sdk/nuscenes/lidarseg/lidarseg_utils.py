@@ -58,6 +58,9 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     fig.add_axes(ax)
 
+    ax.axis('off')
+    ax.margins(0, 0)
+
     ax.imshow(im)
     ax.scatter(points[0, :], points[1, :], c=coloring, s=5)
 
