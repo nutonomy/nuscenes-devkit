@@ -1858,6 +1858,8 @@ class NuScenesExplorer:
             'CAM_BACK_RIGHT': (2 * imsize[0], imsize[1]),
         }
 
+        horizontal_flip = ['CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']  # Flip these for aesthetic reasons.
+
         window_name = '{} {labels_type} (Space to pause, ESC to exit)'.format(
             scene_record['name'], labels_type="(predictions)" if lidarseg_preds_folder else "")
         cv2.namedWindow(window_name)
@@ -1901,6 +1903,10 @@ class NuScenesExplorer:
                 if im is not None:
                     mat = plt_to_cv2(points, coloring, im, imsize)
 
+                    if camera_channel in horizontal_flip:
+                        # Flip image horizontally.
+                        mat = cv2.flip(mat, 1)
+
                     slate[layout[camera_channel][1]: layout[camera_channel][1] + imsize[1],
                     layout[camera_channel][0]:layout[camera_channel][0] + imsize[0], :] = mat
 
@@ -1912,7 +1918,12 @@ class NuScenesExplorer:
                     key = cv2.waitKey()
 
                 if key == 27:  # if ESC is pressed, exit.
-                    cv2.destroyAllWindows()
+                    # If rendering is stopped halfway, save whatever has been rendered so far into a video
+                    # (if save_as_vid = True).
+                    if save_as_vid:
+                        out.write(slate)
+                        out.release()
+
                     break
 
             plt.close('all')  # To prevent figures from accumulating in memory.
