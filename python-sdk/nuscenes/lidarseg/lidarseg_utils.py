@@ -124,7 +124,7 @@ def get_colormap() -> np.ndarray:
     return colormap
 
 
-def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.ndarray:
+def get_arbitrary_colormap(num_classes: int, random_seed: int = 93) -> np.ndarray:
     """
     Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
     :param num_classes: Number of colors to create.
