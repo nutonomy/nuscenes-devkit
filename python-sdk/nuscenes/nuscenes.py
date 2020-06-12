@@ -1796,6 +1796,11 @@ class NuScenesExplorer:
 
                     if key == 27:  # if ESC is pressed, exit.
                         plt.close('all')  # To prevent figures from accumulating in memory.
+                        # If rendering is stopped halfway, save whatever has been rendered so far into a video
+                        # (if save_as_vid = True).
+                        if save_as_vid:
+                            out.write(mat)
+                            out.release()
                         cv2.destroyAllWindows()
                         break
 
@@ -1937,7 +1942,7 @@ class NuScenesExplorer:
                     if save_as_vid:
                         out.write(slate)
                         out.release()
-
+                    cv2.destroyAllWindows()
                     break
 
             plt.close('all')  # To prevent figures from accumulating in memory.
