@@ -1795,6 +1795,7 @@ class NuScenesExplorer:
                         key = cv2.waitKey()
 
                     if key == 27:  # if ESC is pressed, exit.
+                        plt.close('all')  # To prevent figures from accumulating in memory.
                         cv2.destroyAllWindows()
                         break
 
