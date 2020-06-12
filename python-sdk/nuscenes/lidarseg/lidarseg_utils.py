@@ -58,6 +58,9 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     ax = plt.Axes(fig, [0., 0., 1., 1.])
     fig.add_axes(ax)
 
+    ax.axis('off')
+    ax.margins(0, 0)
+
     ax.imshow(im)
     ax.scatter(points[0, :], points[1, :], c=coloring, s=5)
 
@@ -121,7 +124,7 @@ def get_colormap() -> np.ndarray:
     return colormap
 
 
-def get_arbitrary_colormap(num_classes: int, random_seed: int = 2020) -> np.ndarray:
+def get_arbitrary_colormap(num_classes: int, random_seed: int = 93) -> np.ndarray:
     """
     Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
     :param num_classes: Number of colors to create.
