@@ -1878,10 +1878,13 @@ class NuScenesExplorer:
 
         horizontal_flip = ['CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']  # Flip these for aesthetic reasons.
 
-        window_name = '{} {labels_type} (Space to pause, ESC to exit)'.format(
-            scene_record['name'], labels_type="(predictions)" if lidarseg_preds_folder else "")
-        cv2.namedWindow(window_name)
-        cv2.moveWindow(window_name, 0, 0)
+        if verbose:
+            window_name = '{} {labels_type} (Space to pause, ESC to exit)'.format(
+                scene_record['name'], labels_type="(predictions)" if lidarseg_preds_folder else "")
+            cv2.namedWindow(window_name)
+            cv2.moveWindow(window_name, 0, 0)
+        else:
+            window_name = None
 
         slate = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
 
