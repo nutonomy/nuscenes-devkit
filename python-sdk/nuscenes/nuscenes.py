@@ -1827,7 +1827,10 @@ class NuScenesExplorer:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
         :param scene_token: Unique identifier of scene to render.
-        :param out_path: Optional path to write a video file of the rendered frames.
+        :param out_path: Optional path to save the rendered figure to disk. The filename of each image will be
+                         same as the original image's. If .avi is specified (e.g. '~/Desktop/my_rendered_scene.avi),
+                         a video will be written instead of saving individual frames as images. Each image name wil
+                         follow this format: <0-scene_number>_<frame_number>.jpg
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
         :param freq: Display frequency (Hz).
@@ -1838,6 +1841,15 @@ class NuScenesExplorer:
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
         """
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
+
+        if out_path is not None:
+            if os.path.splitext(out_path)[-1] == '.avi':
+                save_as_vid = True
+            else:
+                assert os.path.isdir(out_path), 'Error: {} does not exist.'.format(out_path)
+                save_as_vid = False
+        else:
+            save_as_vid = False
 
         # Get records from DB.
         scene_record = self.nusc.get('scene', scene_token)
@@ -1866,12 +1878,11 @@ class NuScenesExplorer:
         cv2.moveWindow(window_name, 0, 0)
 
         slate = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
-        save_as_vid = False
-        if out_path is not None:
+
+        if save_as_vid:
             assert os.path.splitext(out_path)[-1] == '.avi', 'Error: Video can only be saved in .avi format.'
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(out_path, fourcc, freq, slate.shape[1::-1])
-            save_as_vid = True
         else:
             out = None
 
@@ -1882,6 +1893,7 @@ class NuScenesExplorer:
                 keep_looping = False
 
             sample_record = self.nusc.get('sample', current_token)
+            filename = '0' + scene_record['name'][5:] + '_{:02d}.jpg'.format(i)
 
             for camera_channel in layout:
                 pointsensor_token = sample_record['data']['LIDAR_TOP']
@@ -1931,6 +1943,10 @@ class NuScenesExplorer:
 
             if save_as_vid:
                 out.write(slate)
+            elif out_path:
+                cv2.imwrite(os.path.join(out_path, filename), slate)
+            else:
+                pass
 
             next_token = sample_record['next']
             current_token = next_token
