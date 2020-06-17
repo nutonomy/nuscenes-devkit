@@ -1922,7 +1922,17 @@ class NuScenesExplorer:
                                                                     lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
                 if im is not None:
-                    mat = plt_to_cv2(points, coloring, im, imsize)
+                    # Get annotations and params from DB.
+                    impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token,
+                                                                                box_vis_level=BoxVisibility.ANY)
+                    h, w, c = cv2.imread(impath).shape
+
+                    mat = plt_to_cv2(points, coloring, im, (w, h), dpi=200)
+
+                    for box in boxes:
+                        c = self.get_color(box.name)
+                        box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=5)
+                    mat = cv2.resize(mat, imsize)
 
                     if camera_channel in horizontal_flip:
                         # Flip image horizontally.
