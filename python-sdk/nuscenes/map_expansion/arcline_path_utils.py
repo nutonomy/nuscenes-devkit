@@ -117,7 +117,7 @@ def pose_at_length(arcline_path: ArcLinePath,
 
     path_length = sum(arcline_path['segment_length'])
 
-    assert -1e-6 <= pos <= path_length
+    assert 1e-6 <= pos
 
     pos = max(0.0, min(pos, path_length))
 
