@@ -682,7 +682,8 @@ class NuScenesMapExplorer:
         # Render connectivity lines.
         plt.figure(figsize=self._get_figsize(figsize))
         for pose_list in pose_lists:
-            plt.plot(pose_list[:, 0], pose_list[:, 1])
+            if len(pose_list) > 0:
+                plt.plot(pose_list[:, 0], pose_list[:, 1])
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
