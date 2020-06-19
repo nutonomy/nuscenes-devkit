@@ -67,7 +67,7 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     # Convert from pyplot to cv2.
     canvas = FigureCanvas(fig)
     canvas.draw()
-    mat = np.array(canvas.renderer._renderer)  # Put pixel buffer in numpy array.
+    mat = np.array(canvas.renderer.buffer_rgba()).astype('uint8')  # Put pixel buffer in numpy array.
     mat = cv2.cvtColor(mat, cv2.COLOR_RGB2BGR)
     mat = cv2.resize(mat, imsize)
 

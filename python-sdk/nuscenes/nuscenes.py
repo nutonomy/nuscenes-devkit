@@ -1696,10 +1696,11 @@ class NuScenesExplorer:
                                camera_token: str,
                                filter_lidarseg_labels: Iterable[int] = None,
                                lidarseg_preds_bin_path: str = None,
+                               render_if_no_points: bool = True,
                                with_anns: bool = False,
                                imsize: Tuple[int, int] = (640, 360),
                                dpi: int = 100,
-                               line_width: float = 5) -> np.ndarray:
+                               line_width: float = 5) -> Tuple[np.ndarray, bool]:
         """
         Projects a pointcloud into a camera image along with the lidarseg labels. There is an option to plot the
         bounding boxes as well.
@@ -1707,18 +1708,29 @@ class NuScenesExplorer:
         :param camera_token: Token of camera to render image from.
          :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
                                        or the list is empty, all classes will be displayed.
-        :param lidarseg_preds_bin_path:
+        :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
+                                        predictions for the sample.
         :param with_anns: Whether to draw box annotations.
         :param imsize: Size of image to render. The larger the slower this will run.
         :param dpi: Resolution of the output figure.
         :param line_width: Line width of bounding boxes.
-        :return: An image with the projected pointcloud, lidarseg labels and (if applicable) the bounding boxes.
+        :return: An image with the projected pointcloud, lidarseg labels and (if applicable) the bounding boxes. Also,
+                 whether there are any lidarseg points (after the filter has been applied) in the image.
         """
         points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
                                                             render_intensity=False,
                                                             show_lidarseg=True,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
                                                             lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+
+        # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
+        # the users do not appear within the image). To check if there are no lidarseg labels belonging to the desired
+        # classes in an image, we check if any column in the coloring is all zeros (the alpha column will be all
+        # zeroes if so).
+        if (~coloring.any(axis=0)).any():
+            no_points_in_im = True
+        else:
+            no_points_in_im = False
 
         if with_anns:
             # Get annotations and params from DB.
@@ -1742,14 +1754,14 @@ class NuScenesExplorer:
         else:
             mat = plt_to_cv2(points, coloring, im, imsize, dpi=dpi)
 
-        return mat
+        return mat, no_points_in_im
 
     def render_scene_channel_lidarseg(self,
                                       scene_token: str,
                                       channel: str,
                                       out_folder: str = None,
                                       filter_lidarseg_labels: Iterable[int] = None,
-                                      render_if_no_points: bool = True,
+                                      render_mode: str = None,
                                       verbose: bool = True,
                                       imsize: Tuple[int, int] = (640, 360),
                                       with_anns: bool = False,
@@ -1760,16 +1772,16 @@ class NuScenesExplorer:
         The scene can be rendered either to a video or to a set of images.
         :param scene_token: Unique identifier of scene to render.
         :param channel: Camera channel to render.
-        :param out_folder: Optional path to save the rendered figure to disk. The filename of each image will be
-                           same as the original image's. If .avi is specified (e.g. '~/Desktop/my_rendered_scene.avi),
-                           a video will be written instead of saving individual frames as images. Each image name wil
-                           follow this format: <0-scene_number>_<original_file_name>.jpg
+        :param out_folder: Optional path to save the rendered frames to disk, either as a video or as individual images.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
                                        or the list is empty, all classes will be displayed.
         :param imsize: Size of image to render. The larger the slower this will run.
         :param with_anns: Whether to draw box annotations.
         :param freq: Display frequency (Hz).
-        :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
+        :param render_mode: Either 'video' or 'image'. 'video' will render the frames into a video (the name of the
+                            video will follow this format: <scene_number>.avi) while 'image' will render the frames
+                            into individual images (each image name wil follow this format:
+                            <0-scene_number>_<original_file_name>.jpg). 'out_folder' must be specified to save the
         :param verbose: Whether to show the frames as they are being rendered.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
                                       the scene. The naming convention of each .bin file in the folder should be
@@ -1781,14 +1793,12 @@ class NuScenesExplorer:
         assert channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(channel)
         assert imsize[0] / imsize[1] == 16 / 9, 'Error: Aspect ratio should be 16/9.'
 
-        if out_folder is not None:
-            if os.path.splitext(out_folder)[-1] == '.avi':
+        save_as_vid = False
+        if out_folder:
+            assert render_mode in ['video', 'image'], 'Error: Only `video` or `image` are accepted for render_mode.'
+            assert os.path.isdir(out_folder), 'Error: {} does not exist.'.format(out_folder)
+            if render_mode == 'video':
                 save_as_vid = True
-            else:
-                assert os.path.isdir(out_folder), 'Error: {} does not exist.'.format(out_folder)
-                save_as_vid = False
-        else:
-            save_as_vid = False
 
         scene_record = self.nusc.get('scene', scene_token)
 
@@ -1810,8 +1820,9 @@ class NuScenesExplorer:
             name = None
 
         if save_as_vid:
+            out_path = os.path.join(out_folder, scene_record['name'] + '.avi')
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-            out = cv2.VideoWriter(out_folder, fourcc, freq, imsize)
+            out = cv2.VideoWriter(out_path, fourcc, freq, imsize)
         else:
             out = None
 
@@ -1833,10 +1844,11 @@ class NuScenesExplorer:
             else:
                 lidarseg_preds_bin_path = None
 
-            mat = self.plot_points_and_bboxes(pointsensor_token, camera_token,
-                                              filter_lidarseg_labels=filter_lidarseg_labels,
-                                              lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                              with_anns=with_anns, imsize=imsize, dpi=150, line_width=3)
+            mat, no_points_in_mat = self.plot_points_and_bboxes(pointsensor_token, camera_token,
+                                                                filter_lidarseg_labels=filter_lidarseg_labels,
+                                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                                with_anns=with_anns, imsize=imsize,
+                                                                dpi=150, line_width=2)
 
             if verbose:
                 cv2.imshow(name, mat)
@@ -1859,7 +1871,7 @@ class NuScenesExplorer:
 
                 if save_as_vid:
                     out.write(mat)
-                elif out_folder:
+                elif not no_points_in_mat and out_folder:
                     cv2.imwrite(os.path.join(out_folder, filename), mat)
                 else:
                     pass
@@ -1934,7 +1946,9 @@ class NuScenesExplorer:
         slate = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
 
         if out_path:
-            assert os.path.splitext(out_path)[-1] == '.avi', 'Error: Video can only be saved in .avi format.'
+            dir, filename = os.path.split(out_path)
+            assert os.path.isdir(dir), 'Error: {} does not exist.'.format(dir)
+            assert os.path.splitext(filename)[-1] == '.avi', 'Error: Video can only be saved in .avi format.'
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(out_path, fourcc, freq, slate.shape[1::-1])
         else:
