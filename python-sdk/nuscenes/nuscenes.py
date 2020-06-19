@@ -540,13 +540,13 @@ class NuScenes:
     def render_scene_channel_lidarseg(self, scene_token: str, channel: str, out_folder: str = None,
                                       filter_lidarseg_labels: Iterable[int] = None,
                                       with_anns: bool = False,
-                                      render_if_no_points: bool = True, verbose: bool = True,
+                                      render_mode: str = None, verbose: bool = True,
                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                       lidarseg_preds_folder: str = None) -> None:
         self.explorer.render_scene_channel_lidarseg(scene_token, channel, out_folder=out_folder,
                                                     filter_lidarseg_labels=filter_lidarseg_labels,
                                                     with_anns=with_anns,
-                                                    render_if_no_points=render_if_no_points, verbose=verbose,
+                                                    render_mode=render_mode, verbose=verbose,
                                                     imsize=imsize, freq=freq,
                                                     lidarseg_preds_folder=lidarseg_preds_folder)
 
@@ -1782,6 +1782,7 @@ class NuScenesExplorer:
                             video will follow this format: <scene_number>.avi) while 'image' will render the frames
                             into individual images (each image name wil follow this format:
                             <0-scene_number>_<original_file_name>.jpg). 'out_folder' must be specified to save the
+                            video / images.
         :param verbose: Whether to show the frames as they are being rendered.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
                                       the scene. The naming convention of each .bin file in the folder should be
@@ -1795,7 +1796,9 @@ class NuScenesExplorer:
 
         save_as_vid = False
         if out_folder:
-            assert render_mode in ['video', 'image'], 'Error: Only `video` or `image` are accepted for render_mode.'
+            assert render_mode in ['video', 'image'], 'Error: For the renderings to be saved to {}, either `video` ' \
+                                                      'or `image` must be specified for render_mode. {} is ' \
+                                                      'not a valid mode.'.format(out_folder, render_mode)
             assert os.path.isdir(out_folder), 'Error: {} does not exist.'.format(out_folder)
             if render_mode == 'video':
                 save_as_vid = True
@@ -1903,7 +1906,7 @@ class NuScenesExplorer:
         :param out_path: Optional path to write a video file (must be .avi) of the rendered frames
                          (e.g. '~/Desktop/my_rendered_scene.avi),
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
-            or the list is empty, all classes will be displayed.
+                                       or the list is empty, all classes will be displayed.
         :param with_anns: Whether to draw box annotations.
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
