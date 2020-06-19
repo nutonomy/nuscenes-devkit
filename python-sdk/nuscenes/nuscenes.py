@@ -1704,6 +1704,7 @@ class NuScenesExplorer:
                                       lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
+        The scene can be rendered either to a video or to a set of images.
         :param scene_token: Unique identifier of scene to render.
         :param channel: Camera channel to render.
         :param out_folder: Optional path to save the rendered figure to disk. The filename of each image will be
@@ -1837,7 +1838,6 @@ class NuScenesExplorer:
 
             next_token = sample_record['next']
             current_token = next_token
-
             i += 1
 
         cv2.destroyAllWindows()
@@ -1858,6 +1858,7 @@ class NuScenesExplorer:
                               lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
+        The scene can be rendered either to a video or to a set of images.
         :param scene_token: Unique identifier of scene to render.
         :param out_path: Optional path to save the rendered figure to disk. The filename of each image will be
                          same as the original image's. If .avi is specified (e.g. '~/Desktop/my_rendered_scene.avi),
