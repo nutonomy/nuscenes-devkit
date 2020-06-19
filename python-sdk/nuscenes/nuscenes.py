@@ -1849,8 +1849,7 @@ class NuScenesExplorer:
                                                       with_anns: bool = False,
                                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                                       verbose: bool = True,
-                                                      lidarseg_preds_folder: str = None,
-                                                      ) -> None:
+                                                      lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
         :param scene_token: Unique identifier of scene to render.
