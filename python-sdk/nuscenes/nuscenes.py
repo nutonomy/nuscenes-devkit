@@ -1691,6 +1691,59 @@ class NuScenesExplorer:
         if out_path is not None:
             plt.savefig(out_path)
 
+    def plot_points_and_bboxes(self,
+                               pointsensor_token: str,
+                               camera_token: str,
+                               filter_lidarseg_labels: Iterable[int] = None,
+                               lidarseg_preds_bin_path: str = None,
+                               with_anns: bool = False,
+                               imsize: Tuple[int, int] = (640, 360),
+                               dpi: int = 100,
+                               line_width: float = 5) -> np.ndarray:
+        """
+        Projects a pointcloud into a camera image along with the lidarseg labels. There is an option to plot the
+        bounding boxes as well.
+        :param pointsensor_token: Token of lidar sensor to render points from and lidarseg labels.
+        :param camera_token: Token of camera to render image from.
+         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+                                       or the list is empty, all classes will be displayed.
+        :param lidarseg_preds_bin_path:
+        :param with_anns: Whether to draw box annotations.
+        :param imsize: Size of image to render. The larger the slower this will run.
+        :param dpi: Resolution of the output figure.
+        :param line_width: Line width of bounding boxes.
+        :return: An image with the projected pointcloud, lidarseg labels and (if applicable) the bounding boxes.
+        """
+        points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
+                                                            render_intensity=False,
+                                                            show_lidarseg=True,
+                                                            filter_lidarseg_labels=filter_lidarseg_labels,
+                                                            lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+
+        if with_anns:
+            # Get annotations and params from DB.
+            impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token, box_vis_level=BoxVisibility.ANY)
+
+            # We need to get the image's original height and width as the boxes returned by get_sample_data
+            # are scaled wrt to that.
+            h, w, c = cv2.imread(impath).shape
+
+            # Place the projected pointcloud and lidarseg labels onto the image.
+            mat = plt_to_cv2(points, coloring, im, (w, h), dpi=dpi)
+
+            # Plot each box onto the image.
+            for box in boxes:
+                c = self.get_color(box.name)
+                box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=line_width)
+
+            # Only after points and boxes have been placed in the image, then we resize (this is to prevent
+            # weird scaling issues where the dots and boxes are not of the same scale).
+            mat = cv2.resize(mat, imsize)
+        else:
+            mat = plt_to_cv2(points, coloring, im, imsize, dpi=dpi)
+
+        return mat
+
     def render_scene_channel_lidarseg(self,
                                       scene_token: str,
                                       channel: str,
@@ -1773,59 +1826,34 @@ class NuScenesExplorer:
             cam = self.nusc.get('sample_data', camera_token)
             filename = '0' + scene_record['name'][5:] + '_' + os.path.basename(cam['filename'])
 
-            # Determine annotation path.
+            # Determine whether to render lidarseg points from groundtruth or predictions.
             pointsensor_token = sample_record['data']['LIDAR_TOP']
             if lidarseg_preds_folder:
                 lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
             else:
                 lidarseg_preds_bin_path = None
 
-            # Render pointcloud in image.
-            points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
-                                                                render_intensity=False,
-                                                                show_lidarseg=True,
-                                                                filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+            mat = self.plot_points_and_bboxes(pointsensor_token, camera_token,
+                                              filter_lidarseg_labels=filter_lidarseg_labels,
+                                              lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                              with_anns=with_anns, imsize=imsize, dpi=150, line_width=3)
 
-            # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
-            # the users do not appear within the image). To check if there are no lidarseg labels belonging to the
-            # desired classes in an image, we check if any column in the coloring is all zeros (the alpha column will
-            # be all zeroes if so).
-            if not render_if_no_points and (~coloring.any(axis=0)).any():
-                points, coloring, im = None, None, None
+            if verbose:
+                cv2.imshow(name, mat)
 
-            if im is not None:
-                if with_anns:
-                    # Get annotations and params from DB.
-                    impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token,
-                                                                                box_vis_level=BoxVisibility.ANY)
-                    h, w, c = cv2.imread(impath).shape
+                key = cv2.waitKey(1)
+                if key == 32:  # If space is pressed, pause.
+                    key = cv2.waitKey()
 
-                    mat = plt_to_cv2(points, coloring, im, (w, h), dpi=200)
-
-                    for box in boxes:
-                        c = self.get_color(box.name)
-                        box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=5)
-                    mat = cv2.resize(mat, imsize)
-                else:
-                    mat = plt_to_cv2(points, coloring, im, imsize)
-
-                if verbose:
-                    cv2.imshow(name, mat)
-
-                    key = cv2.waitKey(1)
-                    if key == 32:  # If space is pressed, pause.
-                        key = cv2.waitKey()
-
-                    if key == 27:  # if ESC is pressed, exit.
-                        plt.close('all')  # To prevent figures from accumulating in memory.
-                        # If rendering is stopped halfway, save whatever has been rendered so far into a video
-                        # (if save_as_vid = True).
-                        if save_as_vid:
-                            out.write(mat)
-                            out.release()
-                        cv2.destroyAllWindows()
-                        break
+                if key == 27:  # if ESC is pressed, exit.
+                    plt.close('all')  # To prevent figures from accumulating in memory.
+                    # If rendering is stopped halfway, save whatever has been rendered so far into a video
+                    # (if save_as_vid = True).
+                    if save_as_vid:
+                        out.write(mat)
+                        out.release()
+                    cv2.destroyAllWindows()
+                    break
 
                 plt.close('all')  # To prevent figures from accumulating in memory.
 
@@ -1936,41 +1964,23 @@ class NuScenesExplorer:
                 pointsensor_token = sample_record['data']['LIDAR_TOP']
                 camera_token = sample_record['data'][camera_channel]
 
+                # Determine whether to render lidarseg points from groundtruth or predictions.
                 if lidarseg_preds_folder:
                     lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
                 else:
                     lidarseg_preds_bin_path = None
 
-                # render_if_no_points has to be true or the rendering will fail as some cameras will
-                # have points and others will not.
-                points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
-                                                                    render_intensity=False,
-                                                                    show_lidarseg=True,
-                                                                    filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                    lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+                mat = self.plot_points_and_bboxes(pointsensor_token, camera_token,
+                                                  filter_lidarseg_labels=filter_lidarseg_labels,
+                                                  lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                  with_anns=with_anns, imsize=imsize, dpi=200, line_width=5)
 
-                if im is not None:
-                    if with_anns:
-                        # Get annotations and params from DB.
-                        impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token,
-                                                                                    box_vis_level=BoxVisibility.ANY)
-                        h, w, c = cv2.imread(impath).shape
+                if camera_channel in horizontal_flip:
+                    # Flip image horizontally.
+                    mat = cv2.flip(mat, 1)
 
-                        mat = plt_to_cv2(points, coloring, im, (w, h), dpi=200)
-
-                        for box in boxes:
-                            c = self.get_color(box.name)
-                            box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=5)
-                        mat = cv2.resize(mat, imsize)
-                    else:
-                        mat = plt_to_cv2(points, coloring, im, imsize)
-
-                    if camera_channel in horizontal_flip:
-                        # Flip image horizontally.
-                        mat = cv2.flip(mat, 1)
-
-                    slate[layout[camera_channel][1]: layout[camera_channel][1] + imsize[1],
-                    layout[camera_channel][0]:layout[camera_channel][0] + imsize[0], :] = mat
+                slate[layout[camera_channel][1]: layout[camera_channel][1] + imsize[1],
+                layout[camera_channel][0]:layout[camera_channel][0] + imsize[0], :] = mat
 
             if verbose:
                 cv2.imshow(window_name, slate)
