@@ -537,31 +537,31 @@ class NuScenes:
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
         self.explorer.render_egoposes_on_map(log_location, scene_tokens, out_path=out_path)
 
-    def render_camera_channel_with_pointclouds(self, scene_token: str, camera_channel: str, out_folder: str = None,
-                                               filter_lidarseg_labels: Iterable[int] = None,
-                                               with_anns: bool = False,
-                                               render_if_no_points: bool = True, verbose: bool = True,
-                                               imsize: Tuple[int, int] = (640, 360), freq: float = 2,
-                                               lidarseg_preds_folder: str = None) -> None:
-        self.explorer.render_camera_channel_with_pointclouds(scene_token, camera_channel, out_folder=out_folder,
-                                                             filter_lidarseg_labels=filter_lidarseg_labels,
-                                                             with_anns=with_anns,
-                                                             render_if_no_points=render_if_no_points, verbose=verbose,
-                                                             imsize=imsize, freq=freq,
-                                                             lidarseg_preds_folder=lidarseg_preds_folder)
+    def render_scene_channel_lidarseg(self, scene_token: str, camera_channel: str, out_folder: str = None,
+                                      filter_lidarseg_labels: Iterable[int] = None,
+                                      with_anns: bool = False,
+                                      render_if_no_points: bool = True, verbose: bool = True,
+                                      imsize: Tuple[int, int] = (640, 360), freq: float = 2,
+                                      lidarseg_preds_folder: str = None) -> None:
+        self.explorer.render_scene_channel_lidarseg(scene_token, camera_channel, out_folder=out_folder,
+                                                    filter_lidarseg_labels=filter_lidarseg_labels,
+                                                    with_anns=with_anns,
+                                                    render_if_no_points=render_if_no_points, verbose=verbose,
+                                                    imsize=imsize, freq=freq,
+                                                    lidarseg_preds_folder=lidarseg_preds_folder)
 
-    def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
-                                                      filter_lidarseg_labels: Iterable[int] = None,
-                                                      with_anns: bool = False,
-                                                      imsize: Tuple[int, int] = (640, 360), freq: float = 2,
-                                                      verbose: bool = True,
-                                                      lidarseg_preds_folder: str = None) -> None:
-        self.explorer.render_scene_with_pointclouds_for_all_cameras(scene_token, out_path=out_path,
-                                                                    filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                    with_anns=with_anns,
-                                                                    imsize=imsize, freq=freq,
-                                                                    verbose=verbose,
-                                                                    lidarseg_preds_folder=lidarseg_preds_folder)
+    def render_scene_lidarseg(self, scene_token: str, out_path: str = None,
+                              filter_lidarseg_labels: Iterable[int] = None,
+                              with_anns: bool = False,
+                              imsize: Tuple[int, int] = (640, 360), freq: float = 2,
+                              verbose: bool = True,
+                              lidarseg_preds_folder: str = None) -> None:
+        self.explorer.render_scene_lidarseg(scene_token, out_path=out_path,
+                                            filter_lidarseg_labels=filter_lidarseg_labels,
+                                            with_anns=with_anns,
+                                            imsize=imsize, freq=freq,
+                                            verbose=verbose,
+                                            lidarseg_preds_folder=lidarseg_preds_folder)
 
 
 class NuScenesExplorer:
@@ -1691,14 +1691,17 @@ class NuScenesExplorer:
         if out_path is not None:
             plt.savefig(out_path)
 
-    def render_camera_channel_with_pointclouds(self, scene_token: str, camera_channel: str, out_folder: str = None,
-                                               filter_lidarseg_labels: Iterable[int] = None,
-                                               render_if_no_points: bool = True,
-                                               verbose: bool = True,
-                                               imsize: Tuple[int, int] = (640, 360),
-                                               with_anns: bool = False,
-                                               freq: float = 2,
-                                               lidarseg_preds_folder: str = None) -> None:
+    def render_scene_channel_lidarseg(self,
+                                      scene_token: str,
+                                      camera_channel: str,
+                                      out_folder: str = None,
+                                      filter_lidarseg_labels: Iterable[int] = None,
+                                      render_if_no_points: bool = True,
+                                      verbose: bool = True,
+                                      imsize: Tuple[int, int] = (640, 360),
+                                      with_anns: bool = False,
+                                      freq: float = 2,
+                                      lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.
@@ -1844,12 +1847,15 @@ class NuScenesExplorer:
                                            'but only {} keyframes were processed'.format(total_num_samples, i)
             out.release()
 
-    def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
-                                                      filter_lidarseg_labels: Iterable[int] = None,
-                                                      with_anns: bool = False,
-                                                      imsize: Tuple[int, int] = (640, 360), freq: float = 2,
-                                                      verbose: bool = True,
-                                                      lidarseg_preds_folder: str = None) -> None:
+    def render_scene_lidarseg(self,
+                              scene_token: str,
+                              out_path: str = None,
+                              filter_lidarseg_labels: Iterable[int] = None,
+                              with_anns: bool = False,
+                              imsize: Tuple[int, int] = (640, 360),
+                              freq: float = 2,
+                              verbose: bool = True,
+                              lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
         :param scene_token: Unique identifier of scene to render.
