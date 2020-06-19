@@ -44,7 +44,7 @@ def get_key_from_value(dictionary: dict, target_value: str):
 def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int] = (640, 360), dpi: int = 100):
     """
     Converts a scatter plot in matplotlib to an image in cv2. This is useful as cv2 is unable to do
-    scatter plats.
+    scatter plots.
     :param points: A numPy array (of size [2 x num_points] and type float) representing the pointcloud.
     :param coloring: A numPy array (of size [num_points] containing the color (in RGB, normalized
                      between 0 and 1) for each point.

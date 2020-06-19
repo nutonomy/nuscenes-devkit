@@ -537,13 +537,13 @@ class NuScenes:
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
         self.explorer.render_egoposes_on_map(log_location, scene_tokens, out_path=out_path)
 
-    def render_scene_channel_lidarseg(self, scene_token: str, camera_channel: str, out_folder: str = None,
+    def render_scene_channel_lidarseg(self, scene_token: str, channel: str, out_folder: str = None,
                                       filter_lidarseg_labels: Iterable[int] = None,
                                       with_anns: bool = False,
                                       render_if_no_points: bool = True, verbose: bool = True,
                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                       lidarseg_preds_folder: str = None) -> None:
-        self.explorer.render_scene_channel_lidarseg(scene_token, camera_channel, out_folder=out_folder,
+        self.explorer.render_scene_channel_lidarseg(scene_token, channel, out_folder=out_folder,
                                                     filter_lidarseg_labels=filter_lidarseg_labels,
                                                     with_anns=with_anns,
                                                     render_if_no_points=render_if_no_points, verbose=verbose,
@@ -1092,7 +1092,7 @@ class NuScenesExplorer:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
-        :param with_anns: Whether to draw annotations.
+        :param with_anns: Whether to draw box annotations.
         :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
         :param axes_limit: Axes limit for lidar and radar (measured in meters).
         :param ax: Axes onto which to render.
@@ -1693,7 +1693,7 @@ class NuScenesExplorer:
 
     def render_scene_channel_lidarseg(self,
                                       scene_token: str,
-                                      camera_channel: str,
+                                      channel: str,
                                       out_folder: str = None,
                                       filter_lidarseg_labels: Iterable[int] = None,
                                       render_if_no_points: bool = True,
@@ -1705,7 +1705,7 @@ class NuScenesExplorer:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
         :param scene_token: Unique identifier of scene to render.
-        :param camera_channel: Channel to render.
+        :param channel: Camera channel to render.
         :param out_folder: Optional path to save the rendered figure to disk. The filename of each image will be
                            same as the original image's. If .avi is specified (e.g. '~/Desktop/my_rendered_scene.avi),
                            a video will be written instead of saving individual frames as images. Each image name wil
@@ -1724,7 +1724,7 @@ class NuScenesExplorer:
 
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                           'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
-        assert camera_channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(camera_channel)
+        assert channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(channel)
         assert imsize[0] / imsize[1] == 16 / 9, 'Error: Aspect ratio should be 16/9.'
 
         if out_folder is not None:
@@ -1749,7 +1749,7 @@ class NuScenesExplorer:
         # Open CV init.
         if verbose:
             name = '{}: {} {labels_type} (Space to pause, ESC to exit)'.format(
-                scene_record['name'], camera_channel, labels_type="(predictions)" if lidarseg_preds_folder else "")
+                scene_record['name'], channel, labels_type="(predictions)" if lidarseg_preds_folder else "")
             cv2.namedWindow(name)
             cv2.moveWindow(name, 0, 0)
         else:
@@ -1768,12 +1768,12 @@ class NuScenesExplorer:
             sample_record = self.nusc.get('sample', current_token)
 
             # Set filename of the image.
-            camera_token = sample_record['data'][camera_channel]
+            camera_token = sample_record['data'][channel]
             cam = self.nusc.get('sample_data', camera_token)
             filename = '0' + scene_record['name'][5:] + '_' + os.path.basename(cam['filename'])
 
             pointsensor_token = sample_record['data']['LIDAR_TOP']
-            camera_token = sample_record['data'][camera_channel]
+            camera_token = sample_record['data'][channel]
 
             if lidarseg_preds_folder:
                 lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
