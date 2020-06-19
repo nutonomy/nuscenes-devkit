@@ -1714,7 +1714,7 @@ class NuScenesExplorer:
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
                                        or the list is empty, all classes will be displayed.
         :param imsize: Size of image to render. The larger the slower this will run.
-        :param with_anns: Whether to draw the bounding boxes, if available.
+        :param with_anns: Whether to draw box annotations.
         :param freq: Display frequency (Hz).
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param verbose: Whether to show the frames as they are being rendered.
@@ -1866,7 +1866,7 @@ class NuScenesExplorer:
                          follow this format: <0-scene_number>_<frame_number>.jpg
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
-        :param with_anns: Whether to draw the bounding boxes, if available.
+        :param with_anns: Whether to draw box annotations.
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
         :param verbose: Whether to show the frames as they are being rendered.
