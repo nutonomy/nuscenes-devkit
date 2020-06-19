@@ -539,22 +539,26 @@ class NuScenes:
 
     def render_camera_channel_with_pointclouds(self, scene_token: str, camera_channel: str, out_folder: str = None,
                                                filter_lidarseg_labels: Iterable[int] = None,
-                                               render_if_no_points: bool = True, verbose=True,
+                                               with_anns: bool = False,
+                                               render_if_no_points: bool = True, verbose: bool = True,
                                                imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                                lidarseg_preds_folder: str = None) -> None:
         self.explorer.render_camera_channel_with_pointclouds(scene_token, camera_channel, out_folder=out_folder,
                                                              filter_lidarseg_labels=filter_lidarseg_labels,
+                                                             with_anns=with_anns,
                                                              render_if_no_points=render_if_no_points, verbose=verbose,
                                                              imsize=imsize, freq=freq,
                                                              lidarseg_preds_folder=lidarseg_preds_folder)
 
     def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
                                                       filter_lidarseg_labels: Iterable[int] = None,
+                                                      with_anns: bool = False,
                                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                                       verbose: bool = True,
                                                       lidarseg_preds_folder: str = None) -> None:
         self.explorer.render_scene_with_pointclouds_for_all_cameras(scene_token, out_path=out_path,
                                                                     filter_lidarseg_labels=filter_lidarseg_labels,
+                                                                    with_anns=with_anns,
                                                                     imsize=imsize, freq=freq,
                                                                     verbose=verbose,
                                                                     lidarseg_preds_folder=lidarseg_preds_folder)
@@ -1692,6 +1696,7 @@ class NuScenesExplorer:
                                                render_if_no_points: bool = True,
                                                verbose: bool = True,
                                                imsize: Tuple[int, int] = (640, 360),
+                                               with_anns: bool = False,
                                                freq: float = 2,
                                                lidarseg_preds_folder: str = None) -> None:
         """
@@ -1705,6 +1710,7 @@ class NuScenesExplorer:
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
                                        or the list is empty, all classes will be displayed.
         :param imsize: Size of image to render. The larger the slower this will run.
+        :param with_anns: Whether to draw the bounding boxes, if available.
         :param freq: Display frequency (Hz).
         :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param verbose: Whether to show the frames as they are being rendered.
@@ -1785,7 +1791,20 @@ class NuScenesExplorer:
                 points, coloring, im = None, None, None
 
             if im is not None:
-                mat = plt_to_cv2(points, coloring, im, imsize)
+                if with_anns:
+                    # Get annotations and params from DB.
+                    impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token,
+                                                                                box_vis_level=BoxVisibility.ANY)
+                    h, w, c = cv2.imread(impath).shape
+
+                    mat = plt_to_cv2(points, coloring, im, (w, h), dpi=200)
+
+                    for box in boxes:
+                        c = self.get_color(box.name)
+                        box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=5)
+                    mat = cv2.resize(mat, imsize)
+                else:
+                    mat = plt_to_cv2(points, coloring, im, imsize)
 
                 if verbose:
                     cv2.imshow(name, mat)
@@ -1827,9 +1846,11 @@ class NuScenesExplorer:
 
     def render_scene_with_pointclouds_for_all_cameras(self, scene_token: str, out_path: str = None,
                                                       filter_lidarseg_labels: Iterable[int] = None,
+                                                      with_anns: bool = False,
                                                       imsize: Tuple[int, int] = (640, 360), freq: float = 2,
                                                       verbose: bool = True,
-                                                      lidarseg_preds_folder: str = None) -> None:
+                                                      lidarseg_preds_folder: str = None,
+                                                      ) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
         :param scene_token: Unique identifier of scene to render.
@@ -1839,6 +1860,7 @@ class NuScenesExplorer:
                          follow this format: <0-scene_number>_<frame_number>.jpg
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
+        :param with_anns: Whether to draw the bounding boxes, if available.
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
         :param verbose: Whether to show the frames as they are being rendered.
@@ -1922,17 +1944,20 @@ class NuScenesExplorer:
                                                                     lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
                 if im is not None:
-                    # Get annotations and params from DB.
-                    impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token,
-                                                                                box_vis_level=BoxVisibility.ANY)
-                    h, w, c = cv2.imread(impath).shape
+                    if with_anns:
+                        # Get annotations and params from DB.
+                        impath, boxes, camera_intrinsic = self.nusc.get_sample_data(camera_token,
+                                                                                    box_vis_level=BoxVisibility.ANY)
+                        h, w, c = cv2.imread(impath).shape
 
-                    mat = plt_to_cv2(points, coloring, im, (w, h), dpi=200)
+                        mat = plt_to_cv2(points, coloring, im, (w, h), dpi=200)
 
-                    for box in boxes:
-                        c = self.get_color(box.name)
-                        box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=5)
-                    mat = cv2.resize(mat, imsize)
+                        for box in boxes:
+                            c = self.get_color(box.name)
+                            box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=5)
+                        mat = cv2.resize(mat, imsize)
+                    else:
+                        mat = plt_to_cv2(points, coloring, im, imsize)
 
                     if camera_channel in horizontal_flip:
                         # Flip image horizontally.
