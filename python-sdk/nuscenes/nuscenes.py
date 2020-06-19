@@ -479,7 +479,6 @@ class NuScenes:
                                    render_intensity: bool = False,
                                    show_lidarseg: bool = False,
                                    filter_lidarseg_labels: List = None,
-                                   render_if_no_points: bool = True,
                                    show_lidarseg_legend: bool = False,
                                    verbose: bool = True,
                                    lidarseg_preds_bin_path: str = None) -> None:
@@ -488,7 +487,6 @@ class NuScenes:
                                                  render_intensity=render_intensity,
                                                  show_lidarseg=show_lidarseg,
                                                  filter_lidarseg_labels=filter_lidarseg_labels,
-                                                 render_if_no_points=render_if_no_points,
                                                  show_lidarseg_legend=show_lidarseg_legend,
                                                  verbose=verbose,
                                                  lidarseg_preds_bin_path=lidarseg_preds_bin_path)
@@ -835,7 +833,6 @@ class NuScenesExplorer:
                                    show_lidarseg: bool = False,
                                    filter_lidarseg_labels: List = None,
                                    ax: Axes = None,
-                                   render_if_no_points: bool = True,
                                    show_lidarseg_legend: bool = False,
                                    verbose: bool = True,
                                    lidarseg_preds_bin_path: str = None):
@@ -850,7 +847,6 @@ class NuScenesExplorer:
         :param show_lidarseg: Whether to render lidarseg labels instead of point depth.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes.
         :param ax: Axes onto which to render.
-        :param render_if_no_points: Whether to render if there are no points (e.g. after filtering) in the image.
         :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param verbose: Whether to display the image in a window.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
@@ -868,21 +864,6 @@ class NuScenesExplorer:
                                                             show_lidarseg=show_lidarseg,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
                                                             lidarseg_preds_bin_path=lidarseg_preds_bin_path)
-
-        # Prevent rendering images which have no lidarseg labels in them (e.g. the classes in the filter chosen by
-        # the users do not appear within the image). To check if there are no lidarseg labels belonging to the desired
-        # classes in an image, we check if any column in the coloring is all zeros (the alpha column will be all
-        # zeroes if so).
-        if show_lidarseg and not render_if_no_points and (~coloring.any(axis=0)).any():
-            points, coloring, im = None, None, None
-
-        if pointsensor_channel == 'LIDAR_TOP':
-            # Prevent rendering images which have no lidarseg labels.
-            if not render_if_no_points and points is None:
-                if verbose:
-                    print('No points in {} which are present in '
-                          '{} image (sample_token = {})'.format(pointsensor_channel, camera_channel, sample_token))
-                return
 
         # Init axes.
         if ax is None:
