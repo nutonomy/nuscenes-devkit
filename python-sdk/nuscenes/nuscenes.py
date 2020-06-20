@@ -1760,10 +1760,10 @@ class NuScenesExplorer:
         :param with_anns: Whether to draw box annotations.
         :param freq: Display frequency (Hz).
         :param render_mode: Either 'video' or 'image'. 'video' will render the frames into a video (the name of the
-                            video will follow this format: <scene_number>.avi) while 'image' will render the frames
-                            into individual images (each image name wil follow this format:
-                            <0-scene_number>_<original_file_name>.jpg). 'out_folder' must be specified to save the
-                            video / images.
+                            video will follow this format: <scene_number>_<camera_channel>.avi) while 'image' will
+                            render the frames into individual images (each image name wil follow this format:
+                            <0-scene_number>_<camera_channel>_<original_file_name>.jpg). 'out_folder' must be specified
+                            to save the video / images.
         :param verbose: Whether to show the frames as they are being rendered.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
                                       the scene. The naming convention of each .bin file in the folder should be
@@ -1804,7 +1804,7 @@ class NuScenesExplorer:
             name = None
 
         if save_as_vid:
-            out_path = os.path.join(out_folder, scene_record['name'] + '.avi')
+            out_path = os.path.join(out_folder, scene_record['name'] + '_' + channel + '.avi')
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(out_path, fourcc, freq, imsize)
         else:
@@ -1819,7 +1819,7 @@ class NuScenesExplorer:
             # Set filename of the image.
             camera_token = sample_record['data'][channel]
             cam = self.nusc.get('sample_data', camera_token)
-            filename = '0' + scene_record['name'][5:] + '_' + os.path.basename(cam['filename'])
+            filename = '0' + scene_record['name'][5:] + '_' + channel + '_' + os.path.basename(cam['filename'])
 
             # Determine whether to render lidarseg points from ground truth or predictions.
             pointsensor_token = sample_record['data']['LIDAR_TOP']
