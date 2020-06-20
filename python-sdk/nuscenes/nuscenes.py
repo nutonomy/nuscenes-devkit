@@ -1853,12 +1853,12 @@ class NuScenesExplorer:
 
                 plt.close('all')  # To prevent figures from accumulating in memory.
 
-                if save_as_vid:
-                    out.write(mat)
-                elif not no_points_in_mat and out_folder:
-                    cv2.imwrite(os.path.join(out_folder, filename), mat)
-                else:
-                    pass
+            if save_as_vid:
+                out.write(mat)
+            elif not no_points_in_mat and out_folder:
+                cv2.imwrite(os.path.join(out_folder, filename), mat)
+            else:
+                pass
 
             next_token = sample_record['next']
             current_token = next_token
