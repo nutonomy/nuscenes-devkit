@@ -1956,10 +1956,10 @@ class NuScenesExplorer:
                 else:
                     lidarseg_preds_bin_path = None
 
-                mat = self.plot_points_and_bboxes(pointsensor_token, camera_token,
-                                                  filter_lidarseg_labels=filter_lidarseg_labels,
-                                                  lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                                  with_anns=with_anns, imsize=imsize, dpi=200, line_width=5)
+                mat, _ = self.plot_points_and_bboxes(pointsensor_token, camera_token,
+                                                     filter_lidarseg_labels=filter_lidarseg_labels,
+                                                     lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                     with_anns=with_anns, imsize=imsize, dpi=200, line_width=5)
 
                 if camera_channel in horizontal_flip:
                     # Flip image horizontally.
