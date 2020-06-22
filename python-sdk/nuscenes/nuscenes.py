@@ -1479,8 +1479,10 @@ class NuScenesExplorer:
                     if channel in horizontal_flip:
                         im = im[:, ::-1, :]
 
-                    canvas[layout[channel][1]: layout[channel][1] + imsize[1],
-                    layout[channel][0]:layout[channel][0] + imsize[0], :] = im
+                    canvas[
+                        layout[channel][1]: layout[channel][1] + imsize[1],
+                        layout[channel][0]:layout[channel][0] + imsize[0], :
+                    ] = im
 
                     prev_recs[channel] = sd_rec  # Store here so we don't render the same image twice.
 
@@ -1672,22 +1674,21 @@ class NuScenesExplorer:
         if out_path is not None:
             plt.savefig(out_path)
 
-    def plot_points_and_bboxes(self,
-                               pointsensor_token: str,
-                               camera_token: str,
-                               filter_lidarseg_labels: Iterable[int] = None,
-                               lidarseg_preds_bin_path: str = None,
-                               render_if_no_points: bool = True,
-                               with_anns: bool = False,
-                               imsize: Tuple[int, int] = (640, 360),
-                               dpi: int = 100,
-                               line_width: float = 5) -> Tuple[np.ndarray, bool]:
+    def _plot_points_and_bboxes(self,
+                                pointsensor_token: str,
+                                camera_token: str,
+                                filter_lidarseg_labels: Iterable[int] = None,
+                                lidarseg_preds_bin_path: str = None,
+                                with_anns: bool = False,
+                                imsize: Tuple[int, int] = (640, 360),
+                                dpi: int = 100,
+                                line_width: int = 5) -> Tuple[np.ndarray, bool]:
         """
         Projects a pointcloud into a camera image along with the lidarseg labels. There is an option to plot the
         bounding boxes as well.
         :param pointsensor_token: Token of lidar sensor to render points from and lidarseg labels.
         :param camera_token: Token of camera to render image from.
-         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
+        :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
                                        or the list is empty, all classes will be displayed.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
@@ -1828,11 +1829,11 @@ class NuScenesExplorer:
             else:
                 lidarseg_preds_bin_path = None
 
-            mat, no_points_in_mat = self.plot_points_and_bboxes(pointsensor_token, camera_token,
-                                                                filter_lidarseg_labels=filter_lidarseg_labels,
-                                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                                                with_anns=with_anns, imsize=imsize,
-                                                                dpi=150, line_width=2)
+            mat, no_points_in_mat = self._plot_points_and_bboxes(pointsensor_token, camera_token,
+                                                                 filter_lidarseg_labels=filter_lidarseg_labels,
+                                                                 lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                                 with_anns=with_anns, imsize=imsize,
+                                                                 dpi=150, line_width=2)
 
             if verbose:
                 cv2.imshow(name, mat)
@@ -1956,17 +1957,19 @@ class NuScenesExplorer:
                 else:
                     lidarseg_preds_bin_path = None
 
-                mat, _ = self.plot_points_and_bboxes(pointsensor_token, camera_token,
-                                                     filter_lidarseg_labels=filter_lidarseg_labels,
-                                                     lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                                     with_anns=with_anns, imsize=imsize, dpi=200, line_width=5)
+                mat, _ = self._plot_points_and_bboxes(pointsensor_token, camera_token,
+                                                      filter_lidarseg_labels=filter_lidarseg_labels,
+                                                      lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                      with_anns=with_anns, imsize=imsize, dpi=200, line_width=5)
 
                 if camera_channel in horizontal_flip:
                     # Flip image horizontally.
                     mat = cv2.flip(mat, 1)
 
-                slate[layout[camera_channel][1]: layout[camera_channel][1] + imsize[1],
-                layout[camera_channel][0]:layout[camera_channel][0] + imsize[0], :] = mat
+                slate[
+                    layout[camera_channel][1]: layout[camera_channel][1] + imsize[1],
+                    layout[camera_channel][0]:layout[camera_channel][0] + imsize[0], :
+                ] = mat
 
             if verbose:
                 cv2.imshow(window_name, slate)
