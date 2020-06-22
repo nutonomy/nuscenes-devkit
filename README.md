@@ -99,9 +99,8 @@ Great care has been taken to collate the nuScenes dataset and many users have pr
 However, some minor issues remain:
 
 **Maps**:
-- For *singapore-hollandvillage* and *singapore-queenstown* the traffic light poses are all 0 (except for tz).
+- For *singapore-hollandvillage* and *singapore-queenstown* the traffic light 3d poses are all 0 (except for tz).
 - For *boston-seaport*, the ego poses of 3 scenes (499, 515, 517) are slightly incorrect and 2 scenes (501, 502) are outside the annotated area. 
-- For *singapore-onenorth* some of the center line paths have small gaps in them.
 - For *singapore-onenorth*, the ego poses of about 10 scenes were off the drivable surface. This has been **resolved in map v1.1**.
 
 **Annotations**:
