@@ -108,7 +108,7 @@ def get_colormap() -> np.ndarray:
         "flat.sidewalk": [75, 0, 75],
         "flat.terrain": [150, 240, 80],
         "flat.other": [175, 0, 75],
-        "static.manmade": [128, 0, 0],  # Maroon
+        "static.manmade": [222, 184, 135],  # Burlywood
         "static.vegetation": [0, 175, 0],
         "static.other": [255, 228, 196]  # Bisque
     }
