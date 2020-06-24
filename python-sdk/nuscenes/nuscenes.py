@@ -22,7 +22,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
-    get_key_from_value, get_labels_in_coloring
+    get_key_from_value, get_labels_in_coloring, get_colormap
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -91,9 +91,14 @@ class NuScenes:
             self.table_names.append('lidarseg')
 
             lidarseg_categories = self.__load_table__('category_lidarseg')
+            # Create mapping from class index to class name, and vice versa, for easy lookup later on.
             self.lidarseg_idx2name_mapping = dict()
+            self.lidarseg_name2idx_mapping = dict()
             for lidarseg_category in lidarseg_categories:
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
+                self.lidarseg_name2idx_mapping[lidarseg_category['label']] = lidarseg_category['index']
+            # self.lidarseg_colormap = get_arbitrary_colormap(num_classes=len(self.lidarseg_idx2name_mapping)) # TODO
+            self.lidarseg_colormap = get_colormap()
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
@@ -569,22 +574,31 @@ class NuScenesExplorer:
     def __init__(self, nusc: NuScenes):
         self.nusc = nusc
 
-    @staticmethod
-    def get_color(category_name: str) -> Tuple[int, int, int]:
+    def get_color(self, category_name: str, color_theme: str = None) -> Tuple[int, int, int]:
         """
         Provides the default colors based on the category names.
         This method works for the general nuScenes categories, as well as the nuScenes detection categories.
         """
-        if 'bicycle' in category_name or 'motorcycle' in category_name:
-            return 255, 61, 99  # Red.
-        elif 'vehicle' in category_name or category_name in ['bus', 'car', 'construction_vehicle', 'trailer', 'truck']:
-            return 255, 158, 0  # Orange.
-        elif 'pedestrian' in category_name:
-            return 0, 0, 230  # Blue.
-        elif 'cone' in category_name or 'barrier' in category_name:
+        if color_theme == 'all_black':
+            # All boxes will be black.
             return 0, 0, 0  # Black.
+        elif color_theme == 'lidarseg':
+            # Boxes will be colored according to the colors of the lidarseg points.
+            colormap = self.nusc.lidarseg_colormap
+            return colormap[self.nusc.lidarseg_name2idx_mapping[category_name]] * 255
         else:
-            return 255, 0, 255  # Magenta.
+            # Boxes will be colored according to default colors.
+            if 'bicycle' in category_name or 'motorcycle' in category_name:
+                return 255, 61, 99  # Red.
+            elif 'vehicle' in category_name or \
+                    category_name in ['bus', 'car', 'construction_vehicle', 'trailer', 'truck']:
+                return 255, 158, 0  # Orange.
+            elif 'pedestrian' in category_name:
+                return 0, 0, 230  # Blue.
+            elif 'cone' in category_name or 'barrier' in category_name:
+                return 0, 0, 0  # Black.
+            else:
+                return 255, 0, 255  # Magenta.
 
     def list_categories(self) -> None:
         """ Print categories, counts and stats. These stats only cover the split specified in nusc.version. """
@@ -792,9 +806,8 @@ class NuScenesExplorer:
             if lidarseg_labels_filename:
                 points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
-                # Create colormap for the lidarseg labels.
-                num_classes = len(self.nusc.lidarseg_idx2name_mapping)
-                colormap = get_arbitrary_colormap(num_classes)
+                # Make a copy of the lidarseg colormap to do filtering on.
+                colormap = self.nusc.lidarseg_colormap
                 if filter_lidarseg_labels:
                     colormap = filter_colormap(colormap, filter_lidarseg_labels)
                 coloring = colormap[points_label]
@@ -883,7 +896,7 @@ class NuScenesExplorer:
             recs = []
             classes_final = []
             classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-            color_legend = get_arbitrary_colormap(len(classes))
+            color_legend = self.nusc.lidarseg_colormap
 
             # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
             # after it has been projected onto the image; this will allow displaying the legend only for classes which
@@ -1190,9 +1203,8 @@ class NuScenesExplorer:
                 if lidarseg_labels_filename:
                     points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
-                    # Create colormap for the lidarseg labels.
-                    num_classes = len(self.nusc.lidarseg_idx2name_mapping)
-                    colormap = get_arbitrary_colormap(num_classes)
+                    # Make a copy of the lidarseg colormap to do filtering on.
+                    colormap = self.nusc.lidarseg_colormap
                     if filter_lidarseg_labels:
                         colormap = filter_colormap(colormap, filter_lidarseg_labels)
                     colors = colormap[points_label]
@@ -1727,7 +1739,12 @@ class NuScenesExplorer:
 
             # Plot each box onto the image.
             for box in boxes:
-                c = self.get_color(box.name)
+                # If a filter is set, and the class of the box is not among the classes that the user wants to see,
+                # then we skip plotting the box.
+                if filter_lidarseg_labels is not None and \
+                        self.nusc.lidarseg_name2idx_mapping[box.name] not in filter_lidarseg_labels:
+                    continue
+                c = self.get_color(box.name, color_theme='lidarseg')
                 box.render_cv2(mat, view=camera_intrinsic, normalize=True, colors=(c, c, c), linewidth=line_width)
 
             # Only after points and boxes have been placed in the image, then we resize (this is to prevent
