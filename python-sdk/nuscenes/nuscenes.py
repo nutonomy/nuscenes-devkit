@@ -584,7 +584,7 @@ class NuScenesExplorer:
             return 0, 0, 0  # Black.
         elif color_theme == 'lidarseg':
             # Boxes will be colored according to the colors of the lidarseg points.
-            colormap = self.nusc.lidarseg_colormap
+            colormap = self.nusc.lidarseg_colormap.copy()
             return colormap[self.nusc.lidarseg_name2idx_mapping[category_name]] * 255
         else:
             # Boxes will be colored according to default colors.
@@ -807,7 +807,7 @@ class NuScenesExplorer:
                 points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
                 # Make a copy of the lidarseg colormap to do filtering on.
-                colormap = self.nusc.lidarseg_colormap
+                colormap = self.nusc.lidarseg_colormap.copy()
                 if filter_lidarseg_labels:
                     colormap = filter_colormap(colormap, filter_lidarseg_labels)
                 coloring = colormap[points_label]
@@ -896,7 +896,7 @@ class NuScenesExplorer:
             recs = []
             classes_final = []
             classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-            color_legend = self.nusc.lidarseg_colormap
+            color_legend = self.nusc.lidarseg_colormap.copy()
 
             # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
             # after it has been projected onto the image; this will allow displaying the legend only for classes which
@@ -1204,7 +1204,7 @@ class NuScenesExplorer:
                     points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
                     # Make a copy of the lidarseg colormap to do filtering on.
-                    colormap = self.nusc.lidarseg_colormap
+                    colormap = self.nusc.lidarseg_colormap.copy()
                     if filter_lidarseg_labels:
                         colormap = filter_colormap(colormap, filter_lidarseg_labels)
                     colors = colormap[points_label]

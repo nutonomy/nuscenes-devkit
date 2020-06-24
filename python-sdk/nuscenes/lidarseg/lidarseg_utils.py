@@ -104,7 +104,7 @@ def get_colormap() -> np.ndarray:
         "static_object.bicycle_rack": [188,143,143],  # Rosybrown
         "vehicle.on_rail": [0, 0, 255],  # Blue  TODO: remove
         "vehicle.emergency.firetruck": default,  # TODO: remove
-        "flat.driveable_surface": [255, 0, 255],
+        "flat.driveable_surface": [128, 64, 128],  # [255, 0, 255],
         "flat.sidewalk": [75, 0, 75],
         "flat.terrain": [150, 240, 80],
         "flat.other": [175, 0, 75],
