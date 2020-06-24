@@ -106,7 +106,7 @@ def get_colormap() -> np.ndarray:
         "vehicle.emergency.firetruck": default,  # TODO: remove
         "flat.driveable_surface": [128, 64, 128],  # [255, 0, 255],
         "flat.sidewalk": [75, 0, 75],
-        "flat.terrain": [150, 240, 80],
+        "flat.terrain": [112, 180, 60],  # [150, 240, 80],
         "flat.other": [175, 0, 75],
         "static.manmade": [222, 184, 135],  # Burlywood
         "static.vegetation": [0, 175, 0],
