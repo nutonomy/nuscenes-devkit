@@ -540,29 +540,41 @@ class NuScenes:
     def render_egoposes_on_map(self, log_location: str, scene_tokens: List = None, out_path: str = None) -> None:
         self.explorer.render_egoposes_on_map(log_location, scene_tokens, out_path=out_path)
 
-    def render_scene_channel_lidarseg(self, scene_token: str, channel: str, out_folder: str = None,
+    def render_scene_channel_lidarseg(self, scene_token: str,
+                                      channel: str,
+                                      out_folder: str = None,
                                       filter_lidarseg_labels: Iterable[int] = None,
                                       with_anns: bool = False,
-                                      render_mode: str = None, verbose: bool = True,
-                                      imsize: Tuple[int, int] = (640, 360), freq: float = 2,
+                                      render_mode: str = None,
+                                      verbose: bool = True,
+                                      imsize: Tuple[int, int] = (640, 360),
+                                      freq: float = 2,
                                       lidarseg_preds_folder: str = None) -> None:
-        self.explorer.render_scene_channel_lidarseg(scene_token, channel, out_folder=out_folder,
+        self.explorer.render_scene_channel_lidarseg(scene_token,
+                                                    channel,
+                                                    out_folder=out_folder,
                                                     filter_lidarseg_labels=filter_lidarseg_labels,
                                                     with_anns=with_anns,
-                                                    render_mode=render_mode, verbose=verbose,
-                                                    imsize=imsize, freq=freq,
+                                                    render_mode=render_mode,
+                                                    verbose=verbose,
+                                                    imsize=imsize,
+                                                    freq=freq,
                                                     lidarseg_preds_folder=lidarseg_preds_folder)
 
-    def render_scene_lidarseg(self, scene_token: str, out_path: str = None,
+    def render_scene_lidarseg(self, scene_token: str,
+                              out_path: str = None,
                               filter_lidarseg_labels: Iterable[int] = None,
                               with_anns: bool = False,
-                              imsize: Tuple[int, int] = (640, 360), freq: float = 2,
+                              imsize: Tuple[int, int] = (640, 360),
+                              freq: float = 2,
                               verbose: bool = True,
                               lidarseg_preds_folder: str = None) -> None:
-        self.explorer.render_scene_lidarseg(scene_token, out_path=out_path,
+        self.explorer.render_scene_lidarseg(scene_token,
+                                            out_path=out_path,
                                             filter_lidarseg_labels=filter_lidarseg_labels,
                                             with_anns=with_anns,
-                                            imsize=imsize, freq=freq,
+                                            imsize=imsize,
+                                            freq=freq,
                                             verbose=verbose,
                                             lidarseg_preds_folder=lidarseg_preds_folder)
 
