@@ -1791,7 +1791,7 @@ class NuScenesExplorer:
         :param render_mode: Either 'video' or 'image'. 'video' will render the frames into a video (the name of the
                             video will follow this format: <scene_number>_<camera_channel>.avi) while 'image' will
                             render the frames into individual images (each image name wil follow this format:
-                            <0-scene_number>_<camera_channel>_<original_file_name>.jpg). 'out_folder' must be specified
+                            <scene_name>_<camera_channel>_<original_file_name>.jpg). 'out_folder' must be specified
                             to save the video / images.
         :param verbose: Whether to show the frames as they are being rendered.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
@@ -1848,7 +1848,7 @@ class NuScenesExplorer:
             # Set filename of the image.
             camera_token = sample_record['data'][channel]
             cam = self.nusc.get('sample_data', camera_token)
-            filename = '0' + scene_record['name'][5:] + '_' + channel + '_' + os.path.basename(cam['filename'])
+            filename = scene_record['name'] + '_' + channel + '_' + os.path.basename(cam['filename'])
 
             # Determine whether to render lidarseg points from ground truth or predictions.
             pointsensor_token = sample_record['data']['LIDAR_TOP']
