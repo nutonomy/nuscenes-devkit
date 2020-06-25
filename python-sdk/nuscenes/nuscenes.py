@@ -21,8 +21,8 @@ from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_arbitrary_colormap, plt_to_cv2, get_stats, \
-    get_key_from_value, get_labels_in_coloring, get_colormap
+from nuscenes.lidarseg.lidarseg_utils import filter_colormap, get_colormap, plt_to_cv2, get_stats, \
+    get_key_from_value, get_labels_in_coloring
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -97,7 +97,6 @@ class NuScenes:
             for lidarseg_category in lidarseg_categories:
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
                 self.lidarseg_name2idx_mapping[lidarseg_category['label']] = lidarseg_category['index']
-            # self.lidarseg_colormap = get_arbitrary_colormap(num_classes=len(self.lidarseg_idx2name_mapping)) # TODO
             self.lidarseg_colormap = get_colormap()
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
@@ -1960,8 +1959,8 @@ class NuScenesExplorer:
         slate = np.ones((2 * imsize[1], 3 * imsize[0], 3), np.uint8)
 
         if out_path:
-            dir, filename = os.path.split(out_path)
-            assert os.path.isdir(dir), 'Error: {} does not exist.'.format(dir)
+            path_to_file, filename = os.path.split(out_path)
+            assert os.path.isdir(path_to_file), 'Error: {} does not exist.'.format(path_to_file)
             assert os.path.splitext(filename)[-1] == '.avi', 'Error: Video can only be saved in .avi format.'
             fourcc = cv2.VideoWriter_fourcc(*'MJPG')
             out = cv2.VideoWriter(out_path, fourcc, freq, slate.shape[1::-1])
