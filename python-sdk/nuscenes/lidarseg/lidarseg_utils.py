@@ -85,7 +85,8 @@ def colormap_to_colors(colormap: Dict[str, Iterable[int]], name2idx: Dict[str, i
     colors = []
     for i, (k, v) in enumerate(colormap.items()):
         # Ensure that the indices from the colormap is same as the class indices.
-        assert i == name2idx[k], 'Error: {} is of index {}, but it is of index {} in the colormap.'
+        assert i == name2idx[k], 'Error: {} is of index {}, ' \
+                                 'but it is of index {} in the colormap.'.format(k, name2idx[k], i)
         colors.append(v)
 
     colors = np.array(colors) / 255  # Normalize RGB values to be between 0 and 1 for each channel.
