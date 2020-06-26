@@ -557,6 +557,7 @@ class NuScenes:
                                       verbose: bool = True,
                                       imsize: Tuple[int, int] = (640, 360),
                                       freq: float = 2,
+                                      dpi: int = 150,
                                       lidarseg_preds_folder: str = None) -> None:
         self.explorer.render_scene_channel_lidarseg(scene_token,
                                                     channel,
@@ -567,6 +568,7 @@ class NuScenes:
                                                     verbose=verbose,
                                                     imsize=imsize,
                                                     freq=freq,
+                                                    dpi=dpi,
                                                     lidarseg_preds_folder=lidarseg_preds_folder)
 
     def render_scene_lidarseg(self, scene_token: str,
@@ -576,6 +578,7 @@ class NuScenes:
                               imsize: Tuple[int, int] = (640, 360),
                               freq: float = 2,
                               verbose: bool = True,
+                              dpi: int = 200,
                               lidarseg_preds_folder: str = None) -> None:
         self.explorer.render_scene_lidarseg(scene_token,
                                             out_path=out_path,
@@ -584,6 +587,7 @@ class NuScenes:
                                             imsize=imsize,
                                             freq=freq,
                                             verbose=verbose,
+                                            dpi=dpi,
                                             lidarseg_preds_folder=lidarseg_preds_folder)
 
 
@@ -1767,6 +1771,7 @@ class NuScenesExplorer:
                                       imsize: Tuple[int, int] = (640, 360),
                                       with_anns: bool = False,
                                       freq: float = 2,
+                                      dpi: int = 150,
                                       lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
@@ -1776,15 +1781,16 @@ class NuScenesExplorer:
         :param out_folder: Optional path to save the rendered frames to disk, either as a video or as individual images.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
                                        or the list is empty, all classes will be displayed.
-        :param imsize: Size of image to render. The larger the slower this will run.
-        :param with_anns: Whether to draw box annotations.
-        :param freq: Display frequency (Hz).
         :param render_mode: Either 'video' or 'image'. 'video' will render the frames into a video (the name of the
                             video will follow this format: <scene_number>_<camera_channel>.avi) while 'image' will
                             render the frames into individual images (each image name wil follow this format:
                             <scene_name>_<camera_channel>_<original_file_name>.jpg). 'out_folder' must be specified
                             to save the video / images.
         :param verbose: Whether to show the frames as they are being rendered.
+        :param imsize: Size of image to render. The larger the slower this will run.
+        :param with_anns: Whether to draw box annotations.
+        :param freq: Display frequency (Hz).
+        :param dpi: Resolution of the output dots.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
                                       the scene. The naming convention of each .bin file in the folder should be
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
@@ -1852,7 +1858,7 @@ class NuScenesExplorer:
                                                                  filter_lidarseg_labels=filter_lidarseg_labels,
                                                                  lidarseg_preds_bin_path=lidarseg_preds_bin_path,
                                                                  with_anns=with_anns, imsize=imsize,
-                                                                 dpi=150, line_width=2)
+                                                                 dpi=dpi, line_width=2)
 
             if verbose:
                 cv2.imshow(name, mat)
@@ -1899,6 +1905,7 @@ class NuScenesExplorer:
                               imsize: Tuple[int, int] = (640, 360),
                               freq: float = 2,
                               verbose: bool = True,
+                              dpi: int = 200,
                               lidarseg_preds_folder: str = None) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
@@ -1912,6 +1919,7 @@ class NuScenesExplorer:
         :param freq: Display frequency (Hz).
         :param imsize: Size of image to render. The larger the slower this will run.
         :param verbose: Whether to show the frames as they are being rendered.
+        :param dpi: Resolution of the output dots.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
                                       the scene. The naming convention of each .bin file in the folder should be
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
@@ -1979,7 +1987,7 @@ class NuScenesExplorer:
                 mat, _ = self._plot_points_and_bboxes(pointsensor_token, camera_token,
                                                       filter_lidarseg_labels=filter_lidarseg_labels,
                                                       lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                                      with_anns=with_anns, imsize=imsize, dpi=200, line_width=3)
+                                                      with_anns=with_anns, imsize=imsize, dpi=dpi, line_width=3)
 
                 if camera_channel in horizontal_flip:
                     # Flip image horizontally.
