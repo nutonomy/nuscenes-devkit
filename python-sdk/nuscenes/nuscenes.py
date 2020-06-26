@@ -103,11 +103,6 @@ class NuScenes:
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
                 self.lidarseg_name2idx_mapping[lidarseg_category['label']] = lidarseg_category['index']
 
-            # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
-            # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
-            # later use.
-            self.lidarseg_colors = colormap_to_colors(self.colormap, self.lidarseg_name2idx_mapping)
-
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
             self.image_annotations = self.__load_table__('image_annotations')
@@ -812,8 +807,11 @@ class NuScenesExplorer:
             if lidarseg_labels_filename:
                 points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
-                # Make a copy of the lidarseg colors to do filtering on.
-                colors = self.nusc.lidarseg_colors.copy()
+                # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
+                # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
+                # later use.
+                colors = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
+
                 if filter_lidarseg_labels:
                     colors = filter_colors(colors, filter_lidarseg_labels)
                 coloring = colors[points_label]
@@ -902,7 +900,11 @@ class NuScenesExplorer:
             recs = []
             classes_final = []
             classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-            color_legend = self.nusc.lidarseg_colors.copy()
+
+            # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
+            # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
+            # later use.
+            color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
             # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
             # after it has been projected onto the image; this will allow displaying the legend only for classes which
@@ -1209,8 +1211,11 @@ class NuScenesExplorer:
                 if lidarseg_labels_filename:
                     points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
 
-                    # Make a copy of the lidarseg colors to do filtering on.
-                    coloring = self.nusc.lidarseg_colors.copy()
+                    # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes
+                    # in colors as an array of RGB values, and thus the colormap needs to be converted to the
+                    # appropriate format.
+                    coloring = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
+
                     if filter_lidarseg_labels:
                         coloring = filter_colors(coloring, filter_lidarseg_labels)
                     colors = coloring[points_label]
