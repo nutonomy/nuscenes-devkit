@@ -2,7 +2,7 @@
 # Code written by Fong Whye Kit, 2020.
 
 import colorsys
-from typing import List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
@@ -74,80 +74,30 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     return mat
 
 
-def get_colormap() -> np.ndarray:
-    default = [255, 0, 0]
-
-    classname_to_color = {  # RGB.
-        "noise": [0, 0, 0],  # Black.
-        "human.pedestrian.adult": [0, 0, 230],  # Blue
-        "human.pedestrian.child": [135, 206, 235],  # Skyblue,
-        "human.pedestrian.wheelchair": [138, 43, 226],  # Blueviolet
-        "human.pedestrian.stroller": [240, 128, 128],  # Lightcoral
-        "human.pedestrian.personal_mobility": [219, 112, 147],  # Palevioletred
-        "human.pedestrian.police_officer": [0, 0, 128],  # Navy,
-        "human.pedestrian.construction_worker": [100, 149, 237],  # Cornflowerblue
-        "animal": [70, 130, 180],  # Steelblue
-        "vehicle.car": [255, 158, 0],  # Orange
-        "vehicle.motorcycle": [255, 61, 99],  # Red
-        "vehicle.bicycle": [220, 20, 60],  # Crimson
-        "vehicle.bus.bendy": [255, 127, 80],  # Coral
-        "vehicle.bus.rigid": [255,69,0],  # Orangered
-        "vehicle.truck": [255, 99, 71],  # Tomato
-        "vehicle.construction": [233, 150, 70],  # Darksalmon
-        "vehicle.emergency.ambulance": [255, 83, 0],
-        "vehicle.emergency.police": [255, 215, 0],  # Gold
-        "vehicle.trailer":   [255, 140, 0],  # Darkorange
-        "movable_object.barrier": [112, 128, 144],  # Slategrey
-        "movable_object.trafficcone": [47, 79, 79],  # Darkslategrey
-        "movable_object.pushable_pullable": [105, 105, 105],  # Dimgrey
-        "movable_object.debris": [210, 105, 30],  # Chocolate
-        "static_object.bicycle_rack": [188, 143, 143],  # Rosybrown
-        "flat.driveable_surface": [128, 64, 128],  # Dark purple
-        "flat.sidewalk": [75, 0, 75],
-        "flat.terrain": [112, 180, 60],
-        "flat.other": [175, 0, 75],
-        "static.manmade": [222, 184, 135],  # Burlywood
-        "static.vegetation": [0, 175, 0],  # Green
-        "static.other": [255, 228, 196]  # Bisque
-    }
-
-    coloring = dict(classname_to_color.copy())
-
-    colormap = []
-    for k, v in coloring.items():
-        colormap.append(v)
-
-    colormap = np.array(colormap) / 255  # Normalize RGB values to be between 0 and 1 for each channel.
-
-    return colormap
-
-
-def get_arbitrary_colormap(num_classes: int, random_seed: int = 93) -> np.ndarray:
+def colormap_to_colors(colormap: Dict[str, Iterable[int]], name2idx: Dict[str, int]) -> np.ndarray:
     """
-    Create an arbitrary RGB colormap. Note that the RGB values are normalized between 0 and 1, not 0 and 255.
-    :param num_classes: Number of colors to create.
-    :param random_seed: The random seed to use.
+    Create an array of RGB values from a colormap. Note that the RGB values are normalized
+    between 0 and 1, not 0 and 255.
+    :param colormap: A dictionary containing the mapping from class names to RGB values.
+    :param name2idx: A dictionary containing the mapping form class names to class index.
+    :return: An array of colors.
     """
-    num_classes = num_classes - 1  # No need colormap for class 0 as it will be fixed as black further down.
+    colors = []
+    for i, (k, v) in enumerate(colormap.items()):
+        # Ensure that the indices from the colormap is same as the class indices.
+        assert i == name2idx[k], 'Error: {} is of index {}, but it is of index {} in the colormap.'
+        colors.append(v)
 
-    hsv_tuples = [(x / num_classes, 1., 1.) for x in range(num_classes)]
-    colormap = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = np.array(colors) / 255  # Normalize RGB values to be between 0 and 1 for each channel.
 
-    np.random.seed(random_seed)  # Fix seed for consistent colors across runs.
-    np.random.shuffle(colormap)  # Shuffle colors to de-correlate adjacent classes.
-    np.random.seed(None)  # Reset seed to default.
-
-    colormap = [(0, 0, 0)] + colormap  # Ensures that (class 0, which is noise) is black.
-    colormap = np.array(colormap)  # Colormap is RGB with values for each channel normalized between 0 and 1.
-
-    return colormap
+    return colors
 
 
-def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.ndarray:
+def filter_colors(colors: np.array, classes_to_display: np.array) -> np.ndarray:
     """
-    Given a colormap (in RGB) and a list of classes to display, return a colormap (in RGBA) with the opacity
+    Given an array of RGB colors and a list of classes to display, return a colormap (in RGBA) with the opacity
     of the labels to be display set to 1.0 and those to be hidden set to 0.0
-    :param colormap: [n x 3] array where each row consist of the RGB values for the corresponding class index
+    :param colors: [n x 3] array where each row consist of the RGB values for the corresponding class index
     :param classes_to_display: An array of classes to display (e.g. [1, 8, 32]). The array need not be ordered.
     :return: (colormap <np.float: n, 4)>).
 
@@ -156,16 +106,16 @@ def filter_colormap(colormap: np.array, classes_to_display: np.array) -> np.ndar
                          ...,                                           ...,
                          Rn, Gn, Bn]])                                  [1.0, 1.0, 1.0, 0.0]])
     """
-    for i in range(len(colormap)):
+    for i in range(len(colors)):
         if i not in classes_to_display:
-            colormap[i] = [1.0, 1.0, 1.0]  # Mask labels to be hidden with 1.0 in all channels.
+            colors[i] = [1.0, 1.0, 1.0]  # Mask labels to be hidden with 1.0 in all channels.
 
     # Convert the RGB colormap to an RGBA array, with the alpha channel set to zero whenever the R, G and B channels
     # are all equal to 1.0.
-    alpha = np.array([~np.all(colormap == 1.0, axis=1) * 1.0])
-    colormap = np.concatenate((colormap, alpha.T), axis=1)
+    alpha = np.array([~np.all(colors == 1.0, axis=1) * 1.0])
+    colors = np.concatenate((colors, alpha.T), axis=1)
 
-    return colormap
+    return colors
 
 
 def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> List[int]:
