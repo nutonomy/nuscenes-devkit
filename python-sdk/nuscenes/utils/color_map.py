@@ -3,7 +3,8 @@ from typing import Dict, Iterable
 
 def get_colormap() -> Dict[str, Iterable[int]]:
     """
-    Returns a mapping from the class names to the respective RGB values.
+    Get the defined colormap.
+    :return: A mapping from the class names to the respective RGB values.
     """
 
     classname_to_color = {  # RGB.
@@ -40,5 +41,4 @@ def get_colormap() -> Dict[str, Iterable[int]]:
         "static.other": [255, 228, 196]  # Bisque
     }
 
-    # return dict(classname_to_color.copy())
     return classname_to_color
