@@ -625,6 +625,8 @@ class NuScenesExplorer:
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
         """
+        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
         print('Calculating stats for nuScenes-lidarseg...')
         start_time = time.time()
 
@@ -1799,6 +1801,8 @@ class NuScenesExplorer:
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
         """
 
+        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                           'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
         assert channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(channel)
@@ -1932,6 +1936,8 @@ class NuScenesExplorer:
                                       the scene. The naming convention of each .bin file in the folder should be
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
         """
+        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
 
         if lidarseg_preds_folder:
