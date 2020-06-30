@@ -1810,8 +1810,7 @@ class NuScenesExplorer:
 
         if lidarseg_preds_folder:
             assert(os.path.isdir(lidarseg_preds_folder)), \
-                'Error: The folder which supposedly contains the lidarseg predictions ' \
-                '({}) does not exist.'.format(lidarseg_preds_folder)
+                'Error:  The lidarseg predictions folder ({}) does not exist.'.format(lidarseg_preds_folder)
 
         save_as_vid = False
         if out_folder:
@@ -1942,8 +1941,7 @@ class NuScenesExplorer:
 
         if lidarseg_preds_folder:
             assert(os.path.isdir(lidarseg_preds_folder)), \
-                'Error: The folder which supposedly contains the lidarseg predictions ' \
-                '({}) does not exist.'.format(lidarseg_preds_folder)
+                'Error: The lidarseg predictions folder ({}) does not exist.'.format(lidarseg_preds_folder)
 
         # Get records from DB.
         scene_record = self.nusc.get('scene', scene_token)
