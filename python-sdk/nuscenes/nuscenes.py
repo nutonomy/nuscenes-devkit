@@ -94,14 +94,16 @@ class NuScenes:
                 'Error: There are {} .bin files but {} lidarseg records.'.format(num_bin_files, num_lidarseg_recs)
             self.table_names.append('lidarseg')
 
-            lidarseg_categories = self.__load_table__('category_lidarseg')
-
             # Create mapping from class index to class name, and vice versa, for easy lookup later on.
             self.lidarseg_idx2name_mapping = dict()
             self.lidarseg_name2idx_mapping = dict()
-            for lidarseg_category in lidarseg_categories:
-                self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['label']
-                self.lidarseg_name2idx_mapping[lidarseg_category['label']] = lidarseg_category['index']
+            for lidarseg_category in self.category:
+                # Check that the category records contain both the keys 'name' and 'index'.
+                assert 'index' in lidarseg_category.keys(), \
+                    'Please use the category.json that comes with nuScenes-lidarseg, and not the old category.json.'
+
+                self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
+                self.lidarseg_name2idx_mapping[lidarseg_category['name']] = lidarseg_category['index']
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
@@ -627,6 +629,8 @@ class NuScenesExplorer:
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
         """
+        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
         print('Calculating stats for nuScenes-lidarseg...')
         start_time = time.time()
 
@@ -1801,10 +1805,16 @@ class NuScenesExplorer:
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
         """
 
+        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                           'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
         assert channel in valid_channels, 'Error: Input camera channel {} not valid.'.format(channel)
         assert imsize[0] / imsize[1] == 16 / 9, 'Error: Aspect ratio should be 16/9.'
+
+        if lidarseg_preds_folder:
+            assert(os.path.isdir(lidarseg_preds_folder)), \
+                'Error:  The lidarseg predictions folder ({}) does not exist.'.format(lidarseg_preds_folder)
 
         save_as_vid = False
         if out_folder:
@@ -1929,7 +1939,13 @@ class NuScenesExplorer:
                                       the scene. The naming convention of each .bin file in the folder should be
                                       named in this format: <lidar_sample_data_token>_lidarseg.bin.
         """
+        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
+
+        if lidarseg_preds_folder:
+            assert(os.path.isdir(lidarseg_preds_folder)), \
+                'Error: The lidarseg predictions folder ({}) does not exist.'.format(lidarseg_preds_folder)
 
         # Get records from DB.
         scene_record = self.nusc.get('scene', scene_token)
