@@ -99,7 +99,7 @@ class NuScenes:
             self.lidarseg_name2idx_mapping = dict()
             for lidarseg_category in self.category:
                 # Check that the category records contain both the keys 'name' and 'index'.
-                assert 'name' in lidarseg_category.keys() and 'index' in lidarseg_category.keys(), \
+                assert 'index' in lidarseg_category.keys(), \
                     'Please use the category.json that comes with nuScenes-lidarseg, and not the old category.json.'
 
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
