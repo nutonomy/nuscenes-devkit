@@ -1,7 +1,7 @@
-from typing import Dict, Iterable
+from typing import Dict, List
 
 
-def get_colormap() -> Dict[str, Iterable[int]]:
+def get_colormap() -> Dict[str, List[int]]:
     """
     Get the defined colormap.
     :return: A mapping from the class names to the respective RGB values.

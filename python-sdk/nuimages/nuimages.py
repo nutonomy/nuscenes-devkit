@@ -184,35 +184,41 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('image')
-            self.load_table('camera')
+            self.load_table('sample')
+            self.load_table('sample_data')
+            self.load_table('calibrated_sensor')
+            self.load_table('sensor')
 
         # Count cameras.
-        camera_freqs = defaultdict(lambda: 0)
-        image_freqs = defaultdict(lambda: 0)
-        for camera in self.camera:
-            camera_freqs[camera['channel']] += 1
-        for image in self.image:
-            camera = self.get('camera', image['camera_token'])
-            image_freqs[camera['channel']] += 1
+        cs_freqs = defaultdict(lambda: 0)
+        channel_freqs = defaultdict(lambda: 0)
+        for calibrated_sensor in self.calibrated_sensor:
+            sensor = self.get('sensor', calibrated_sensor['sensor_token'])
+            cs_freqs[sensor['channel']] += 1
+        for sample_data in self.sample_data:
+            if sample_data['is_key_frame']:  # Only use keyframes (images).
+                calibrated_sensor = self.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
+                sensor = self.get('sensor', calibrated_sensor['sensor_token'])
+                channel_freqs[sensor['channel']] += 1
 
         # Print to stdout.
         format_str = '{:7} {:6} {:24}'
         print()
         print(format_str.format('Cameras', 'Images', 'Channel'))
-        for channel in camera_freqs.keys():
-            camera_freq = camera_freqs[channel]
-            image_freq = image_freqs[channel]
+        for channel in cs_freqs.keys():
+            cs_freq = cs_freqs[channel]
+            channel_freq = channel_freqs[channel]
             print(format_str.format(
-                camera_freq, image_freq, channel))
+                cs_freq, channel_freq, channel))
 
-    def list_categories(self, image_tokens: List[str] = None) -> None:
+    def list_categories(self, sample_tokens: List[str] = None) -> None:
         """
         List all categories and the number of object_anns and surface_anns for them.
-        :param image_tokens: A list of image tokens for which category stats will be shown.
+        :param sample_tokens: A list of sample tokens for which category stats will be shown.
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
+            self.load_table('sample')
             self.load_table('object_ann')
             self.load_table('surface_ann')
             self.load_table('category')
@@ -220,13 +226,15 @@ class NuImages:
         # Count object_anns and surface_anns.
         object_freqs = defaultdict(lambda: 0)
         surface_freqs = defaultdict(lambda: 0)
-        if image_tokens is not None:
-            image_tokens = set(image_tokens)
+        if sample_tokens is not None:
+            sample_tokens = set(sample_tokens)
         for object_ann in self.object_ann:
-            if image_tokens is None or object_ann['image_token'] in image_tokens:
-                object_freqs[object_ann['category_token']] += 1
+            sample_token = self.get('sample_data', object_ann['sample_data_token'])['sample_token']
+            if sample_tokens is None or sample_token in sample_tokens:
+                    object_freqs[object_ann['category_token']] += 1
         for surface_ann in self.surface_ann:
-            if image_tokens is None or surface_ann['image_token'] in image_tokens:
+            sample_token = self.get('sample_data', surface_ann['sample_data_token'])['sample_token']
+            if sample_tokens is None or sample_token in sample_tokens:
                 surface_freqs[surface_ann['category_token']] += 1
 
         # Print to stdout.
@@ -253,27 +261,27 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('image')
+            self.load_table('sample')
             self.load_table('log')
 
         # Count images.
-        image_freqs = defaultdict(lambda: 0)
-        for image in self.image:
-            image_freqs[image['log_token']] += 1
+        sample_freqs = defaultdict(lambda: 0)
+        for sample in self.sample:
+            sample_freqs[sample['log_token']] += 1
 
         # Print to stdout.
         format_str = '{:6} {:29} {:24}'
         print()
-        print(format_str.format('Images', 'Log', 'Location'))
+        print(format_str.format('Samples', 'Log', 'Location'))
         for log in self.log:
-            image_freq = image_freqs[log['token']]
+            image_freq = sample_freqs[log['token']]
             logfile = log['logfile']
             location = log['location']
             print(format_str.format(
                 image_freq, logfile, location))
 
     def render_image(self,
-                     image_token: str,
+                     sample_token: str,
                      with_annotations: bool = True,
                      with_attributes: bool = False,
                      box_tokens: List[str] = None,
@@ -282,7 +290,7 @@ class NuImages:
                      ax: Axes = None) -> PIL.Image:
         """
         Draws an image with annotations overlaid.
-        :param image_token: The token of the image to be rendered.
+        :param sample_token: The token of the sample to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
         :param box_tokens: List of bounding box annotation tokens. If given, only these annotations are drawn.
@@ -292,8 +300,10 @@ class NuImages:
         :return: Image object.
         """
         # Get image data.
-        image = self.get('image', image_token)
-        im_path = osp.join(self.dataroot, image['filename_jpg'])
+        sample_data_token = [sd['token'] for sd in self.sample_data
+                             if sd['sample_token'] == sample_token and sd['is_key_frame']][0]
+        sample_data = self.get('sample_data', sample_data_token)
+        im_path = osp.join(self.dataroot, sample_data['filename'])
         im = PIL.Image.open(im_path)
         if not with_annotations:
             return im
@@ -303,7 +313,7 @@ class NuImages:
         draw = PIL.ImageDraw.Draw(im, 'RGBA')
 
         # Load stuff / background regions.
-        surface_anns = [o for o in self.surface_ann if o['image_token'] == image_token]
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sample_data_token]
         if surface_tokens is not None:
             surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
@@ -320,7 +330,7 @@ class NuImages:
             draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Load object instances.
-        object_anns = [o for o in self.object_ann if o['image_token'] == image_token]
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sample_data_token]
         if box_tokens is not None:
             object_anns = [o for o in object_anns if o['token'] in box_tokens]
 
@@ -350,7 +360,7 @@ class NuImages:
         (width, height) = im.size
         ax.set_xlim(0, width)
         ax.set_ylim(height, 0)
-        ax.set_title(image_token)
+        ax.set_title(sample_data_token)
         ax.axis('off')
 
         return im
