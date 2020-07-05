@@ -29,13 +29,13 @@ class NuImages:
     """
 
     def __init__(self,
-                 version: str = 'v0.1-train',
+                 version: str = 'v1.0-train',
                  dataroot: str = '/data/sets/nuimages',
                  lazy: bool = True,
                  verbose: bool = False):
         """
         Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v0.1-train", "v0.1-val").
+        :param version: Version to load (e.g. "v1.0-train", "v1.0-val").
         :param dataroot: Path to the tables and data.
         :param lazy: Whether to use lazy loading for the database tables.
         :param verbose: Whether to print status messages during load.

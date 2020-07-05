@@ -17,6 +17,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) and nuImages d
 - [Citation](#citation)
 
 ## Changelog
+- Jul. 14, 2020: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
 - Apr. 30, 2020: nuImages v0.1 code release.
 - Mar. 24, 2020: Devkit v1.0.7: nuScenes prediction challenge code released.
 - Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
@@ -52,7 +53,7 @@ Eventually you should have the following folder structure:
 ```
 /data/sets/nuimages
     imgs	-	Folder with the camera images.
-    v0.1-*	-	JSON tables that include all the meta data and annotations. Each split (train, val, test) is provided in a separate folder.
+    v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (train, val, test) is provided in a separate folder.
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuImages class (see tutorial).
 
