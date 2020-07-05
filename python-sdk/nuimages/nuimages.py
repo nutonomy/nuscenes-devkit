@@ -50,6 +50,7 @@ class NuImages:
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
+        start_time = time.time()
         if verbose:
             print("======\nLoading nuImages tables for version {}...".format(self.version))
 
@@ -59,7 +60,7 @@ class NuImages:
             self._token2ind[table] = None
 
         # Load tables directly if requested.
-        if not lazy:
+        if not self.lazy:
             # Explicitly init tables to help the IDE determine valid class members.
             self.attribute = self.__load_table__('attribute')
             self.calibrated_sensor = self.__load_table__('calibrated_sensor')
@@ -71,6 +72,9 @@ class NuImages:
             self.sample_data = self.__load_table__('sample_data')
             self.sensor = self.__load_table__('sensor')
             self.surface_ann = self.__load_table__('surface_ann')
+
+        if verbose:
+            print("Done loading in {:.1f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
 
     def __getattr__(self, attr_name: str) -> Any:
         """
