@@ -15,7 +15,7 @@ import PIL.ImageFont
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from nuimages.utils import annotation_name, mask_decode
+from nuimages.utils.utils import annotation_name, mask_decode
 from nuscenes.utils.color_map import get_colormap
 
 PYTHON_VERSION = sys.version_info[0]
