@@ -45,7 +45,8 @@ class NuImages:
         self.lazy = lazy
         self.verbose = verbose
 
-        self.table_names = ['attribute', 'camera', 'category', 'image', 'log', 'object_ann', 'surface_ann']
+        self.table_names = ['attribute', 'calibrated_sensor', 'category', 'ego_pose', 'log', 'object_ann', 'sample',
+                            'sample_data', 'sensor', 'surface_ann']
 
         assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
 
@@ -61,11 +62,14 @@ class NuImages:
         if not lazy:
             # Explicitly init tables to help the IDE determine valid class members.
             self.attribute = self.__load_table__('attribute')
-            self.camera = self.__load_table__('camera')
+            self.calibrated_sensor = self.__load_table__('calibrated_sensor')
             self.category = self.__load_table__('category')
-            self.image = self.__load_table__('image')
+            self.ego_pose = self.__load_table__('ego_pose')
             self.log = self.__load_table__('log')
             self.object_ann = self.__load_table__('object_ann')
+            self.sample = self.__load_table__('sample')
+            self.sample_data = self.__load_table__('sample_data')
+            self.sensor = self.__load_table__('sensor')
             self.surface_ann = self.__load_table__('surface_ann')
 
     def __getattr__(self, attr_name: str) -> Any:
