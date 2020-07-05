@@ -8,24 +8,6 @@ import numpy as np
 from pycocotools import mask as cocomask
 
 
-def default_color(category_name: str) -> Tuple[int, int, int]:
-    """
-    Provides a default colors based on the category names.
-    :param category_name: The name of the category.
-    :returns: A tuple of RGB values.
-    """
-    if 'cycle' in category_name:
-        return 255, 61, 99  # Red
-    elif 'vehicle' in category_name:
-        return 255, 0, 255  # Magenta
-    elif 'human.pedestrian' in category_name:
-        return 0, 0, 230  # Blue
-    elif 'cone' in category_name or 'barrier' in category_name:
-        return 0, 0, 0  # Black
-    else:
-        return 255, 158, 0  # Orange
-
-
 def annotation_name(attributes: List[dict],
                     category_name: str,
                     with_attributes: bool = False) -> str:

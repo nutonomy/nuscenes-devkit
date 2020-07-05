@@ -1,21 +1,22 @@
 # nuScenes dev-kit.
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
-import sys
-import os.path as osp
 import json
+import os.path as osp
+import sys
 import time
-from typing import Any, List, Dict, Optional
 from collections import defaultdict
+from typing import Any, List, Dict, Optional
 
 import PIL
+import PIL.Image
 import PIL.ImageDraw
 import PIL.ImageFont
-import PIL.Image
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from nuimages.utils import default_color, annotation_name, mask_decode
+from nuimages.utils import annotation_name, mask_decode
+from nuscenes.utils.color_map import get_colormap
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -72,6 +73,8 @@ class NuImages:
             self.sample_data = self.__load_table__('sample_data')
             self.sensor = self.__load_table__('sensor')
             self.surface_ann = self.__load_table__('surface_ann')
+
+        self.color_map = get_colormap()
 
         if verbose:
             print("Done loading in {:.1f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
@@ -309,7 +312,7 @@ class NuImages:
             # Get color and mask
             category_token = ann['category_token']
             category_name = self.get('category', category_token)['name']
-            color = default_color(category_name)
+            color = self.color_map[category_name]
             if ann['mask'] is None:
                 continue
             mask = mask_decode(ann['mask'])
@@ -326,7 +329,7 @@ class NuImages:
             # Get color, box, mask and name.
             category_token = ann['category_token']
             category_name = self.get('category', category_token)['name']
-            color = default_color(category_name)
+            color = self.color_map[category_name]
             bbox = ann['bbox']
             attr_tokens = ann['attribute_tokens']
             attributes = [self.get('attribute', at) for at in attr_tokens]
