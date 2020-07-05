@@ -36,7 +36,7 @@ class TestAttributes(unittest.TestCase):
             'vehicle.truck': ['vehicle']
         }
 
-    def test_object_anns(self) -> None:
+    def test_object_anns(self, print_only: bool = True) -> None:
         """
         For every object_ann, check that all the required attributes for that class are present.
         """
@@ -46,25 +46,46 @@ class TestAttributes(unittest.TestCase):
             # Collect the attribute names used here.
             category_name = cat_token_to_name[object_ann['category_token']]
 
-            # TODO: Remove this temporary workaround!
-            if category_name == 'human.pedestrian.personal_mobility':
-                continue
-
             cur_att_names = []
             for attribute_token in object_ann['attribute_tokens']:
                 attribute_name = att_token_to_name[attribute_token]
                 cur_att_names.append(attribute_name)
 
             # Compare to the required attribute name prefixes.
-            # Checks for completeness.
+            # Check that the length is correct.
             required_att_names = self.valid_attributes[category_name]
-            self.assertEqual(len(cur_att_names), len(required_att_names),
-                             {'category_name': category_name,
-                              'cur_att_names': cur_att_names,
-                              'required_att_names': required_att_names})
+            condition = len(cur_att_names) == len(required_att_names)
+            if not condition:
+                sample_token = self.nuim.get('sample_data', object_ann['sample_data_token'])['sample_token']
+                debug_output = {
+                    'sample_token': sample_token,
+                    'category_name': category_name,
+                    'cur_att_names': cur_att_names,
+                    'required_att_names': required_att_names
+                }
+                error_msg = 'Error in test_object_anns: ' + str(debug_output)
+                if print_only:
+                    print(error_msg)
+                else:
+                    self.assertTrue(condition, error_msg)
+
+                # Skip next check if we already saw an error.
+                continue
+
+            # Check that they are really the same.
             for required in required_att_names:
-                self.assertTrue(any([cur.startswith(required + '.') for cur in cur_att_names]))
+                condition = any([cur.startswith(required + '.') for cur in cur_att_names])
+                if not condition:
+                    error_msg = 'Error in test_object_anns: Required attribute ''%s'' not in %s for class %s!' \
+                                % (required, cur_att_names, category_name)
+                    if print_only:
+                        print(error_msg)
+                    else:
+                        self.assertTrue(condition, error_msg)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # Runs the tests without throwing errors
+    test = TestAttributes()
+    test.setUp()
+    test.test_object_anns(print_only=True)
