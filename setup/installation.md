@@ -115,5 +115,8 @@ Set the NUSCENES environment variable to point to your data folder, e.g. `/data/
 ```
 export NUSCENES="/data/sets/nuscenes"
 ```
-
+or for nuImages:
+```
+export NUIMAGES="/data/sets/nuimages"
+```
 That's it you should be good to go!
