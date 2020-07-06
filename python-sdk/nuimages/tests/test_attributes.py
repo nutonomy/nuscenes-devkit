@@ -36,6 +36,7 @@ class TestAttributes(unittest.TestCase):
             'vehicle.truck': ['vehicle']
         }
 
+    @unittest.skip
     def test_object_anns(self, print_only: bool = True) -> None:
         """
         For every object_ann, check that all the required attributes for that class are present.

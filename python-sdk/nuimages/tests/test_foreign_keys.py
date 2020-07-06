@@ -11,11 +11,11 @@ class TestForeignKeys(unittest.TestCase):
     def setUp(self):
         self.nuim = NuImages(version='v1.0-val', dataroot=os.environ['NUIMAGES'], verbose=False)
 
+    @unittest.skip
     def test_foreign_keys(self) -> None:
         """
         Test that every foreign key points to a valid token.
         """
-
         # Index the tokens of all tables.
         index = dict()
         for table_name in self.nuim.table_names:
