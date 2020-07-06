@@ -17,7 +17,7 @@ def convert_to_pixel_coords(location: Tuple[float, float],
     :param location: Location in global coordinates as (x, y) tuple.
     :param center_of_image_in_global: Center of the image in global coordinates (x, y) tuple.
     :param center_of_image_in_pixels: Center of the image in pixel coordinates (row_pixel, column pixel).
-    :param resolution: Center of image.
+    :param resolution: Resolution of image in pixels / meters.
     """
 
     x, y = location
