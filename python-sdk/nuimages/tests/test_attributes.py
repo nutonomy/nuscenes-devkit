@@ -4,11 +4,23 @@ import os
 from nuimages.nuimages import NuImages
 
 
-class TestAttributes(unittest.TestCase):
+class TestAttributes():
 
-    def setUp(self):
-        self.nuim = NuImages(version='v1.0-val', dataroot=os.environ['NUIMAGES'], verbose=False)
+    def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
+        """
+        Initialize TestAttributes.
+        Note that this is not a unittest to disable issues with automatic test discovery.
+        :param version: The NuImages version.
+        :param dataroot: The root folder where the dataset is installed.
+        """
+        super().__init__()
 
+        self.version = version
+        if dataroot is None:
+            self.dataroot = os.environ['NUIMAGES']
+        else:
+            self.dataroot = dataroot
+        self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=False)
         self.valid_attributes = {
             'animal': ['pedestrian', 'vertical_position'],
             'human.pedestrian.adult': ['pedestrian'],
@@ -36,8 +48,7 @@ class TestAttributes(unittest.TestCase):
             'vehicle.truck': ['vehicle']
         }
 
-    @unittest.skip
-    def test_object_anns(self, print_only: bool = True) -> None:
+    def test_object_anns(self, print_only: bool = False) -> None:
         """
         For every object_ann, check that all the required attributes for that class are present.
         """
@@ -68,7 +79,7 @@ class TestAttributes(unittest.TestCase):
                 if print_only:
                     print(error_msg)
                 else:
-                    self.assertTrue(condition, error_msg)
+                    assert condition, error_msg
 
                 # Skip next check if we already saw an error.
                 continue
@@ -82,11 +93,12 @@ class TestAttributes(unittest.TestCase):
                     if print_only:
                         print(error_msg)
                     else:
-                        self.assertTrue(condition, error_msg)
+                        assert condition, error_msg
 
 
 if __name__ == '__main__':
-    # Runs the tests without throwing errors
-    test = TestAttributes()
-    test.setUp()
-    test.test_object_anns(print_only=True)
+    # Runs the tests without aborting on error.
+    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+        print('Running test_foreign_keys() for version %s...' % nuim_version)
+        test = TestAttributes(version=nuim_version)
+        test.test_object_anns(print_only=True)

@@ -15,11 +15,8 @@ class TestForeignKeys(unittest.TestCase):
             self.dataroot = os.environ['NUIMAGES']
         else:
             self.dataroot = dataroot
-
-    def setUp(self):
         self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=False)
 
-    @unittest.skip
     def test_foreign_keys(self) -> None:
         """
         Test that every foreign key points to a valid token.
@@ -64,7 +61,8 @@ class TestForeignKeys(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    for version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
-        print('Running test_foreign_keys() for version %s...' % version)
-        test = TestForeignKeys(version=version)
+    # Runs the tests without aborting on error.
+    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+        print('Running test_foreign_keys() for version %s...' % nuim_version)
+        test = TestForeignKeys(version=nuim_version)
         test.test_foreign_keys()
