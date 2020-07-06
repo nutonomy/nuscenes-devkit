@@ -7,9 +7,17 @@ from nuimages.nuimages import NuImages
 
 
 class TestForeignKeys(unittest.TestCase):
+    def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
+        super().__init__()
+
+        self.version = version
+        if dataroot is None:
+            self.dataroot = os.environ['NUIMAGES']
+        else:
+            self.dataroot = dataroot
 
     def setUp(self):
-        self.nuim = NuImages(version='v1.0-val', dataroot=os.environ['NUIMAGES'], verbose=False)
+        self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=False)
 
     @unittest.skip
     def test_foreign_keys(self) -> None:
@@ -56,4 +64,7 @@ class TestForeignKeys(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    for version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+        print('Running test_foreign_keys() for version %s...' % version)
+        test = TestForeignKeys(version=version)
+        test.test_foreign_keys()
