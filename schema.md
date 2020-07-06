@@ -7,6 +7,7 @@ Every row can be identified by its unique primary key `token`.
 Foreign keys such as `sample_token` may be used to link to the `token` of the table `sample`.
 Please refer to the [tutorial](https://www.nuscenes.org/tutorial) for an introduction to the most important database tables.
 
+![](https://www.nuscenes.org/public/images/nuscenes-schema.svg)
 
 category
 ---------
