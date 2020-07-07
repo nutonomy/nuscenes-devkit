@@ -472,8 +472,8 @@ class NuScenes:
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
-    def list_lidarseg_categories(self) -> None:
-        self.explorer.list_lidarseg_categories()
+    def list_lidarseg_categories(self, sort_counts: bool = True) -> None:
+        self.explorer.list_lidarseg_categories(sort_counts=sort_counts)
 
     def list_attributes(self) -> None:
         self.explorer.list_attributes()
@@ -624,10 +624,12 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
 
-    def list_lidarseg_categories(self) -> None:
+    def list_lidarseg_categories(self, sort_counts: bool = True) -> None:
         """
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
+        :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
+                            the stats will be printed alphabetically according to class name.
         """
         assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
 
@@ -650,11 +652,15 @@ class NuScenesExplorer:
         for i in range(len(lidarseg_counts)):
             lidarseg_counts_dict[self.nusc.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
-        out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
+        if sort_counts:
+            out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
+        else:
+            out = sorted(lidarseg_counts_dict.items())
+
         # Print frequency counts of each class in the lidarseg dataset.
         for class_name, count in out:
             idx = get_key_from_value(self.nusc.lidarseg_idx2name_mapping, class_name)
-            print('{:3}  {:35} nbr_points={:12,}'.format(idx, class_name, count))
+            print('{:3}  {:40} nbr_points={:12,}'.format(idx, class_name, count))
 
         print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
             len(self.nusc.lidarseg), time.time() - start_time))
