@@ -12,6 +12,8 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) dataset.
 - [Citation](#citation)
 
 ## Changelog
+- Jul. 7, 2020: Devkit v1.0.9: Misc updates on map and prediction code.
+- Apr. 1, 2020: Devkit v1.0.8: Relax pip requirements and reorganize prediction code.
 - Mar. 24, 2020: Devkit v1.0.7: nuScenes prediction challenge code released.
 - Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
 - Dec. 11, 2019: Devkit v1.0.5: Remove weight factor from AMOTA tracking metrics.
