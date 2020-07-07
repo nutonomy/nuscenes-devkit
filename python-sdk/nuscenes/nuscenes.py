@@ -22,7 +22,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import filter_colors, colormap_to_colors, plt_to_cv2, get_stats, \
-    get_key_from_value, get_labels_in_coloring
+    get_key_from_value, get_labels_in_coloring, create_lidarseg_legend
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -909,13 +909,8 @@ class NuScenesExplorer:
 
         # Produce a legend with the unique colors from the scatter.
         if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg and show_lidarseg_legend:
-            recs = []
-            classes_final = []
-            classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-
-            # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
-            # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
-            # later use.
+            # Since the labels are stored as class indices, we get the RGB colors from the colormap in an array where
+            # the position of the RGB color corresponds to the index of the class it represents.
             color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
             # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
@@ -924,14 +919,8 @@ class NuScenesExplorer:
             if filter_lidarseg_labels is None:
                 filter_lidarseg_labels = get_labels_in_coloring(color_legend, coloring)
 
-            for i in range(len(classes)):
-                # Create legend only for labels specified in the lidarseg filter.
-                if filter_lidarseg_labels is None or i in filter_lidarseg_labels:
-                    recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_legend[i]))
-
-                    # Truncate class names to only first 25 chars so that legend is not excessively long.
-                    classes_final.append(classes[i][:25])
-            plt.legend(recs, classes_final, loc='upper center', ncol=3)
+            create_lidarseg_legend(filter_lidarseg_labels,
+                                   self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap)
 
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
@@ -1235,18 +1224,9 @@ class NuScenesExplorer:
                     colors = coloring[points_label]
 
                     if show_lidarseg_legend:
-                        recs = []
-                        classes_final = []
-                        classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-
-                        for i in range(len(classes)):
-                            if coloring[i][-1] > 0:
-                                recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=coloring[i]))
-
-                                # Truncate class names to only first 25 chars so that legend is not excessively long.
-                                classes_final.append(classes[i][:25])
-                        plt.legend(recs, classes_final, loc='upper left', ncol=1,
-                                   bbox_to_anchor=(1.05, 1.0))
+                        create_lidarseg_legend(filter_lidarseg_labels,
+                                               self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap,
+                                               loc='upper left', ncol=1, bbox_to_anchor=(1.05, 1.0))
                 else:
                     colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
                     print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '

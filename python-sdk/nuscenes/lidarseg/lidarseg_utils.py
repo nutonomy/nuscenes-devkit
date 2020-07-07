@@ -1,7 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Fong Whye Kit, 2020.
 
-import colorsys
 from typing import Dict, Iterable, List, Tuple
 
 import cv2
@@ -152,3 +151,21 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
             filter_lidarseg_labels.append(i)
 
     return filter_lidarseg_labels
+
+
+def create_lidarseg_legend(labels_to_include_in_legend, idx2name, name2color,
+                           loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
+    import matplotlib.patches as mpatches
+    recs = []
+    classes_final = []
+    classes = [name for idx, name in sorted(idx2name.items())]
+
+    for i in range(len(classes)):
+        if labels_to_include_in_legend is None or i in labels_to_include_in_legend:
+            name = classes[i]
+            recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=np.array(name2color[name]) / 255))
+
+            # Truncate class names to only first 25 chars so that legend is not excessively long.
+            classes_final.append(classes[i][:25])
+
+    plt.legend(recs, classes_final, loc=loc, ncol=ncol, bbox_to_anchor=bbox_to_anchor)
