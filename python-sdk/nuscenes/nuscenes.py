@@ -465,7 +465,7 @@ class NuScenes:
         for class_name, count in out:
             if count > 0:
                 idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
-                print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
+                print('{:3}  {:40} n={:12,}'.format(idx, class_name, count))
 
         print('=' * len(header))
 
@@ -825,6 +825,11 @@ class NuScenesExplorer:
                 colors = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
                 if filter_lidarseg_labels is not None:
+                    # Ensure that filter_lidarseg_labels is an iterable.
+                    assert isinstance(filter_lidarseg_labels, (list, np.ndarray)), \
+                        'Error: filter_lidarseg_labels should be a list of class indices, eg. [9], [10, 21].'
+
+                    # Filter to get only the colors of the desired classes.
                     colors = filter_colors(colors, filter_lidarseg_labels)
                 coloring = colors[points_label]
             else:
@@ -1220,6 +1225,11 @@ class NuScenesExplorer:
                     coloring = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
                     if filter_lidarseg_labels is not None:
+                        # Ensure that filter_lidarseg_labels is an iterable.
+                        assert isinstance(filter_lidarseg_labels, (list, np.ndarray)), \
+                            'Error: filter_lidarseg_labels should be a list of class indices, eg. [9], [10, 21].'
+
+                        # Filter to get only the colors of the desired classes.
                         coloring = filter_colors(coloring, filter_lidarseg_labels)
                     colors = coloring[points_label]
 
