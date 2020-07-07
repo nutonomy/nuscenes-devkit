@@ -822,7 +822,7 @@ class NuScenesExplorer:
                 # later use.
                 colors = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
-                if filter_lidarseg_labels:
+                if filter_lidarseg_labels is not None:
                     colors = filter_colors(colors, filter_lidarseg_labels)
                 coloring = colors[points_label]
             else:
@@ -1226,7 +1226,7 @@ class NuScenesExplorer:
                     # appropriate format.
                     coloring = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
-                    if filter_lidarseg_labels:
+                    if filter_lidarseg_labels is not None:
                         coloring = filter_colors(coloring, filter_lidarseg_labels)
                     colors = coloring[points_label]
                 else:
