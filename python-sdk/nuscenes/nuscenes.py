@@ -409,19 +409,22 @@ class NuScenes:
         else:
             return pos_diff / time_diff
 
-    def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True,
+    def get_sample_lidarseg_stats(self, sample_token: str, sort_by: str = 'count',
                                   lidarseg_preds_bin_path: str = None) -> None:
         """
         Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
         points in the pointcloud will not be printed.
         :param sample_token: Sample token.
-        :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
-                            the stats will be printed alphabetically according to class name.
+        :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
+                        ascending order of frequency; if `name`, the stats will be printed alphabetically
+                        according to class name; if `index`, the stats will be printed in ascending order of index.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
         """
         assert hasattr(self, 'lidarseg'), 'Error: You have no lidarseg data; unable to get ' \
                                           'statistics for segmentation of the point cloud.'
+        assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
+                                                      'count / name / index.'
 
         sample_rec = self.get('sample', sample_token)
         ref_sd_token = sample_rec['data']['LIDAR_TOP']
@@ -457,10 +460,12 @@ class NuScenes:
         for i in range(len(lidarseg_counts)):
             lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
-        if sort_counts:
+        if sort_by == 'count':
             out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
-        else:
+        elif sort_by == 'name':
             out = sorted(lidarseg_counts_dict.items())
+        else:
+            out = lidarseg_counts_dict.items()
 
         for class_name, count in out:
             if count > 0:
@@ -472,8 +477,8 @@ class NuScenes:
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
-    def list_lidarseg_categories(self, sort_counts: bool = True) -> None:
-        self.explorer.list_lidarseg_categories(sort_counts=sort_counts)
+    def list_lidarseg_categories(self, sort_by: str = 'count') -> None:
+        self.explorer.list_lidarseg_categories(sort_by=sort_by)
 
     def list_attributes(self) -> None:
         self.explorer.list_attributes()
@@ -626,14 +631,17 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
 
-    def list_lidarseg_categories(self, sort_counts: bool = True) -> None:
+    def list_lidarseg_categories(self, sort_by: str = 'count') -> None:
         """
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
-        :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
-                            the stats will be printed alphabetically according to class name.
+        :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
+                        ascending order of frequency; if `name`, the stats will be printed alphabetically
+                        according to class name; if `index`, the stats will be printed in ascending order of index.
         """
         assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+        assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
+                                                      'count / name / index.'
 
         print('Calculating stats for nuScenes-lidarseg...')
         start_time = time.time()
@@ -654,10 +662,12 @@ class NuScenesExplorer:
         for i in range(len(lidarseg_counts)):
             lidarseg_counts_dict[self.nusc.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
-        if sort_counts:
+        if sort_by == 'count':
             out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
-        else:
+        elif sort_by == 'name':
             out = sorted(lidarseg_counts_dict.items())
+        else:
+            out = lidarseg_counts_dict.items()
 
         # Print frequency counts of each class in the lidarseg dataset.
         for class_name, count in out:
