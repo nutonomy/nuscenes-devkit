@@ -4,6 +4,7 @@
 from typing import Dict, Iterable, List, Tuple
 
 import cv2
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -155,7 +156,19 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
 
 def create_lidarseg_legend(labels_to_include_in_legend, idx2name, name2color,
                            loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
-    import matplotlib.patches as mpatches
+    """
+    Given a list of class indices, the mapping from class index to class name, and the mapping from class name
+    to class color, produce a legend which shows the color and the corresponding class name.
+    :param labels_to_include_in_legend:
+    :param idx2name: The mapping from class index to class name.
+    :param name2color: The mapping from class name to class color.
+    :param loc: The location of the legend.
+    :param ncol: The number of columns that the legend has.
+    :param bbox_to_anchor: A 2-tuple (x, y) which places the top-left corner of the legend specified by loc
+                           at x, y. The origin is at the bottom-left corner and x and y are normalized between
+                           0 and 1 (i.e. x > 1 and / or y > 1 will place the legend outside the plot.
+    """
+
     recs = []
     classes_final = []
     classes = [name for idx, name in sorted(idx2name.items())]

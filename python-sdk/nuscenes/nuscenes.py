@@ -12,7 +12,6 @@ from typing import Tuple, List, Iterable
 
 import cv2
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 import sklearn.metrics
 from PIL import Image
@@ -417,7 +416,8 @@ class NuScenes:
         :param sample_token: Sample token.
         :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
                         ascending order of frequency; if `name`, the stats will be printed alphabetically
-                        according to class name; if `index`, the stats will be printed in ascending order of index.
+                        according to class name; if `index`, the stats will be printed in ascending order of
+                        class index.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
         """
@@ -637,7 +637,8 @@ class NuScenesExplorer:
         the split specified in nusc.version.
         :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
                         ascending order of frequency; if `name`, the stats will be printed alphabetically
-                        according to class name; if `index`, the stats will be printed in ascending order of index.
+                        according to class name; if `index`, the stats will be printed in ascending order of
+                        class index.
         """
         assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
         assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
