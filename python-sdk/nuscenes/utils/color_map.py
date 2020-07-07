@@ -32,7 +32,7 @@ def get_colormap() -> Dict[str, Iterable[int]]:
         "movable_object.pushable_pullable": [105, 105, 105],  # Dimgrey
         "movable_object.debris": [210, 105, 30],  # Chocolate
         "static_object.bicycle_rack": [188, 143, 143],  # Rosybrown
-        "flat.driveable_surface": [128, 64, 128],  # Dark purple
+        "flat.driveable_surface": [0, 207, 191],  # nuTonomy green
         "flat.sidewalk": [75, 0, 75],
         "flat.terrain": [112, 180, 60],
         "flat.other": [175, 0, 75],
