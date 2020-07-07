@@ -1229,6 +1229,20 @@ class NuScenesExplorer:
                     if filter_lidarseg_labels is not None:
                         coloring = filter_colors(coloring, filter_lidarseg_labels)
                     colors = coloring[points_label]
+
+                    show_lidarseg_legend = True
+                    if show_lidarseg_legend:
+                        recs = []
+                        classes_final = []
+                        classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
+
+                        for i in range(len(classes)):
+                            if coloring[i][-1] > 0:
+                                recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=coloring[i]))
+
+                                # Truncate class names to only first 25 chars so that legend is not excessively long.
+                                classes_final.append(classes[i][:25])
+                        plt.legend(recs, classes_final, loc='upper center', ncol=3)
                 else:
                     colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
                     print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
@@ -1266,7 +1280,6 @@ class NuScenesExplorer:
             # Limit visible range.
             ax.set_xlim(-axes_limit, axes_limit)
             ax.set_ylim(-axes_limit, axes_limit)
-
         elif sensor_modality == 'camera':
             # Load boxes and image.
             data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token,
