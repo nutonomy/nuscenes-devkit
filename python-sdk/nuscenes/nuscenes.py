@@ -1245,7 +1245,8 @@ class NuScenesExplorer:
 
                                 # Truncate class names to only first 25 chars so that legend is not excessively long.
                                 classes_final.append(classes[i][:25])
-                        plt.legend(recs, classes_final, loc='upper center', ncol=3)
+                        plt.legend(recs, classes_final, loc='upper left', ncol=1,
+                                   bbox_to_anchor=(1.05, 1.0))
                 else:
                     colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
                     print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
