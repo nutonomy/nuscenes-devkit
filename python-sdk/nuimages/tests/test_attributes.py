@@ -4,12 +4,11 @@ import os
 from nuimages.nuimages import NuImages
 
 
-class TestAttributes():
+class TestAttributes(unittest.TestCase):
 
     def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
         """
         Initialize TestAttributes.
-        Note that this is not a unittest to disable issues with automatic test discovery.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
@@ -51,6 +50,7 @@ class TestAttributes():
     def test_object_anns(self, print_only: bool = False) -> None:
         """
         For every object_ann, check that all the required attributes for that class are present.
+        :param print_only: Whether to throw assertion errors or just print a warning message.
         """
         att_token_to_name = {att['token']: att['name'] for att in self.nuim.attribute}
         cat_token_to_name = {cat['token']: cat['name'] for cat in self.nuim.category}
@@ -79,7 +79,7 @@ class TestAttributes():
                 if print_only:
                     print(error_msg)
                 else:
-                    assert condition, error_msg
+                    self.assertTrue(condition, error_msg)
 
                 # Skip next check if we already saw an error.
                 continue
@@ -93,7 +93,7 @@ class TestAttributes():
                     if print_only:
                         print(error_msg)
                     else:
-                        assert condition, error_msg
+                        self.assertTrue(condition, error_msg)
 
 
 if __name__ == '__main__':
