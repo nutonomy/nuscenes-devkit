@@ -515,12 +515,14 @@ class NuScenes:
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg: bool = False,
+                           show_lidarseg_legend: bool = False,
                            filter_lidarseg_labels: List = None,
                            lidarseg_preds_bin_path: str = None, verbose: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
                                          use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
                                          show_lidarseg=show_lidarseg,
+                                         show_lidarseg_legend=show_lidarseg_legend,
                                          filter_lidarseg_labels=filter_lidarseg_labels,
                                          lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose)
 
@@ -1098,6 +1100,7 @@ class NuScenesExplorer:
                            underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg: bool = False,
+                           show_lidarseg_legend: bool = False,
                            filter_lidarseg_labels: List = None,
                            lidarseg_preds_bin_path: str = None,
                            verbose: bool = True) -> None:
@@ -1117,6 +1120,7 @@ class NuScenesExplorer:
             setting is more correct and rotates the plot by ~90 degrees.
         :param show_lidarseg: When set to True, the lidar data is colored with the segmentation labels. When set
             to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+        :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
@@ -1230,7 +1234,6 @@ class NuScenesExplorer:
                         coloring = filter_colors(coloring, filter_lidarseg_labels)
                     colors = coloring[points_label]
 
-                    show_lidarseg_legend = True
                     if show_lidarseg_legend:
                         recs = []
                         classes_final = []
