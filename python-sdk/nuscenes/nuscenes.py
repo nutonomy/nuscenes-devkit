@@ -1224,6 +1224,12 @@ class NuScenesExplorer:
                     colors = coloring[points_label]
 
                     if show_lidarseg_legend:
+                        # If user does not specify a filter, then set the filter to contain the classes present in
+                        # the pointcloud after it has been projected onto the image; this will allow displaying the
+                        # legend only for classes which are present in the image (instead of all the classes).
+                        if filter_lidarseg_labels is None:
+                            filter_lidarseg_labels = get_labels_in_coloring(coloring, colors)
+
                         create_lidarseg_legend(filter_lidarseg_labels,
                                                self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap,
                                                loc='upper left', ncol=1, bbox_to_anchor=(1.05, 1.0))
