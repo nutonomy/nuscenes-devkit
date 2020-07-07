@@ -71,6 +71,9 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     mat = cv2.cvtColor(mat, cv2.COLOR_RGB2BGR)
     mat = cv2.resize(mat, imsize)
 
+    # Clear off the current figure to prevent an accumulation of figures in memory.
+    plt.close('all')
+
     return mat
 
 
