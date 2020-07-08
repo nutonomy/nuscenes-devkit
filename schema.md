@@ -46,6 +46,7 @@ category {
    "token":                   <str> -- Unique record identifier.
    "name":                    <str> -- Category name. Subcategories indicated by period.
    "description":             <str> -- Category description.
+   "index":                   <int> -- The index of the label used for efficiency reasons in the .bin label files of nuScenes-lidarseg. This field did not exist previously.
 }
 ```
 ego_pose
@@ -75,6 +76,18 @@ instance {
    "nbr_annotations":         <int> -- Number of annotations of this instance.
    "first_annotation_token":  <str> -- Foreign key. Points to the first annotation of this instance.
    "last_annotation_token":   <str> -- Foreign key. Points to the last annotation of this instance.
+}
+```
+lidarseg
+---------
+
+Mapping between nuScenes-lidarseg annotations and sample_datas corresponding to the lidar pointcloud associated with a keyframe. 
+```
+lidarseg {
+   "token":                   <str> -- Unique record identifier.
+   "filename":                <str> -- The name of the .bin files containing the nuScenes-lidarseg labels. These are numpy arrays of uint8 stored in binary format using numpy.
+   "sample_data_token":       <str> -- Foreign key. Sample_data corresponding to the annotated lidar pointcloud with is_key_frame=True. 
+   "nbr_points":              <int> -- The number of points in the lidar pointcloud.
 }
 ```
 log
