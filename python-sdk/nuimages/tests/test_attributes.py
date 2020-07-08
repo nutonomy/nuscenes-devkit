@@ -75,7 +75,7 @@ class TestAttributes(unittest.TestCase):
                     'cur_att_names': cur_att_names,
                     'required_att_names': required_att_names
                 }
-                error_msg = 'Error in test_object_anns: ' + str(debug_output)
+                error_msg = 'Error: ' + str(debug_output)
                 if print_only:
                     print(error_msg)
                 else:
@@ -88,8 +88,8 @@ class TestAttributes(unittest.TestCase):
             for required in required_att_names:
                 condition = any([cur.startswith(required + '.') for cur in cur_att_names])
                 if not condition:
-                    error_msg = 'Error in test_object_anns: Required attribute ''%s'' not in %s for class %s!' \
-                                % (required, cur_att_names, category_name)
+                    error_msg = 'Errors: Required attribute ''%s'' not in %s for class %s! (image %s)' \
+                                % (required, cur_att_names, category_name, object_ann['sample_data_token'])
                     if print_only:
                         print(error_msg)
                     else:
