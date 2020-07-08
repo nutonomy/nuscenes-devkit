@@ -231,7 +231,7 @@ class NuImages:
         for object_ann in self.object_ann:
             sample_token = self.get('sample_data', object_ann['sample_data_token'])['sample_token']
             if sample_tokens is None or sample_token in sample_tokens:
-                    object_freqs[object_ann['category_token']] += 1
+                object_freqs[object_ann['category_token']] += 1
         for surface_ann in self.surface_ann:
             sample_token = self.get('sample_data', surface_ann['sample_data_token'])['sample_token']
             if sample_tokens is None or sample_token in sample_tokens:
@@ -281,13 +281,13 @@ class NuImages:
                 sample_freq, logfile, location))
 
     def render_sample(self,
-                     sample_token: str,
-                     with_annotations: bool = True,
-                     with_attributes: bool = False,
-                     box_tokens: List[str] = None,
-                     surface_tokens: List[str] = None,
-                     render_scale: float = 2.0,
-                     ax: Axes = None) -> PIL.Image:
+                      sample_token: str,
+                      with_annotations: bool = True,
+                      with_attributes: bool = False,
+                      box_tokens: List[str] = None,
+                      surface_tokens: List[str] = None,
+                      render_scale: float = 2.0,
+                      ax: Axes = None) -> PIL.Image:
         """
         Draws an sample (image) with annotations overlaid.
         :param sample_token: The token of the sample to be rendered.
