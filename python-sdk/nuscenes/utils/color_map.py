@@ -38,7 +38,8 @@ def get_colormap() -> Dict[str, Tuple[int, int, int]]:
         "flat.other": (175, 0, 75),
         "static.manmade": (222, 184, 135),  # Burlywood
         "static.vegetation": (0, 175, 0),  # Green
-        "static.other": (255, 228, 196)  # Bisque
+        "static.other": (255, 228, 196),  # Bisque
+        "vehicle.ego": (255, 240, 245)  # Light pink
     }
 
     return classname_to_color
