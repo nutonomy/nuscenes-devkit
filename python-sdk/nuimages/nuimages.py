@@ -180,7 +180,7 @@ class NuImages:
 
     def list_cameras(self) -> None:
         """
-        List all cameras and the number of images for each.
+        List all cameras and the number of samples for each.
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
@@ -196,7 +196,7 @@ class NuImages:
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
             cs_freqs[sensor['channel']] += 1
         for sample_data in self.sample_data:
-            if sample_data['is_key_frame']:  # Only use keyframes (images).
+            if sample_data['is_key_frame']:  # Only use keyframes (samples).
                 calibrated_sensor = self.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
                 sensor = self.get('sensor', calibrated_sensor['sensor_token'])
                 channel_freqs[sensor['channel']] += 1
@@ -204,7 +204,7 @@ class NuImages:
         # Print to stdout.
         format_str = '{:7} {:6} {:24}'
         print()
-        print(format_str.format('Cameras', 'Images', 'Channel'))
+        print(format_str.format('Cameras', 'Samples', 'Channel'))
         for channel in cs_freqs.keys():
             cs_freq = cs_freqs[channel]
             channel_freq = channel_freqs[channel]
@@ -257,14 +257,14 @@ class NuImages:
 
     def list_logs(self) -> None:
         """
-        List all logs and the number of images per log.
+        List all logs and the number of samples per log.
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
             self.load_table('sample')
             self.load_table('log')
 
-        # Count images.
+        # Count samples.
         sample_freqs = defaultdict(lambda: 0)
         for sample in self.sample:
             sample_freqs[sample['log_token']] += 1
@@ -274,13 +274,13 @@ class NuImages:
         print()
         print(format_str.format('Samples', 'Log', 'Location'))
         for log in self.log:
-            image_freq = sample_freqs[log['token']]
+            sample_freq = sample_freqs[log['token']]
             logfile = log['logfile']
             location = log['location']
             print(format_str.format(
-                image_freq, logfile, location))
+                sample_freq, logfile, location))
 
-    def render_image(self,
+    def render_sample(self,
                      sample_token: str,
                      with_annotations: bool = True,
                      with_attributes: bool = False,
@@ -289,7 +289,7 @@ class NuImages:
                      render_scale: float = 2.0,
                      ax: Axes = None) -> PIL.Image:
         """
-        Draws an image with annotations overlaid.
+        Draws an sample (image) with annotations overlaid.
         :param sample_token: The token of the sample to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
