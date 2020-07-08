@@ -154,12 +154,13 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
     return filter_lidarseg_labels
 
 
-def create_lidarseg_legend(labels_to_include_in_legend, idx2name, name2color,
+def create_lidarseg_legend(labels_to_include_in_legend: List[int],
+                           idx2name: Dict[int, str], name2color: Dict[str, List[int]],
                            loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
     """
     Given a list of class indices, the mapping from class index to class name, and the mapping from class name
     to class color, produce a legend which shows the color and the corresponding class name.
-    :param labels_to_include_in_legend:
+    :param labels_to_include_in_legend: Labels to show in the legend.
     :param idx2name: The mapping from class index to class name.
     :param name2color: The mapping from class name to class color.
     :param loc: The location of the legend.
@@ -187,7 +188,16 @@ def create_lidarseg_legend(labels_to_include_in_legend, idx2name, name2color,
 def paint_points_label(lidarseg_labels_filename: str, filter_lidarseg_labels: List[int],
                        name2idx: Dict[str, int], colormap: Dict[str, List[int]]) -> np.ndarray:
     """
-
+    Paint each label in a pointcloud with the corresponding RGB value, and set the opacity of the labels to
+    be shown to 1 (the opacity of the rest will be set to 0); e.g.:
+        [30, 5, 12, 34, ...] ------> [[R30, G30, B30, 0], [R5, G5, B5, 1], [R34, G34, B34, 1], ...]
+    :param lidarseg_labels_filename: Path to the .bin file containing the labels.
+    :param filter_lidarseg_labels: The labels for which to set opacity to zero; this is to hide those points
+                                   thereby preventing them from being displayed.
+    :param name2idx: A dictionary containing the mapping from class names to class indices.
+    :param colormap: A dictionary containing the mapping from class names to RGB values.
+    :return: A numpy array which has length equal to the number of points in the pointcloud, and each value is
+             a RGBA array.
     """
 
     # Load labels from .bin file.
