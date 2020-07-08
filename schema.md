@@ -87,7 +87,6 @@ lidarseg {
    "token":                   <str> -- Unique record identifier.
    "filename":                <str> -- The name of the .bin files containing the nuScenes-lidarseg labels. These are numpy arrays of uint8 stored in binary format using numpy.
    "sample_data_token":       <str> -- Foreign key. Sample_data corresponding to the annotated lidar pointcloud with is_key_frame=True. 
-   "nbr_points":              <int> -- The number of points in the lidar pointcloud.
 }
 ```
 log
