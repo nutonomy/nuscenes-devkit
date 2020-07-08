@@ -14,6 +14,7 @@ import PIL.ImageDraw
 import PIL.ImageFont
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+import numpy as np
 
 from nuimages.utils.utils import annotation_name, mask_decode
 from nuscenes.utils.color_map import get_colormap
@@ -279,6 +280,35 @@ class NuImages:
             location = log['location']
             print(format_str.format(
                 sample_freq, logfile, location))
+
+    def list_sample_content(self, sample_token: str) -> None:
+        """
+        List the sample_datas for a given sample.
+        :param sample_token: Sample token.
+        """
+        # Load data if in lazy load to avoid confusing outputs.
+        if self.lazy:
+            self.load_table('sample_data')
+            self.load_table('sample')
+
+        sample_datas = [sd for sd in self.sample_data if sd['sample_token'] == sample_token]
+        sample = self.get('sample', sample_token)
+
+        # Print content for each modality.
+        for modality in ['camera', 'lidar']:
+            if modality == 'camera':
+                fileformat = 'jpg'
+            else:
+                fileformat = 'bin'
+            sample_datas_sel = [sd for sd in sample_datas if sd['fileformat'] == fileformat]
+            sample_datas_sel.sort(key=lambda sd: sd['timestamp'])
+            timestamps = np.array([sd['timestamp'] for sd in sample_datas_sel])
+            rel_times = (timestamps - sample['timestamp']) / 1e6
+
+            print('\nListing sample_datas for %s...' % modality)
+            print('Rel. time\tSample_data token')
+            for rel_time, sample_data in zip(rel_times, sample_datas_sel):
+                print('{:>9.1f}\t{}'.format(rel_time, sample_data['token']))
 
     def render_sample(self,
                       sample_token: str,
