@@ -57,6 +57,7 @@ class TestAttributes(unittest.TestCase):
         for object_ann in self.nuim.object_ann:
             # Collect the attribute names used here.
             category_name = cat_token_to_name[object_ann['category_token']]
+            sample_token = self.nuim.get('sample_data', object_ann['sample_data_token'])['sample_token']
 
             cur_att_names = []
             for attribute_token in object_ann['attribute_tokens']:
@@ -68,7 +69,6 @@ class TestAttributes(unittest.TestCase):
             required_att_names = self.valid_attributes[category_name]
             condition = len(cur_att_names) == len(required_att_names)
             if not condition:
-                sample_token = self.nuim.get('sample_data', object_ann['sample_data_token'])['sample_token']
                 debug_output = {
                     'sample_token': sample_token,
                     'category_name': category_name,
@@ -88,8 +88,8 @@ class TestAttributes(unittest.TestCase):
             for required in required_att_names:
                 condition = any([cur.startswith(required + '.') for cur in cur_att_names])
                 if not condition:
-                    error_msg = 'Errors: Required attribute ''%s'' not in %s for class %s! (image %s)' \
-                                % (required, cur_att_names, category_name, object_ann['sample_data_token'])
+                    error_msg = 'Errors: Required attribute ''%s'' not in %s for class %s! (sample %s)' \
+                                % (required, cur_att_names, category_name, sample_token)
                     if print_only:
                         print(error_msg)
                     else:
