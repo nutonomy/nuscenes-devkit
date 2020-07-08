@@ -1,10 +1,10 @@
 # nuScenes dev-kit.
 # Code written by Fong Whye Kit, 2020.
 
-import colorsys
 from typing import Dict, Iterable, List, Tuple
 
 import cv2
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -70,6 +70,9 @@ def plt_to_cv2(points: np.array, coloring: np.array, im, imsize: Tuple[int, int]
     mat = np.array(canvas.renderer.buffer_rgba()).astype('uint8')  # Put pixel buffer in numpy array.
     mat = cv2.cvtColor(mat, cv2.COLOR_RGB2BGR)
     mat = cv2.resize(mat, imsize)
+
+    # Clear off the current figure to prevent an accumulation of figures in memory.
+    plt.close('all')
 
     return mat
 
@@ -149,3 +152,77 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
             filter_lidarseg_labels.append(i)
 
     return filter_lidarseg_labels
+
+
+def create_lidarseg_legend(labels_to_include_in_legend: List[int],
+                           idx2name: Dict[int, str], name2color: Dict[str, List[int]],
+                           loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
+    """
+    Given a list of class indices, the mapping from class index to class name, and the mapping from class name
+    to class color, produce a legend which shows the color and the corresponding class name.
+    :param labels_to_include_in_legend: Labels to show in the legend.
+    :param idx2name: The mapping from class index to class name.
+    :param name2color: The mapping from class name to class color.
+    :param loc: The location of the legend.
+    :param ncol: The number of columns that the legend has.
+    :param bbox_to_anchor: A 2-tuple (x, y) which places the top-left corner of the legend specified by loc
+                           at x, y. The origin is at the bottom-left corner and x and y are normalized between
+                           0 and 1 (i.e. x > 1 and / or y > 1 will place the legend outside the plot.
+    """
+
+    recs = []
+    classes_final = []
+    classes = [name for idx, name in sorted(idx2name.items())]
+
+    for i in range(len(classes)):
+        if labels_to_include_in_legend is None or i in labels_to_include_in_legend:
+            name = classes[i]
+            recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=np.array(name2color[name]) / 255))
+
+            # Truncate class names to only first 25 chars so that legend is not excessively long.
+            classes_final.append(classes[i][:25])
+
+    plt.legend(recs, classes_final, loc=loc, ncol=ncol, bbox_to_anchor=bbox_to_anchor)
+
+
+def paint_points_label(lidarseg_labels_filename: str, filter_lidarseg_labels: List[int],
+                       name2idx: Dict[str, int], colormap: Dict[str, List[int]]) -> np.ndarray:
+    """
+    Paint each label in a pointcloud with the corresponding RGB value, and set the opacity of the labels to
+    be shown to 1 (the opacity of the rest will be set to 0); e.g.:
+        [30, 5, 12, 34, ...] ------> [[R30, G30, B30, 0], [R5, G5, B5, 1], [R34, G34, B34, 1], ...]
+    :param lidarseg_labels_filename: Path to the .bin file containing the labels.
+    :param filter_lidarseg_labels: The labels for which to set opacity to zero; this is to hide those points
+                                   thereby preventing them from being displayed.
+    :param name2idx: A dictionary containing the mapping from class names to class indices.
+    :param colormap: A dictionary containing the mapping from class names to RGB values.
+    :return: A numpy array which has length equal to the number of points in the pointcloud, and each value is
+             a RGBA array.
+    """
+
+    # Load labels from .bin file.
+    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)  # [num_points]
+
+    # Given a colormap (class name -> RGB color) and a mapping from class name to class index,
+    # get an array of RGB values where each color sits at the index in the array corresponding
+    # to the class index.
+    colors = colormap_to_colors(colormap, name2idx)  # Shape: [num_class, 3]
+
+    if filter_lidarseg_labels is not None:
+        # Ensure that filter_lidarseg_labels is an iterable.
+        assert isinstance(filter_lidarseg_labels, (list, np.ndarray)), \
+            'Error: filter_lidarseg_labels should be a list of class indices, eg. [9], [10, 21].'
+
+        # Check that class indices in filter_lidarseg_labels are valid.
+        assert all([0 <= x < len(name2idx) for x in filter_lidarseg_labels]), \
+            'All class indices in filter_lidarseg_labels should ' \
+            'be between 0 and {}'.format(len(name2idx) - 1)
+
+        # Filter to get only the colors of the desired classes; this is done by setting the
+        # alpha channel of the classes to be viewed to 1, and the rest to 0.
+        colors = filter_colors(colors, filter_lidarseg_labels)  # Shape: [num_class, 4]
+
+    # Paint each label with its respective RGBA value.
+    coloring = colors[points_label]  # Shape: [num_points, 4]
+
+    return coloring

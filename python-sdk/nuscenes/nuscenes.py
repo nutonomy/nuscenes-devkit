@@ -12,7 +12,6 @@ from typing import Tuple, List, Iterable
 
 import cv2
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 import sklearn.metrics
 from PIL import Image
@@ -22,7 +21,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import filter_colors, colormap_to_colors, plt_to_cv2, get_stats, \
-    get_key_from_value, get_labels_in_coloring
+    get_key_from_value, get_labels_in_coloring, create_lidarseg_legend, paint_points_label
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -409,19 +408,23 @@ class NuScenes:
         else:
             return pos_diff / time_diff
 
-    def get_sample_lidarseg_stats(self, sample_token: str, sort_counts: bool = True,
+    def get_sample_lidarseg_stats(self, sample_token: str, sort_by: str = 'count',
                                   lidarseg_preds_bin_path: str = None) -> None:
         """
         Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
         points in the pointcloud will not be printed.
         :param sample_token: Sample token.
-        :param sort_counts: If True, the stats will be printed in ascending order of frequency; if False,
-                            the stats will be printed alphabetically according to class name.
+        :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
+                        ascending order of frequency; if `name`, the stats will be printed alphabetically
+                        according to class name; if `index`, the stats will be printed in ascending order of
+                        class index.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
         """
         assert hasattr(self, 'lidarseg'), 'Error: You have no lidarseg data; unable to get ' \
                                           'statistics for segmentation of the point cloud.'
+        assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
+                                                      'count / name / index.'
 
         sample_rec = self.get('sample', sample_token)
         ref_sd_token = sample_rec['data']['LIDAR_TOP']
@@ -457,23 +460,25 @@ class NuScenes:
         for i in range(len(lidarseg_counts)):
             lidarseg_counts_dict[self.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
-        if sort_counts:
+        if sort_by == 'count':
             out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
-        else:
+        elif sort_by == 'name':
             out = sorted(lidarseg_counts_dict.items())
+        else:
+            out = lidarseg_counts_dict.items()
 
         for class_name, count in out:
             if count > 0:
                 idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
-                print('{:3}  {:35} n={:12,}'.format(idx, class_name, count))
+                print('{:3}  {:40} n={:12,}'.format(idx, class_name, count))
 
         print('=' * len(header))
 
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
-    def list_lidarseg_categories(self) -> None:
-        self.explorer.list_lidarseg_categories()
+    def list_lidarseg_categories(self, sort_by: str = 'count') -> None:
+        self.explorer.list_lidarseg_categories(sort_by=sort_by)
 
     def list_attributes(self) -> None:
         self.explorer.list_attributes()
@@ -515,12 +520,14 @@ class NuScenes:
                            nsweeps: int = 1, out_path: str = None, underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg: bool = False,
+                           show_lidarseg_legend: bool = False,
                            filter_lidarseg_labels: List = None,
                            lidarseg_preds_bin_path: str = None, verbose: bool = True) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
                                          out_path=out_path, underlay_map=underlay_map,
                                          use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
                                          show_lidarseg=show_lidarseg,
+                                         show_lidarseg_legend=show_lidarseg_legend,
                                          filter_lidarseg_labels=filter_lidarseg_labels,
                                          lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose)
 
@@ -624,12 +631,18 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
 
-    def list_lidarseg_categories(self) -> None:
+    def list_lidarseg_categories(self, sort_by: str = 'count') -> None:
         """
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
+        :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
+                        ascending order of frequency; if `name`, the stats will be printed alphabetically
+                        according to class name; if `index`, the stats will be printed in ascending order of
+                        class index.
         """
         assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+        assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
+                                                      'count / name / index.'
 
         print('Calculating stats for nuScenes-lidarseg...')
         start_time = time.time()
@@ -650,11 +663,17 @@ class NuScenesExplorer:
         for i in range(len(lidarseg_counts)):
             lidarseg_counts_dict[self.nusc.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
-        out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
+        if sort_by == 'count':
+            out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
+        elif sort_by == 'name':
+            out = sorted(lidarseg_counts_dict.items())
+        else:
+            out = lidarseg_counts_dict.items()
+
         # Print frequency counts of each class in the lidarseg dataset.
         for class_name, count in out:
             idx = get_key_from_value(self.nusc.lidarseg_idx2name_mapping, class_name)
-            print('{:3}  {:35} nbr_points={:12,}'.format(idx, class_name, count))
+            print('{:3}  {:40} nbr_points={:12,}'.format(idx, class_name, count))
 
         print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
             len(self.nusc.lidarseg), time.time() - start_time))
@@ -809,16 +828,9 @@ class NuScenesExplorer:
                     lidarseg_labels_filename = None
 
             if lidarseg_labels_filename:
-                points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-
-                # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
-                # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
-                # later use.
-                colors = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
-
-                if filter_lidarseg_labels:
-                    colors = filter_colors(colors, filter_lidarseg_labels)
-                coloring = colors[points_label]
+                # Paint each label in the pointcloud with a RGBA value.
+                coloring = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
+                                              self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
             else:
                 coloring = depths
                 print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
@@ -901,13 +913,8 @@ class NuScenesExplorer:
 
         # Produce a legend with the unique colors from the scatter.
         if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg and show_lidarseg_legend:
-            recs = []
-            classes_final = []
-            classes = [name for idx, name in sorted(self.nusc.lidarseg_idx2name_mapping.items())]
-
-            # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
-            # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
-            # later use.
+            # Since the labels are stored as class indices, we get the RGB colors from the colormap in an array where
+            # the position of the RGB color corresponds to the index of the class it represents.
             color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
             # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
@@ -916,14 +923,8 @@ class NuScenesExplorer:
             if filter_lidarseg_labels is None:
                 filter_lidarseg_labels = get_labels_in_coloring(color_legend, coloring)
 
-            for i in range(len(classes)):
-                # Create legend only for labels specified in the lidarseg filter.
-                if filter_lidarseg_labels is None or i in filter_lidarseg_labels:
-                    recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_legend[i]))
-
-                    # Truncate class names to only first 25 chars so that legend is not excessively long.
-                    classes_final.append(classes[i][:25])
-            plt.legend(recs, classes_final, loc='upper center', ncol=3)
+            create_lidarseg_legend(filter_lidarseg_labels,
+                                   self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap)
 
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
@@ -1092,6 +1093,7 @@ class NuScenesExplorer:
                            underlay_map: bool = True,
                            use_flat_vehicle_coordinates: bool = True,
                            show_lidarseg: bool = False,
+                           show_lidarseg_legend: bool = False,
                            filter_lidarseg_labels: List = None,
                            lidarseg_preds_bin_path: str = None,
                            verbose: bool = True) -> None:
@@ -1111,6 +1113,7 @@ class NuScenesExplorer:
             setting is more correct and rotates the plot by ~90 degrees.
         :param show_lidarseg: When set to True, the lidar data is colored with the segmentation labels. When set
             to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+        :param show_lidarseg_legend: Whether to display the legend for the lidarseg labels in the frame.
         :param filter_lidarseg_labels: Only show lidar points which belong to the given list of classes. If None
             or the list is empty, all classes will be displayed.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
@@ -1213,16 +1216,25 @@ class NuScenesExplorer:
                         lidarseg_labels_filename = None
 
                 if lidarseg_labels_filename:
-                    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+                    # Paint each label in the pointcloud with a RGBA value.
+                    colors = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
+                                                self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
 
-                    # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes
-                    # in colors as an array of RGB values, and thus the colormap needs to be converted to the
-                    # appropriate format.
-                    coloring = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
+                    if show_lidarseg_legend:
+                        # Since the labels are stored as class indices, we get the RGB colors from the colormap
+                        # in an array where the position of the RGB color corresponds to the index of the class
+                        # it represents.
+                        color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
 
-                    if filter_lidarseg_labels:
-                        coloring = filter_colors(coloring, filter_lidarseg_labels)
-                    colors = coloring[points_label]
+                        # If user does not specify a filter, then set the filter to contain the classes present in
+                        # the pointcloud after it has been projected onto the image; this will allow displaying the
+                        # legend only for classes which are present in the image (instead of all the classes).
+                        if filter_lidarseg_labels is None:
+                            filter_lidarseg_labels = get_labels_in_coloring(color_legend, colors)
+
+                        create_lidarseg_legend(filter_lidarseg_labels,
+                                               self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap,
+                                               loc='upper left', ncol=1, bbox_to_anchor=(1.05, 1.0))
                 else:
                     colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
                     print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
@@ -1260,7 +1272,6 @@ class NuScenesExplorer:
             # Limit visible range.
             ax.set_xlim(-axes_limit, axes_limit)
             ax.set_ylim(-axes_limit, axes_limit)
-
         elif sensor_modality == 'camera':
             # Load boxes and image.
             data_path, boxes, camera_intrinsic = self.nusc.get_sample_data(sample_data_token,
