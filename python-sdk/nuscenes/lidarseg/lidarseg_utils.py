@@ -182,3 +182,37 @@ def create_lidarseg_legend(labels_to_include_in_legend, idx2name, name2color,
             classes_final.append(classes[i][:25])
 
     plt.legend(recs, classes_final, loc=loc, ncol=ncol, bbox_to_anchor=bbox_to_anchor)
+
+
+def paint_points_label(lidarseg_labels_filename: str, filter_lidarseg_labels: List[int],
+                       name2idx: Dict[str, int], colormap: Dict[str, List[int]]) -> np.ndarray:
+    """
+
+    """
+
+    # Load labels from .bin file.
+    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)  # [num_points]
+
+    # Given a colormap (class name -> RGB color) and a mapping from class name to class index,
+    # get an array of RGB values where each color sits at the index in the array corresponding
+    # to the class index.
+    colors = colormap_to_colors(colormap, name2idx)  # Shape: [num_class, 3]
+
+    if filter_lidarseg_labels is not None:
+        # Ensure that filter_lidarseg_labels is an iterable.
+        assert isinstance(filter_lidarseg_labels, (list, np.ndarray)), \
+            'Error: filter_lidarseg_labels should be a list of class indices, eg. [9], [10, 21].'
+
+        # Check that class indices in filter_lidarseg_labels are valid.
+        assert all([0 <= x < len(name2idx) for x in filter_lidarseg_labels]), \
+            'All class indices in filter_lidarseg_labels should ' \
+            'be between 0 and {}'.format(len(name2idx) - 1)
+
+        # Filter to get only the colors of the desired classes; this is done by setting the
+        # alpha channel of the classes to be viewed to 1, and the rest to 0.
+        colors = filter_colors(colors, filter_lidarseg_labels)  # Shape: [num_class, 4]
+
+    # Paint each label with its respective RGBA value.
+    coloring = colors[points_label]  # Shape: [num_points, 4]
+
+    return coloring

@@ -21,7 +21,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import filter_colors, colormap_to_colors, plt_to_cv2, get_stats, \
-    get_key_from_value, get_labels_in_coloring, create_lidarseg_legend
+    get_key_from_value, get_labels_in_coloring, create_lidarseg_legend, paint_points_label
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -828,21 +828,9 @@ class NuScenesExplorer:
                     lidarseg_labels_filename = None
 
             if lidarseg_labels_filename:
-                points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-
-                # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes in colors
-                # as an array of RGB values, and thus the colormap needs to be converted to the appropriate format for
-                # later use.
-                colors = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
-
-                if filter_lidarseg_labels is not None:
-                    # Ensure that filter_lidarseg_labels is an iterable.
-                    assert isinstance(filter_lidarseg_labels, (list, np.ndarray)), \
-                        'Error: filter_lidarseg_labels should be a list of class indices, eg. [9], [10, 21].'
-
-                    # Filter to get only the colors of the desired classes.
-                    colors = filter_colors(colors, filter_lidarseg_labels)
-                coloring = colors[points_label]
+                # Paint each label in the pointcloud with a RGBA value.
+                coloring = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
+                                              self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
             else:
                 coloring = depths
                 print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
@@ -1228,28 +1216,21 @@ class NuScenesExplorer:
                         lidarseg_labels_filename = None
 
                 if lidarseg_labels_filename:
-                    points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
-
-                    # A scatter plot is used for displaying the lidarseg points; however, the scatter plot takes
-                    # in colors as an array of RGB values, and thus the colormap needs to be converted to the
-                    # appropriate format.
-                    coloring = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
-
-                    if filter_lidarseg_labels is not None:
-                        # Ensure that filter_lidarseg_labels is an iterable.
-                        assert isinstance(filter_lidarseg_labels, (list, np.ndarray)), \
-                            'Error: filter_lidarseg_labels should be a list of class indices, eg. [9], [10, 21].'
-
-                        # Filter to get only the colors of the desired classes.
-                        coloring = filter_colors(coloring, filter_lidarseg_labels)
-                    colors = coloring[points_label]
+                    # Paint each label in the pointcloud with a RGBA value.
+                    colors = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
+                                                self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
 
                     if show_lidarseg_legend:
+                        # Since the labels are stored as class indices, we get the RGB colors from the colormap
+                        # in an array where the position of the RGB color corresponds to the index of the class
+                        # it represents.
+                        color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
+
                         # If user does not specify a filter, then set the filter to contain the classes present in
                         # the pointcloud after it has been projected onto the image; this will allow displaying the
                         # legend only for classes which are present in the image (instead of all the classes).
                         if filter_lidarseg_labels is None:
-                            filter_lidarseg_labels = get_labels_in_coloring(coloring, colors)
+                            filter_lidarseg_labels = get_labels_in_coloring(color_legend, colors)
 
                         create_lidarseg_legend(filter_lidarseg_labels,
                                                self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap,
