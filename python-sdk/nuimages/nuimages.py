@@ -331,7 +331,7 @@ class NuImages:
         """
         # Get image data.
         sample_data_token = [sd['token'] for sd in self.sample_data if sd['sample_token'] == sample_token and
-                             sd['is_key_frame'] and sd['filetype'] == 'jpg'][0]
+                             sd['is_key_frame'] and sd['fileformat'] == 'jpg'][0]
         sample_data = self.get('sample_data', sample_data_token)
         im_path = osp.join(self.dataroot, sample_data['filename'])
         im = PIL.Image.open(im_path)
