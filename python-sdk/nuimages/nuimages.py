@@ -76,6 +76,7 @@ class NuImages:
             self.surface_ann = self.__load_table__('surface_ann')
 
         self.color_map = get_colormap()
+        self.sample_to_key_frame_map = None
 
         if verbose:
             print("Done loading in {:.1f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
@@ -310,29 +311,59 @@ class NuImages:
             for rel_time, sample_data in zip(rel_times, sample_datas_sel):
                 print('{:>9.1f}\t{}'.format(rel_time, sample_data['token']))
 
-    def render_sample(self,
-                      sample_token: str,
-                      with_annotations: bool = True,
-                      with_attributes: bool = False,
-                      box_tokens: List[str] = None,
-                      surface_tokens: List[str] = None,
-                      render_scale: float = 2.0,
-                      ax: Axes = None) -> PIL.Image:
+    def sample_to_key_frame(self, sample_token: str, modality: str = 'camera') -> str:
         """
-        Draws an sample (image) with annotations overlaid.
-        :param sample_token: The token of the sample to be rendered.
+        Map from a sample to the sample_data of the keyframe.
+        :param sample_token: Sample token.
+        :param modality: The type of sample_data to select, camera or lidar.
+        :return: The sample_data token of the keyframe.
+        """
+        # Precompute and store the mapping.
+        if self.sample_to_key_frame_map is None:
+            mapping = {'image': dict(), 'lidar': dict()}
+            for sample_data in self.sample_data:
+                if sample_data['is_key_frame']:
+                    if sample_data['fileformat'] == 'jpg':
+                        sd_modality = 'camera'
+                    else:
+                        sd_modality = 'lidar'
+                    sd_sample_token = sample_data['sample_token']
+                    mapping[sd_modality][sd_sample_token] = sample_data['token']
+
+            self.sample_to_key_frame_map = mapping
+
+        # Use the mapping
+        sample_data_token = self.sample_to_key_frame_map[modality][sample_token]
+
+        return sample_data_token
+
+    def render_image(self,
+                     sample_data_token: str,
+                     with_annotations: bool = True,
+                     with_attributes: bool = False,
+                     object_tokens: List[str] = None,
+                     surface_tokens: List[str] = None,
+                     render_scale: float = 2.0,
+                     ax: Axes = None) -> PIL.Image:
+        """
+        Renders an image (sample_data), optionally with annotations overlaid.
+        :param sample_data_token: The token of the sample_data to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
-        :param box_tokens: List of bounding box annotation tokens. If given, only these annotations are drawn.
+        :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered.
         :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
         :return: Image object.
         """
-        # Get image data.
-        sample_data_token = [sd['token'] for sd in self.sample_data if sd['sample_token'] == sample_token and
-                             sd['is_key_frame'] and sd['fileformat'] == 'jpg'][0]
+        # Validate inputs.
         sample_data = self.get('sample_data', sample_data_token)
+        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use render_image() on lidar pointclouds!'
+        if not sample_data['is_key_frame']:
+            assert not with_annotations, 'Error: Cannot render annotations for non keyframes!'
+            assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
+
+        # Get image data.
         im_path = osp.join(self.dataroot, sample_data['filename'])
         im = PIL.Image.open(im_path)
         if not with_annotations:
@@ -361,8 +392,8 @@ class NuImages:
 
         # Load object instances.
         object_anns = [o for o in self.object_ann if o['sample_data_token'] == sample_data_token]
-        if box_tokens is not None:
-            object_anns = [o for o in object_anns if o['token'] in box_tokens]
+        if object_tokens is not None:
+            object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
         # Draw object instances.
         for ann in object_anns:
