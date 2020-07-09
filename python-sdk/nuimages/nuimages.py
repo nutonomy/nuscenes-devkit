@@ -2,22 +2,24 @@
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
 import json
+import os
 import os.path as osp
 import sys
 import time
 from collections import defaultdict
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict, Optional, Tuple, Callable
 
-import PIL
-import PIL.Image
-import PIL.ImageDraw
-import PIL.ImageFont
+from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 import numpy as np
+from pyquaternion import Quaternion
 
 from nuimages.utils.utils import annotation_name, mask_decode
+from nuimages.utils.lidar import distort_pointcloud, InvertedNormalize
 from nuscenes.utils.color_map import get_colormap
+from nuscenes.utils.geometry_utils import view_points
+from nuscenes.utils.data_classes import LidarPointCloud
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -81,6 +83,8 @@ class NuImages:
         if verbose:
             print("Done loading in {:.1f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
 
+    # ### Internal methods. ###
+
     def __getattr__(self, attr_name: str) -> Any:
         """
         Implement lazy loading for the database tables. Otherwise throw the default error.
@@ -88,8 +92,9 @@ class NuImages:
         :return: The dictionary that represents that table.
         """
         if attr_name in self.table_names:
-            self.load_table(attr_name)
-            return self.__getattribute__(attr_name)
+            return self.load_table(attr_name)
+        elif attr_name == 'sample_to_key_frame_map':
+            return self._load_lazy('sample_to_key_frame_map', lambda: self._load_sample_to_key_frame_map())
         else:
             raise AttributeError("Error: %r object has no attribute %r" % (self.__class__.__name__, attr_name))
 
@@ -126,16 +131,44 @@ class NuImages:
         """
         return osp.join(self.dataroot, self.version)
 
-    def load_table(self, table_name) -> None:
+    def _load_sample_to_key_frame_map(self) -> Dict[str, Dict[str, dict]]:
+        """
+        Create the mapping from sample to the key_frames for lidar and radar.
+        :return: The mapping dictionary.
+        """
+        mapping = {'image': dict(), 'lidar': dict()}
+        for sample_data in self.sample_data:
+            if sample_data['is_key_frame']:
+                if sample_data['fileformat'] == 'jpg':
+                    sd_modality = 'camera'
+                else:
+                    sd_modality = 'lidar'
+                sd_sample_token = sample_data['sample_token']
+                mapping[sd_modality][sd_sample_token] = sample_data['token']
+
+        return mapping
+
+    def _load_table(self, table_name: str) -> Any:
         """
         Load a table, if it isn't already loaded.
+        :param table_name: The name of the nuImages table to be loaded.
+        :returns The loaded table.
         """
+        return self._load_lazy(table_name, lambda tab_name: self.__load_table__(tab_name))
 
-        if table_name in self.__dict__.keys():
-            return
+    def _load_lazy(self, attr_name: str, loading_func: Callable) -> Any:
+        """
+        Load an atribute, if it isn't already loaded.
+        :param attr_name: The name of the attribute to be loaded.
+        :param loading_func: The function used to load it if necessary.
+        :returns The loaded attribute.
+        """
+        if attr_name in self.__dict__.keys():
+            return self.__getattribute__(attr_name)
         else:
-            table = self.__load_table__(table_name)
-            self.__setattr__(table_name, table)
+            attr = loading_func(attr_name)
+            self.__setattr__(attr_name, attr)
+            return attr
 
     def __load_table__(self, table_name) -> List[dict]:
         """
@@ -143,7 +176,6 @@ class NuImages:
         :param table_name: The name of the table to load.
         :returns: The table dictionary.
         """
-
         start_time = time.time()
         table_path = osp.join(self.table_root, '{}.json'.format(table_name))
         assert osp.exists(table_path), 'Error: Table %s does not exist!' % table_name
@@ -156,6 +188,8 @@ class NuImages:
             print("Loaded {} {}(s) in {:.3f}s,".format(len(table), table_name, end_time - start_time))
 
         return table
+
+    # ### List methods. ###
 
     def list_attributes(self) -> None:
         """
@@ -318,24 +352,13 @@ class NuImages:
         :param modality: The type of sample_data to select, camera or lidar.
         :return: The sample_data token of the keyframe.
         """
-        # Precompute and store the mapping.
-        if self.sample_to_key_frame_map is None:
-            mapping = {'image': dict(), 'lidar': dict()}
-            for sample_data in self.sample_data:
-                if sample_data['is_key_frame']:
-                    if sample_data['fileformat'] == 'jpg':
-                        sd_modality = 'camera'
-                    else:
-                        sd_modality = 'lidar'
-                    sd_sample_token = sample_data['sample_token']
-                    mapping[sd_modality][sd_sample_token] = sample_data['token']
 
-            self.sample_to_key_frame_map = mapping
-
-        # Use the mapping
+        # Use the mapping that is computed on-the-fly.
         sample_data_token = self.sample_to_key_frame_map[modality][sample_token]
 
         return sample_data_token
+
+    # ### Render methods. ###
 
     def render_image(self,
                      sample_data_token: str,
@@ -344,7 +367,7 @@ class NuImages:
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 2.0,
-                     ax: Axes = None) -> PIL.Image:
+                     ax: Axes = None) -> Image:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
         :param sample_data_token: The token of the sample_data to be rendered.
@@ -365,13 +388,13 @@ class NuImages:
 
         # Get image data.
         im_path = osp.join(self.dataroot, sample_data['filename'])
-        im = PIL.Image.open(im_path)
+        im = Image.open(im_path)
         if not with_annotations:
             return im
 
         # Initialize drawing.
-        font = PIL.ImageFont.load_default()
-        draw = PIL.ImageDraw.Draw(im, 'RGBA')
+        font = ImageFont.load_default()
+        draw = ImageDraw.Draw(im, 'RGBA')
 
         # Load stuff / background regions.
         surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sample_data_token]
@@ -388,7 +411,7 @@ class NuImages:
                 continue
             mask = mask_decode(ann['mask'])
 
-            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+            draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Load object instances.
         object_anns = [o for o in self.object_ann if o['sample_data_token'] == sample_data_token]
@@ -412,7 +435,7 @@ class NuImages:
             # Draw rectangle, text and mask.
             draw.rectangle(bbox, outline=color)
             draw.text((bbox[0], bbox[1]), name, font=font)
-            draw.bitmap((0, 0), PIL.Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+            draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Plot the image.
         if ax is None:
@@ -425,3 +448,122 @@ class NuImages:
         ax.axis('off')
 
         return im
+
+    def render_depth(self, sample_data_token: str, mode: str = 'sparse',
+                     output_path: str = None, max_depth: float = None, cmap: str = 'viridis',
+                     scale: float = 0.5, n_dilate: int = 25, n_gauss: int = 11, sigma_gauss: float = 3) -> None:
+        """
+        This function plots an image and its depth map, either as a set of sparse points, or with depth completion.
+        Default depth colors range from yellow (close) to blue (far). Missing values are blue.
+        Suitable colormaps for depth maps are viridis and magma.
+        :param im_timestamp: The image timestamp.
+        :param im_token: The image token.
+        :param log_name: The log name.
+        :param cam: The camera name.
+        :param mode: How to render the depth, either sparse or dense.
+        :param output_path: The path where we save the depth image, or otherwise None.
+        :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
+        :param cmap: The matplotlib color map name.
+        :param scale: The scaling factor applied to the depth map.
+        :param n_dilate: Dilation filter size.
+        :param n_gauss: Gaussian filter size.
+        :param sigma_gauss: Gaussian filter sigma.
+        """
+        # Get depth and image
+        points, depths, _ = self.get_depth(sample_data_token)
+
+        # Compute depth image
+        depth_im = self.depth_map(points, depths, mode=mode, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
+                                  sigma_gauss=sigma_gauss)
+
+        # Determine color scaling
+        min_depth = 0
+        if max_depth is None:
+            max_depth = depth_im.max()
+        norm = InvertedNormalize(vmin=min_depth, vmax=max_depth)
+
+        # Show image and depth side by side
+        plt.figure()
+        plt.axis('off')
+        plt.imshow(depth_im, norm=norm, cmap=cmap)
+        plt.axis('off')
+
+        # Save to disk
+        output_dir = os.path.dirname(output_path)
+        if not osp.isdir(output_dir):
+            os.makedirs(output_dir)
+        print(output_path)
+        plt.savefig(output_path, bbox_inches='tight', dpi=300)
+        plt.close()
+
+    def get_depth(self, sample_data_token: str) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
+        TODO: Add a new parameter num_sweeps to use multiple past sweeps.
+        :param sample_data_token: The sample_data token of the camera image.
+        :return depth_list = ([(row, col, distance, timestamp_delta, intensity)])
+        """
+        # Find closest pointcloud.
+        sd_camera_token = sample_data_token
+        sd_camera = self.get('sample_data', sd_camera_token)
+
+        sample_lidar_tokens = self.sample_to_key_frame_map['lidar'][sd_camera['sample_token']]
+        sample_lidar_timestamps = [self.get('sample_data', t)['timestamp'] for t in sample_data_token]
+        sd_lidar_token = '' # TODO
+        sd_lidar = self.get('sample_data', sd_lidar_token)
+
+        # Retrieve size from meta data.
+        im_size = (sd_camera['width'], sd_camera['height'])
+
+        # Load pointcloud.
+        pcl_path = osp.join(self.dataroot, sd_lidar['filename'])
+        pc = LidarPointCloud.from_file(pcl_path)
+
+        # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
+        # First step: transform the point-cloud to the ego vehicle frame
+        pc = rotate(pc, rot_matrix_ego_lidar.rotation_matrix)
+        pc = translate(pc, np.array(trans_matrix_ego_lidar))
+
+        # Pick out the rotation matrix and the translation matrix wrt to the global frame for the timestamps closest to
+        # the lidar timestamp
+        rotation_at_lidar_ts, ego_pose_at_lidar_ts = ego_orientation_pose_at_timestamp(log_name, im_token, closest_lidar_ts)
+
+        # Second step: transform lidar points from ego frame to the global frame.
+        pc = rotate(pc, Quaternion(rotation_at_lidar_ts).rotation_matrix)
+        pc = translate(pc, np.array(ego_pose_at_lidar_ts))
+
+        # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
+        rotation_at_closest_im_ts, ego_pose_at_closest_im_ts = ego_orientation_pose_at_timestamp(log_name, im_token,
+                                                                                                 im_timestamp)
+        pc = translate(pc, -np.array(ego_pose_at_closest_im_ts))
+        pc = rotate(pc, Quaternion(rotation_at_closest_im_ts).rotation_matrix.T)
+
+        # Fourth step: transform into the camera frame from the ego frame
+        pc = translate(pc, -np.array(trans_matrix_cam))
+        pc = rotate(pc, Quaternion(rot_matrix_cam).rotation_matrix.T)
+
+        # Fifth step: actually take a "picture" of the point cloud.
+        # Distort in camera plane
+        pc, depths = distort_pointcloud(pc, np.array(cam_distortion_coeffs), cam)
+
+        # Image plane
+        points = view_points(pc, np.array(cam_intrinsic), normalize=True)
+
+        # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
+        # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera
+        # casing for non-keyframes which are slightly out of sync.
+        min_dist = 1
+        mask = np.ones(depths.shape[0], dtype=bool)
+        mask = np.logical_and(mask, depths > min_dist)
+        mask = np.logical_and(mask, points[0, :] > 1)
+        mask = np.logical_and(mask, points[0, :] < im_size[0] - 1)
+        mask = np.logical_and(mask, points[1, :] > 1)
+        mask = np.logical_and(mask, points[1, :] < im_size[1] - 1)
+        points = points[:, mask]
+        depths = depths[mask]
+
+        # Compute timestamp delta between lidar and image.
+        timestamp_deltas = (closest_lidar_ts - im_timestamp) / 1e6 * np.ones(points.shape[1])
+
+        return points, depths, timestamp_deltas

@@ -1,7 +1,7 @@
 # nuScenes dev-kit.
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
-from typing import Tuple, List
+from typing import List
 import base64
 
 import numpy as np
