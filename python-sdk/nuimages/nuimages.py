@@ -558,7 +558,9 @@ class NuImages:
                                                       sensor['channel'])
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
-        points = view_points(pc.points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
+        # TODO: Remove this workaround.
+        camera_intrinsic = np.array(np.array(cs_record['camera_intrinsic'])).reshape((3, 3))
+        points = view_points(pc.points[:3, :], camera_intrinsic, normalize=True)
 
         # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
         # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera
