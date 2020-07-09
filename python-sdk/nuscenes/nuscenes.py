@@ -535,7 +535,7 @@ class NuScenesExplorer:
                                 min_dist: float = 1.0,
                                 render_intensity: bool = False) -> Tuple:
         """
-        Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
+        Given a point sensor (lidar/radar) token and camera sample_data token, load pointcloud and map it to the image
         plane.
         :param pointsensor_token: Lidar/radar sample_data token.
         :param camera_token: Camera sample_data token.
@@ -553,7 +553,7 @@ class NuScenesExplorer:
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
 
         # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
-        # First step: transform the point-cloud to the ego vehicle frame for the timestamp of the sweep.
+        # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
         cs_record = self.nusc.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
         pc.translate(np.array(cs_record['translation']))
@@ -615,7 +615,7 @@ class NuScenesExplorer:
                                    out_path: str = None,
                                    render_intensity: bool = False) -> None:
         """
-        Scatter-plots a point-cloud on top of image.
+        Scatter-plots a pointcloud on top of image.
         :param sample_token: Sample token.
         :param dot_size: Scatter plot dot size.
         :param pointsensor_channel: RADAR or LIDAR channel name, e.g. 'LIDAR_TOP'.

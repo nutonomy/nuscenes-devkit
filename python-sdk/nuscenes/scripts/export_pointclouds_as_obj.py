@@ -2,8 +2,8 @@
 # Code written by Holger Caesar, 2018.
 
 """
-Export fused point clouds of a scene to a Wavefront OBJ file.
-This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
+Export fused pointclouds of a scene to a Wavefront OBJ file.
+This pointcloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
 """
 
 import argparse
@@ -30,9 +30,9 @@ def export_scene_pointcloud(nusc: NuScenes,
                             verbose: bool = True) -> None:
     """
     Export fused point clouds of a scene to a Wavefront OBJ file.
-    This point-cloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
+    This pointcloud can be viewed in your favorite 3D rendering tool, e.g. Meshlab or Maya.
     :param nusc: NuScenes instance.
-    :param out_path: Output path to write the point-cloud to.
+    :param out_path: Output path to write the pointcloud to.
     :param scene_token: Unique identifier of scene to render.
     :param channel: Channel to render.
     :param min_dist: Minimum distance to ego vehicle below which points are dropped.
@@ -58,7 +58,7 @@ def export_scene_pointcloud(nusc: NuScenes,
         cur_sd_rec = nusc.get('sample_data', cur_sd_rec['next'])
         sd_tokens.append(cur_sd_rec['token'])
 
-    # Write point-cloud.
+    # Write pointcloud.
     with open(out_path, 'w') as f:
         f.write("OBJ File:\n")
 
@@ -114,7 +114,7 @@ def pointcloud_color_from_image(nusc: NuScenes,
                                 pointsensor_token: str,
                                 camera_token: str) -> Tuple[np.array, np.array]:
     """
-    Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
+    Given a point sensor (lidar/radar) token and camera sample_data token, load pointcloud and map it to the image
     plane, then retrieve the colors of the closest image pixels.
     :param nusc: NuScenes instance.
     :param pointsensor_token: Lidar/radar sample_data token.
@@ -130,7 +130,7 @@ def pointcloud_color_from_image(nusc: NuScenes,
     im = Image.open(osp.join(nusc.dataroot, cam['filename']))
 
     # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
-    # First step: transform the point-cloud to the ego vehicle frame for the timestamp of the sweep.
+    # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
     cs_record = nusc.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
     pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
     pc.translate(np.array(cs_record['translation']))
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     if not out_dir == '' and not osp.isdir(out_dir):
         os.makedirs(out_dir)
 
-    # Extract point-cloud for the specified scene
+    # Extract pointcloud for the specified scene
     nusc = NuScenes()
     scene_tokens = [s['token'] for s in nusc.scene if s['name'] == scene_name]
     assert len(scene_tokens) == 1, 'Error: Invalid scene %s' % scene_name

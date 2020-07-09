@@ -530,7 +530,7 @@ class NuImages:
         cam = sd_camera
 
         # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
-        # First step: transform the point-cloud to the ego vehicle frame for the timestamp of the sweep.
+        # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
         cs_record = self.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
         pc.translate(np.array(cs_record['translation']))
@@ -550,11 +550,11 @@ class NuImages:
         pc.translate(-np.array(cs_record['translation']))
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix.T)
 
-        # Fifth step: actually take a "picture" of the point cloud.
+        # Fifth step: actually take a "picture" of the pointcloud.
         # Distort in camera plane (note that this only happens in nuImages, not nuScenes.
         # In nuScenes all images are undistorted, in nuImages they are not.
         sensor = self.get('sensor', cs_record['sensor_token'])
-        pc.points[:3, :], depths = distort_pointcloud(pc.points[:3, :], np.array(cs_record['camera_distortion']),
+        pc.points, depths = distort_pointcloud(pc.points, np.array(cs_record['camera_distortion']),
                                                       sensor['channel'])
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).

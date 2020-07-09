@@ -12,7 +12,7 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
               scale: float = 0.5, n_dilate: int = 25, n_gauss: int = 11, sigma_gauss: float = 3) -> np.ndarray:
     """
     This function computes a dense depth map given a lidar pointcloud projected to the camera.
-    :param pts: <np.ndarray: 3, n> Lidar point-cloud in image coordinates.
+    :param pts: <np.ndarray: 3, n> Lidar pointcloud in image coordinates.
     :param depths: <np.ndarray: n, 1> Depth of the points.
     :param im_size: The image width and height.
     :param mode: How to render the depth, either sparse or dense.
@@ -53,18 +53,18 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
     return depth_map
 
 
-def distort_pointcloud(pc: np.ndarray, camera_distortion: np.ndarray, cam: str, r_sq_max: float = 1) \
+def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam: str, r_sq_max: float = 1) \
         -> Tuple[np.ndarray, np.ndarray]:
     """
-    Distort the point-cloud coordinates to map into the image.
+    Distort the pointcloud coordinates to map into the image.
     Note: This function discards some invalid points, that do not project into the image.
           This happens if the radial distortion function is not injective, which is the case if k3 is negative.
           We also use the same mechanism to avoid float overflows in the k4 portion of CAM_B0.
     :param r_sq_max: Hand-tuned parameter to address warping when distortion coeff, k3, < 0.
     :param cam: Name of the camera.
-    :param pc: Lidar point-cloud.
+    :param points: Lidar pointcloud.
     :param camera_distortion: Distortion coefficents of the camera.
-    :return: Distorted point-cloud and depth values.
+    :return: Distorted pointcloud and depth values.
     """
     k1 = camera_distortion[0]
     k2 = camera_distortion[1]
@@ -73,11 +73,11 @@ def distort_pointcloud(pc: np.ndarray, camera_distortion: np.ndarray, cam: str, 
     k3 = camera_distortion[4]
 
     # Store depth to return it
-    depths = pc[2, :]
+    depths = points[2, :]
 
     # Normalize
-    points_x = pc[0, :] / pc[2, :]
-    points_y = pc[1, :] / pc[2, :]
+    points_x = points[0, :] / points[2, :]
+    points_y = points[1, :] / points[2, :]
     r_sq = points_x ** 2 + points_y ** 2
 
     # Filter points from outside the frustum that are likely to map inside it.
@@ -104,9 +104,10 @@ def distort_pointcloud(pc: np.ndarray, camera_distortion: np.ndarray, cam: str, 
     y = radial_distort * points_y + p1 * (r_sq + 2 * points_y ** 2) + 2 * p2 * points_x * points_y
 
     # Define output
-    points = np.ones((3, len(points_x)))
+    points = np.ones((2, len(points_x)))
     points[0, :] = x
     points[1, :] = y
+    assert points.shape[1] == len(depths)
 
     return points, depths
 
