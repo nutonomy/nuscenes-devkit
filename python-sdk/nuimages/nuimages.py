@@ -93,7 +93,7 @@ class NuImages:
         if attr_name in self.table_names:
             return self._load_table(attr_name)
         elif attr_name == 'sample_to_key_frame_map':
-            return self._load_lazy('sample_to_key_frame_map', lambda: self._load_sample_to_key_frame_map())
+            return self._load_lazy('sample_to_key_frame_map', lambda dummy: self._load_sample_to_key_frame_map())
         else:
             raise AttributeError("Error: %r object has no attribute %r" % (self.__class__.__name__, attr_name))
 
