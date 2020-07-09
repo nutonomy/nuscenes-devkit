@@ -11,14 +11,12 @@ In nuScenes-lidarseg, we annotate every point in the lidar pointcloud with a sem
 All the labels from nuScenes are carried over into nuScenes-lidarseg; in addition, more ["stuff" (background) classes](#classes) have been included.
 Thus, nuScenes-lidarseg contains both foreground classes (pedestrians, vehicles, cyclists, etc.) and background classes (driveable surface, nature, buildings, etc.).
 
-[Top](#overview)
 
 # General Instructions
  - Label each point with a class. 
  - Use the camera images to facilitate, check and validate the labels.
  - Each point belongs to only one class, i.e., one class per point.
 
-[Top](#overview)
  
 # Detailed Instructions  
 + **Extremities** such as vehicle doors, car mirrors and human limbs should be assigned the same label as the object. 
@@ -43,7 +41,6 @@ Note that in contrast to the nuScenes 3d cuboids, the lidarseg labels include ca
     + **Terrain:** See above.
     + **Sidewalk:** A sidewalk is a walkway designed for pedestrians and / or cyclists. Sidewalks are always paved.
 
-[Top](#overview)
 
 # Classes
 The following classes are in **addition** to the existing ones in nuScenes:  
@@ -71,11 +68,18 @@ For simplicity, we only show lidar points which are relevant to the class being 
 ![noise_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/0_scene-0207_CAM_BACK_LEFT_1532621922197405_crop.jpg)
 ![noise_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/0_scene-0635_CAM_FRONT_1537296086862404_crop.jpg)
 
+ 
+[Top](#classes)
+
+
 ### 2. flat.driveable_surface (class 24)
 ![driveable_surface_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/24_206_CAM_BACK.jpg)
 ![driveable_surface_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/24_250_CAM_FRONT.jpg)
 ![driveable_surface_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/24_9750_CAM_FRONT.jpg)
 ![driveable_surface_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/24_10000_CAM_BACK.jpg)
+
+[Top](#classes)
+
 
 ### 3. flat.sidewalk (class 25)
 ![sidewalk_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/25_90_CAM_FRONT_LEFT.jpg)
@@ -83,11 +87,17 @@ For simplicity, we only show lidar points which are relevant to the class being 
 ![sidewalk_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/25_280_CAM_FRONT_LEFT.jpg)
 ![sidewalk_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/25_680_CAM_FRONT_LEFT.jpg)
 
+[Top](#classes)
+
+
 ### 4. flat.terrain (class 26)
 ![terrain_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/26_11750_CAM_BACK_RIGHT.jpg)
 ![terrain_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/26_10700_CAM_BACK_LEFT.jpg)
 ![terrain_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/26_886_CAM_BACK_LEFT.jpg)
 ![terrain_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/26_1260_CAM_BACK_LEFT.jpg)
+
+[Top](#classes)
+
 
 ### 5. flat.other (class 27)
 ![flat_other_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/27_2318_CAM_FRONT.jpg)
@@ -95,11 +105,17 @@ For simplicity, we only show lidar points which are relevant to the class being 
 ![flat_other_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/27_1230_CAM_FRONT.jpg)
 ![flat_other_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/27_1380_CAM_FRONT.jpg)
 
+[Top](#classes)
+
+
 ### 6. static.manmade (class 28)
 ![manmade_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/28_13850_CAM_FRONT.jpg)
 ![manmade_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/28_15550_CAM_FRONT.jpg)
 ![manmade_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/28_5009_CAM_FRONT.jpg)
 ![manmade_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/28_5501_CAM_BACK.jpg)
+
+[Top](#classes)
+
 
 ### 7. static.vegetation (class 29)
 ![vegetation_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/29_650_CAM_FRONT_LEFT.jpg)
@@ -107,11 +123,17 @@ For simplicity, we only show lidar points which are relevant to the class being 
 ![vegetation_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/29_5610_CAM_BACK_RIGHT.jpg)
 ![vegetation_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/29_5960_CAM_FRONT_RIGHT.jpg)
 
+[Top](#classes)
+
+
 ### 8. static.other (class 30)
 ![static_other_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0031_CAM_BACK_LEFT_1531886230947423.jpg )
 ![static_other_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0032_CAM_BACK_RIGHT_1531886262027893.jpg )
 ![static_other_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0160_CAM_BACK_LEFT_1533115303947423.jpg )
 ![static_other_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0166_CAM_BACK_RIGHT_1526915380527813.jpg )
+
+[Top](#classes)
+
 
 ### 9. vehicle.ego (class 31)
 Points on the ego vehicle generally arise due to self-occlusion, in which some lidar beams hit the ego vehicle.
@@ -125,4 +147,4 @@ belonging to `vehicle.ego` projected onto the camera images when using the devki
 ![ego_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/31_14500_BEV.jpg)
 ![ego_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/31_24230_BEV.jpg)
 
-[Top](#overview)
+[Top](#classes)
