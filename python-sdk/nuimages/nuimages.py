@@ -509,7 +509,7 @@ class NuImages:
         # Find closest pointcloud.
         sd_camera = self.get('sample_data', sd_token_camera)
         sample_lidar_tokens = self.sample_to_key_frame_map['lidar'][sd_camera['sample_token']]
-        sample_lidar_timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sd_token_camera])
+        sample_lidar_timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
         time_diffs = np.abs(sample_lidar_timestamps - sd_camera['timestamp']) / 1e6
         closest_idx = np.argmin(time_diffs)
         closest_time_diff = time_diffs[closest_idx]
