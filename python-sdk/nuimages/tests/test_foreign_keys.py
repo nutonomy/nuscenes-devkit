@@ -113,15 +113,16 @@ class TestForeignKeys(unittest.TestCase):
         for sample in self.nuim.sample:
             for modality in ['camera', 'lidar']:
                 # Compare the above sample_datas against those retrieved by using prev and next pointers.
-                sd_tokens_pointers = set(self.nuim.get_sample_content(sample['token'], modality))
-                sd_tokens_all = set(sample_to_sample_datas[modality][sample['token']])
-                assert sd_tokens_pointers == sd_tokens_all, 'Error: Inconsistency in prev/next pointers!'
+                sd_tokens_pointers = self.nuim.get_sample_content(sample['token'], modality)
+                sd_tokens_all = sample_to_sample_datas[modality][sample['token']]
+                self.assertTrue(set(sd_tokens_pointers) == set(sd_tokens_all),
+                                'Error: Inconsistency in prev/next pointers!')
 
                 timestamps = []
                 for sd_token in sd_tokens_pointers:
                     sample_data = self.nuim.get('sample_data', sd_token)
                     timestamps.append(sample_data['timestamp'])
-                assert sorted(timestamps) == timestamps, 'Error: Timestamps not properly sorted!'
+                self.assertTrue(sorted(timestamps) == timestamps, 'Error: Timestamps not properly sorted!')
 
 
 if __name__ == '__main__':
