@@ -78,7 +78,6 @@ class NuImages:
             self.surface_ann = self.__load_table__('surface_ann')
 
         self.color_map = get_colormap()
-        self.sample_to_key_frame_map = None
 
         if verbose:
             print("Done loading in {:.1f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
