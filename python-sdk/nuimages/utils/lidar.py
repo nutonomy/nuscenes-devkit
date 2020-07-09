@@ -104,7 +104,7 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam: s
     y = radial_distort * points_y + p1 * (r_sq + 2 * points_y ** 2) + 2 * p2 * points_x * points_y
 
     # Define output
-    points = np.ones((2, len(points_x)))
+    points = np.ones((3, len(points_x)))
     points[0, :] = x
     points[1, :] = y
     assert points.shape[1] == len(depths)
