@@ -92,7 +92,7 @@ class NuImages:
         :return: The dictionary that represents that table.
         """
         if attr_name in self.table_names:
-            return self.load_table(attr_name)
+            return self._load_table(attr_name)
         elif attr_name == 'sample_to_key_frame_map':
             return self._load_lazy('sample_to_key_frame_map', lambda: self._load_sample_to_key_frame_map())
         else:
