@@ -41,7 +41,7 @@ class TestForeignKeys(unittest.TestCase):
             keys = table[0].keys()
 
             # Check 1-to-1 link.
-            one_to_one_names = [k for k in keys if k.endswith('_token')]
+            one_to_one_names = [k for k in keys if k.endswith('_token') and not k.startswith('key_')]
             for foreign_key_name in one_to_one_names:
                 print('Checking one-to-one key %s in table %s...' % (foreign_key_name, table_name))
                 foreign_table_name = foreign_key_name.replace('_token', '')
