@@ -50,19 +50,20 @@ The following classes are in **addition** to the existing ones in nuScenes:
 
 | Label ID |  Label | Short Description |
 | --- | --- | --- |
-| 0 | `noise` | Any lidar return that does not correspond to a physical object, such as dust, vapor, noise, fog, raindrops, smoke and reflections. |
-| 24 | `flat.driveable_surface` | All paved or unpaved surfaces that a car can drive on with no concern of traffic rules. |
-| 25 | `flat.sidewalk` | Sidewalk, pedestrian walkways, bike paths, etc. Part of the ground designated for pedestrians or cyclists. Sidewalks do **not** have to be next to a road. |
-| 26 | `flat.terrain` | Natural horizontal surfaces such as ground level horizontal vegetation (< 20 cm tall), grass, rolling hills, soil, sand and gravel. |
-| 27 | `flat.other` | All other forms of horizontal ground-level structures that do not belong to any of driveable_surface, curb, sidewalk and terrain. Includes elevated parts of traffic islands, delimiters, rail tracks, stairs with at most 3 steps and larger bodies of water (lakes, rivers). |
-| 28 | `static.manmade` | Includes man-made structures but not limited to: buildings, walls, guard rails, fences, poles, drainages, hydrants, flags, banners, street signs, electric circuit boxes, traffic lights, parking meters and stairs with more than 3 steps.  |
-| 29 | `static.vegetation` | Any vegetation in the frame that is higher than the ground, including bushes, plants, potted plants, trees, etc. Only tall grass (> 20cm) is part of this, ground level grass is part of `flat.terrain`.|
-| 30 | `static.other` | Points in the background that are not distinguishable. Or objects that do not match any of the above labels. |
-| 31 | `vehicle.ego` | The vehicle on which the cameras, radar and lidar are mounted, that is sometimes visible at the bottom of the image. |
+| 0 | [`noise`](#1-noise-class-0) | Any lidar return that does not correspond to a physical object, such as dust, vapor, noise, fog, raindrops, smoke and reflections. |
+| 24 | [`flat.driveable_surface`](#2-flatdriveable_surface-class-24) | All paved or unpaved surfaces that a car can drive on with no concern of traffic rules. |
+| 25 | [`flat.sidewalk`](#3-flatsidewalk-class-25) | Sidewalk, pedestrian walkways, bike paths, etc. Part of the ground designated for pedestrians or cyclists. Sidewalks do **not** have to be next to a road. |
+| 26 | [`flat.terrain`](#4-flatterrain-class-26) | Natural horizontal surfaces such as ground level horizontal vegetation (< 20 cm tall), grass, rolling hills, soil, sand and gravel. |
+| 27 | [`flat.other`](#5-flatother-class-27) | All other forms of horizontal ground-level structures that do not belong to any of driveable_surface, curb, sidewalk and terrain. Includes elevated parts of traffic islands, delimiters, rail tracks, stairs with at most 3 steps and larger bodies of water (lakes, rivers). |
+| 28 | [`static.manmade`](#6-staticmanmade-class-28) | Includes man-made structures but not limited to: buildings, walls, guard rails, fences, poles, drainages, hydrants, flags, banners, street signs, electric circuit boxes, traffic lights, parking meters and stairs with more than 3 steps.  |
+| 29 | [`static.vegetation`](#7-staticvegetation-class-29) | Any vegetation in the frame that is higher than the ground, including bushes, plants, potted plants, trees, etc. Only tall grass (> 20cm) is part of this, ground level grass is part of `flat.terrain`.|
+| 30 | [`static.other`](#8-staticother-class-30) | Points in the background that are not distinguishable. Or objects that do not match any of the above labels. |
+| 31 | [`vehicle.ego`](#9-vehicleego-class-31) | The vehicle on which the cameras, radar and lidar are mounted, that is sometimes visible at the bottom of the image. |
 
 ## Examples of classes
 Below are examples of the classes added in nuScenes-lidarseg.
 For simplicity, we only show lidar points which are relevant to the class being discussed.
+
 
 ### 1. noise (class 0)
 ![noise_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/0_scene-0053_CAM_FRONT_LEFT_1532402428104844_crop.jpg)
