@@ -135,7 +135,7 @@ class NuImages:
         Create the mapping from sample to the key_frames for lidar and radar.
         :return: The mapping dictionary.
         """
-        mapping = {'image': dict(), 'lidar': dict()}
+        mapping = {'camera': dict(), 'lidar': dict()}
         for sample_data in self.sample_data:
             if sample_data['is_key_frame']:
                 if sample_data['fileformat'] == 'jpg':
