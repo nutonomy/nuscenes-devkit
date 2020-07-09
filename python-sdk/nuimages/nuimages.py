@@ -150,7 +150,7 @@ class NuImages:
 
     def _load_table(self, table_name: str) -> Any:
         """
-        Load a table, if it isn't already loaded.
+        Load a table and add it to self, if it isn't already loaded.
         :param table_name: The name of the nuImages table to be loaded.
         :returns The loaded table.
         """
@@ -158,7 +158,7 @@ class NuImages:
 
     def _load_lazy(self, attr_name: str, loading_func: Callable) -> Any:
         """
-        Load an atribute, if it isn't already loaded.
+        Load an attribute and add it to self, if it isn't already loaded.
         :param attr_name: The name of the attribute to be loaded.
         :param loading_func: The function used to load it if necessary.
         :returns The loaded attribute.
@@ -197,8 +197,8 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('attribute')
-            self.load_table('object_ann')
+            self._load_table('attribute')
+            self._load_table('object_ann')
 
         # Count attributes.
         attribute_freqs = defaultdict(lambda: 0)
@@ -220,10 +220,10 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('sample')
-            self.load_table('sample_data')
-            self.load_table('calibrated_sensor')
-            self.load_table('sensor')
+            self._load_table('sample')
+            self._load_table('sample_data')
+            self._load_table('calibrated_sensor')
+            self._load_table('sensor')
 
         # Count cameras.
         cs_freqs = defaultdict(lambda: 0)
@@ -254,10 +254,10 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('sample')
-            self.load_table('object_ann')
-            self.load_table('surface_ann')
-            self.load_table('category')
+            self._load_table('sample')
+            self._load_table('object_ann')
+            self._load_table('surface_ann')
+            self._load_table('category')
 
         # Count object_anns and surface_anns.
         object_freqs = defaultdict(lambda: 0)
@@ -297,8 +297,8 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('sample')
-            self.load_table('log')
+            self._load_table('sample')
+            self._load_table('log')
 
         # Count samples.
         sample_freqs = defaultdict(lambda: 0)
@@ -323,8 +323,8 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self.load_table('sample_data')
-            self.load_table('sample')
+            self._load_table('sample_data')
+            self._load_table('sample')
 
         sample_datas = [sd for sd in self.sample_data if sd['sample_token'] == sample_token]
         sample = self.get('sample', sample_token)
