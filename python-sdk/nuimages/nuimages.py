@@ -2,7 +2,6 @@
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
 import json
-import os
 import os.path as osp
 import sys
 import time
@@ -92,8 +91,6 @@ class NuImages:
         """
         if attr_name in self.table_names:
             return self._load_table(attr_name)
-        elif attr_name == 'sample_to_key_frame_map':
-            return self._load_lazy('sample_to_key_frame_map', lambda dummy: self._load_sample_to_key_frame_map())
         else:
             raise AttributeError("Error: %r object has no attribute %r" % (self.__class__.__name__, attr_name))
 
@@ -129,23 +126,6 @@ class NuImages:
         Returns the folder where the tables are stored for the relevant version.
         """
         return osp.join(self.dataroot, self.version)
-
-    def _load_sample_to_key_frame_map(self) -> Dict[str, Dict[str, dict]]:
-        """
-        Create the mapping from sample to the key_frames for lidar and radar.
-        :return: The mapping dictionary.
-        """
-        mapping = {'camera': dict(), 'lidar': dict()}
-        for sample_data in self.sample_data:
-            if sample_data['is_key_frame']:
-                if sample_data['fileformat'] == 'jpg':
-                    sd_modality = 'camera'
-                else:
-                    sd_modality = 'lidar'
-                sd_sample_token = sample_data['sample_token']
-                mapping[sd_modality][sd_sample_token] = sample_data['token']
-
-        return mapping
 
     def _load_table(self, table_name: str) -> Any:
         """
@@ -344,20 +324,7 @@ class NuImages:
             for rel_time, sample_data in zip(rel_times, sample_datas_sel):
                 print('{:>9.1f}\t{}'.format(rel_time, sample_data['token']))
 
-    def sample_to_key_frame(self, sample_token: str, modality: str = 'camera') -> str:
-        """
-        Map from a sample to the sample_data of the keyframe.
-        :param sample_token: Sample token.
-        :param modality: The type of sample_data to select, camera or lidar.
-        :return: The sample_data token of the keyframe.
-        """
-
-        # Use the mapping that is computed on-the-fly.
-        sample_data_token = self.sample_to_key_frame_map[modality][sample_token]
-
-        return sample_data_token
-
-    # ### Render methods. ###
+    # ### Rendering methods. ###
 
     def render_image(self,
                      sd_token_camera: str,
