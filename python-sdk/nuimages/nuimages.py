@@ -366,10 +366,10 @@ class NuImages:
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 2.0,
-                     ax: Axes = None) -> None:
+                     ax: Axes = None,
+                     out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
-        # TODO: add output_path
         :param sd_token_camera: The token of the sample_data to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
@@ -377,7 +377,7 @@ class NuImages:
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered.
         :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
-        :return: Image object.
+        :param out_path: The path where we save the depth image, or otherwise None.
         """
         # Validate inputs.
         sample_data = self.get('sample_data', sd_token_camera)
@@ -447,52 +447,61 @@ class NuImages:
         ax.set_title(sd_token_camera)
         ax.axis('off')
 
-    def render_depth(self, sd_token_camera: str, mode: str = 'sparse',
-                     output_path: str = None, max_depth: float = None, cmap: str = 'viridis',
-                     scale: float = 0.5, n_dilate: int = 25, n_gauss: int = 11, sigma_gauss: float = 3) -> None:
+        # Save to disk.
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', dpi=300)
+            plt.close()
+
+    def render_depth(self,
+                     sd_token_camera: str,
+                     mode: str = 'sparse',
+                     max_depth: float = None,
+                     cmap: str = 'viridis',
+                     scale: float = 0.5,
+                     n_dilate: int = 25,
+                     n_gauss: int = 11,
+                     sigma_gauss: float = 3,
+                     out_path: str = None) -> None:
         """
         This function plots an image and its depth map, either as a set of sparse points, or with depth completion.
         Default depth colors range from yellow (close) to blue (far). Missing values are blue.
-        Suitable colormaps for depth maps are viridis and magma.  #TODO
+        Suitable colormaps for depth maps are viridis and magma.
         :param sd_token_camera: The sample_data token of the camera image.
         :param mode: How to render the depth, either sparse or dense.
-        :param output_path: The path where we save the depth image, or otherwise None.
         :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
         :param cmap: The matplotlib color map name.
         :param scale: The scaling factor applied to the depth map.
         :param n_dilate: Dilation filter size.
         :param n_gauss: Gaussian filter size.
         :param sigma_gauss: Gaussian filter sigma.
+        :param out_path: The path where we save the depth image, or otherwise None.
         """
-        # Get depth and image
+        # Get depth and image.
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
-        # Compute depth image
+        # Compute depth image.
         depth_im = depth_map(points, depths, im_size, mode=mode, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
                              sigma_gauss=sigma_gauss)
 
-        # Determine color scaling
+        # Determine color scaling.
         min_depth = 0
         if max_depth is None:
             max_depth = depth_im.max()
         norm = InvertedNormalize(vmin=min_depth, vmax=max_depth)
 
-        # Show image and depth side by side
+        # Show image and depth side by side.
         plt.figure()
         plt.axis('off')
         plt.imshow(depth_im, norm=norm, cmap=cmap)
-        plt.axis('off')
 
-        # Save to disk
-        output_dir = os.path.dirname(output_path)
-        if not osp.isdir(output_dir):
-            os.makedirs(output_dir)
-        print(output_path)
-        plt.savefig(output_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        # Save to disk.
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', dpi=300)
+            plt.close()
 
-    def get_depth(self, sd_token_camera: str, min_dist: float = 1.0) \
-            -> Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[int, int]]:
+    def get_depth(self,
+                  sd_token_camera: str,
+                  min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[int, int]]:
         """
         This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
         TODO: Add a new parameter num_sweeps to use multiple past sweeps.
