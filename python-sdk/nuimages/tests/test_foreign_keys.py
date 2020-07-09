@@ -56,14 +56,14 @@ class TestForeignKeys(unittest.TestCase):
                 if table_name == 'object_ann':
                     if foreign_table_name == 'category':
                         remove = set([cat['token'] for cat in self.nuim.category if cat['name']
-                                      in ['vehicle.ego', 'flat.drivable_surface']])
+                                      in ['vehicle.ego', 'flat.driveable_surface']])
                         foreign_index = foreign_index.difference(remove)
                     elif foreign_table_name == 'sample_data':
                         foreign_index = None  # Skip as sample_datas may have no object_ann.
                 elif table_name == 'surface_ann':
                     if foreign_table_name == 'category':
                         remove = set([cat['token'] for cat in self.nuim.category if cat['name']
-                                      not in ['vehicle.ego', 'flat.drivable_surface']])
+                                      not in ['vehicle.ego', 'flat.driveable_surface']])
                         foreign_index = foreign_index.difference(remove)
                     elif foreign_table_name == 'sample_data':
                         foreign_index = None  # Skip as sample_datas may have no surface_ann.
