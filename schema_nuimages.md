@@ -1,4 +1,4 @@
-Database schema
+nuImages schema
 ==========
 
 ![](https://www.nuscenes.org/public/images/nuimages-schema.svg)

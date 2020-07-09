@@ -1,4 +1,4 @@
-Database schema
+nuScenes schema
 ==========
 This document describes the database schema used in nuScenes.
 All annotations and meta data (including calibration, maps, vehicle coordinates etc.) are covered in a relational database.

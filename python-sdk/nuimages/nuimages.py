@@ -504,7 +504,6 @@ class NuImages:
                   min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[int, int]]:
         """
         This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
-        TODO: Add a new parameter num_sweeps to use multiple past sweeps.
         :param sd_token_camera: The sample_data token of the camera image.
         :param min_dist: Distance from the camera below which points are discarded.
         :return (
@@ -567,9 +566,7 @@ class NuImages:
                                                       sensor['channel'])
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
-        # TODO: Remove this workaround.
-        camera_intrinsic = np.array(np.array(cs_record['camera_intrinsic'])).reshape((3, 3))
-        points = view_points(points[:3, :], camera_intrinsic, normalize=True)
+        points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
 
         # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
         # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera
