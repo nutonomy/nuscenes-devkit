@@ -508,10 +508,11 @@ class NuImages:
         """
         # Find closest pointcloud.
         sd_camera = self.get('sample_data', sd_token_camera)
-        sample_lidar_tokens = self.sample_to_key_frame_map['lidar'][sd_camera['sample_token']]
+        sample_lidar_tokens = [sd['token'] for sd in self.sample_data if
+                               sd['sample_token'] == sd_camera['sample_token'] and sd['fileformat'] == 'jpg']
         sample_lidar_timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
         time_diffs = np.abs(sample_lidar_timestamps - sd_camera['timestamp']) / 1e6
-        closest_idx = np.argmin(time_diffs)
+        closest_idx = int(np.argmin(time_diffs))
         closest_time_diff = time_diffs[closest_idx]
         if closest_time_diff > 0.25:
             raise Exception('Error: Cannot render depth for an image that has no associated lidar pointcloud!'
