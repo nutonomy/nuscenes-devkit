@@ -558,17 +558,17 @@ class NuScenesExplorer:
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
         pc.translate(np.array(cs_record['translation']))
 
-        # Second step: transform to the global frame.
+        # Second step: transform from ego to the global frame.
         poserecord = self.nusc.get('ego_pose', pointsensor['ego_pose_token'])
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
         pc.translate(np.array(poserecord['translation']))
 
-        # Third step: transform into the ego vehicle frame for the timestamp of the image.
+        # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
         poserecord = self.nusc.get('ego_pose', cam['ego_pose_token'])
         pc.translate(-np.array(poserecord['translation']))
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
 
-        # Fourth step: transform into the camera.
+        # Fourth step: transform from ego into the camera.
         cs_record = self.nusc.get('calibrated_sensor', cam['calibrated_sensor_token'])
         pc.translate(-np.array(cs_record['translation']))
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix.T)

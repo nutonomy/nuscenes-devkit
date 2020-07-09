@@ -8,12 +8,13 @@ import numpy as np
 from matplotlib.colors import Normalize
 
 
-def depth_map(pts: np.ndarray, depths: np.ndarray, mode: str = 'sparse',
+def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mode: str = 'sparse',
               scale: float = 0.5, n_dilate: int = 25, n_gauss: int = 11, sigma_gauss: float = 3) -> np.ndarray:
     """
     This function computes a dense depth map given a lidar pointcloud projected to the camera.
     :param pts: <np.ndarray: 3, n> Lidar point-cloud in image coordinates.
     :param depths: <np.ndarray: n, 1> Depth of the points.
+    :param im_size: The image width and height.
     :param mode: How to render the depth, either sparse or dense.
     :param scale: The scaling factor applied to the depth map.
     :param n_dilate: Dilation filter size.
@@ -23,7 +24,7 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, mode: str = 'sparse',
     """
     # Store the minimum depth in the corresponding pixels
     # Apply downsampling to make it more efficient
-    im_size = (1600, 900)
+    assert mode in ['sparse', 'dense']
     pxs = (pts[0, :] * scale).astype(np.int32)
     pys = (pts[1, :] * scale).astype(np.int32)
 
@@ -52,7 +53,7 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, mode: str = 'sparse',
     return depth_map
 
 
-def distort_pointcloud(pc: np.ndarray, distortion_coeff: np.ndarray, cam: str, r_sq_max: float = 1) \
+def distort_pointcloud(pc: np.ndarray, camera_distortion: np.ndarray, cam: str, r_sq_max: float = 1) \
         -> Tuple[np.ndarray, np.ndarray]:
     """
     Distort the point-cloud coordinates to map into the image.
@@ -62,14 +63,14 @@ def distort_pointcloud(pc: np.ndarray, distortion_coeff: np.ndarray, cam: str, r
     :param r_sq_max: Hand-tuned parameter to address warping when distortion coeff, k3, < 0.
     :param cam: Name of the camera.
     :param pc: Lidar point-cloud.
-    :param distortion_coeff: Distortion coefficents of the camera.
+    :param camera_distortion: Distortion coefficents of the camera.
     :return: Distorted point-cloud and depth values.
     """
-    k1 = distortion_coeff[0]
-    k2 = distortion_coeff[1]
-    p1 = distortion_coeff[2]
-    p2 = distortion_coeff[3]
-    k3 = distortion_coeff[4]
+    k1 = camera_distortion[0]
+    k2 = camera_distortion[1]
+    p1 = camera_distortion[2]
+    p2 = camera_distortion[3]
+    k3 = camera_distortion[4]
 
     # Store depth to return it
     depths = pc[2, :]
@@ -95,7 +96,7 @@ def distort_pointcloud(pc: np.ndarray, distortion_coeff: np.ndarray, cam: str, r
     radial_distort = 1 + k1 * r_sq + k2 * r_sq ** 2 + k3 * r_sq ** 3
 
     if cam == 'CAM_B0':  # fish-eye
-        k4 = distortion_coeff[5]
+        k4 = camera_distortion[5]
         radial_distort = radial_distort + k4 * r_sq ** 4
         assert not np.any(np.isinf(radial_distort)) and not np.any(np.isnan(radial_distort))
 
