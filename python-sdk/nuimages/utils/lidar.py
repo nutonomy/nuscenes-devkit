@@ -20,7 +20,7 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
     :param n_dilate: Dilation filter size.
     :param n_gauss: Gaussian filter size.
     :param sigma_gauss: Gaussian filter sigma.
-    :return The dense depth map.
+    :return: The dense depth map.
     """
     # Store the minimum depth in the corresponding pixels
     # Apply downsampling to make it more efficient
@@ -40,6 +40,7 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
     invalid = depth_map == 0
     depth_map[invalid] = depth_map.max()
 
+    # TODO: Sparse mode is not rendering any points
     if mode == 'dense':
         # Perform erosion to grow points
         depth_map = cv2.morphologyEx(depth_map, cv2.MORPH_ERODE, np.ones((n_dilate, n_dilate), np.uint8))

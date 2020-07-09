@@ -90,7 +90,7 @@ class NuImages:
         :return: The dictionary that represents that table.
         """
         if attr_name in self.table_names:
-            return self._load_table(attr_name)
+            return self._load_lazy(attr_name, lambda tab_name: self.__load_table__(tab_name))
         else:
             raise AttributeError("Error: %r object has no attribute %r" % (self.__class__.__name__, attr_name))
 
@@ -127,20 +127,20 @@ class NuImages:
         """
         return osp.join(self.dataroot, self.version)
 
-    def _load_table(self, table_name: str) -> Any:
+    def load_tables(self, table_names: List[str]) -> None:
         """
-        Load a table and add it to self, if it isn't already loaded.
-        :param table_name: The name of the nuImages table to be loaded.
-        :returns The loaded table.
+        Load tables and add them to self, if not already loaded.
+        :param table_names: The names of the nuImages tables to be loaded.
         """
-        return self._load_lazy(table_name, lambda tab_name: self.__load_table__(tab_name))
+        for table_name in table_names:
+            self._load_lazy(table_name, lambda tab_name: self.__load_table__(tab_name))
 
     def _load_lazy(self, attr_name: str, loading_func: Callable) -> Any:
         """
         Load an attribute and add it to self, if it isn't already loaded.
         :param attr_name: The name of the attribute to be loaded.
         :param loading_func: The function used to load it if necessary.
-        :returns The loaded attribute.
+        :return: The loaded attribute.
         """
         if attr_name in self.__dict__.keys():
             return self.__getattribute__(attr_name)
@@ -153,7 +153,7 @@ class NuImages:
         """
         Load a table and return it.
         :param table_name: The name of the table to load.
-        :returns: The table dictionary.
+        :return: The table dictionary.
         """
         start_time = time.time()
         table_path = osp.join(self.table_root, '{}.json'.format(table_name))
@@ -176,8 +176,7 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self._load_table('attribute')
-            self._load_table('object_ann')
+            self.load_tables(['attribute', 'object_ann'])
 
         # Count attributes.
         attribute_freqs = defaultdict(lambda: 0)
@@ -199,10 +198,7 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self._load_table('sample')
-            self._load_table('sample_data')
-            self._load_table('calibrated_sensor')
-            self._load_table('sensor')
+            self.load_tables(['sample', 'sample_data', 'calibrated_sensor', 'sensor'])
 
         # Count cameras.
         cs_freqs = defaultdict(lambda: 0)
@@ -233,10 +229,7 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self._load_table('sample')
-            self._load_table('object_ann')
-            self._load_table('surface_ann')
-            self._load_table('category')
+            self.load_tables(['sample', 'object_ann', 'surface_ann', 'category'])
 
         # Count object_anns and surface_anns.
         object_freqs = defaultdict(lambda: 0)
@@ -276,8 +269,7 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self._load_table('sample')
-            self._load_table('log')
+            self.load_tables(['sample', 'log'])
 
         # Count samples.
         sample_freqs = defaultdict(lambda: 0)
@@ -302,27 +294,50 @@ class NuImages:
         """
         # Load data if in lazy load to avoid confusing outputs.
         if self.lazy:
-            self._load_table('sample_data')
-            self._load_table('sample')
-
-        sample_datas = [sd for sd in self.sample_data if sd['sample_token'] == sample_token]
-        sample = self.get('sample', sample_token)
+            self.load_tables(['sample', 'sample_data'])
 
         # Print content for each modality.
+        sample = self.get('sample', sample_token)
         for modality in ['camera', 'lidar']:
-            if modality == 'camera':
-                fileformat = 'jpg'
-            else:
-                fileformat = 'bin'
-            sample_datas_sel = [sd for sd in sample_datas if sd['fileformat'] == fileformat]
-            sample_datas_sel.sort(key=lambda sd: sd['timestamp'])
-            timestamps = np.array([sd['timestamp'] for sd in sample_datas_sel])
+            sample_data_tokens = self.get_sample_content(sample_token, modality)
+            timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in sample_data_tokens])
             rel_times = (timestamps - sample['timestamp']) / 1e6
 
             print('\nListing sample_datas for %s...' % modality)
             print('Rel. time\tSample_data token')
-            for rel_time, sample_data in zip(rel_times, sample_datas_sel):
-                print('{:>9.1f}\t{}'.format(rel_time, sample_data['token']))
+            for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
+                print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
+
+    def get_sample_content(self,
+                           sample_token: str,
+                           modality: str) -> List[str]:
+        """
+        For a given sample and modality, return all the sample_datas.
+        :param sample_token: Sample token.
+        :param modality: Sensor modality, either camera or lidar.
+        :return: A list of sample_data tokens sorted by their timestamp.
+        """
+        assert modality in ['camera', 'lidar']
+        sample = self.get('sample', sample_token)
+        key_sd = self.get('sample_data', sample['key_%s_token' % modality])
+
+        # Go forward.
+        cur_sd = key_sd
+        forward = []
+        while cur_sd['next'] != '':
+            cur_sd = self.get('sample_data', cur_sd['next'])
+            forward.append(cur_sd['token'])
+
+        # Go backward.
+        cur_sd = key_sd
+        backward = []
+        while cur_sd['prev'] != '':
+            cur_sd = self.get('sample_data', cur_sd['prev'])
+            backward.append(cur_sd['token'])
+
+        # Combine.
+        result = backward[::-1] + [key_sd['token']] + forward
+        return result
 
     # ### Rendering methods. ###
 
@@ -473,7 +488,7 @@ class NuImages:
         This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
         :param sd_token_camera: The sample_data token of the camera image.
         :param min_dist: Distance from the camera below which points are discarded.
-        :return (
+        :return: (
             points: Lidar points (x, y) in pixel coordinates.
             depths: Depth in meters of each lidar point.
             timestamp_deltas: Timestamp difference between each lidar point and the camera image.
@@ -482,10 +497,9 @@ class NuImages:
         """
         # Find closest pointcloud.
         sd_camera = self.get('sample_data', sd_token_camera)
-        sample_lidar_tokens = [sd['token'] for sd in self.sample_data if
-                               sd['sample_token'] == sd_camera['sample_token'] and sd['fileformat'] == 'bin']
-        sample_lidar_timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
-        time_diffs = np.abs(sample_lidar_timestamps - sd_camera['timestamp']) / 1e6
+        sample_lidar_tokens = self.get_sample_content(sd_camera['sample_token'], 'lidar')
+        timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
+        time_diffs = np.abs(timestamps - sd_camera['timestamp']) / 1e6
         closest_idx = int(np.argmin(time_diffs))
         closest_time_diff = time_diffs[closest_idx]
         if closest_time_diff > 0.25:
