@@ -68,7 +68,6 @@ For simplicity, we only show lidar points which are relevant to the class being 
 ![noise_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/0_scene-0207_CAM_BACK_LEFT_1532621922197405_crop.jpg)
 ![noise_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/0_scene-0635_CAM_FRONT_1537296086862404_crop.jpg)
 
- 
 [Top](#classes)
 
 
@@ -127,10 +126,10 @@ For simplicity, we only show lidar points which are relevant to the class being 
 
 
 ### 8. static.other (class 30)
-![static_other_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0031_CAM_BACK_LEFT_1531886230947423.jpg )
-![static_other_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0032_CAM_BACK_RIGHT_1531886262027893.jpg )
-![static_other_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0160_CAM_BACK_LEFT_1533115303947423.jpg )
-![static_other_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0166_CAM_BACK_RIGHT_1526915380527813.jpg )
+![static_other_1](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0031_CAM_BACK_LEFT_1531886230947423.jpg)
+![static_other_2](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0032_CAM_BACK_RIGHT_1531886262027893.jpg)
+![static_other_3](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0160_CAM_BACK_LEFT_1533115303947423.jpg)
+![static_other_4](https://www.nuscenes.org/public/images/taxonomy_imgs/lidarseg/30_scene-0166_CAM_BACK_RIGHT_1526915380527813.jpg)
 
 [Top](#classes)
 
