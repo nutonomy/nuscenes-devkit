@@ -366,9 +366,10 @@ class NuImages:
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 2.0,
-                     ax: Axes = None) -> Image:
+                     ax: Axes = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
+        # TODO: add output_path
         :param sd_token_camera: The token of the sample_data to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_attributes: Whether to include attributes in the label tags.
@@ -445,8 +446,6 @@ class NuImages:
         ax.set_ylim(height, 0)
         ax.set_title(sd_token_camera)
         ax.axis('off')
-
-        return im
 
     def render_depth(self, sd_token_camera: str, mode: str = 'sparse',
                      output_path: str = None, max_depth: float = None, cmap: str = 'viridis',
@@ -554,7 +553,7 @@ class NuImages:
         # Fifth step: actually take a "picture" of the point cloud.
         # Distort in camera plane (note that this only happens in nuImages, not nuScenes.
         # In nuScenes all images are undistorted, in nuImages they are not.
-        sensor = self.get('sensor', self.cs_record['sensor_token'])
+        sensor = self.get('sensor', cs_record['sensor_token'])
         pc.points[:3, :], depths = distort_pointcloud(pc.points[:3, :], np.array(cs_record['camera_distortion']),
                                                       sensor['channel'])
 
