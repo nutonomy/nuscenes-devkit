@@ -575,12 +575,14 @@ class NuImages:
     def render_pointcloud(self,
                           sd_token_lidar: str,
                           axes_limit: float = 10,
+                          color_mode: str = 'height',
                           use_flat_vehicle_coordinates: bool = True,
                           out_path: str = None) -> None:
         """
         Render sample data onto axis.
         :param sd_token_lidar: Sample_data token of the lidar pointcloud.
         :param axes_limit: Axes limit for lidar (measured in meters).
+        :param color_mode: How to color the lidar points, e.g. depth or height.
         :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
             aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
             can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
@@ -618,8 +620,15 @@ class NuImages:
 
         # Show point cloud.
         points = view_points(pc.points[:3, :], viewpoint, normalize=False)
-        dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-        colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+        if color_mode == 'depth':
+            dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
+            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+        elif color_mode == 'height':
+            heights = points[2, :]
+            colors = (heights - heights.min()) / (heights.max() - heights.min())
+            colors = np.sqrt(colors)
+        else:
+            raise Exception('Error: Invalid color mode %s!' % color_mode)
         point_scale = 0.2
         ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
 
