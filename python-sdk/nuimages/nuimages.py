@@ -10,9 +10,9 @@ from typing import Any, List, Dict, Optional, Tuple, Callable
 
 from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 import numpy as np
 from pyquaternion import Quaternion
+import cv2
 
 from nuimages.utils.utils import annotation_name, mask_decode
 from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
@@ -344,21 +344,21 @@ class NuImages:
     def render_image(self,
                      sd_token_camera: str,
                      with_annotations: bool = True,
+                     with_category: bool = False,
                      with_attributes: bool = False,
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
-                     render_scale: float = 2.0,
-                     ax: Axes = None,
+                     render_scale: float = 1.0,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
         :param sd_token_camera: The token of the sample_data to be rendered.
         :param with_annotations: Whether to draw all annotations.
+        :param with_category: Whether to include the category name at the top of a box.
         :param with_attributes: Whether to include attributes in the label tags.
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
-        :param render_scale: The scale at which the image will be rendered.
-        :param ax: The matplotlib axes where the layer will get rendered or None to create new axes.
+        :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
         :param out_path: The path where we save the depth image, or otherwise None.
         """
         # Validate inputs.
@@ -371,66 +371,65 @@ class NuImages:
         # Get image data.
         im_path = osp.join(self.dataroot, sample_data['filename'])
         im = Image.open(im_path)
-        if not with_annotations:
-            return im
 
         # Initialize drawing.
         font = ImageFont.load_default()
         draw = ImageDraw.Draw(im, 'RGBA')
 
-        # Load stuff / background regions.
-        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
-        if surface_tokens is not None:
-            surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
+        if with_annotations:
+            # Load stuff / background regions.
+            surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+            if surface_tokens is not None:
+                surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
-        # Draw stuff / background regions.
-        for ann in surface_anns:
-            # Get color and mask
-            category_token = ann['category_token']
-            category_name = self.get('category', category_token)['name']
-            color = self.color_map[category_name]
-            if ann['mask'] is None:
-                continue
-            mask = mask_decode(ann['mask'])
+            # Draw stuff / background regions.
+            for ann in surface_anns:
+                # Get color and mask
+                category_token = ann['category_token']
+                category_name = self.get('category', category_token)['name']
+                color = self.color_map[category_name]
+                if ann['mask'] is None:
+                    continue
+                mask = mask_decode(ann['mask'])
 
-            draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-        # Load object instances.
-        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
-        if object_tokens is not None:
-            object_anns = [o for o in object_anns if o['token'] in object_tokens]
+            # Load object instances.
+            object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+            if object_tokens is not None:
+                object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
-        # Draw object instances.
-        for ann in object_anns:
-            # Get color, box, mask and name.
-            category_token = ann['category_token']
-            category_name = self.get('category', category_token)['name']
-            color = self.color_map[category_name]
-            bbox = ann['bbox']
-            attr_tokens = ann['attribute_tokens']
-            attributes = [self.get('attribute', at) for at in attr_tokens]
-            name = annotation_name(attributes, category_name, with_attributes=with_attributes)
-            if ann['mask'] is None:
-                continue
-            mask = mask_decode(ann['mask'])
+            # Draw object instances.
+            for ann in object_anns:
+                # Get color, box, mask and name.
+                category_token = ann['category_token']
+                category_name = self.get('category', category_token)['name']
+                color = self.color_map[category_name]
+                bbox = ann['bbox']
+                attr_tokens = ann['attribute_tokens']
+                attributes = [self.get('attribute', at) for at in attr_tokens]
+                name = annotation_name(attributes, category_name, with_attributes=with_attributes)
+                if ann['mask'] is None:
+                    continue
+                mask = mask_decode(ann['mask'])
 
-            # Draw rectangle, text and mask.
-            draw.rectangle(bbox, outline=color)
-            draw.text((bbox[0], bbox[1]), name, font=font)
-            draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                # Draw rectangle, text and mask.
+                draw.rectangle(bbox, outline=color)
+                if with_category:
+                    draw.text((bbox[0], bbox[1]), name, font=font)
+                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Plot the image.
-        if ax is None:
-            _, ax = plt.subplots(1, 1, figsize=(9 * render_scale, 16 * render_scale))
-        ax.imshow(im)
         (width, height) = im.size
-        ax.set_xlim(0, width)
-        ax.set_ylim(height, 0)
-        ax.axis('off')
+        pix_to_inch = 100
+        figsize = (height / pix_to_inch, width / pix_to_inch)
+        plt.figure(figsize=figsize)
+        plt.axis('off')
+        plt.imshow(im)
 
         # Save to disk.
         if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=300)
+            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch * render_scale, pad_inches=0)
             plt.close()
 
     def render_depth(self,
@@ -442,6 +441,7 @@ class NuImages:
                      n_dilate: int = 25,
                      n_gauss: int = 11,
                      sigma_gauss: float = 3,
+                     render_scale: float = 1.0,
                      out_path: str = None) -> None:
         """
         This function plots an image and its depth map, either as a set of sparse points, or with depth completion.
@@ -455,6 +455,7 @@ class NuImages:
         :param n_dilate: Dilation filter size.
         :param n_gauss: Gaussian filter size.
         :param sigma_gauss: Gaussian filter sigma.
+        :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
         :param out_path: The path where we save the depth image, or otherwise None.
         """
         # Get depth and image.
@@ -464,20 +465,26 @@ class NuImages:
         depth_im = depth_map(points, depths, im_size, mode=mode, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
                              sigma_gauss=sigma_gauss)
 
+        # Scale depth_im to full image size.
+        depth_im = cv2.resize(depth_im, im_size)
+
         # Determine color scaling.
         min_depth = 0
         if max_depth is None:
             max_depth = depth_im.max()
         norm = InvertedNormalize(vmin=min_depth, vmax=max_depth)
 
-        # Show image and depth side by side.
-        plt.figure()
+        # Plot the image.
+        (width, height) = depth_im.shape[::-1]
+        pix_to_inch = 100
+        figsize = (height / pix_to_inch, width / pix_to_inch)
+        plt.figure(figsize=figsize)
         plt.axis('off')
         plt.imshow(depth_im, norm=norm, cmap=cmap)
 
         # Save to disk.
         if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=300)
+            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch * render_scale, pad_inches=0)
             plt.close()
 
     def get_depth(self,
@@ -547,6 +554,8 @@ class NuImages:
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
         points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
+        assert not np.any(np.isnan(points))  # TODO: remove later
+        assert not np.any(np.isinf(points))  # TODO: remove later
 
         # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
         # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera

@@ -85,7 +85,7 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam: s
     # This happens when the distortion function is not injective, i.e. when k3 < 0 for all cameras,
     # apart from CAM_B0 which has distortion coefficient k6, which prevents warping.
     # However, we also do it for CAM_B0 to avoid overflows when computing r_sq ** 4.
-    if k3 < 0 or cam == 'CAM_B0':
+    if True: # TODO: k3 < 0 or cam == 'CAM_B0':
         if cam == 'CAM_B0':
             r_sq_max = 10
         mask = r_sq < r_sq_max
