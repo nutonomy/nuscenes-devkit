@@ -326,6 +326,8 @@ class NuImages:
             for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
                 print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
 
+    # ### Getter methods. ###
+
     def get_sample_content(self,
                            sample_token: str,
                            modality: str) -> List[str]:
@@ -356,6 +358,118 @@ class NuImages:
         # Combine.
         result = backward[::-1] + [key_sd['token']] + forward
         return result
+
+    def get_depth(self,
+                  sd_token_camera: str,
+                  min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, float, Tuple[int, int]]:
+        """
+        This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
+        :param sd_token_camera: The sample_data token of the camera image.
+        :param min_dist: Distance from the camera below which points are discarded.
+        :return: (
+            points: Lidar points (x, y) in pixel coordinates.
+            depths: Depth in meters of each lidar point.
+            time_diff: Time difference between capturing the lidar and camera data.
+            im_size: Width and height.
+        )
+        """
+        # Find closest pointcloud.
+        sd_camera = self.get('sample_data', sd_token_camera)
+        sample_lidar_tokens = self.get_sample_content(sd_camera['sample_token'], 'lidar')
+        timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
+        time_diffs = np.abs(timestamps - sd_camera['timestamp']) / 1e6
+        closest_idx = int(np.argmin(time_diffs))
+        closest_time_diff = time_diffs[closest_idx]
+        if closest_time_diff > 0.25:
+            raise Exception('Error: Cannot render depth for an image that has no associated lidar pointcloud!'
+                            'This is the case for about 0.9%% of the images.')
+        # TODO: revisit this number, as some of the images may also be missing
+        sd_token_lidar = sample_lidar_tokens[closest_idx]
+        sd_lidar = self.get('sample_data', sd_token_lidar)
+
+        # Retrieve size from meta data.
+        im_size = (sd_camera['width'], sd_camera['height'])
+
+        # Load pointcloud.
+        pcl_path = osp.join(self.dataroot, sd_lidar['filename'])
+        pc = LidarPointCloud.from_file(pcl_path)
+        pointsensor = sd_lidar
+        cam = sd_camera
+
+        # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
+        # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
+        cs_record = self.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
+        pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
+        pc.translate(np.array(cs_record['translation']))
+
+        # Second step: transform from ego to the global frame.
+        poserecord = self.get('ego_pose', pointsensor['ego_pose_token'])
+        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
+        pc.translate(np.array(poserecord['translation']))
+
+        # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
+        poserecord = self.get('ego_pose', cam['ego_pose_token'])
+        pc.translate(-np.array(poserecord['translation']))
+        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
+
+        # Fourth step: transform from ego into the camera.
+        cs_record = self.get('calibrated_sensor', cam['calibrated_sensor_token'])
+        pc.translate(-np.array(cs_record['translation']))
+        pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix.T)
+
+        # Fifth step: actually take a "picture" of the pointcloud.
+        # Distort in camera plane (note that this only happens in nuImages, not nuScenes.
+        # In nuScenes all images are undistorted, in nuImages they are not.
+        sensor = self.get('sensor', cs_record['sensor_token'])
+        points, depths = distort_pointcloud(pc.points, np.array(cs_record['camera_distortion']),
+                                            sensor['channel'])
+
+        # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
+        points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
+
+        # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
+        # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera
+        # casing for non-keyframes which are slightly out of sync.
+        mask = np.ones(depths.shape[0], dtype=bool)
+        mask = np.logical_and(mask, depths > min_dist)
+        mask = np.logical_and(mask, points[0, :] > 1)
+        mask = np.logical_and(mask, points[0, :] < im_size[0] - 1)
+        mask = np.logical_and(mask, points[1, :] > 1)
+        mask = np.logical_and(mask, points[1, :] < im_size[1] - 1)
+        points = points[:, mask]
+        depths = depths[mask]
+
+        return points, depths, closest_time_diff, im_size
+
+    def get_trajectory(self,
+                       sample_token: str,
+                       modality: str = 'camera',
+                       attribute_name: str = 'translation') -> np.ndarray:
+        """
+        Return the trajectory of the <= 13 sample_datas associated with this sample.
+        The method can be adjusted to return other attributes of ego_pose than just translation.
+        :param sample_token: Sample token.
+        :param modality: Whether to look at the ego poses of camera or lidar (very similar, as long as all 13 images
+            and 13 pointclouds exist.
+        :param attribute_name: The ego_pose field to extract, e.g. "translation", "acceleration" or "speed".
+        :return: A matrix with sample_datas x len(attribute) number of fields.
+        """
+
+        sd_tokens = self.get_sample_content(sample_token, modality)
+        attributes = np.array([])
+        for i, sd_token in enumerate(sd_tokens):
+            # Get attribute.
+            sample_data = self.get('sample_data', sd_token)
+            ego_pose = self.get('ego_pose', sample_data['ego_pose_token'])
+            attribute = ego_pose[attribute_name]
+
+            # Store in matrix.
+            if len(attributes) == 0:
+                attribute = np.empty((len(sd_tokens), len(attribute)))
+            attributes[i] = attribute
+        assert len(attributes) > 0
+
+        return attributes
 
     # ### Rendering methods. ###
 
@@ -508,88 +622,6 @@ class NuImages:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch * render_scale, pad_inches=0)
             plt.close()
 
-    def get_depth(self,
-                  sd_token_camera: str,
-                  min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, float, Tuple[int, int]]:
-        """
-        This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
-        :param sd_token_camera: The sample_data token of the camera image.
-        :param min_dist: Distance from the camera below which points are discarded.
-        :return: (
-            points: Lidar points (x, y) in pixel coordinates.
-            depths: Depth in meters of each lidar point.
-            time_diff: Time difference between capturing the lidar and camera data.
-            im_size: Width and height.
-        )
-        """
-        # Find closest pointcloud.
-        sd_camera = self.get('sample_data', sd_token_camera)
-        sample_lidar_tokens = self.get_sample_content(sd_camera['sample_token'], 'lidar')
-        timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
-        time_diffs = np.abs(timestamps - sd_camera['timestamp']) / 1e6
-        closest_idx = int(np.argmin(time_diffs))
-        closest_time_diff = time_diffs[closest_idx]
-        if closest_time_diff > 0.25:
-            raise Exception('Error: Cannot render depth for an image that has no associated lidar pointcloud!'
-                            'This is the case for about 0.9%% of the images.')
-        # TODO: revisit this number, as some of the images may also be missing
-        sd_token_lidar = sample_lidar_tokens[closest_idx]
-        sd_lidar = self.get('sample_data', sd_token_lidar)
-
-        # Retrieve size from meta data.
-        im_size = (sd_camera['width'], sd_camera['height'])
-
-        # Load pointcloud.
-        pcl_path = osp.join(self.dataroot, sd_lidar['filename'])
-        pc = LidarPointCloud.from_file(pcl_path)
-        pointsensor = sd_lidar
-        cam = sd_camera
-
-        # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
-        # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
-        cs_record = self.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
-        pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
-        pc.translate(np.array(cs_record['translation']))
-
-        # Second step: transform from ego to the global frame.
-        poserecord = self.get('ego_pose', pointsensor['ego_pose_token'])
-        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
-        pc.translate(np.array(poserecord['translation']))
-
-        # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
-        poserecord = self.get('ego_pose', cam['ego_pose_token'])
-        pc.translate(-np.array(poserecord['translation']))
-        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
-
-        # Fourth step: transform from ego into the camera.
-        cs_record = self.get('calibrated_sensor', cam['calibrated_sensor_token'])
-        pc.translate(-np.array(cs_record['translation']))
-        pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix.T)
-
-        # Fifth step: actually take a "picture" of the pointcloud.
-        # Distort in camera plane (note that this only happens in nuImages, not nuScenes.
-        # In nuScenes all images are undistorted, in nuImages they are not.
-        sensor = self.get('sensor', cs_record['sensor_token'])
-        points, depths = distort_pointcloud(pc.points, np.array(cs_record['camera_distortion']),
-                                            sensor['channel'])
-
-        # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
-        points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
-
-        # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
-        # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera
-        # casing for non-keyframes which are slightly out of sync.
-        mask = np.ones(depths.shape[0], dtype=bool)
-        mask = np.logical_and(mask, depths > min_dist)
-        mask = np.logical_and(mask, points[0, :] > 1)
-        mask = np.logical_and(mask, points[0, :] < im_size[0] - 1)
-        mask = np.logical_and(mask, points[1, :] > 1)
-        mask = np.logical_and(mask, points[1, :] < im_size[1] - 1)
-        points = points[:, mask]
-        depths = depths[mask]
-
-        return points, depths, closest_time_diff, im_size
-
     def render_pointcloud(self,
                           sd_token_lidar: str,
                           axes_limit: float = 10,
@@ -663,6 +695,3 @@ class NuImages:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=150, pad_inches=0)
             plt.close()
-
-    def get_trajectory(self, sample_token: str):
-        pass
