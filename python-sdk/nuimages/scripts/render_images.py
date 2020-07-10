@@ -18,7 +18,7 @@ class ImageRenderer:
         self.version = version
         self.dataroot = dataroot
         self.verbose = verbose
-        self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=self.verbose)
+        self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=self.verbose, lazy=False)
 
     def render_images(self,
                       mode: str = 'annotated',
@@ -39,9 +39,10 @@ class ImageRenderer:
             os.makedirs(out_dir)
 
         # Get a random selection of samples.
-        sample_tokens = [s['token'] for s in self.nuim.samples]
+        sample_tokens = [s['token'] for s in self.nuim.sample]
         random.shuffle(sample_tokens)
         sample_tokens = sample_tokens[:image_limit]
+
 
         print('Rendering images for mode %s to folder %s...' % (mode, out_dir))
         for sample_token in tqdm.tqdm(sample_tokens):
@@ -61,7 +62,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Render a random selection of images and save them to disk.')
     parser.add_argument('--version', type=str, default='v1.0-val',
                         help='Which version of the dataset to render, e.g. v1.0-val.')
-    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuimages')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print details to stdout.')
     parser.add_argument('--mode', type=str, default='annotated')

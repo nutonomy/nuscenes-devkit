@@ -426,7 +426,6 @@ class NuImages:
         (width, height) = im.size
         ax.set_xlim(0, width)
         ax.set_ylim(height, 0)
-        ax.set_title(sd_token_camera)
         ax.axis('off')
 
         # Save to disk.
@@ -565,3 +564,9 @@ class NuImages:
         timestamp_deltas = closest_time_diff / 1e6 * np.ones(points.shape[1])
 
         return points, depths, timestamp_deltas, im_size
+
+    def render_pointcloud(self):
+        pass
+
+    def get_trajectory(self, sample_token: str):
+        pass
