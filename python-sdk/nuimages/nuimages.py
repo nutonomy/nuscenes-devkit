@@ -437,10 +437,6 @@ class NuImages:
                      mode: str = 'sparse',
                      max_depth: float = None,
                      cmap: str = 'viridis',
-                     scale: float = 0.5,
-                     n_dilate: int = 25,
-                     n_gauss: int = 11,
-                     sigma_gauss: float = 3,
                      render_scale: float = 1.0,
                      out_path: str = None) -> None:
         """
@@ -462,7 +458,18 @@ class NuImages:
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
         # Compute depth image.
-        depth_im = depth_map(points, depths, im_size, mode=mode, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
+        assert mode in ['sparse', 'dense']
+        if mode == 'sparse':
+            scale = 1 / 8
+            n_dilate = None
+            n_gauss = None
+            sigma_gauss = None
+        else:
+            scale = 1 / 2
+            n_dilate = 23
+            n_gauss = 11
+            sigma_gauss = 3
+        depth_im = depth_map(points, depths, im_size, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
                              sigma_gauss=sigma_gauss)
 
         # Scale depth_im to full image size.
@@ -554,8 +561,6 @@ class NuImages:
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
         points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
-        assert not np.any(np.isnan(points))  # TODO: remove later
-        assert not np.any(np.isinf(points))  # TODO: remove later
 
         # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
         # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera

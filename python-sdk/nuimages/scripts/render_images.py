@@ -38,12 +38,13 @@ class ImageRenderer:
         :param out_dir: Folder to render the images to.
         """
         # Check and convert inputs.
-        assert mode in ['annotated', 'raw', 'depth', 'all']
+        all_modes = ['annotated', 'raw', 'depth_dense', 'depth_sparse']
+        assert mode in all_modes + ['all']
         out_dir = os.path.expanduser(out_dir)
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
         if mode == 'all':
-            modes = ['annotated', 'raw', 'depth']
+            modes = all_modes
         else:
             modes = [mode]
 
@@ -80,8 +81,10 @@ class ImageRenderer:
                     self.nuim.render_image(sd_token_camera, with_annotations=True, out_path=out_path)
                 elif mode == 'raw':
                     self.nuim.render_image(sd_token_camera, with_annotations=False, out_path=out_path)
-                elif mode == 'depth':
+                elif mode == 'depth_dense':
                     self.nuim.render_depth(sd_token_camera, mode='dense', out_path=out_path)
+                elif mode == 'depth_sparse':
+                    self.nuim.render_depth(sd_token_camera, mode='sparse', out_path=out_path)
 
 
 if __name__ == '__main__':

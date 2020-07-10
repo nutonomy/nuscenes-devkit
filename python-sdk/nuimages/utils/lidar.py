@@ -8,27 +8,32 @@ import numpy as np
 from matplotlib.colors import Normalize
 
 
-def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mode: str = 'sparse',
-              scale: float = 0.5, n_dilate: int = 25, n_gauss: int = 11, sigma_gauss: float = 3) -> np.ndarray:
+def depth_map(pts: np.ndarray,
+              depths: np.ndarray,
+              im_size: Tuple[int, int],
+              scale: float = 1 / 8,
+              n_dilate: int = None,
+              n_gauss: int = None,
+              sigma_gauss: float = None) -> np.ndarray:
     """
-    This function computes a dense depth map given a lidar pointcloud projected to the camera.
+    This function computes a depth map given a lidar pointcloud projected to the camera.
+    Depth completion can be used to sparsify the depth map.
     :param pts: <np.ndarray: 3, n> Lidar pointcloud in image coordinates.
     :param depths: <np.ndarray: n, 1> Depth of the points.
     :param im_size: The image width and height.
-    :param mode: How to render the depth, either sparse or dense.
     :param scale: The scaling factor applied to the depth map.
     :param n_dilate: Dilation filter size.
     :param n_gauss: Gaussian filter size.
     :param sigma_gauss: Gaussian filter sigma.
     :return: The dense depth map.
     """
-    # Store the minimum depth in the corresponding pixels
-    # Apply downsampling to make it more efficient
-    assert mode in ['sparse', 'dense']
+    # Store the minimum depth in the corresponding pixels.
+    # Apply downsampling to make it more efficient.
     pxs = (pts[0, :] * scale).astype(np.int32)
     pys = (pts[1, :] * scale).astype(np.int32)
 
-    depth_map_size = (np.array(im_size)[::-1] * scale).astype(np.int32)
+    depth_map_size = np.array(im_size)[::-1] * scale
+    depth_map_size = np.ceil(depth_map_size).astype(np.int32)
     depth_map = np.zeros(depth_map_size, dtype=np.float32)
     for x, y, depth in zip(pxs, pys, depths):
         if depth_map[y][x] == 0:
@@ -36,17 +41,17 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
         else:
             depth_map[y][x] = min(depth_map[y][x], depth)
 
-    # Set invalid pixels to max_depth
+    # Set invalid pixels to max_depth.
     invalid = depth_map == 0
     depth_map[invalid] = depth_map.max()
 
-    # TODO: In sparse mode points are barely visible
-    if mode == 'dense':
-        # Perform erosion to grow points
+    # Perform erosion to grow points
+    if n_dilate is not None:
         depth_map = cv2.morphologyEx(depth_map, cv2.MORPH_ERODE, np.ones((n_dilate, n_dilate), np.uint8))
 
-        # Perform Gaussian blur to smoothen points
-        # Note that this should be used in moderation as the Gaussian filter also uses invalid depth values.
+    # Perform Gaussian blur to smoothen points.
+    # Note that this should be used in moderation as the Gaussian filter also uses invalid depth values.
+    if n_gauss is not None:
         blurred = cv2.GaussianBlur(depth_map, (n_gauss, n_gauss), sigma_gauss)
         valid = depth_map > 0
         depth_map[valid] = blurred[valid]
@@ -73,10 +78,10 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_na
     p2 = camera_distortion[3]
     k3 = camera_distortion[4]
 
-    # Store depth to return it
+    # Store depth to return it.
     depths = points[2, :]
 
-    # Normalize
+    # Normalize.
     points_x = points[0, :] / points[2, :]
     points_y = points[1, :] / points[2, :]
     r_sq = points_x ** 2 + points_y ** 2
@@ -93,7 +98,7 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_na
 
     radial_distort = 1 + k1 * r_sq + k2 * r_sq ** 2 + k3 * r_sq ** 3
 
-    if cam_name == 'CAM_BACK':  # fish-eye
+    if cam_name == 'CAM_BACK':  # Fish-eye lens.
         k4 = camera_distortion[5]
         radial_distort = radial_distort + k4 * r_sq ** 4
         assert not np.any(np.isinf(radial_distort)) and not np.any(np.isnan(radial_distort))
@@ -101,7 +106,7 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_na
     x = radial_distort * points_x + 2 * p1 * points_x * points_y + p2 * (r_sq + 2 * points_x ** 2)
     y = radial_distort * points_y + p1 * (r_sq + 2 * points_y ** 2) + 2 * p2 * points_x * points_y
 
-    # Define output
+    # Define output.
     points = np.ones((3, len(points_x)))
     points[0, :] = x
     points[1, :] = y
