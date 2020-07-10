@@ -441,35 +441,80 @@ class NuImages:
 
         return points, depths, closest_time_diff, im_size
 
-    def get_trajectory(self,
-                       sample_token: str,
-                       modality: str = 'camera',
-                       attribute_name: str = 'translation') -> np.ndarray:
+    def get_ego_pose_data(self,
+                          sample_token: str,
+                          modality: str = 'camera',
+                          attribute_name: str = 'translation') -> Tuple[np.ndarray, np.ndarray]:
         """
-        Return the trajectory of the <= 13 sample_datas associated with this sample.
-        The method can be adjusted to return other attributes of ego_pose than just translation.
+        Return the ego pose data of the <= 13 sample_datas associated with this sample.
+        The method return translation, rotation, rotation_rate, acceleration and speed.
         :param sample_token: Sample token.
         :param modality: Whether to look at the ego poses of camera or lidar (very similar, as long as all 13 images
             and 13 pointclouds exist.
         :param attribute_name: The ego_pose field to extract, e.g. "translation", "acceleration" or "speed".
-        :return: A matrix with sample_datas x len(attribute) number of fields.
+        :return: (
+            timestamps: The timestamp of each ego_pose.
+            attributes: A matrix with sample_datas x len(attribute) number of fields.
+        )
         """
+        assert attribute_name in ['translation', 'rotation', 'rotation_rate', 'acceleration', 'speed']
+
+        if attribute_name == 'speed':
+            attribute_len = 1
+        elif attribute_name == 'rotation':
+            attribute_len = 4
+        else:
+            attribute_len = 3
 
         sd_tokens = self.get_sample_content(sample_token, modality)
-        attributes = np.array([])
+        attributes = np.zeros((len(sd_tokens), attribute_len))
+        timestamps = np.zeros((len(sd_tokens)))
         for i, sd_token in enumerate(sd_tokens):
             # Get attribute.
             sample_data = self.get('sample_data', sd_token)
             ego_pose = self.get('ego_pose', sample_data['ego_pose_token'])
             attribute = ego_pose[attribute_name]
 
-            # Store in matrix.
-            if len(attributes) == 0:
-                attribute = np.empty((len(sd_tokens), len(attribute)))
+            # Store results.
             attributes[i] = attribute
-        assert len(attributes) > 0
+            timestamps[i] = ego_pose['timestamp']
 
-        return attributes
+        return timestamps, attributes
+
+    def get_trajectory(self,
+                       sample_token: str,
+                       rotation_yaw: float = 0.0,
+                       center_key_pose: bool = True) -> np.ndarray:
+        """
+        Get the trajectory of the ego vehicle and optionally rotate and center it.
+        :param sample_token: Sample token.
+        :param rotation_yaw: Default rotation.
+            Set to None to use lat/lon coordinates.
+            Set to 0 to point in the driving direction.
+            Set to any other value to rotate relative to the driving direction (in radians).
+        :param center_key_pose: Whether to center the trajectory on the key pose.
+        :return: A matrix with sample_datas x 3 values of the translations at each timestamp.
+        """
+        # Get trajectory data.
+        timestamps, translations = self.get_ego_pose_data(sample_token)
+
+        # Find keyframe translation and rotation.
+        sample = self.get('sample', sample_token)
+        sd_camera = self.get('sample_data', sample['key_camera_token'])
+        ego_pose = self.get('ego_pose', sd_camera['ego_pose_token'])
+        key_rotation = Quaternion(ego_pose['rotation'])
+        key_timestamp = ego_pose['timestamp']
+        key_index = [i for i, t in enumerate(timestamps) if t == key_timestamp][0]
+
+        # Rotate points such that the initial driving direction points upwards.
+        rotation = key_rotation.inverse * Quaternion(axis=[0, 0, 1], angle=np.pi / 2 - rotation_yaw)
+        translations = np.dot(rotation.rotation_matrix, translations.T).T
+
+        # Subtract origin to have lower numbers on the axes.
+        if center_key_pose:
+            translations -= translations[key_index, :]
+
+        return translations
 
     # ### Rendering methods. ###
 
@@ -692,6 +737,35 @@ class NuImages:
         ax.axis('off')
         ax.set_aspect('equal')
 
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', dpi=150, pad_inches=0)
+            plt.close()
+
+    def render_trajectory(self,
+                          sample_token: str,
+                          out_path: str = None) -> None:
+        """
+        Render a plot of the trajectory for the clip surrounding the annotated keyframe.
+        A red cross indicates the starting point, a green dot the ego pose of the annotated keyframe.
+        :param sample_token: Sample token.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        # Get the translations or poses.
+        translations = self.get_trajectory(sample_token)
+
+        # Render translations.
+        plt.figure()
+        plt.plot(translations[:, 0], translations[:, 1])
+        plt.plot(0, 0, 'go', MarkerSize=10)  # Key image.
+        plt.plot(translations[0, 0], translations[0, 1], 'rx', MarkerSize=10)  # Start point.
+        max_dist = np.ceil(np.max(np.abs(translations)) * 1.05)  # Leave some margin.
+        max_dist = np.maximum(10, max_dist)
+        plt.xlim([-max_dist, max_dist])
+        plt.ylim([-max_dist, max_dist])
+        plt.xlabel('x in meters')
+        plt.ylabel('y in meters')
+
+        # Save to disk.
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=150, pad_inches=0)
             plt.close()

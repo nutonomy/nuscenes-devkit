@@ -38,7 +38,7 @@ class ImageRenderer:
         :param out_dir: Folder to render the images to.
         """
         # Check and convert inputs.
-        all_modes = ['annotated', 'raw', 'depth_dense', 'depth_sparse', 'pointcloud']
+        all_modes = ['annotated', 'image', 'depth_dense', 'depth_sparse', 'pointcloud', 'trajectory']
         assert mode in all_modes + ['all']
         out_dir = os.path.expanduser(out_dir)
         if not os.path.isdir(out_dir):
@@ -81,7 +81,7 @@ class ImageRenderer:
                 out_path = os.path.join(out_dir, '%s_%s_%s.jpg' % (sample_token, sample_cam_name, mode))
                 if mode == 'annotated':
                     self.nuim.render_image(sd_token_camera, with_annotations=True, out_path=out_path)
-                elif mode == 'raw':
+                elif mode == 'image':
                     self.nuim.render_image(sd_token_camera, with_annotations=False, out_path=out_path)
                 elif mode == 'depth_dense':
                     self.nuim.render_depth(sd_token_camera, mode='dense', out_path=out_path)
@@ -90,6 +90,8 @@ class ImageRenderer:
                 elif mode == 'pointcloud':
                     sd_token_lidar = sample['key_lidar_token']
                     self.nuim.render_pointcloud(sd_token_lidar, out_path=out_path)
+                elif mode == 'trajectory':
+                    self.nuim.render_trajectory(sample_token, out_path=out_path)
 
 
 if __name__ == '__main__':
