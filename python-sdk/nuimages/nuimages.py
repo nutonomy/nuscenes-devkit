@@ -168,6 +168,24 @@ class NuImages:
 
         return table
 
+    def shortcut(self, src_table: str, dst_table: str, src_token: str) -> Dict[str, Any]:
+        """
+        Convenience function to navigate between different tables that have one-to-one relations.
+        E.g. we can use this function to conveniently retrieve the sensor for a sample_data.
+        :param src_table: The name of the source table.
+        :param dst_table: The name of the destination table.
+        :param src_token: The source token.
+        :return: The entry of the destination table correspondings to the source token.
+        """
+        if src_table == 'sample_data' and dst_table == 'sensor':
+            sd_camera = self.get('sample_data', src_token)
+            calibrated_sensor = self.get('calibrated_sensor', sd_camera['calibrated_sensor_token'])
+            sensor = self.get('sensor', calibrated_sensor['sensor_token'])
+
+            return sensor
+        else:
+            raise Exception('Error: Shortcut from %s to %s not implemented!')
+
     # ### List methods. ###
 
     def list_attributes(self) -> None:

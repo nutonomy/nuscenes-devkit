@@ -54,15 +54,15 @@ class ImageRenderer:
         sample_tokens = [s['token'] for s in self.nuim.sample]
         random.shuffle(sample_tokens)
 
+        # sample_tokens = ['749d065e9bba4d19ae4030eab81970b3']  # TODO: remove this debug cmd
+
         # Filter by camera.
         if cam_name is not None:
             sample_tokens_cam = []
             for sample_token in sample_tokens:
                 sample = self.nuim.get('sample', sample_token)
                 sd_token_camera = sample['key_camera_token']
-                sd_camera = self.nuim.get('sample_data', sd_token_camera)
-                calibrated_sensor = self.nuim.get('calibrated_sensor', sd_camera['calibrated_sensor_token'])
-                sensor = self.nuim.get('sensor', calibrated_sensor['sensor_token'])
+                sensor = self.nuim.shortcut('sample_data', 'sensor', sd_token_camera)
                 if sensor['channel'] == cam_name:
                     sample_tokens_cam.append(sample_token)
             sample_tokens = sample_tokens_cam
@@ -74,9 +74,11 @@ class ImageRenderer:
         for sample_token in tqdm.tqdm(sample_tokens):
             sample = self.nuim.get('sample', sample_token)
             sd_token_camera = sample['key_camera_token']
+            sensor = self.nuim.shortcut('sample_data', 'sensor', sd_token_camera)
+            sample_cam_name = sensor['channel']
 
             for mode in modes:
-                out_path = os.path.join(out_dir, '%s_%s.jpg' % (sample_token, mode))
+                out_path = os.path.join(out_dir, '%s_%s_%s.jpg' % (sample_token, sample_cam_name, mode))
                 if mode == 'annotated':
                     self.nuim.render_image(sd_token_camera, with_annotations=True, out_path=out_path)
                 elif mode == 'raw':

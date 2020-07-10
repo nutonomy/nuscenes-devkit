@@ -59,7 +59,7 @@ def depth_map(pts: np.ndarray,
     return depth_map
 
 
-def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_name: str, r_sq_max: float = 10) \
+def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_name: str, r_sq_max: float = 1.0) \
         -> Tuple[np.ndarray, np.ndarray]:
     """
     Distort the pointcloud coordinates to map into the image.
