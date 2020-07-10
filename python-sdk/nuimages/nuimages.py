@@ -17,7 +17,7 @@ import cv2
 from nuimages.utils.utils import annotation_name, mask_decode
 from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
 from nuscenes.utils.color_map import get_colormap
-from nuscenes.utils.geometry_utils import view_points
+from nuscenes.utils.geometry_utils import view_points, transform_matrix
 from nuscenes.utils.data_classes import LidarPointCloud
 
 PYTHON_VERSION = sys.version_info[0]
@@ -492,7 +492,7 @@ class NuImages:
 
     def get_depth(self,
                   sd_token_camera: str,
-                  min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[int, int]]:
+                  min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, float, Tuple[int, int]]:
         """
         This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
         :param sd_token_camera: The sample_data token of the camera image.
@@ -500,7 +500,7 @@ class NuImages:
         :return: (
             points: Lidar points (x, y) in pixel coordinates.
             depths: Depth in meters of each lidar point.
-            timestamp_deltas: Timestamp difference between each lidar point and the camera image.
+            time_diff: Time difference between capturing the lidar and camera data.
             im_size: Width and height.
         )
         """
@@ -570,13 +570,72 @@ class NuImages:
         points = points[:, mask]
         depths = depths[mask]
 
-        # Compute timestamp delta between lidar and image.
-        timestamp_deltas = closest_time_diff / 1e6 * np.ones(points.shape[1])
+        return points, depths, closest_time_diff, im_size
 
-        return points, depths, timestamp_deltas, im_size
+    def render_pointcloud(self,
+                          sd_token_lidar: str,
+                          axes_limit: float = 10,
+                          use_flat_vehicle_coordinates: bool = True,
+                          out_path: str = None) -> None:
+        """
+        Render sample data onto axis.
+        :param sd_token_lidar: Sample_data token of the lidar pointcloud.
+        :param axes_limit: Axes limit for lidar (measured in meters).
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+            aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
+            can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
+            setting is more correct and rotates the plot by ~90 degrees.
+        :param out_path: Optional path to save the rendered figure to disk.
+        """
+        # Load lidar pointcloud.
+        sd_lidar = self.get('sample_data', sd_token_lidar)
+        lidar_path = osp.join(self.dataroot, sd_lidar['filename'])
+        pc = LidarPointCloud.from_file(lidar_path)
 
-    def render_pointcloud(self):
-        pass
+        # By default we render the sample_data top down in the sensor frame.
+        # This is slightly inaccurate when rendering the map as the sensor frame may not be perfectly upright.
+        # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
+        if use_flat_vehicle_coordinates:
+            # Retrieve transformation matrices for reference point cloud.
+            cs_record = self.get('calibrated_sensor', sd_lidar['calibrated_sensor_token'])
+            pose_record = self.get('ego_pose', sd_lidar['ego_pose_token'])
+            ref_to_ego = transform_matrix(translation=cs_record['translation'],
+                                          rotation=Quaternion(cs_record["rotation"]))
+
+            # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
+            ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+            rotation_vehicle_flat_from_vehicle = np.dot(
+                Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
+                Quaternion(pose_record['rotation']).inverse.rotation_matrix)
+            vehicle_flat_from_vehicle = np.eye(4)
+            vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
+            viewpoint = np.dot(vehicle_flat_from_vehicle, ref_to_ego)
+        else:
+            viewpoint = np.eye(4)
+
+        # Init axes.
+        _, ax = plt.subplots(1, 1, figsize=(9, 9))
+
+        # Show point cloud.
+        points = view_points(pc.points[:3, :], viewpoint, normalize=False)
+        dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
+        colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+        point_scale = 0.2
+        ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
+
+        # Show ego vehicle.
+        ax.plot(0, 0, 'x', color='red')
+
+        # Limit visible range.
+        ax.set_xlim(-axes_limit, axes_limit)
+        ax.set_ylim(-axes_limit, axes_limit)
+
+        ax.axis('off')
+        ax.set_aspect('equal')
+
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', dpi=150, pad_inches=0)
+            plt.close()
 
     def get_trajectory(self, sample_token: str):
         pass
