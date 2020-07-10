@@ -110,6 +110,7 @@ class TestForeignKeys(unittest.TestCase):
                 modality = 'lidar'
             sample_to_sample_datas[modality][sample_data['sample_token']].append(sample_data['token'])
 
+        print('Checking prev-next pointers for completeness and correct ordering...')
         for sample in self.nuim.sample:
             for modality in ['camera', 'lidar']:
                 # Compare the above sample_datas against those retrieved by using prev and next pointers.
