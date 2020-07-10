@@ -99,6 +99,6 @@ class TestAttributes(unittest.TestCase):
 if __name__ == '__main__':
     # Runs the tests without aborting on error.
     for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
-        print('Running test_foreign_keys() for version %s...' % nuim_version)
+        print('Running TestAttributes for version %s...' % nuim_version)
         test = TestAttributes(version=nuim_version)
         test.test_object_anns(print_only=True)
