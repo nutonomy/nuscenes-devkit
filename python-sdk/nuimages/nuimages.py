@@ -447,10 +447,6 @@ class NuImages:
         :param mode: How to render the depth, either sparse or dense.
         :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
         :param cmap: The matplotlib color map name.
-        :param scale: The scaling factor applied to the depth map.
-        :param n_dilate: Dilation filter size.
-        :param n_gauss: Gaussian filter size.
-        :param sigma_gauss: Gaussian filter sigma.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
         :param out_path: The path where we save the depth image, or otherwise None.
         """
@@ -557,7 +553,7 @@ class NuImages:
         # In nuScenes all images are undistorted, in nuImages they are not.
         sensor = self.get('sensor', cs_record['sensor_token'])
         points, depths = distort_pointcloud(pc.points, np.array(cs_record['camera_distortion']),
-                                                      sensor['channel'])
+                                            sensor['channel'])
 
         # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
         points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
