@@ -40,7 +40,7 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
     invalid = depth_map == 0
     depth_map[invalid] = depth_map.max()
 
-    # TODO: Sparse mode is not rendering any points
+    # TODO: In sparse mode points are barely visible
     if mode == 'dense':
         # Perform erosion to grow points
         depth_map = cv2.morphologyEx(depth_map, cv2.MORPH_ERODE, np.ones((n_dilate, n_dilate), np.uint8))
@@ -54,15 +54,15 @@ def depth_map(pts: np.ndarray, depths: np.ndarray, im_size: Tuple[int, int], mod
     return depth_map
 
 
-def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam: str, r_sq_max: float = 1) \
+def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_name: str, r_sq_max: float = 10) \
         -> Tuple[np.ndarray, np.ndarray]:
     """
     Distort the pointcloud coordinates to map into the image.
     Note: This function discards some invalid points, that do not project into the image.
           This happens if the radial distortion function is not injective, which is the case if k3 is negative.
-          We also use the same mechanism to avoid float overflows in the k4 portion of CAM_B0.
-    :param r_sq_max: Hand-tuned parameter to address warping when distortion coeff, k3, < 0.
-    :param cam: Name of the camera.
+          We also use the same mechanism to avoid float overflows in the k4 portion of CAM_BACK.
+    :param r_sq_max: Hand-tuned parameter to address warping and numerical overflow.
+    :param cam_name: Name of the camera.
     :param points: Lidar pointcloud.
     :param camera_distortion: Distortion coefficents of the camera.
     :return: Distorted pointcloud and depth values.
@@ -83,20 +83,17 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam: s
 
     # Filter points from outside the frustum that are likely to map inside it.
     # This happens when the distortion function is not injective, i.e. when k3 < 0 for all cameras,
-    # apart from CAM_B0 which has distortion coefficient k6, which prevents warping.
-    # However, we also do it for CAM_B0 to avoid overflows when computing r_sq ** 4.
-    if True: # TODO: k3 < 0 or cam == 'CAM_B0':
-        if cam == 'CAM_B0':
-            r_sq_max = 10
-        mask = r_sq < r_sq_max
-        depths = depths[mask]
-        points_x = points_x[mask]
-        points_y = points_y[mask]
-        r_sq = r_sq[mask]
+    # apart from CAM_BACK which has distortion coefficient k6, which prevents warping.
+    # However, we also do it elsewhere to avoid numerical overflows.
+    mask = r_sq < r_sq_max
+    depths = depths[mask]
+    points_x = points_x[mask]
+    points_y = points_y[mask]
+    r_sq = r_sq[mask]
 
     radial_distort = 1 + k1 * r_sq + k2 * r_sq ** 2 + k3 * r_sq ** 3
 
-    if cam == 'CAM_B0':  # fish-eye
+    if cam_name == 'CAM_BACK':  # fish-eye
         k4 = camera_distortion[5]
         radial_distort = radial_distort + k4 * r_sq ** 4
         assert not np.any(np.isinf(radial_distort)) and not np.any(np.isnan(radial_distort))

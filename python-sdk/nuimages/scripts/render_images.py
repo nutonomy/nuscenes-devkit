@@ -47,6 +47,8 @@ class ImageRenderer:
         else:
             modes = [mode]
 
+        random.seed(42)  # TODO: remove later
+
         # Get a random selection of samples.
         sample_tokens = [s['token'] for s in self.nuim.sample]
         random.shuffle(sample_tokens)
