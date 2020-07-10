@@ -2,6 +2,8 @@ import argparse
 import os
 import random
 
+import tqdm
+
 from nuimages.nuimages import NuImages
 
 
@@ -41,7 +43,8 @@ class ImageRenderer:
         random.shuffle(sample_tokens)
         sample_tokens = sample_tokens[:image_limit]
 
-        for sample_token in sample_tokens:
+        print('Rendering images for mode %s to folder %s...' % (mode, out_dir))
+        for sample_token in tqdm.tqdm(sample_tokens):
             sample = self.nuim.get('sample', sample_token)
             sd_token_camera = sample['key_camera_token']
             out_path = os.path.join(out_dir, '%s_%s.jpg' % (sample_token, mode))
@@ -59,7 +62,6 @@ if __name__ == '__main__':
     parser.add_argument('--version', type=str, default='v1.0-val',
                         help='Which version of the dataset to render, e.g. v1.0-val.')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes')
-    parser.add_argument('--verbose', type=str, default='/data/sets/nuscenes')
     parser.add_argument('--verbose', type=int, default=1,
                         help='Whether to print details to stdout.')
     parser.add_argument('--mode', type=str, default='annotated')
