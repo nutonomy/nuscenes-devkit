@@ -62,7 +62,7 @@ Please follow these steps to make yourself familiar with the nuImages dataset:
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Run the tutorial using:
 ```
-jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuimages_basics_tutorial.ipynb
+jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuimages_tutorial.ipynb
 ```
 
 ## nuScenes
@@ -118,7 +118,7 @@ Please follow these steps to make yourself familiar with the nuScenes dataset:
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Read the [online tutorial](https://www.nuscenes.org/tutorial) or run it yourself using:
 ```
-jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_basics_tutorial.ipynb
+jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_tutorial.ipynb
 ```
 - Read the [nuScenes paper](https://www.nuscenes.org/publications) for a detailed analysis of the dataset.
 - Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
