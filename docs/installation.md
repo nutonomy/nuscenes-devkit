@@ -7,7 +7,7 @@ We provide step-by-step instructions to install our devkit. These instructions a
 - [Setup PYTHONPATH](#setup-pythonpath)
 - [Install required packages](#install-required-packages)
 - [Verify install](#verify-install)
-- [Setup NUSCENES environment variable](#setup-nuscenes-environment-variable)
+- [Setup environment variable](#setup-environment-variable)
 
 ## Download
 

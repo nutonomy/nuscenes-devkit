@@ -8,17 +8,17 @@ import time
 from collections import defaultdict
 from typing import Any, List, Dict, Optional, Tuple, Callable
 
-from PIL import Image, ImageDraw, ImageFont
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 from pyquaternion import Quaternion
-import cv2
 
-from nuimages.utils.utils import annotation_name, mask_decode
 from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
+from nuimages.utils.utils import annotation_name, mask_decode
 from nuscenes.utils.color_map import get_colormap
-from nuscenes.utils.geometry_utils import view_points, transform_matrix
 from nuscenes.utils.data_classes import LidarPointCloud
+from nuscenes.utils.geometry_utils import view_points, transform_matrix
 
 PYTHON_VERSION = sys.version_info[0]
 

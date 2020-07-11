@@ -1,8 +1,8 @@
 # nuScenes dev-kit.
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
-from typing import List
 import base64
+from typing import List
 
 import numpy as np
 from pycocotools import mask as cocomask

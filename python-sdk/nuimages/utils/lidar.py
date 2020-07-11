@@ -5,8 +5,8 @@ from typing import Tuple, Any
 
 import cv2
 import numpy as np
-from numpy.ma.core import MaskedArray
 from matplotlib.colors import Normalize
+from numpy.ma.core import MaskedArray
 
 
 def depth_map(pts: np.ndarray,

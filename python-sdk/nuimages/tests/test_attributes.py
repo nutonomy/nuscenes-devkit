@@ -1,5 +1,5 @@
-import unittest
 import os
+import unittest
 
 from nuimages.nuimages import NuImages
 
@@ -9,6 +9,7 @@ class TestAttributes(unittest.TestCase):
     def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
         """
         Initialize TestAttributes.
+        TODO: Fix automatic discovery for this test.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
