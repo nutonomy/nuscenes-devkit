@@ -48,13 +48,9 @@ class ImageRenderer:
         else:
             modes = [mode]
 
-        random.seed(42)  # TODO: remove later
-
         # Get a random selection of samples.
         sample_tokens = [s['token'] for s in self.nuim.sample]
         random.shuffle(sample_tokens)
-
-        # sample_tokens = ['749d065e9bba4d19ae4030eab81970b3']  # TODO: remove this debug cmd
 
         # Filter by camera.
         if cam_name is not None:
@@ -96,6 +92,7 @@ class ImageRenderer:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Render a random selection of images and save them to disk.')
+    parser.add_argument('--seed', type=int, default=42)  # Set to 0 to disable.
     parser.add_argument('--version', type=str, default='v1.0-val')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuimages')
     parser.add_argument('--verbose', type=int, default=1)
@@ -105,5 +102,10 @@ if __name__ == '__main__':
     parser.add_argument('--out_dir', type=str, default='~/Downloads/nuImages')
     args = parser.parse_args()
 
+    # Set random seed for reproducible image selection.
+    if args.seed != 0:
+        random.seed(args.seed)
+
+    # Render images.
     renderer = ImageRenderer(args.version, args.dataroot, bool(args.verbose))
     renderer.render_images(mode=args.mode, cam_name=args.cam_name, image_limit=args.image_limit, out_dir=args.out_dir)
