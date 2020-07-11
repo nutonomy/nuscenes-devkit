@@ -397,6 +397,8 @@ class NuImages:
 
         # Combine.
         result = backward[::-1] + [key_sd['token']] + forward
+        assert 7 <= len(result) <= 13, 'Error: There should be between 7 and 13 %s sample_datas for each sample!' \
+                                       % modality
         return result
 
     def get_depth(self,

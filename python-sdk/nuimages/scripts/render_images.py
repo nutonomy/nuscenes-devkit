@@ -95,6 +95,10 @@ class ImageRenderer:
             sample_cam_name = sensor['channel']
             sd_tokens_camera = self.nuim.get_sample_content(sample_token, modality='camera')
 
+            # We cannot render a video if there are missing camera sample_datas.
+            if len(sd_tokens_camera) < 13 and out_type == 'video':
+                continue
+
             for mode in modes:
                 out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
                 if out_type == 'image':
