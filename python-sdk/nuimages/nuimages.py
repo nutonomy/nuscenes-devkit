@@ -168,16 +168,16 @@ class NuImages:
 
         return table
 
-    def shortcut(self, src_table: str, dst_table: str, src_token: str) -> Dict[str, Any]:
+    def shortcut(self, src_table: str, tgt_table: str, src_token: str) -> Dict[str, Any]:
         """
         Convenience function to navigate between different tables that have one-to-one relations.
         E.g. we can use this function to conveniently retrieve the sensor for a sample_data.
         :param src_table: The name of the source table.
-        :param dst_table: The name of the destination table.
+        :param tgt_table: The name of the target table.
         :param src_token: The source token.
         :return: The entry of the destination table correspondings to the source token.
         """
-        if src_table == 'sample_data' and dst_table == 'sensor':
+        if src_table == 'sample_data' and tgt_table == 'sensor':
             sd_camera = self.get('sample_data', src_token)
             calibrated_sensor = self.get('calibrated_sensor', sd_camera['calibrated_sensor_token'])
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
@@ -200,6 +200,31 @@ class NuImages:
                 raise Exception('Error: You are missing the "%s" directory! The devkit generally works without this '
                                 'directory, but you cannot call methods that use non-keyframe sample_datas.'
                                 % sweeps_dir)
+
+    def find_corresponding_sample_data(self, sd_token: str, tgt_modality: str) -> str:
+        """
+        For a sample_data token from either camera or lidar, find the corresponding sample_data token of the
+        other modality.
+        :param sd_token: Source sample_data token.
+        :param tgt_modality: The modality of the target.
+        :return: The tcorresponding sample_data token with the targe modality.
+        """
+        assert tgt_modality in ['camera', 'lidar']
+        sample_data = self.get('sample_data', sd_token)
+
+        tgt_sd_tokens = self.get_sample_content(sample_data['sample_token'], tgt_modality)
+        timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in tgt_sd_tokens])
+        rel_times = np.abs(timestamps - sample_data['timestamp']) / 1e6
+
+        closest_idx = rel_times.argmin()
+        closest_time_diff = rel_times[closest_idx]
+        assert closest_time_diff < 0.25, 'Error: No corresponding sample_data exists!' \
+                                         'Note that this is the case for 0.9% of all sample_datas.'
+        tgt_sd_token = tgt_sd_tokens[closest_idx]
+        assert tgt_sd_token != sd_token, 'Error: Invalid usage of this method. ' \
+                                         'Source and target modality must differ!'
+
+        return tgt_sd_token
 
     # ### List methods. ###
 
@@ -741,12 +766,19 @@ class NuImages:
                           out_path: str = None) -> None:
         """
         Render sample data onto axis.
-        :param sd_token_lidar: Sample_data token of the lidar pointcloud.
+        :param sd_token_lidar: Sample_data token of the lidar.
+            For compatibility with other render methods we also allow passing a camera sample_data token,
+            which is then converted to the corresponding lidar token.
         :param axes_limit: Axes limit for lidar (measured in meters).
         :param color_mode: How to color the lidar points, e.g. depth or height.
         :param use_flat_vehicle_coordinates: See get_pointcloud().
         :param out_path: Optional path to save the rendered figure to disk.
         """
+        # If we are provided a camera sd_token, we need to find the closest lidar token.
+        sample_data = self.get('sample_data', sd_token_lidar)
+        if sample_data['fileformat'] == 'jpg':
+            sd_token_lidar = self.find_corresponding_sample_data(sd_token_lidar, 'lidar')
+
         # Load the pointcloud and transform it to the specified viewpoint.
         points, original_points = self.get_pointcloud(sd_token_lidar, use_flat_vehicle_coordinates)
 
