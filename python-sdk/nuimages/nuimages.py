@@ -457,6 +457,49 @@ class NuImages:
 
         return points, depths, closest_time_diff, im_size
 
+    def get_pointcloud(self,
+                       sd_token_lidar: str,
+                       use_flat_vehicle_coordinates: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Load a pointcloud and transform it to the specified viewpoint.
+        :param sd_token_lidar: Sample_data token of the lidar pointcloud.
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+            aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
+            can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
+            setting is more correct and rotates the plot by ~90 degrees.
+        :return: The points as seen from the specified viewpoint and the points in the original (lidar) frame.
+        """
+        # Load lidar pointcloud.
+        sd_lidar = self.get('sample_data', sd_token_lidar)
+        self.check_sweeps(sd_lidar['filename'])
+        lidar_path = osp.join(self.dataroot, sd_lidar['filename'])
+        pc = LidarPointCloud.from_file(lidar_path)
+
+        # By default we render the sample_data top down in the sensor frame.
+        # This is slightly inaccurate when rendering the map as the sensor frame may not be perfectly upright.
+        # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
+        if use_flat_vehicle_coordinates:
+            # Retrieve transformation matrices for reference point cloud.
+            cs_record = self.get('calibrated_sensor', sd_lidar['calibrated_sensor_token'])
+            pose_record = self.get('ego_pose', sd_lidar['ego_pose_token'])
+            ref_to_ego = transform_matrix(translation=cs_record['translation'],
+                                          rotation=Quaternion(cs_record["rotation"]))
+
+            # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
+            ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+            rotation_vehicle_flat_from_vehicle = np.dot(
+                Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
+                Quaternion(pose_record['rotation']).inverse.rotation_matrix)
+            vehicle_flat_from_vehicle = np.eye(4)
+            vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
+            viewpoint = np.dot(vehicle_flat_from_vehicle, ref_to_ego)
+        else:
+            viewpoint = np.eye(4)
+        original_points = pc.points[:3, :]
+        points = view_points(original_points, viewpoint, normalize=False)
+
+        return points, original_points
+
     def get_ego_pose_data(self,
                           sample_token: str,
                           modality: str = 'camera',
@@ -504,9 +547,9 @@ class NuImages:
         """
         Get the trajectory of the ego vehicle and optionally rotate and center it.
         :param sample_token: Sample token.
-        :param rotation_yaw: Default rotation.
+        :param rotation_yaw: Rotation of the ego vehicle in the plot.
             Set to None to use lat/lon coordinates.
-            Set to 0 to point in the driving direction.
+            Set to 0 to point in the driving direction at the time of the keyframe.
             Set to any other value to rotate relative to the driving direction (in radians).
         :param center_key_pose: Whether to center the trajectory on the key pose.
         :return: A matrix with sample_datas x 3 values of the translations at each timestamp.
@@ -641,7 +684,9 @@ class NuImages:
         :param mode: How to render the depth, either sparse or dense.
         :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
         :param cmap: The matplotlib color map name.
-        :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
+        :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
+            A larger scale makes the point location more precise, but they will be harder to see.
+            For the "dense" option, the depth completion parameters are optimized for the recommended size.
         :param out_path: The path where we save the depth image, or otherwise None.
         """
         # Get depth and image.
@@ -650,12 +695,12 @@ class NuImages:
         # Compute depth image.
         assert mode in ['sparse', 'dense']
         if mode == 'sparse':
-            scale = 1 / 8
+            scale = 1 / 8 * render_scale
             n_dilate = None
             n_gauss = None
             sigma_gauss = None
         else:
-            scale = 1 / 2
+            scale = 1 / 2 * render_scale
             n_dilate = 23
             n_gauss = 11
             sigma_gauss = 3
@@ -681,7 +726,7 @@ class NuImages:
 
         # Save to disk.
         if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch * render_scale, pad_inches=0)
+            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
 
     def render_pointcloud(self,
@@ -695,47 +740,19 @@ class NuImages:
         :param sd_token_lidar: Sample_data token of the lidar pointcloud.
         :param axes_limit: Axes limit for lidar (measured in meters).
         :param color_mode: How to color the lidar points, e.g. depth or height.
-        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
-            aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
-            can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
-            setting is more correct and rotates the plot by ~90 degrees.
+        :param use_flat_vehicle_coordinates: See get_pointcloud().
         :param out_path: Optional path to save the rendered figure to disk.
         """
-        # Load lidar pointcloud.
-        sd_lidar = self.get('sample_data', sd_token_lidar)
-        self.check_sweeps(sd_lidar['filename'])
-        lidar_path = osp.join(self.dataroot, sd_lidar['filename'])
-        pc = LidarPointCloud.from_file(lidar_path)
-
-        # By default we render the sample_data top down in the sensor frame.
-        # This is slightly inaccurate when rendering the map as the sensor frame may not be perfectly upright.
-        # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
-        if use_flat_vehicle_coordinates:
-            # Retrieve transformation matrices for reference point cloud.
-            cs_record = self.get('calibrated_sensor', sd_lidar['calibrated_sensor_token'])
-            pose_record = self.get('ego_pose', sd_lidar['ego_pose_token'])
-            ref_to_ego = transform_matrix(translation=cs_record['translation'],
-                                          rotation=Quaternion(cs_record["rotation"]))
-
-            # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
-            ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
-            rotation_vehicle_flat_from_vehicle = np.dot(
-                Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
-                Quaternion(pose_record['rotation']).inverse.rotation_matrix)
-            vehicle_flat_from_vehicle = np.eye(4)
-            vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
-            viewpoint = np.dot(vehicle_flat_from_vehicle, ref_to_ego)
-        else:
-            viewpoint = np.eye(4)
+        # Load the pointcloud and transform it to the specified viewpoint.
+        points, original_points = self.get_pointcloud(sd_token_lidar, use_flat_vehicle_coordinates)
 
         # Init axes.
         plt.figure(figsize=(9, 9))
         plt.axis('off')
 
         # Show point cloud.
-        points = view_points(pc.points[:3, :], viewpoint, normalize=False)
         if color_mode == 'depth':
-            dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
+            dists = np.sqrt(np.sum(original_points[:2, :] ** 2, axis=0))
             colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
         elif color_mode == 'height':
             heights = points[2, :]
@@ -760,15 +777,20 @@ class NuImages:
 
     def render_trajectory(self,
                           sample_token: str,
+                          rotation_yaw: float = 0.0,
                           out_path: str = None) -> None:
         """
         Render a plot of the trajectory for the clip surrounding the annotated keyframe.
         A red cross indicates the starting point, a green dot the ego pose of the annotated keyframe.
         :param sample_token: Sample token.
+        :param rotation_yaw: Rotation of the ego vehicle in the plot.
+            Set to None to use lat/lon coordinates.
+            Set to 0 to point in the driving direction at the time of the keyframe.
+            Set to any other value to rotate relative to the driving direction (in radians).
         :param out_path: Optional path to save the rendered figure to disk.
         """
         # Get the translations or poses.
-        translations = self.get_trajectory(sample_token)
+        translations = self.get_trajectory(sample_token, rotation_yaw=rotation_yaw)
 
         # Render translations.
         plt.figure()
