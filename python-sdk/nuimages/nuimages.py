@@ -207,7 +207,7 @@ class NuImages:
         """
         List all attributes and the number of annotations with each attribute.
         """
-        # Load data if in lazy load to avoid confusing outputs.
+        # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
             self.load_tables(['attribute', 'object_ann'])
 
@@ -229,7 +229,7 @@ class NuImages:
         """
         List all cameras and the number of samples for each.
         """
-        # Load data if in lazy load to avoid confusing outputs.
+        # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
             self.load_tables(['sample', 'sample_data', 'calibrated_sensor', 'sensor'])
 
@@ -260,7 +260,7 @@ class NuImages:
         List all categories and the number of object_anns and surface_anns for them.
         :param sample_tokens: A list of sample tokens for which category stats will be shown.
         """
-        # Load data if in lazy load to avoid confusing outputs.
+        # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
             self.load_tables(['sample', 'object_ann', 'surface_ann', 'category'])
 
@@ -300,7 +300,7 @@ class NuImages:
         """
         List all logs and the number of samples per log.
         """
-        # Load data if in lazy load to avoid confusing outputs.
+        # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
             self.load_tables(['sample', 'log'])
 
@@ -325,7 +325,7 @@ class NuImages:
         List the sample_datas for a given sample.
         :param sample_token: Sample token.
         """
-        # Load data if in lazy load to avoid confusing outputs.
+        # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
             self.load_tables(['sample', 'sample_data'])
 
@@ -535,7 +535,7 @@ class NuImages:
             attribute = ego_pose[attribute_name]
 
             # Store results.
-            attributes[i] = attribute
+            attributes[i, :] = attribute
             timestamps[i] = ego_pose['timestamp']
 
         return timestamps, attributes
@@ -543,7 +543,7 @@ class NuImages:
     def get_trajectory(self,
                        sample_token: str,
                        rotation_yaw: float = 0.0,
-                       center_key_pose: bool = True) -> np.ndarray:
+                       center_key_pose: bool = True) -> Tuple[np.ndarray, int]:
         """
         Get the trajectory of the ego vehicle and optionally rotate and center it.
         :param sample_token: Sample token.
@@ -552,7 +552,10 @@ class NuImages:
             Set to 0 to point in the driving direction at the time of the keyframe.
             Set to any other value to rotate relative to the driving direction (in radians).
         :param center_key_pose: Whether to center the trajectory on the key pose.
-        :return: A matrix with sample_datas x 3 values of the translations at each timestamp.
+        :return: (
+            translations: A matrix with sample_datas x 3 values of the translations at each timestamp.
+            key_index: The index of the translations corresponding to the keyframe (usually 6).
+        )
         """
         # Get trajectory data.
         timestamps, translations = self.get_ego_pose_data(sample_token)
@@ -566,14 +569,15 @@ class NuImages:
         key_index = [i for i, t in enumerate(timestamps) if t == key_timestamp][0]
 
         # Rotate points such that the initial driving direction points upwards.
-        rotation = key_rotation.inverse * Quaternion(axis=[0, 0, 1], angle=np.pi / 2 - rotation_yaw)
-        translations = np.dot(rotation.rotation_matrix, translations.T).T
+        if rotation_yaw is not None:
+            rotation = key_rotation.inverse * Quaternion(axis=[0, 0, 1], angle=np.pi / 2 - rotation_yaw)
+            translations = np.dot(rotation.rotation_matrix, translations.T).T
 
         # Subtract origin to have lower numbers on the axes.
         if center_key_pose:
             translations -= translations[key_index, :]
 
-        return translations
+        return translations, key_index
 
     # ### Rendering methods. ###
 
@@ -621,7 +625,7 @@ class NuImages:
 
             # Draw stuff / background regions.
             for ann in surface_anns:
-                # Get color and mask
+                # Get color and mask.
                 category_token = ann['category_token']
                 category_name = self.get('category', category_token)['name']
                 color = self.color_map[category_name]
@@ -778,6 +782,7 @@ class NuImages:
     def render_trajectory(self,
                           sample_token: str,
                           rotation_yaw: float = 0.0,
+                          center_key_pose: bool = True,
                           out_path: str = None) -> None:
         """
         Render a plot of the trajectory for the clip surrounding the annotated keyframe.
@@ -787,20 +792,23 @@ class NuImages:
             Set to None to use lat/lon coordinates.
             Set to 0 to point in the driving direction at the time of the keyframe.
             Set to any other value to rotate relative to the driving direction (in radians).
+        :param center_key_pose: Whether to center the trajectory on the key pose.
         :param out_path: Optional path to save the rendered figure to disk.
         """
         # Get the translations or poses.
-        translations = self.get_trajectory(sample_token, rotation_yaw=rotation_yaw)
+        translations, key_index = self.get_trajectory(sample_token, rotation_yaw=rotation_yaw,
+                                                      center_key_pose=center_key_pose)
 
         # Render translations.
         plt.figure()
         plt.plot(translations[:, 0], translations[:, 1])
-        plt.plot(0, 0, 'go', MarkerSize=10)  # Key image.
+        plt.plot(translations[key_index, 0], translations[key_index, 1], 'go', MarkerSize=10)  # Key image.
         plt.plot(translations[0, 0], translations[0, 1], 'rx', MarkerSize=10)  # Start point.
-        max_dist = np.ceil(np.max(np.abs(translations)) * 1.05)  # Leave some margin.
+        max_dist = translations - translations[key_index, :]
+        max_dist = np.ceil(np.max(np.abs(max_dist)) * 1.05)  # Leave some margin.
         max_dist = np.maximum(10, max_dist)
-        plt.xlim([-max_dist, max_dist])
-        plt.ylim([-max_dist, max_dist])
+        plt.xlim([translations[key_index, 0] - max_dist, translations[key_index, 0] + max_dist])
+        plt.ylim([translations[key_index, 1] - max_dist, translations[key_index, 1] + max_dist])
         plt.xlabel('x in meters')
         plt.ylabel('y in meters')
 
