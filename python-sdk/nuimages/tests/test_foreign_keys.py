@@ -8,9 +8,10 @@ from nuimages.nuimages import NuImages
 
 
 class TestForeignKeys(unittest.TestCase):
-    def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
+    def __init__(self, test_name: str = '', version: str = 'v1.0-val', dataroot: str = None):
         """
         Initialize TestForeignKeys.
+        :param test_name: Dummy parameter required by the TestCase class.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
@@ -22,6 +23,12 @@ class TestForeignKeys(unittest.TestCase):
         else:
             self.dataroot = dataroot
         self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=False)
+
+    def runTest(self) -> None:
+        """
+        Dummy function required by the TestCase class.
+        """
+        pass
 
     def test_foreign_keys(self) -> None:
         """

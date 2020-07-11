@@ -6,6 +6,6 @@ tokens = [
 
 # TODO: Delete this file once everything is well tested.
 
-nuim = NuImages(version='v1.0-val')
+nuim = NuImages(version='v1.0-val', verbose=False)
 for token in tokens:
-    nuim.render_depth(tokens)
+    nuim.render_depth(token)

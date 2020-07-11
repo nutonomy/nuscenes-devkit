@@ -6,10 +6,10 @@ from nuimages.nuimages import NuImages
 
 class TestAttributes(unittest.TestCase):
 
-    def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
+    def __init__(self, test_name: str = '', version: str = 'v1.0-val', dataroot: str = None):
         """
         Initialize TestAttributes.
-        TODO: Fix automatic discovery for this test.
+        :param test_name: Dummy parameter required by the TestCase class.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
@@ -47,6 +47,12 @@ class TestAttributes(unittest.TestCase):
             'vehicle.trailer': ['vehicle'],
             'vehicle.truck': ['vehicle']
         }
+
+    def runTest(self) -> None:
+        """
+        Dummy function required by the TestCase class.
+        """
+        pass
 
     def test_object_anns(self, print_only: bool = False) -> None:
         """
