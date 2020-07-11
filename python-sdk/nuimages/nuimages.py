@@ -186,6 +186,21 @@ class NuImages:
         else:
             raise Exception('Error: Shortcut from %s to %s not implemented!')
 
+    def check_sweeps(self, filename: str) -> None:
+        """
+        Check that the sweeps folder was downloaded if required.
+        :param filename: The filename of the sample_data
+        """
+        assert filename.startswith('samples') or filename.startswith('sweeps'), \
+            'Error: You passed an incorrect filename to check_sweeps(). Please use sample_data[''filename''].'
+
+        if 'sweeps' in filename:
+            sweeps_dir = osp.join(self.dataroot, 'sweeps')
+            if not osp.isdir(sweeps_dir):
+                raise Exception('Error: You are missing the "%s" directory! The devkit generally works without this '
+                                'directory, but you cannot call methods that use non-keyframe sample_datas.'
+                                % sweeps_dir)
+
     # ### List methods. ###
 
     def list_attributes(self) -> None:
@@ -391,6 +406,7 @@ class NuImages:
         im_size = (sd_camera['width'], sd_camera['height'])
 
         # Load pointcloud.
+        self.check_sweeps(sd_lidar['filename'])
         pcl_path = osp.join(self.dataroot, sd_lidar['filename'])
         pc = LidarPointCloud.from_file(pcl_path)
         pointsensor = sd_lidar
@@ -546,6 +562,7 @@ class NuImages:
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
 
         # Get image data.
+        self.check_sweeps(sample_data['filename'])
         im_path = osp.join(self.dataroot, sample_data['filename'])
         im = Image.open(im_path)
 
@@ -686,6 +703,7 @@ class NuImages:
         """
         # Load lidar pointcloud.
         sd_lidar = self.get('sample_data', sd_token_lidar)
+        self.check_sweeps(sd_lidar['filename'])
         lidar_path = osp.join(self.dataroot, sd_lidar['filename'])
         pc = LidarPointCloud.from_file(lidar_path)
 
@@ -711,7 +729,8 @@ class NuImages:
             viewpoint = np.eye(4)
 
         # Init axes.
-        _, ax = plt.subplots(1, 1, figsize=(9, 9))
+        plt.figure(figsize=(9, 9))
+        plt.axis('off')
 
         # Show point cloud.
         points = view_points(pc.points[:3, :], viewpoint, normalize=False)
@@ -725,18 +744,16 @@ class NuImages:
         else:
             raise Exception('Error: Invalid color mode %s!' % color_mode)
         point_scale = 0.2
-        ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
+        plt.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
 
         # Show ego vehicle.
-        ax.plot(0, 0, 'x', color='red')
+        plt.plot(0, 0, 'x', color='red')
 
         # Limit visible range.
-        ax.set_xlim(-axes_limit, axes_limit)
-        ax.set_ylim(-axes_limit, axes_limit)
+        plt.xlim(-axes_limit, axes_limit)
+        plt.ylim(-axes_limit, axes_limit)
 
-        ax.axis('off')
-        ax.set_aspect('equal')
-
+        # Save to disk.
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=150, pad_inches=0)
             plt.close()
