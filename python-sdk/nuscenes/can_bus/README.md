@@ -80,7 +80,7 @@ Format: `scene_0001_pose.json`
 The current pose of the ego vehicle, sampled at 50Hz.
 - accel: \[3\] Acceleration vector in the ego vehicle frame in m/s/s.
 - orientation: \[4\]  The rotation vector in the ego vehicle frame.
-- pos: \[3\] The position (x, y, z) in meters in the global frame. This is identical to the [nuScenes ego pose](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#ego_pose), but sampled at a higher frequency.
+- pos: \[3\] The position (x, y, z) in meters in the global frame. This is identical to the [nuScenes ego pose](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuscenes.md#ego_pose), but sampled at a higher frequency.
 - rotation_rate: \[3\] The angular velocity vector of the vehicle in rad/s.  This is expressed in the ego vehicle frame.
 - vel: \[3\] The velocity in m/s, expressed in the ego vehicle frame.
  
