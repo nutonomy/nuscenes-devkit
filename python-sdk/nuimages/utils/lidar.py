@@ -26,10 +26,10 @@ def depth_map(pts: np.ndarray,
     :param n_dilate: Dilation filter size.
     :param n_gauss: Gaussian filter size.
     :param sigma_gauss: Gaussian filter sigma.
-    :return: The dense depth map.
+    :return: The depth map.
     """
     # Store the minimum depth in the corresponding pixels.
-    # Apply downsampling to make it more efficient.
+    # Apply downsampling to make it more efficient and points larger to be more visible.
     pxs = (pts[0, :] * scale).astype(np.int32)
     pys = (pts[1, :] * scale).astype(np.int32)
 
@@ -44,7 +44,7 @@ def depth_map(pts: np.ndarray,
 
     # Set invalid pixels to max_depth.
     invalid = depth_map == 0
-    depth_map[invalid] = depth_map.max()
+    depth_map[invalid] = np.max(depth_map)
 
     # Perform erosion to grow points
     if n_dilate is not None:
@@ -97,21 +97,25 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_na
     points_y = points_y[mask]
     r_sq = r_sq[mask]
 
+    # Specify the basic distortion model.
     radial_distort = 1 + k1 * r_sq + k2 * r_sq ** 2 + k3 * r_sq ** 3
 
-    if cam_name == 'CAM_BACK':  # Fish-eye lens.
+    # For fish-eye lenses, add another parameter to the distortion model.
+    if cam_name == 'CAM_BACK':
         k4 = camera_distortion[5]
         radial_distort = radial_distort + k4 * r_sq ** 4
         assert not np.any(np.isinf(radial_distort)) and not np.any(np.isnan(radial_distort))
 
+    # Apply distortion to points.
     x = radial_distort * points_x + 2 * p1 * points_x * points_y + p2 * (r_sq + 2 * points_x ** 2)
     y = radial_distort * points_y + p1 * (r_sq + 2 * points_y ** 2) + 2 * p2 * points_x * points_y
 
     # Define output.
+    # Note that the third dimension is 1 as the points are already normalized above.
     points = np.ones((3, len(points_x)))
     points[0, :] = x
     points[1, :] = y
-    assert points.shape[1] == len(depths)
+    assert points.shape[1] == len(depths), 'Error: Code is inconsistent!'
 
     return points, depths
 
@@ -131,6 +135,7 @@ class InvertedNormalize(Normalize):
         scaling_x = [0, 0.2, 0.5, 1]
         scaling_y = [0, 0.5, 0.95, 1]
 
+        # Apply that scaling, taking into account the specified minimum and maximum.
         x = self.vmin + np.array(scaling_x) * (self.vmax - self.vmin)
         y = scaling_y
         colors = np.interp(value, x, y)
