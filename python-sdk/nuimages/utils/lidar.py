@@ -1,10 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
-from typing import Tuple
+from typing import Tuple, Any
 
 import cv2
 import numpy as np
+from numpy.ma.core import MaskedArray
 from matplotlib.colors import Normalize
 
 
@@ -116,9 +117,21 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_na
 
 
 class InvertedNormalize(Normalize):
-    # A custom inverted colormap that stretches the close depth values out to have more color resolution.
-    def __call__(self, value, clip=None):
-        x = self.vmin + np.array([0, 0.2, 0.5, 1]) * (self.vmax - self.vmin)
-        y = [0, 0.5, 0.95, 1]
+
+    def __call__(self, value: MaskedArray, clip: Any = None) -> MaskedArray:
+        """
+        A custom inverted colormap that stretches the close depth values out to have more color resolution.
+        :param value:
+        :param clip:
+        :return:
+        """
+        assert clip is None, 'Error: Clip option not supported!'
+
+        # Define a non-linear mapping based on 4 keypoints.
+        scaling_x = [0, 0.2, 0.5, 1]
+        scaling_y = [0, 0.5, 0.95, 1]
+
+        x = self.vmin + np.array(scaling_x) * (self.vmax - self.vmin)
+        y = scaling_y
         colors = np.interp(value, x, y)
         return 1 - np.ma.masked_array(colors)
