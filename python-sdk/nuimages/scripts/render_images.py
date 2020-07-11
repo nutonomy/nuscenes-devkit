@@ -27,7 +27,8 @@ class ImageRenderer:
                       cam_name: str = None,
                       sample_limit: int = 100,
                       out_type: str = 'image',
-                      out_dir: str = '~/Downloads/nuImages') -> None:
+                      out_dir: str = '~/Downloads/nuImages',
+                      cleanup: bool = True) -> None:
         """
         Render a random selection of images and save them to disk.
         Note: The images rendered here are keyframes only.
@@ -45,6 +46,7 @@ class ImageRenderer:
             'image': Renders a single image for the image keyframe of each sample.
             'video': Renders a video for all images/pcls in the clip associated with each sample.
         :param out_dir: Folder to render the images to.
+        :param cleanup: Whether to delete images after rendering the video. Not relevant for out_type == 'image'.
         """
         # Check and convert inputs.
         assert out_type in ['image', 'video'], ' Error: Unknown out_type %s!' % out_type
@@ -91,30 +93,28 @@ class ImageRenderer:
             sd_token_camera = sample['key_camera_token']
             sensor = self.nuim.shortcut('sample_data', 'sensor', sd_token_camera)
             sample_cam_name = sensor['channel']
+            sd_tokens_camera = self.nuim.get_sample_content(sample_token, modality='camera')
+            out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
 
-            if out_type == 'image':
-                for mode in modes:
-                    out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
-                    self.write_image(sd_token_camera, mode, out_path_prefix)
-            elif out_type == 'video':
-                sd_tokens_camera = self.nuim.get_sample_content(sample_token, modality='camera')
-                for mode in modes:
-                    out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
-                    self.write_video(sd_tokens_camera, mode, out_path_prefix)
+            for mode in modes:
+                if out_type == 'image':
+                    self.write_image(sd_token_camera, mode, '%s.jpg' % out_path_prefix)
+                elif out_type == 'video':
+                    self.write_video(sd_tokens_camera, mode, out_path_prefix, cleanup=cleanup)
 
-    def write_image(self, sd_token_camera: str, mode: str, out_path_prefix: str) -> None:
-
-        out_path = '%s.jpg' % out_path_prefix
-        self.write_image_mode(sd_token_camera, mode, out_path)
-
-    def write_video(self, sd_tokens_camera: List[str], mode: str, out_path_prefix: str) -> None:
-
+    def write_video(self, sd_tokens_camera: List[str], mode: str, out_path_prefix: str, cleanup: bool = True) -> None:
+        """
+        Render a video by combining all the images of type mode for each sample_data.
+        :param sd_tokens_camera: All camera sample_data tokens in chronological order.
+        :param mode: The mode - see render_images().
+        :param out_path_prefix: The file prefix used for the images and video.
+        """
         # Loop through each frame to create the video.
         out_paths = []
         for i, sd_token_camera in enumerate(sd_tokens_camera):
-            out_path = '%s_%d.avi' % (out_path_prefix, i)
+            out_path = '%s_%d.jpg' % (out_path_prefix, i)
             out_paths.append(out_path)
-            self.write_image_mode(sd_token_camera, mode, out_path)
+            self.write_image(sd_token_camera, mode, out_path)
 
         # Create video.
         first_im = cv2.imread(out_paths[0])
@@ -128,11 +128,20 @@ class ImageRenderer:
             im = cv2.imread(out_path)
             out.write(im)
 
+            # Delete temporary image if requested.
+            if cleanup:
+                os.remove(out_path)
+
         # Finalize video.
         out.release()
 
-    def write_image_mode(self, sd_token_camera: str, mode: str, out_path: str) -> None:
-
+    def write_image(self, sd_token_camera: str, mode: str, out_path: str) -> None:
+        """
+        Render a single image of type mode for the given sample_data.
+        :param sd_token_camera: The sample_data token of the camera.
+        :param mode: The mode - see render_images().
+        :param out_path: The file to write the image to.
+        """
         if mode == 'annotated':
             self.nuim.render_image(sd_token_camera, with_annotations=True, out_path=out_path)
         elif mode == 'image':
