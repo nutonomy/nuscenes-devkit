@@ -1,5 +1,5 @@
 # Advanced Installation
-We provide step-by-step instructions to install our devkit. 
+We provide step-by-step instructions to install our devkit. These instructions apply to both nuScenes and nuImages.
 - [Download](#download)
 - [Install Python](#install-python)
 - [Setup a Conda environment](#setup-a-conda-environment)
@@ -36,7 +36,7 @@ An alternative to Conda is to use virtualenvwrapper, as described [below](#setup
 See the [official Miniconda page](https://conda.io/en/latest/miniconda.html).
 
 #### Setup a Conda environment
-We create a new Conda environment named `nuscenes`.
+We create a new Conda environment named `nuscenes`. We will use this environment for both nuScenes and nuImages.
 ```
 conda create --name nuscenes python=3.7
 ```
@@ -109,7 +109,7 @@ pip install -r setup/requirements.txt
 To verify your environment run `python -m unittest` in the `python-sdk` folder.
 You can also run `assert_download.py` in the `nuscenes/scripts` folder.
 
-## Setup NUSCENES environment variable
+## Setup environment variable
 Finally, if you want to run the unit tests you need to point the devkit to the `nuscenes` folder on your disk.
 Set the NUSCENES environment variable to point to your data folder, e.g. `/data/sets/nuscenes`:
 ```
