@@ -94,9 +94,9 @@ class ImageRenderer:
             sensor = self.nuim.shortcut('sample_data', 'sensor', sd_token_camera)
             sample_cam_name = sensor['channel']
             sd_tokens_camera = self.nuim.get_sample_content(sample_token, modality='camera')
-            out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
 
             for mode in modes:
+                out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
                 if out_type == 'image':
                     self.write_image(sd_token_camera, mode, '%s.jpg' % out_path_prefix)
                 elif out_type == 'video':
@@ -108,6 +108,7 @@ class ImageRenderer:
         :param sd_tokens_camera: All camera sample_data tokens in chronological order.
         :param mode: The mode - see render_images().
         :param out_path_prefix: The file prefix used for the images and video.
+        :param cleanup: Whether to delete images after rendering the video.
         """
         # Loop through each frame to create the video.
         out_paths = []
