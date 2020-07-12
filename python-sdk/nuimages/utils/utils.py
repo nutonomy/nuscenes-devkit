@@ -34,5 +34,8 @@ def mask_decode(mask: dict) -> np.ndarray:
     :param mask: The mask dictionary with fields `size` and `counts`.
     :return: A numpy array representing the binary mask for this class.
     """
-    mask['counts'] = base64.b64decode(mask['counts'])
-    return cocomask.decode(mask)
+    # Note that it is essential to copy the mask here. If we use the same variable we will overwrite the NuImage class
+    # and cause the Jupyter Notebook to crash on some systems.
+    new_mask = mask.copy()
+    new_mask['counts'] = base64.b64decode(mask['counts'])
+    return cocomask.decode(new_mask)

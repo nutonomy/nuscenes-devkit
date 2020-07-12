@@ -303,6 +303,34 @@ class NuImages:
             print(format_str.format(
                 object_freq, surface_freq, name, description))
 
+    def list_anns(self, sample_token: str, verbose: bool = True) -> Tuple[List[str], List[str]]:
+        """
+        List all the annotations of a sample.
+        :param sample_token: Sample token.
+        :param verbose: Whether to print to stdout.
+        :return: The object and surface annotation tokens in this sample.
+        """
+        sample = self.get('sample', sample_token)
+        sd_token_camera = sample['key_camera_token']
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+
+        if verbose:
+            print('Printing foreground annotations:')
+            for object_ann in object_anns:
+                category = self.get('category', object_ann['category_token'])
+                attribute_names = [self.get('attribute', at)['name'] for at in object_ann['attribute_tokens']]
+                print('{} {} {}'.format(object_ann['token'], category['name'], attribute_names))
+
+            print('\nPrinting background annotations:')
+            for surface_ann in surface_anns:
+                category = self.get('category', surface_ann['category_token'])
+                print(surface_ann['sample_data_token'], category['name'])
+
+        object_tokens = [o['token'] for o in object_anns]
+        surface_tokens = [s['token'] for s in surface_anns]
+        return object_tokens, surface_tokens
+
     def list_logs(self) -> None:
         """
         List all logs and the number of samples per log.
@@ -596,7 +624,7 @@ class NuImages:
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
-                     box_line_width: float = 0.0,
+                     box_line_width: int = 0,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
@@ -607,7 +635,8 @@ class NuImages:
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
-        :param box_line_width: The box line width in pixels. Set 0 to use the default.
+        :param box_line_width: The box line width in pixels. The default is 0.
+            If set to 0, box_line_width equals render_scale (rounded) to be larger in larger images.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -617,6 +646,9 @@ class NuImages:
         if not sample_data['is_key_frame']:
             assert not with_annotations, 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
+        assert type(box_line_width) == int, 'Error: box_line_width must be an integer!'
+        if box_line_width == 0:
+            box_line_width = int(round(render_scale))
 
         # Get image data.
         self.check_sweeps(sample_data['filename'])
@@ -643,6 +675,7 @@ class NuImages:
                     continue
                 mask = mask_decode(ann['mask'])
 
+                # Draw mask. The label is obvious from the color.
                 draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
             # Load object instances.
@@ -664,11 +697,11 @@ class NuImages:
                     continue
                 mask = mask_decode(ann['mask'])
 
-                # Draw rectangle, text and mask.
+                # Draw mask, rectangle and text.
+                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
                 draw.rectangle(bbox, outline=color, width=box_line_width)
                 if with_category:
                     draw.text((bbox[0], bbox[1]), name, font=font)
-                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Plot the image.
         (width, height) = im.size
@@ -682,10 +715,6 @@ class NuImages:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
-
-        # TODO
-        import gc
-        gc.collect()
 
     def render_depth(self,
                      sd_token_camera: str,
