@@ -102,6 +102,10 @@ def render_lidarseg_histogram(nusc: NuScenes,
     fig, ax = plt.subplots(figsize=(16, 9))
     plt.margins(x=0.005)  # Add some padding to the upper and lower limit of the x-axis for aesthetics.
 
+    # Show horizontal gridlines.
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+
     # Plot the histogram.
     ax.bar(class_names, counts, color=colors)
     assert len(class_names) == len(ax.get_xticks()), \
