@@ -596,7 +596,7 @@ class NuImages:
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
-                     box_thickness: float = 0.0,
+                     box_line_width: float = 0.0,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
@@ -607,7 +607,7 @@ class NuImages:
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
-        :param box_thickness: The box thickness in pixels. Set 0 to use the default.
+        :param box_line_width: The box line width in pixels. Set 0 to use the default.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -624,7 +624,7 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = ImageFont.load_default() # TODO
+        font = ImageFont.load_default()
         draw = ImageDraw.Draw(im, 'RGBA')
 
         if with_annotations:
@@ -665,7 +665,7 @@ class NuImages:
                 mask = mask_decode(ann['mask'])
 
                 # Draw rectangle, text and mask.
-                draw.rectangle(bbox, outline=color, width=box_thickness)
+                draw.rectangle(bbox, outline=color, width=box_line_width)
                 if with_category:
                     draw.text((bbox[0], bbox[1]), name, font=font)
                 draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
