@@ -100,7 +100,7 @@ def render_lidarseg_histogram(nusc: NuScenes,
 
     # Start a plot.
     fig, ax = plt.subplots(figsize=(16, 9))
-    plt.margins(x=0.005)  # Add some padding to the upper and lower limit of the x-axis for aesthetics.
+    plt.margins(x=0.005)  # Add some padding to the left and right limits of the x-axis for aesthetics.
     ax.set_axisbelow(True)  # Ensure that axis ticks and gridlines will be below all other ploy elements.
     ax.yaxis.grid(color='white', linewidth=2)  # Show horizontal gridlines.
     ax.set_facecolor('#eaeaf2')  # Set background of plot.
