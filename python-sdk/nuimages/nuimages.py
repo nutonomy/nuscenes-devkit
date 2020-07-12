@@ -683,6 +683,10 @@ class NuImages:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
 
+        # TODO
+        import gc
+        gc.collect()
+
     def render_depth(self,
                      sd_token_camera: str,
                      mode: str = 'sparse',

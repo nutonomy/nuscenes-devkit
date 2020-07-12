@@ -34,6 +34,5 @@ def mask_decode(mask: dict) -> np.ndarray:
     :param mask: The mask dictionary with fields `size` and `counts`.
     :return: A numpy array representing the binary mask for this class.
     """
-
     mask['counts'] = base64.b64decode(mask['counts'])
     return cocomask.decode(mask)
