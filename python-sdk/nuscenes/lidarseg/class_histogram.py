@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, ScalarFormatter
 import matplotlib.transforms as mtrans
 import numpy as np
-import pandas as pd
-import seaborn as sns
 
 from nuscenes import NuScenes
 from nuscenes.utils.color_map import get_colormap
@@ -59,7 +57,7 @@ def truncate_class_name(class_name) -> str:
 
 
 def render_lidarseg_histogram(nusc: NuScenes,
-                              sort_by: str = 'count',
+                              sort_by: str = 'count_desc',
                               chart_title: str = None,
                               x_label: str = None,
                               y_label: str = "Lidar points (logarithmic)",
@@ -93,53 +91,50 @@ def render_lidarseg_histogram(nusc: NuScenes,
     print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
         len(nusc.lidarseg), time.time() - start_time))
 
-    # Place the class names and counts into a dataframe for use with seaborn later.
-    df = pd.DataFrame(list(zip(class_names, counts)), columns=['Class', 'Count'])
-
     # Create an array with the colors to use.
     cmap = get_colormap()
-    colors = ['#%02x%02x%02x' % tuple(cmap[row['Class']]) for index, row in df.iterrows()]  # Convert from RGB to hex.
+    colors = ['#%02x%02x%02x' % tuple(cmap[cn]) for cn in class_names]  # Convert from RGB to hex.
 
     # Make the class names shorter so that they do not take up much space in the plot.
-    df['Class'] = df['Class'].apply(lambda x: truncate_class_name(x))
+    class_names = [truncate_class_name(cn) for cn in class_names]
 
     # Start a plot.
     fig, ax = plt.subplots(figsize=(16, 9))
-    sns.set_style(style="darkgrid")
+    plt.margins(x=0.005)  # Add some padding to the upper and lower limit of the x-axis for aesthetics.
 
     # Plot the histogram.
-    chart = sns.barplot(x="Class", y="Count", data=df, label="Total", palette=colors, ci=None)
-    assert len(df) == len(chart.get_xticks()), \
-        'There are {} classes, but {} are shown on the x-axis'.format(len(df), len(chart.get_xticks()))
+    ax.bar(class_names, counts, color=colors)
+    assert len(class_names) == len(ax.get_xticks()), \
+        'There are {} classes, but {} are shown on the x-axis'.format(len(class_names), len(ax.get_xticks()))
 
     # Format the x-axis.
-    chart.set_xlabel(x_label, fontsize=font_size)
-    chart.set_xticklabels(chart.get_xticklabels(), rotation=45, horizontalalignment='right',
-                          fontweight='light', fontsize=font_size)
+    ax.set_xlabel(x_label, fontsize=font_size)
+    ax.set_xticklabels(class_names, rotation=45, horizontalalignment='right',
+                       fontweight='light', fontsize=font_size)
 
-    # Shift the class names on the x-axis slightly to the right for aesthetics reasons.
+    # Shift the class names on the x-axis slightly to the right for aesthetics.
     trans = mtrans.Affine2D().translate(10, 0)
     for t in ax.get_xticklabels():
         t.set_transform(t.get_transform() + trans)
 
     # Format the y-axis.
-    chart.set_ylabel(y_label, fontsize=font_size)
-    chart.set_yticklabels(chart.get_yticks(), size=font_size)
+    ax.set_ylabel(y_label, fontsize=font_size)
+    ax.set_yticklabels(counts, size=font_size)
 
     # Transform the y-axis to log scale.
     if y_log_scale:
-        chart.set_yscale("log")
+        ax.set_yscale("log")
 
     # Display the y-axis using nice scientific notation.
     formatter = ScalarFormatter(useOffset=False, useMathText=True)
-    chart.yaxis.set_major_formatter(
+    ax.yaxis.set_major_formatter(
         FuncFormatter(lambda x, pos: "${}$".format(formatter._formatSciNotation('%1.10e' % x))))
 
     if chart_title:
-        chart.set_title(chart_title, fontsize=font_size)
+        ax.set_title(chart_title, fontsize=font_size)
 
     if save_as_img_name:
-        fig = chart.get_figure()
+        fig = ax.get_figure()
         plt.tight_layout()
         fig.savefig(save_as_img_name)
 
@@ -149,8 +144,8 @@ def render_lidarseg_histogram(nusc: NuScenes,
 
 def get_lidarseg_stats(nusc: NuScenes, sort_by: str = 'count_desc') -> Tuple[List[str], List[int]]:
     """
-    Get the number of points belonging to each class for the given nusc split.
-    :param nusc: A nuScenes object.
+    Get the number of points belonging to each class for the given nuScenes split.
+    :param nusc: A NuScenes object.
     :param sort_by: How to sort the classes:
         - count_desc: Sort the classes by the number of points belonging to each class, in descending order.
         - count_asc: Sort the classes by the number of points belonging to each class, in ascending order.
