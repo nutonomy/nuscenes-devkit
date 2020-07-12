@@ -9,6 +9,7 @@ opencv-python
 pandas>=0.24
 Pillow<=6.2.1  # Latest Pillow is incompatible with current torchvision, https://github.com/pytorch/vision/issues/1712
 pyquaternion>=0.9.5
+seaborn
 scikit-learn
 scipy
 Shapely
