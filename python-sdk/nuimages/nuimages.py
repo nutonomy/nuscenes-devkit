@@ -305,24 +305,23 @@ class NuImages:
                 surface_freqs[surface_ann['category_token']] += 1
 
         # Sort entries.
-        category = self.category
         if sort_by == 'name':
-            sort_order = [i[0] for i in sorted(enumerate(category), key=lambda x: x[1]['name'])]
+            sort_order = [i for (i, _) in sorted(enumerate(self.category), key=lambda x: x[1]['name'])]
         elif sort_by == 'object_freq':
-            sort_order = [i[0] for i in sorted(enumerate(object_freqs), key=lambda x: x[1])]
+            object_freqs_order = [object_freqs[c['token']] for c in self.category]
+            sort_order = [i for (i, _) in sorted(enumerate(object_freqs_order), key=lambda x: x[1], reverse=True)]
         elif sort_by == 'surface_freq':
-            sort_order = [i[0] for i in sorted(enumerate(surface_freqs), key=lambda x: x[1])]
+            surface_freqs_order = [surface_freqs[c['token']] for c in self.category]
+            sort_order = [i for (i, _) in sorted(enumerate(surface_freqs_order), key=lambda x: x[1], reverse=True)]
         else:
             raise Exception('Error: Invalid sorting criterion %s!' % sort_by)
-        category = [category[s] for s in sort_order]
-        object_freqs = [object_freqs[s] for s in sort_order]
-        surface_freqs = [surface_freqs[s] for s in sort_order]
 
         # Print to stdout.
         format_str = '{:11} {:12} {:24.24} {:48.48}'
         print()
         print(format_str.format('Object_anns', 'Surface_anns', 'Name', 'Description'))
-        for category in category:
+        for s in sort_order:
+            category = self.category[s]
             category_token = category['token']
             object_freq = object_freqs[category_token]
             surface_freq = surface_freqs[category_token]
