@@ -1,5 +1,6 @@
 import os
 import time
+from typing import List, Tuple
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, ScalarFormatter
@@ -12,7 +13,13 @@ from nuscenes import NuScenes
 from nuscenes.utils.color_map import get_colormap
 
 
-def string_formatter(string):
+def truncate_class_name(class_name) -> str:
+    """
+    Truncate a given class name according to a pre-defined map.
+    :param class_name: The long form (i.e. original form) of the class name.
+    :return: The truncated form of the class name.
+    """
+
     string_mapper = {
         "noise": 'noise',
         "human.pedestrian.adult": 'adult',
@@ -48,17 +55,22 @@ def string_formatter(string):
         "vehicle.ego": "ego"
     }
 
-    return string_mapper[string]
+    return string_mapper[class_name]
 
 
 def render_lidarseg_histogram(nusc: NuScenes, sort_by: str = 'count',
                               chart_title: str = None,
+                              x_label: str = None,
+                              y_label: str = "Lidar points (logarithmic)",
+                              y_log_scale: bool = True,
                               verbose: bool = True,
+                              font_size: int = 20,
                               save_as_img_name: str = None) -> None:
 
     print('Calculating stats for nuScenes-lidarseg...')
     start_time = time.time()
 
+    # Get the statistics for the given nuScenes split.
     class_names, counts = get_lidarseg_stats(nusc, sort_by=sort_by)
 
     print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
@@ -66,56 +78,48 @@ def render_lidarseg_histogram(nusc: NuScenes, sort_by: str = 'count',
 
     # Place the class names and counts into a dataframe for use with seaborn later.
     df = pd.DataFrame(list(zip(class_names, counts)), columns=['Class', 'Count'])
-    df = df[~df['Class'].str.match('unwanted')]  # TODO: remove
 
     # Create an array with the colors to use.
     cmap = get_colormap()
     colors = ['#%02x%02x%02x' % tuple(cmap[row['Class']]) for index, row in df.iterrows()]  # Convert from RGB to hex.
 
     # Make the class names shorter so that they do not take up much space in the plot.
-    df['Class'] = df['Class'].apply(lambda x: string_formatter(x))
+    df['Class'] = df['Class'].apply(lambda x: truncate_class_name(x))
 
     # Start a plot.
     fig, ax = plt.subplots(figsize=(16, 9))
-
-    sns.set(style="darkgrid")
+    sns.set_style(style="darkgrid")
 
     # Plot the histogram.
     chart = sns.barplot(x="Class", y="Count", data=df, label="Total", palette=colors, ci=None)
-
-    chart.set_yscale("log")  # Transform the y-axis to log scale.
-
     assert len(df) == len(chart.get_xticks()), \
-        'There are {} classes, but only {} are shown on the x-axis'.format(len(df), len(chart.get_xticks()))
+        'There are {} classes, but {} are shown on the x-axis'.format(len(df), len(chart.get_xticks()))
 
-    # ------------------------------ Format x and y labels --------------------------------------------------
-    # chart.set_xlabel("Class",fontsize=15)
-    chart.set_xlabel(None ,fontsize=20)
+    # Format the x-axis.
+    chart.set_xlabel(x_label, fontsize=font_size)
     chart.set_xticklabels(chart.get_xticklabels(), rotation=45, horizontalalignment='right',
-                          fontweight='light', fontsize=20)
+                          fontweight='light', fontsize=font_size)
 
+    # Shift the class names on the x-axis slightly to the right for aesthetics reasons.
     trans = mtrans.Affine2D().translate(10, 0)
     for t in ax.get_xticklabels():
         t.set_transform(t.get_transform() + trans)
 
-    chart.set_ylabel("Lidar points (logarithmic)", fontsize=20)
-    chart.set_yticklabels(chart.get_yticks(), size=20)
-    # chart.set_yticklabels(chart.get_yticklabels()) #, fontweight='light',fontsize=15)
-    chart.tick_params(which="both")
-    # ------------------------------ Format x and y labels --------------------------------------------------
+    # Format the y-axis.
+    chart.set_ylabel(y_label, fontsize=font_size)
+    chart.set_yticklabels(chart.get_yticks(), size=font_size)
 
-    # chart.yaxis.set_major_formatter(ScalarFormatter())  # useOffset=False, useMathText=True))
-    # formatter = ScalarFormatter(useMathText=True)
-    # formatter.set_scientific(True)
-    # formatter.set_powerlimits((-1,1))
-    # ax.yaxis.set_major_formatter(formatter)
+    # Transform the y-axis to log scale.
+    if y_log_scale:
+        chart.set_yscale("log")
 
-    f = ScalarFormatter(useOffset=False, useMathText=True)
-    g = lambda x, pos : "${}$".format(f._formatSciNotation('%1.10e' % x))
-    chart.yaxis.set_major_formatter(FuncFormatter(g))
+    # Display the y-axis using nice scientific notation.
+    formatter = ScalarFormatter(useOffset=False, useMathText=True)
+    chart.yaxis.set_major_formatter(
+        FuncFormatter(lambda x, pos: "${}$".format(formatter._formatSciNotation('%1.10e' % x))))
 
     if chart_title:
-        chart.set_title('nuScenes-lidarseg', fontsize=20)
+        chart.set_title(chart_title, fontsize=font_size)
 
     if save_as_img_name:
         fig = chart.get_figure()
@@ -126,7 +130,18 @@ def render_lidarseg_histogram(nusc: NuScenes, sort_by: str = 'count',
         plt.show()
 
 
-def get_lidarseg_stats(nusc: NuScenes, sort_by: str = 'count'):
+def get_lidarseg_stats(nusc: NuScenes, sort_by: str = 'count_desc') -> Tuple[List[str], List[int]]:
+    """
+    Get the number of points belonging to each class for the given nusc split.
+    :param nusc: A nuScenes object.
+    :param sort_by: How to sort the classes:
+        - count_desc: Sort the classes by the number of points belonging to each class, in descending order.
+        - count_asc: Sort the classes by the number of points belonging to each class, in ascending order.
+        - name: Sort the classes by alphabetical order.
+        - index: Sort the classes by their indices.
+    :return: A list of class names and a list of the corresponding number of points for each class.
+    """
+
     # Initialize an array of zeroes, one for each class name.
     lidarseg_counts = [0] * len(nusc.lidarseg_idx2name_mapping)
 
@@ -143,14 +158,19 @@ def get_lidarseg_stats(nusc: NuScenes, sort_by: str = 'count'):
     for i in range(len(lidarseg_counts)):
         lidarseg_counts_dict[nusc.lidarseg_idx2name_mapping[i]] = lidarseg_counts[i]
 
-    if sort_by == 'count':
+    if sort_by == 'count_desc':
         out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1], reverse=True)
+    elif sort_by == 'count_asc':
+        out = sorted(lidarseg_counts_dict.items(), key=lambda item: item[1])
     elif sort_by == 'name':
         out = sorted(lidarseg_counts_dict.items())
-    else:
+    elif sort_by == 'index':
         out = lidarseg_counts_dict.items()
+    else:
+        raise Exception('Error: Invalid sorting mode {}. '
+                        'Only `count_desc`, `count_asc`, `name` or `index` are valid.'.format(sort_by))
 
-    # Print frequency counts of each class in the lidarseg dataset.
+    # Get frequency counts of each class in the lidarseg dataset.
     class_names = []
     counts = []
     for class_name, count in out:
@@ -158,10 +178,3 @@ def get_lidarseg_stats(nusc: NuScenes, sort_by: str = 'count'):
         counts.append(count)
 
     return class_names, counts
-
-
-import sys
-sys.path.insert(0, os.path.expanduser('~/Desktop/nuscenes-devkit/python-sdk'))
-
-nusc = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
-render_lidarseg_histogram(nusc, save_as_img_name=os.path.expanduser('~/Desktop/histo_test.png'))
