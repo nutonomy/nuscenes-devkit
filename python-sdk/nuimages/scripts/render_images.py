@@ -1,4 +1,5 @@
 import argparse
+import gc
 import os
 import random
 from typing import List
@@ -52,7 +53,7 @@ class ImageRenderer:
         assert out_type in ['image', 'video'], ' Error: Unknown out_type %s!' % out_type
         all_modes = ['annotated', 'image', 'depth_dense', 'depth_sparse', 'pointcloud', 'trajectory']
         assert mode in all_modes + ['all'], 'Error: Unknown mode %s!' % mode
-        assert not(out_type == 'video' and mode == 'trajectory'), 'Error" Cannot render "trajectory" for videos!'
+        assert not (out_type == 'video' and mode == 'trajectory'), 'Error" Cannot render "trajectory" for videos!'
 
         if mode == 'all':
             if out_type == 'image':
@@ -162,6 +163,9 @@ class ImageRenderer:
             self.nuim.render_trajectory(sd_camera['sample_token'], out_path=out_path)
         else:
             raise Exception('Error: Unknown mode %s!' % mode)
+
+        # Trigger garbage collection to avoid memory overflow from the render functions.
+        gc.collect()
 
 
 if __name__ == '__main__':
