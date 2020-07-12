@@ -58,7 +58,8 @@ def truncate_class_name(class_name) -> str:
     return string_mapper[class_name]
 
 
-def render_lidarseg_histogram(nusc: NuScenes, sort_by: str = 'count',
+def render_lidarseg_histogram(nusc: NuScenes,
+                              sort_by: str = 'count',
                               chart_title: str = None,
                               x_label: str = None,
                               y_label: str = "Lidar points (logarithmic)",
@@ -66,6 +67,22 @@ def render_lidarseg_histogram(nusc: NuScenes, sort_by: str = 'count',
                               verbose: bool = True,
                               font_size: int = 20,
                               save_as_img_name: str = None) -> None:
+    """
+    Render a histogram for the given nuScenes split.
+    :param nusc: A nuScenes object.
+    :param sort_by: How to sort the classes:
+        - count_desc: Sort the classes by the number of points belonging to each class, in descending order.
+        - count_asc: Sort the classes by the number of points belonging to each class, in ascending order.
+        - name: Sort the classes by alphabetical order.
+        - index: Sort the classes by their indices.
+    :param chart_title: Title to display on the histogram.
+    :param x_label: Title to display on the x-axis of the histogram.
+    :param y_label: Title to display on the y-axis of the histogram.
+    :param y_log_scale: Whether to use log scale on the y-axis.
+    :param verbose: Whether to display plot in a window after rendering.
+    :param font_size: Size of the font to use for the histogram.
+    :param save_as_img_name: Path (including image name and extension) to save the histogram as.
+    """
 
     print('Calculating stats for nuScenes-lidarseg...')
     start_time = time.time()
