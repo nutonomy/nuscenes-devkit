@@ -183,13 +183,19 @@ class NuImages:
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
 
             return sensor
+        elif (src_table == 'object_ann' or src_table == 'surface_ann') and dst_table == 'sample':
+            src = self.get(src_table, src_token)
+            sample_data = self.get('sample_data', src['sample_data_token'])
+            sample = self.get('sample', sample_data['sample_token'])
+
+            return sample
         else:
-            raise Exception('Error: Shortcut from %s to %s not implemented!')
+            raise Exception('Error: Shortcut from %s to %s not implemented!' % (src_table, dst_table))
 
     def check_sweeps(self, filename: str) -> None:
         """
         Check that the sweeps folder was downloaded if required.
-        :param filename: The filename of the sample_data
+        :param filename: The filename of the sample_data.
         """
         assert filename.startswith('samples') or filename.startswith('sweeps'), \
             'Error: You passed an incorrect filename to check_sweeps(). Please use sample_data[''filename''].'
@@ -241,8 +247,7 @@ class NuImages:
             cs_freqs[sensor['channel']] += 1
         for sample_data in self.sample_data:
             if sample_data['is_key_frame']:  # Only use keyframes (samples).
-                calibrated_sensor = self.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
-                sensor = self.get('sensor', calibrated_sensor['sensor_token'])
+                sensor = self.shortcut('sample_data', 'sensor', sample_data['token'])
                 channel_freqs[sensor['channel']] += 1
 
         # Print to stdout.
@@ -269,13 +274,15 @@ class NuImages:
         surface_freqs = defaultdict(lambda: 0)
         if sample_tokens is not None:
             sample_tokens = set(sample_tokens)
+
         for object_ann in self.object_ann:
-            sample_token = self.get('sample_data', object_ann['sample_data_token'])['sample_token']
-            if sample_tokens is None or sample_token in sample_tokens:
+            sample = self.shortcut('object_ann', 'sample', object_ann['token'])
+            if sample_tokens is None or sample['token'] in sample_tokens:
                 object_freqs[object_ann['category_token']] += 1
+
         for surface_ann in self.surface_ann:
-            sample_token = self.get('sample_data', surface_ann['sample_data_token'])['sample_token']
-            if sample_tokens is None or sample_token in sample_tokens:
+            sample = self.shortcut('surface_ann', 'sample', surface_ann['token'])
+            if sample_tokens is None or sample['token'] in sample_tokens:
                 surface_freqs[surface_ann['category_token']] += 1
 
         # Print to stdout.
@@ -352,7 +359,7 @@ class NuImages:
         :param modality: Sensor modality, either camera or lidar.
         :return: A list of sample_data tokens sorted by their timestamp.
         """
-        assert modality in ['camera', 'lidar']
+        assert modality in ['camera', 'lidar'], 'Error: Invalid modality %s!' % modality
         sample = self.get('sample', sample_token)
         key_sd = self.get('sample_data', sample['key_%s_token' % modality])
 
@@ -589,6 +596,7 @@ class NuImages:
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
+                     box_thickness: float = 0.0,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
@@ -599,7 +607,9 @@ class NuImages:
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
-        :param out_path: The path where we save the depth image, or otherwise None.
+        :param box_thickness: The box thickness in pixels. Set 0 to use the default.
+        :param out_path: The path where we save the rendered image, or otherwise None.
+            If a path is provided, the plot is not shown to the user.
         """
         # Validate inputs.
         sample_data = self.get('sample_data', sd_token_camera)
@@ -614,7 +624,7 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = ImageFont.load_default()
+        font = ImageFont.load_default() # TODO
         draw = ImageDraw.Draw(im, 'RGBA')
 
         if with_annotations:
@@ -655,14 +665,14 @@ class NuImages:
                 mask = mask_decode(ann['mask'])
 
                 # Draw rectangle, text and mask.
-                draw.rectangle(bbox, outline=color)
+                draw.rectangle(bbox, outline=color, width=box_thickness)
                 if with_category:
                     draw.text((bbox[0], bbox[1]), name, font=font)
                 draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
         # Plot the image.
         (width, height) = im.size
-        pix_to_inch = 100
+        pix_to_inch = 100 / render_scale
         figsize = (height / pix_to_inch, width / pix_to_inch)
         plt.figure(figsize=figsize)
         plt.axis('off')
@@ -670,7 +680,7 @@ class NuImages:
 
         # Save to disk.
         if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch * render_scale, pad_inches=0)
+            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
 
     def render_depth(self,
@@ -682,22 +692,23 @@ class NuImages:
                      out_path: str = None) -> None:
         """
         This function plots an image and its depth map, either as a set of sparse points, or with depth completion.
+        Depth completion dilates the sparse set of points in the image to "interpolate" between them.
         Default depth colors range from yellow (close) to blue (far). Missing values are blue.
-        Suitable colormaps for depth maps are viridis and magma.
         :param sd_token_camera: The sample_data token of the camera image.
         :param mode: How to render the depth, either sparse or dense.
         :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
-        :param cmap: The matplotlib color map name.
+        :param cmap: The matplotlib color map name. We recommend viridis or magma.
         :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
             A larger scale makes the point location more precise, but they will be harder to see.
             For the "dense" option, the depth completion parameters are optimized for the recommended size.
-        :param out_path: The path where we save the depth image, or otherwise None.
+        :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
+            If a path is provided, the plot is not shown to the user.
         """
         # Get depth and image.
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
         # Compute depth image.
-        assert mode in ['sparse', 'dense']
+        assert mode in ['sparse', 'dense'], 'Error: Unknown mode %s!' % mode
         if mode == 'sparse':
             scale = 1 / 8 * render_scale
             n_dilate = None
@@ -722,7 +733,7 @@ class NuImages:
 
         # Plot the image.
         (width, height) = depth_im.shape[::-1]
-        pix_to_inch = 100
+        pix_to_inch = 100 / render_scale
         figsize = (height / pix_to_inch, width / pix_to_inch)
         plt.figure(figsize=figsize)
         plt.axis('off')
@@ -746,6 +757,7 @@ class NuImages:
         :param color_mode: How to color the lidar points, e.g. depth or height.
         :param use_flat_vehicle_coordinates: See get_pointcloud().
         :param out_path: Optional path to save the rendered figure to disk.
+            If a path is provided, the plot is not shown to the user.
         """
         # Load the pointcloud and transform it to the specified viewpoint.
         points, original_points = self.get_pointcloud(sd_token_lidar, use_flat_vehicle_coordinates)
@@ -794,6 +806,7 @@ class NuImages:
             Set to any other value to rotate relative to the driving direction (in radians).
         :param center_key_pose: Whether to center the trajectory on the key pose.
         :param out_path: Optional path to save the rendered figure to disk.
+            If a path is provided, the plot is not shown to the user.
         """
         # Get the translations or poses.
         translations, key_index = self.get_trajectory(sample_token, rotation_yaw=rotation_yaw,
