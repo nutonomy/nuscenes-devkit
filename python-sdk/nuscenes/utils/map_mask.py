@@ -16,7 +16,7 @@ Image.MAX_IMAGE_PIXELS = 400000 * 400000
 class MapMask:
     def __init__(self, img_file: str, resolution: float = 0.1):
         """
-        Init a map mask object that contains the semantic prior (drivable surface and sidewalks) mask.
+        Init a map mask object that contains the semantic prior (driveable surface and sidewalks) mask.
         :param img_file: File path to map png file.
         :param resolution: Map resolution in meters.
         """

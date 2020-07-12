@@ -280,10 +280,11 @@ class NuImages:
             print(format_str.format(
                 cs_freq, channel_freq, channel))
 
-    def list_categories(self, sample_tokens: List[str] = None) -> None:
+    def list_categories(self, sample_tokens: List[str] = None, sort_by: str = 'object_freq') -> None:
         """
         List all categories and the number of object_anns and surface_anns for them.
         :param sample_tokens: A list of sample tokens for which category stats will be shown.
+        :param sort_by: Sorting criteria, e.g. "name", "object_freq", "surface_freq".
         """
         # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
@@ -303,11 +304,25 @@ class NuImages:
             if sample_tokens is None or sample_token in sample_tokens:
                 surface_freqs[surface_ann['category_token']] += 1
 
+        # Sort entries.
+        category = self.category
+        if sort_by == 'name':
+            sort_order = [i[0] for i in sorted(enumerate(category), key=lambda x: x[1]['name'])]
+        elif sort_by == 'object_freq':
+            sort_order = [i[0] for i in sorted(enumerate(object_freqs), key=lambda x: x[1])]
+        elif sort_by == 'surface_freq':
+            sort_order = [i[0] for i in sorted(enumerate(surface_freqs), key=lambda x: x[1])]
+        else:
+            raise Exception('Error: Invalid sorting criterion %s!' % sort_by)
+        category = [category[s] for s in sort_order]
+        object_freqs = [object_freqs[s] for s in sort_order]
+        surface_freqs = [surface_freqs[s] for s in sort_order]
+
         # Print to stdout.
         format_str = '{:11} {:12} {:24.24} {:48.48}'
         print()
         print(format_str.format('Object_anns', 'Surface_anns', 'Name', 'Description'))
-        for category in self.category:
+        for category in category:
             category_token = category['token']
             object_freq = object_freqs[category_token]
             surface_freq = surface_freqs[category_token]
