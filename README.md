@@ -55,7 +55,7 @@ In February 2020 we published the CAN bus expansion.
 It contains low-level vehicle data about the vehicle route, IMU, pose, steering angle feedback, battery, brakes, gear position, signals, wheel speeds, throttle, torque, solar sensors, odometry and more.
 To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
-- Move the can_bus folder to your nuScenes root directory (e.g. `/data/sets/nuscenes/can_bus`).
+- Extract the can_bus folder to your nuScenes root directory (e.g. `/data/sets/nuscenes/can_bus`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [CAN bus readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/can_bus_tutorial.ipynb).
@@ -64,10 +64,19 @@ To install this expansion, please follow these steps:
 In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
 To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
-- Move the .json files to your nuScenes `maps` folder.
+- Extract the .json files to your nuScenes `maps` folder.
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/map_expansion_tutorial.ipynb).
+
+## nuScenes-lidarseg
+In June 2020 we published nuScenes-lidarseg which contains the semantic labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
+To install nuScenes-lidarseg, please follow these steps:
+- Download the dataset from the [Download page](https://www.nuscenes.org/download),
+- Extract the `lidarseg` and `v1.0-*` folders to your root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
+- Get the latest version of the nuscenes-devkit.
+- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
+- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/nuscenes_lidarseg_tutorial.ipynb).
 
 ## Devkit setup
 The devkit is tested for Python 3.6 and Python 3.7.
