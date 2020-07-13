@@ -11,7 +11,7 @@ from nuscenes import NuScenes
 from nuscenes.utils.color_map import get_colormap
 
 
-def truncate_class_name(class_name) -> str:
+def truncate_class_name(class_name: str) -> str:
     """
     Truncate a given class name according to a pre-defined map.
     :param class_name: The long form (i.e. original form) of the class name.
