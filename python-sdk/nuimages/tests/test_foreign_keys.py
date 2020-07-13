@@ -45,6 +45,8 @@ class TestForeignKeys(unittest.TestCase):
         # Go through each table and check the foreign_keys.
         for table_name in self.nuim.table_names:
             table: List[Dict[str, Any]] = self.nuim.__getattr__(table_name)
+            if len(table) == 0 and self.version.endswith('-test'):  # Skip test annotations.
+                continue
             keys = table[0].keys()
 
             # Check 1-to-1 link.
