@@ -194,7 +194,7 @@ def write_image(nuim: NuImages, sd_token_camera: str, mode: str, out_path: str) 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Render a random selection of images and save them to disk.')
     parser.add_argument('--seed', type=int, default=42)  # Set to 0 to disable.
-    parser.add_argument('--version', type=str, default='v1.0-val')
+    parser.add_argument('--version', type=str, default='v1.0-mini')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuimages')
     parser.add_argument('--verbose', type=int, default=1)
     parser.add_argument('--mode', type=str, default='all')

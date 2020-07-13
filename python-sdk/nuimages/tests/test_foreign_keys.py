@@ -8,7 +8,7 @@ from nuimages.nuimages import NuImages
 
 
 class TestForeignKeys(unittest.TestCase):
-    def __init__(self, test_name: str = '', version: str = 'v1.0-val', dataroot: str = None):
+    def __init__(self, test_name: str = '', version: str = 'v1.0-mini', dataroot: str = None):
         """
         Initialize TestForeignKeys.
         :param test_name: Dummy parameter required by the TestCase class.
@@ -137,7 +137,7 @@ class TestForeignKeys(unittest.TestCase):
 
 if __name__ == '__main__':
     # Runs the tests without aborting on error.
-    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test', 'v1.0-mini']:
         print('Running TestForeignKeys for version %s...' % nuim_version)
         test = TestForeignKeys(version=nuim_version)
         test.test_foreign_keys()

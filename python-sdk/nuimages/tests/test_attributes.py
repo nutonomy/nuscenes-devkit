@@ -6,7 +6,7 @@ from nuimages.nuimages import NuImages
 
 class TestAttributes(unittest.TestCase):
 
-    def __init__(self, test_name: str = '', version: str = 'v1.0-val', dataroot: str = None):
+    def __init__(self, test_name: str = '', version: str = 'v1.0-mini', dataroot: str = None):
         """
         Initialize TestAttributes.
         :param test_name: Dummy parameter required by the TestCase class.
@@ -105,7 +105,7 @@ class TestAttributes(unittest.TestCase):
 
 if __name__ == '__main__':
     # Runs the tests without aborting on error.
-    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test', 'v1.0-mini']:
         print('Running TestAttributes for version %s...' % nuim_version)
         test = TestAttributes(version=nuim_version)
         test.test_object_anns(print_only=True)
