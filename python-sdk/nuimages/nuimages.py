@@ -207,9 +207,9 @@ class NuImages:
         other modality.
         :param sd_token: Source sample_data token.
         :param tgt_modality: The modality of the target.
-        :return: The tcorresponding sample_data token with the targe modality.
+        :return: The corresponding sample_data token with the target modality.
         """
-        assert tgt_modality in ['camera', 'lidar']
+        assert tgt_modality in ['camera', 'lidar'], 'Error: Invalid tgt_modality %s!' % tgt_modality
         sample_data = self.get('sample_data', sd_token)
 
         tgt_sd_tokens = self.get_sample_content(sample_data['sample_token'], tgt_modality)
