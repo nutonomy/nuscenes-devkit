@@ -17,6 +17,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) and nuImages d
 - [Citation](#citation)
 
 ## Changelog
+- Jul. 14, 2020: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
 - Apr. 30, 2020: nuImages v0.1 code release.
 - Mar. 24, 2020: Devkit v1.0.7: nuScenes prediction challenge code released.
 - Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
@@ -34,13 +35,13 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) and nuImages d
 ## Devkit setup
 We use a common devkit for nuScenes and nuImages.
 The devkit is tested for Python 3.6 and Python 3.7.
-To install Python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md#install-python).
+To install Python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md#install-python).
 
 Our devkit is available and can be installed via [pip](https://pip.pypa.io/en/stable/installing/) :
 ```
 pip install nuscenes-devkit
 ```
-For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md) for detailed instructions.
+For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md) for detailed instructions.
 
 ## nuImages
 
@@ -52,7 +53,7 @@ Eventually you should have the following folder structure:
 ```
 /data/sets/nuimages
     imgs	-	Folder with the camera images.
-    v0.1-*	-	JSON tables that include all the meta data and annotations. Each split (train, val, test) is provided in a separate folder.
+    v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (train, val, test) is provided in a separate folder.
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuImages class (see tutorial).
 
@@ -61,8 +62,9 @@ Please follow these steps to make yourself familiar with the nuImages dataset:
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Run the tutorial using:
 ```
-jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuimages_basics_tutorial.ipynb
+jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuimages_tutorial.ipynb
 ```
+- See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuimages.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/instructions_nuimages.md).
 
 ## nuScenes
 
@@ -97,7 +99,7 @@ To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
 - Move the can_bus folder to your nuScenes root directory (e.g. `/data/sets/nuscenes/can_bus`).
 - Get the latest version of the nuscenes-devkit.
-- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
+- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/can_bus_tutorial.ipynb).
 
 ### Map expansion
@@ -106,7 +108,7 @@ To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
 - Move the .json files to your nuScenes `maps` folder.
 - Get the latest version of the nuscenes-devkit.
-- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
+- If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
 
 ### Getting started with nuScenes
@@ -117,14 +119,14 @@ Please follow these steps to make yourself familiar with the nuScenes dataset:
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Read the [online tutorial](https://www.nuscenes.org/tutorial) or run it yourself using:
 ```
-jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_basics_tutorial.ipynb
+jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_tutorial.ipynb
 ```
 - Read the [nuScenes paper](https://www.nuscenes.org/publications) for a detailed analysis of the dataset.
 - Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
 - Take a look at the [experimental scripts](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/scripts).
 - For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
-- See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/instructions.md).
-- See the [FAQs](https://github.com/nutonomy/nuscenes-devkit/blob/master/faqs.md).
+- See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuscenes.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/instructions_nuscenes.md).
+- See the [FAQs](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/faqs.md).
 
 ## Citation
 Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):

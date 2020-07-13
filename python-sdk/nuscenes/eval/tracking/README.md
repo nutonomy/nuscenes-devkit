@@ -30,7 +30,7 @@ They are based upon the [nuScenes dataset](http://www.nuScenes.org) \[1\] and th
 To participate in the tracking challenge you should first [get familiar with the nuScenes dataset and install it](https://github.com/nutonomy/nuscenes-devkit/blob/master/README.md).
 In particular, the [tutorial](https://www.nuscenes.org/tutorial) explains how to use the various database tables.
 The tutorial also shows how to retrieve the images, lidar pointclouds and annotations for each sample (timestamp).
-To retrieve the instance/track of an object, take a look at the [instance table](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#instance).
+To retrieve the instance/track of an object, take a look at the [instance table](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuscenes.md#instance).
 Now you are ready to train your tracking algorithm on the dataset.
 If you are only interested in tracking (as opposed to detection), you can use the provided detections for several state-of-the-art methods [below](#baselines).
 To evaluate the tracking results, use `evaluate.py` in the [eval folder](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/eval/tracking).
@@ -101,7 +101,7 @@ submission {
 }
 ```
 For the predictions we create a new database table called `sample_result`.
-The `sample_result` table is designed to mirror the [`sample_annotation`](https://github.com/nutonomy/nuscenes-devkit/blob/master/schema.md#sample_annotation) table.
+The `sample_result` table is designed to mirror the [`sample_annotation`](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuscenes.md#sample_annotation) table.
 This allows for processing of results and annotations using the same tools.
 A `sample_result` is a dictionary defined as follows:
 ```

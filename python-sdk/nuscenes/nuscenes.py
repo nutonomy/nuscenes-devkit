@@ -535,7 +535,7 @@ class NuScenesExplorer:
                                 min_dist: float = 1.0,
                                 render_intensity: bool = False) -> Tuple:
         """
-        Given a point sensor (lidar/radar) token and camera sample_data token, load point-cloud and map it to the image
+        Given a point sensor (lidar/radar) token and camera sample_data token, load pointcloud and map it to the image
         plane.
         :param pointsensor_token: Lidar/radar sample_data token.
         :param camera_token: Camera sample_data token.
@@ -553,22 +553,22 @@ class NuScenesExplorer:
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
 
         # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
-        # First step: transform the point-cloud to the ego vehicle frame for the timestamp of the sweep.
+        # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
         cs_record = self.nusc.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
         pc.translate(np.array(cs_record['translation']))
 
-        # Second step: transform to the global frame.
+        # Second step: transform from ego to the global frame.
         poserecord = self.nusc.get('ego_pose', pointsensor['ego_pose_token'])
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
         pc.translate(np.array(poserecord['translation']))
 
-        # Third step: transform into the ego vehicle frame for the timestamp of the image.
+        # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
         poserecord = self.nusc.get('ego_pose', cam['ego_pose_token'])
         pc.translate(-np.array(poserecord['translation']))
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
 
-        # Fourth step: transform into the camera.
+        # Fourth step: transform from ego into the camera.
         cs_record = self.nusc.get('calibrated_sensor', cam['calibrated_sensor_token'])
         pc.translate(-np.array(cs_record['translation']))
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix.T)
@@ -615,7 +615,7 @@ class NuScenesExplorer:
                                    out_path: str = None,
                                    render_intensity: bool = False) -> None:
         """
-        Scatter-plots a point-cloud on top of image.
+        Scatter-plots a pointcloud on top of image.
         :param sample_token: Sample token.
         :param dot_size: Scatter plot dot size.
         :param pointsensor_channel: RADAR or LIDAR channel name, e.g. 'LIDAR_TOP'.

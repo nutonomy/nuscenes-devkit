@@ -1,29 +1,11 @@
 # nuScenes dev-kit.
 # Code written by Asha Asvathaman & Holger Caesar, 2020.
 
-from typing import Tuple, List
 import base64
+from typing import List
 
 import numpy as np
 from pycocotools import mask as cocomask
-
-
-def default_color(category_name: str) -> Tuple[int, int, int]:
-    """
-    Provides a default colors based on the category names.
-    :param category_name: The name of the category.
-    :returns: A tuple of RGB values.
-    """
-    if 'cycle' in category_name:
-        return 255, 61, 99  # Red
-    elif 'vehicle' in category_name:
-        return 255, 0, 255  # Magenta
-    elif 'human.pedestrian' in category_name:
-        return 0, 0, 230  # Blue
-    elif 'cone' in category_name or 'barrier' in category_name:
-        return 0, 0, 0  # Black
-    else:
-        return 255, 158, 0  # Orange
 
 
 def annotation_name(attributes: List[dict],
@@ -52,6 +34,8 @@ def mask_decode(mask: dict) -> np.ndarray:
     :param mask: The mask dictionary with fields `size` and `counts`.
     :return: A numpy array representing the binary mask for this class.
     """
-
-    mask['counts'] = base64.b64decode(mask['counts'])
-    return cocomask.decode(mask)
+    # Note that it is essential to copy the mask here. If we use the same variable we will overwrite the NuImage class
+    # and cause the Jupyter Notebook to crash on some systems.
+    new_mask = mask.copy()
+    new_mask['counts'] = base64.b64decode(mask['counts'])
+    return cocomask.decode(new_mask)

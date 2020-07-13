@@ -12,12 +12,14 @@ from nuscenes.prediction import PredictHelper, convert_global_coords_to_local
 
 
 class MockNuScenes(NuScenes):
-    """ Mocks the NuScenes API needed to test PredictHelper. """
 
     def __init__(self,
                  sample_annotations: List[Dict[str, Any]],
                  samples: List[Dict[str, Any]]):
-
+        """
+        Mocks the NuScenes API needed to test PredictHelper.
+        Note that we are skipping the call to the super class constructor on purpose to avoid loading the tables.
+        """
         self._sample_annotation = {r['token']: r for r in sample_annotations}
         self._sample = {r['token']: r for r in samples}
 
