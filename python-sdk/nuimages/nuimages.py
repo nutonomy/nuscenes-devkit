@@ -183,14 +183,14 @@ class NuImages:
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
 
             return sensor
-        elif (src_table == 'object_ann' or src_table == 'surface_ann') and dst_table == 'sample':
+        elif (src_table == 'object_ann' or src_table == 'surface_ann') and tgt_table == 'sample':
             src = self.get(src_table, src_token)
             sample_data = self.get('sample_data', src['sample_data_token'])
             sample = self.get('sample', sample_data['sample_token'])
 
             return sample
         else:
-            raise Exception('Error: Shortcut from %s to %s not implemented!' % (src_table, dst_table))
+            raise Exception('Error: Shortcut from %s to %s not implemented!' % (src_table, tgt_table))
 
     def check_sweeps(self, filename: str) -> None:
         """

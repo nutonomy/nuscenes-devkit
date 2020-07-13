@@ -1,15 +1,16 @@
 import os
 import unittest
+from typing import Any
 
 from nuimages.nuimages import NuImages
 
 
 class TestAttributes(unittest.TestCase):
 
-    def __init__(self, test_name: str = '', version: str = 'v1.0-mini', dataroot: str = None):
+    def __init__(self, _: Any = None, version: str = 'v1.0-mini', dataroot: str = None):
         """
         Initialize TestAttributes.
-        :param test_name: Dummy parameter required by the TestCase class.
+        Note: The second parameter is a aummy parameter required by the TestCase class.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
