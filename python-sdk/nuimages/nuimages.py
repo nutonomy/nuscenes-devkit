@@ -528,8 +528,8 @@ class NuImages:
         mask = np.logical_and(mask, points[0, :] < im_size[0] - 1)
         mask = np.logical_and(mask, points[1, :] > 1)
         mask = np.logical_and(mask, points[1, :] < im_size[1] - 1)
-        points = points[:, mask]
-        depths = depths[mask]
+        points = points[:2, mask]
+        depths = depths[mask].squeeze()
 
         return points, depths, closest_time_diff, im_size
 
@@ -779,39 +779,35 @@ class NuImages:
             If a path is provided, the plot is not shown to the user.
         """
         # Get depth and image.
+        sample_data = self.get('sample_data', sd_token_camera)
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
         # Compute depth image.
         assert mode in ['sparse', 'dense'], 'Error: Unknown mode %s!' % mode
         if mode == 'sparse':
-            scale = 1 / 8 * render_scale
-            n_dilate = None
-            n_gauss = None
-            sigma_gauss = None
+            plt.imshow(Image.open(osp.join(self.dataroot, sample_data['filename'])))
+            plt.scatter(points[0], points[1], marker='.', s=5, c=depths)
+            pix_to_inch = 100 / render_scale
         else:
-            scale = 1 / 2 * render_scale
-            n_dilate = 23
-            n_gauss = 11
-            sigma_gauss = 3
-        depth_im = depth_map(points, depths, im_size, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
-                             sigma_gauss=sigma_gauss)
+            depth_im = depth_map(points, depths, im_size, scale=1 / 2 * render_scale, n_dilate=23, n_gauss=11,
+                                 sigma_gauss=3)
 
-        # Scale depth_im to full image size.
-        depth_im = cv2.resize(depth_im, im_size)
+            # Scale depth_im to full image size.
+            depth_im = cv2.resize(depth_im, im_size)
 
-        # Determine color scaling.
-        min_depth = 0
-        if max_depth is None:
-            max_depth = depth_im.max()
-        norm = InvertedNormalize(vmin=min_depth, vmax=max_depth)
+            # Determine color scaling.
+            min_depth = 0
+            if max_depth is None:
+                max_depth = depth_im.max()
+            norm = InvertedNormalize(vmin=min_depth, vmax=max_depth)
 
-        # Plot the image.
-        (width, height) = depth_im.shape[::-1]
-        pix_to_inch = 100 / render_scale
-        figsize = (height / pix_to_inch, width / pix_to_inch)
-        plt.figure(figsize=figsize)
-        plt.axis('off')
-        plt.imshow(depth_im, norm=norm, cmap=cmap)
+            # Plot the image.
+            (height, width) = depth_im.shape
+            pix_to_inch = 100 / render_scale
+            figsize = (height / pix_to_inch, width / pix_to_inch)
+            plt.figure(figsize=figsize)
+            plt.axis('off')
+            plt.imshow(depth_im, norm=norm, cmap=cmap, alpha=.5)
 
         # Save to disk.
         if out_path is not None:
