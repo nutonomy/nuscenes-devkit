@@ -62,6 +62,10 @@ class TestForeignKeys(unittest.TestCase):
 
                 # Check all tokens are covered.
                 # By default we check that all tokens are covered. Exceptions are listed below.
+                if self.version.endswith('-mini') and foreign_table_name in ['category']:
+                    # Mini does not cover everything, hence we skip this check.
+                    continue
+
                 if table_name == 'object_ann':
                     if foreign_table_name == 'category':
                         remove = set([cat['token'] for cat in self.nuim.category if cat['name']
@@ -92,6 +96,10 @@ class TestForeignKeys(unittest.TestCase):
                 self.assertTrue(foreign_tokens.issubset(foreign_index))
 
                 # Check all tokens are covered.
+                if self.version.endswith('-mini') and foreign_table_name in ['attribute']:
+                    # Mini does not cover everything, hence we skip this check.
+                    continue
+
                 if foreign_index is not None:
                     self.assertEqual(foreign_tokens, foreign_index)
 
@@ -142,3 +150,4 @@ if __name__ == '__main__':
         test = TestForeignKeys(version=nuim_version)
         test.test_foreign_keys()
         test.test_prev_next()
+        print()
