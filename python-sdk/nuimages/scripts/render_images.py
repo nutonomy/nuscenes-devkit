@@ -12,7 +12,10 @@ from nuimages.nuimages import NuImages
 
 class ImageRenderer:
 
-    def __init__(self, version: str = 'v1.0-val', dataroot: str = '/data/sets/nuimages', verbose: bool = False):
+    def __init__(self,
+                 version: str = 'v1.0-val',
+                 dataroot: str = '/data/sets/nuimages',
+                 verbose: bool = False):
         """
         Initialize ImageRenderer.
         :param version: The NuImages version.
@@ -107,7 +110,11 @@ class ImageRenderer:
                 elif out_type == 'video':
                     self.write_video(sd_tokens_camera, mode, out_path_prefix, cleanup=cleanup)
 
-    def write_video(self, sd_tokens_camera: List[str], mode: str, out_path_prefix: str, cleanup: bool = True) -> None:
+    def write_video(self,
+                    sd_tokens_camera: List[str],
+                    mode: str,
+                    out_path_prefix: str,
+                    cleanup: bool = True) -> None:
         """
         Render a video by combining all the images of type mode for each sample_data.
         :param sd_tokens_camera: All camera sample_data tokens in chronological order.
