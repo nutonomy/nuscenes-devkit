@@ -23,8 +23,9 @@ def render_rare_classes(nuim: NuImages,
         is present.
     """
     # Checks.
-    assert 'filter_categories' not in render_args.keys()
-    assert max_frequency >= 0
+    assert 'filter_categories' not in render_args.keys(), \
+        'Error: filter_categories is a separate argument and should not be part of render_args!'
+    assert 0 <= max_frequency <= 1, 'Error: max_frequency must be a ratio between 0 and 1!'
 
     # Compute object class frequencies.
     object_freqs = defaultdict(lambda: 0)
