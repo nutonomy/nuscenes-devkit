@@ -1,5 +1,6 @@
 import argparse
 import random
+import warnings
 from collections import defaultdict
 from typing import Dict, Any, List
 
@@ -51,7 +52,7 @@ def render_rare_classes(nuim: NuImages,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Render a random selection of images and save them to disk.')
     parser.add_argument('--seed', type=int, default=42)  # Set to 0 to disable.
-    parser.add_argument('--version', type=str, default='v1.0-mini')
+    parser.add_argument('--version', type=str, default='v1.0-val')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuimages')
     parser.add_argument('--verbose', type=int, default=1)
     parser.add_argument('--mode', type=str, default='all')
@@ -66,6 +67,11 @@ if __name__ == '__main__':
     # Set random seed for reproducible image selection.
     if args.seed != 0:
         random.seed(args.seed)
+
+    # Checks.
+    if args.version.endswith('-mini'):
+        warnings.warn('Warning: We discourage using this script on the mini split, as the class frequencies cannot '
+                      'be reliably estimated with only 50 images!')
 
     # Initialize NuImages class.
     nuim_ = NuImages(version=args.version, dataroot=args.dataroot, verbose=bool(args.verbose), lazy=False)
