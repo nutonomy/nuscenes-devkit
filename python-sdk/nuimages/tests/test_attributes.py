@@ -26,7 +26,7 @@ class TestAttributes(unittest.TestCase):
             'human.pedestrian.adult': ['pedestrian'],
             'human.pedestrian.child': ['pedestrian'],
             'human.pedestrian.construction_worker': ['pedestrian'],
-            'human.pedestrian.personal_mobility': ['has_rider'],
+            'human.pedestrian.personal_mobility': ['cycle'],
             'human.pedestrian.police_officer': ['pedestrian'],
             'human.pedestrian.stroller': [],
             'human.pedestrian.wheelchair': [],
@@ -35,7 +35,7 @@ class TestAttributes(unittest.TestCase):
             'movable_object.pushable_pullable': [],
             'movable_object.trafficcone': [],
             'static_object.bicycle_rack': [],
-            'vehicle.bicycle': ['has_rider'],
+            'vehicle.bicycle': ['cycle'],
             'vehicle.bus.bendy': ['vehicle'],
             'vehicle.bus.rigid': ['vehicle'],
             'vehicle.car': ['vehicle'],
@@ -43,7 +43,7 @@ class TestAttributes(unittest.TestCase):
             'vehicle.ego': [],
             'vehicle.emergency.ambulance': ['vehicle', 'vehicle_light.emergency'],
             'vehicle.emergency.police': ['vehicle', 'vehicle_light.emergency'],
-            'vehicle.motorcycle': ['has_rider'],
+            'vehicle.motorcycle': ['cycle'],
             'vehicle.trailer': ['vehicle'],
             'vehicle.truck': ['vehicle']
         }
