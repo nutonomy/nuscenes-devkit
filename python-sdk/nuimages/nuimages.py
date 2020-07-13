@@ -32,13 +32,13 @@ class NuImages:
     """
 
     def __init__(self,
-                 version: str = 'v1.0-train',
+                 version: str = 'v1.0-mini',
                  dataroot: str = '/data/sets/nuimages',
                  lazy: bool = True,
                  verbose: bool = False):
         """
         Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v1.0-train", "v1.0-val").
+        :param version: Version to load (e.g. "v1.0-train", "v1.0-val", "v1.0-test", "v1.0-mini").
         :param dataroot: Path to the tables and data.
         :param lazy: Whether to use lazy loading for the database tables.
         :param verbose: Whether to print status messages during load.
@@ -168,16 +168,16 @@ class NuImages:
 
         return table
 
-    def shortcut(self, src_table: str, dst_table: str, src_token: str) -> Dict[str, Any]:
+    def shortcut(self, src_table: str, tgt_table: str, src_token: str) -> Dict[str, Any]:
         """
         Convenience function to navigate between different tables that have one-to-one relations.
         E.g. we can use this function to conveniently retrieve the sensor for a sample_data.
         :param src_table: The name of the source table.
-        :param dst_table: The name of the destination table.
+        :param tgt_table: The name of the target table.
         :param src_token: The source token.
         :return: The entry of the destination table correspondings to the source token.
         """
-        if src_table == 'sample_data' and dst_table == 'sensor':
+        if src_table == 'sample_data' and tgt_table == 'sensor':
             sd_camera = self.get('sample_data', src_token)
             calibrated_sensor = self.get('calibrated_sensor', sd_camera['calibrated_sensor_token'])
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
@@ -206,6 +206,31 @@ class NuImages:
                 raise Exception('Error: You are missing the "%s" directory! The devkit generally works without this '
                                 'directory, but you cannot call methods that use non-keyframe sample_datas.'
                                 % sweeps_dir)
+
+    def find_corresponding_sample_data(self, sd_token: str, tgt_modality: str) -> str:
+        """
+        For a sample_data token from either camera or lidar, find the corresponding sample_data token of the
+        other modality.
+        :param sd_token: Source sample_data token.
+        :param tgt_modality: The modality of the target.
+        :return: The corresponding sample_data token with the target modality.
+        """
+        assert tgt_modality in ['camera', 'lidar'], 'Error: Invalid tgt_modality %s!' % tgt_modality
+        sample_data = self.get('sample_data', sd_token)
+
+        tgt_sd_tokens = self.get_sample_content(sample_data['sample_token'], tgt_modality)
+        timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in tgt_sd_tokens])
+        rel_times = np.abs(timestamps - sample_data['timestamp']) / 1e6
+
+        closest_idx = rel_times.argmin()
+        closest_time_diff = rel_times[closest_idx]
+        assert closest_time_diff < 0.25, 'Error: No corresponding sample_data exists!' \
+                                         'Note that this is the case for 0.9% of all sample_datas.'
+        tgt_sd_token = tgt_sd_tokens[closest_idx]
+        assert tgt_sd_token != sd_token, 'Error: Invalid usage of this method. ' \
+                                         'Source and target modality must differ!'
+
+        return tgt_sd_token
 
     # ### List methods. ###
 
@@ -260,10 +285,11 @@ class NuImages:
             print(format_str.format(
                 cs_freq, channel_freq, channel))
 
-    def list_categories(self, sample_tokens: List[str] = None) -> None:
+    def list_categories(self, sample_tokens: List[str] = None, sort_by: str = 'object_freq') -> None:
         """
         List all categories and the number of object_anns and surface_anns for them.
         :param sample_tokens: A list of sample tokens for which category stats will be shown.
+        :param sort_by: Sorting criteria, e.g. "name", "object_freq", "surface_freq".
         """
         # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
@@ -285,11 +311,24 @@ class NuImages:
             if sample_tokens is None or sample['token'] in sample_tokens:
                 surface_freqs[surface_ann['category_token']] += 1
 
+        # Sort entries.
+        if sort_by == 'name':
+            sort_order = [i for (i, _) in sorted(enumerate(self.category), key=lambda x: x[1]['name'])]
+        elif sort_by == 'object_freq':
+            object_freqs_order = [object_freqs[c['token']] for c in self.category]
+            sort_order = [i for (i, _) in sorted(enumerate(object_freqs_order), key=lambda x: x[1], reverse=True)]
+        elif sort_by == 'surface_freq':
+            surface_freqs_order = [surface_freqs[c['token']] for c in self.category]
+            sort_order = [i for (i, _) in sorted(enumerate(surface_freqs_order), key=lambda x: x[1], reverse=True)]
+        else:
+            raise Exception('Error: Invalid sorting criterion %s!' % sort_by)
+
         # Print to stdout.
         format_str = '{:11} {:12} {:24.24} {:48.48}'
         print()
         print(format_str.format('Object_anns', 'Surface_anns', 'Name', 'Description'))
-        for category in self.category:
+        for s in sort_order:
+            category = self.category[s]
             category_token = category['token']
             object_freq = object_freqs[category_token]
             surface_freq = surface_freqs[category_token]
@@ -407,6 +446,8 @@ class NuImages:
 
         # Combine.
         result = backward[::-1] + [key_sd['token']] + forward
+        assert 7 <= len(result) <= 13, 'Error: There should be between 7 and 13 %s sample_datas for each sample!' \
+                                       % modality
         return result
 
     def get_depth(self,
@@ -785,13 +826,20 @@ class NuImages:
                           out_path: str = None) -> None:
         """
         Render sample data onto axis.
-        :param sd_token_lidar: Sample_data token of the lidar pointcloud.
+        :param sd_token_lidar: Sample_data token of the lidar.
+            For compatibility with other render methods we also allow passing a camera sample_data token,
+            which is then converted to the corresponding lidar token.
         :param axes_limit: Axes limit for lidar (measured in meters).
         :param color_mode: How to color the lidar points, e.g. depth or height.
         :param use_flat_vehicle_coordinates: See get_pointcloud().
         :param out_path: Optional path to save the rendered figure to disk.
             If a path is provided, the plot is not shown to the user.
         """
+        # If we are provided a camera sd_token, we need to find the closest lidar token.
+        sample_data = self.get('sample_data', sd_token_lidar)
+        if sample_data['fileformat'] == 'jpg':
+            sd_token_lidar = self.find_corresponding_sample_data(sd_token_lidar, 'lidar')
+
         # Load the pointcloud and transform it to the specified viewpoint.
         points, original_points = self.get_pointcloud(sd_token_lidar, use_flat_vehicle_coordinates)
 

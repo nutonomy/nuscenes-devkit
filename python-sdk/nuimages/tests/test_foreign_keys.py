@@ -8,9 +8,10 @@ from nuimages.nuimages import NuImages
 
 
 class TestForeignKeys(unittest.TestCase):
-    def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
+    def __init__(self, test_name: str = '', version: str = 'v1.0-mini', dataroot: str = None):
         """
         Initialize TestForeignKeys.
+        :param test_name: Dummy parameter required by the TestCase class.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
@@ -22,6 +23,12 @@ class TestForeignKeys(unittest.TestCase):
         else:
             self.dataroot = dataroot
         self.nuim = NuImages(version=self.version, dataroot=self.dataroot, verbose=False)
+
+    def runTest(self) -> None:
+        """
+        Dummy function required by the TestCase class.
+        """
+        pass
 
     def test_foreign_keys(self) -> None:
         """
@@ -38,6 +45,8 @@ class TestForeignKeys(unittest.TestCase):
         # Go through each table and check the foreign_keys.
         for table_name in self.nuim.table_names:
             table: List[Dict[str, Any]] = self.nuim.__getattr__(table_name)
+            if len(table) == 0 and self.version.endswith('-test'):  # Skip test annotations.
+                continue
             keys = table[0].keys()
 
             # Check 1-to-1 link.
@@ -128,7 +137,7 @@ class TestForeignKeys(unittest.TestCase):
 
 if __name__ == '__main__':
     # Runs the tests without aborting on error.
-    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test', 'v1.0-mini']:
         print('Running TestForeignKeys for version %s...' % nuim_version)
         test = TestForeignKeys(version=nuim_version)
         test.test_foreign_keys()

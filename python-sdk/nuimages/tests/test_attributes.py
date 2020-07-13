@@ -6,10 +6,10 @@ from nuimages.nuimages import NuImages
 
 class TestAttributes(unittest.TestCase):
 
-    def __init__(self, version: str = 'v1.0-val', dataroot: str = None):
+    def __init__(self, test_name: str = '', version: str = 'v1.0-mini', dataroot: str = None):
         """
         Initialize TestAttributes.
-        TODO: Fix automatic discovery for this test.
+        :param test_name: Dummy parameter required by the TestCase class.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """
@@ -26,7 +26,7 @@ class TestAttributes(unittest.TestCase):
             'human.pedestrian.adult': ['pedestrian'],
             'human.pedestrian.child': ['pedestrian'],
             'human.pedestrian.construction_worker': ['pedestrian'],
-            'human.pedestrian.personal_mobility': ['has_rider'],
+            'human.pedestrian.personal_mobility': ['cycle'],
             'human.pedestrian.police_officer': ['pedestrian'],
             'human.pedestrian.stroller': [],
             'human.pedestrian.wheelchair': [],
@@ -35,7 +35,7 @@ class TestAttributes(unittest.TestCase):
             'movable_object.pushable_pullable': [],
             'movable_object.trafficcone': [],
             'static_object.bicycle_rack': [],
-            'vehicle.bicycle': ['has_rider'],
+            'vehicle.bicycle': ['cycle'],
             'vehicle.bus.bendy': ['vehicle'],
             'vehicle.bus.rigid': ['vehicle'],
             'vehicle.car': ['vehicle'],
@@ -43,10 +43,16 @@ class TestAttributes(unittest.TestCase):
             'vehicle.ego': [],
             'vehicle.emergency.ambulance': ['vehicle', 'vehicle_light.emergency'],
             'vehicle.emergency.police': ['vehicle', 'vehicle_light.emergency'],
-            'vehicle.motorcycle': ['has_rider'],
+            'vehicle.motorcycle': ['cycle'],
             'vehicle.trailer': ['vehicle'],
             'vehicle.truck': ['vehicle']
         }
+
+    def runTest(self) -> None:
+        """
+        Dummy function required by the TestCase class.
+        """
+        pass
 
     def test_object_anns(self, print_only: bool = False) -> None:
         """
@@ -99,7 +105,7 @@ class TestAttributes(unittest.TestCase):
 
 if __name__ == '__main__':
     # Runs the tests without aborting on error.
-    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test']:
+    for nuim_version in ['v1.0-train', 'v1.0-val', 'v1.0-test', 'v1.0-mini']:
         print('Running TestAttributes for version %s...' % nuim_version)
         test = TestAttributes(version=nuim_version)
         test.test_object_anns(print_only=True)

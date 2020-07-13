@@ -5,15 +5,14 @@ All annotations and meta data (including calibration, maps, vehicle coordinates 
 The database tables are listed below.
 Every row can be identified by its unique primary key `token`.
 Foreign keys such as `sample_token` may be used to link to the `token` of the table `sample`.
-Please refer to the [tutorial](https://www.nuscenes.org/tutorial) for an introduction to the most important database tables.
+Please refer to the [tutorial](https://www.nuscenes.org/nuimages#tutorial) for an introduction to the most important database tables.
 
 ![](https://www.nuscenes.org/public/images/nuscenes-schema.svg)
 
 attribute
 ---------
-
 An attribute is a property of an instance that can change while the category remains the same.
- Example: a vehicle being parked/stopped/moving, and whether or not a bicycle has a rider.
+Example: a vehicle being parked/stopped/moving, and whether or not a bicycle has a rider.
 ```
 attribute {
    "token":                   <str> -- Unique record identifier.
@@ -21,9 +20,9 @@ attribute {
    "description":             <str> -- Attribute description.
 }
 ```
+
 calibrated_sensor
 ---------
-
 Definition of a particular sensor (lidar/radar/camera) as calibrated on a particular vehicle.
 All extrinsic parameters are given with respect to the ego vehicle body frame.
 All camera images come undistorted and rectified.
@@ -36,11 +35,11 @@ calibrated_sensor {
    "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration. Empty for sensors that are not cameras.
 }
 ```
+
 category
 ---------
-
 Taxonomy of object categories (e.g. vehicle, human). 
-Subcategories are delineated by a period (e.g. human.pedestrian.adult).
+Subcategories are delineated by a period (e.g. `human.pedestrian.adult`).
 ```
 category {
    "token":                   <str> -- Unique record identifier.
@@ -49,9 +48,9 @@ category {
    "index":                   <int> -- The index of the label used for efficiency reasons in the .bin label files of nuScenes-lidarseg. This field did not exist previously.
 }
 ```
+
 ego_pose
 ---------
-
 Ego vehicle pose at a particular timestamp. Given with respect to global coordinate system of the log's map.
 The ego_pose is the output of a lidar map-based localization algorithm described in our paper.
 The localization is 2-dimensional in the x-y plane.
@@ -63,24 +62,24 @@ ego_pose {
    "timestamp":               <int> -- Unix time stamp.
 }
 ```
+
 instance
 ---------
-
 An object instance, e.g. particular vehicle.
 This table is an enumeration of all object instances we observed.
 Note that instances are not tracked across scenes.
 ```
 instance {
    "token":                   <str> -- Unique record identifier.
-   "category_token":          <str> -- Foreign key. Object instance category.
+   "category_token":          <str> -- Foreign key pointing to the object category.
    "nbr_annotations":         <int> -- Number of annotations of this instance.
    "first_annotation_token":  <str> -- Foreign key. Points to the first annotation of this instance.
    "last_annotation_token":   <str> -- Foreign key. Points to the last annotation of this instance.
 }
 ```
+
 lidarseg
 ---------
-
 Mapping between nuScenes-lidarseg annotations and sample_datas corresponding to the lidar pointcloud associated with a keyframe. 
 ```
 lidarseg {
@@ -89,9 +88,9 @@ lidarseg {
    "sample_data_token":       <str> -- Foreign key. Sample_data corresponding to the annotated lidar pointcloud with is_key_frame=True. 
 }
 ```
+
 log
 ---------
-
 Information about the log from which the data was extracted.
 ```
 log {
@@ -102,9 +101,9 @@ log {
    "location":                <str> -- Area where log was captured, e.g. singapore-onenorth.
 }
 ```
+
 map
 ---------
-
 Map data that is stored as binary semantic masks from a top-down view.
 ```
 map {
@@ -114,10 +113,11 @@ map {
    "filename":                <str> -- Relative path to the file with the map mask.
 }
 ```
+
 sample
 ---------
-
-A sample is data collected at (approximately) the same timestamp as part of a single LIDAR sweep.
+A sample is an annotated keyframe at 2 Hz.
+The data is collected at (approximately) the same timestamp as part of a single LIDAR sweep.
 ```
 sample {
    "token":                   <str> -- Unique record identifier.
@@ -127,9 +127,9 @@ sample {
    "prev":                    <str> -- Foreign key. Sample that precedes this in time. Empty if start of scene.
 }
 ```
+
 sample_annotation
 ---------
-
 A bounding box defining the position of an object seen in a sample.
 All location data is given with respect to the global coordinate system.
 ```
@@ -137,7 +137,7 @@ sample_annotation {
    "token":                   <str> -- Unique record identifier.
    "sample_token":            <str> -- Foreign key. NOTE: this points to a sample NOT a sample_data since annotations are done on the sample level taking all relevant sample_data into account.
    "instance_token":          <str> -- Foreign key. Which object instance is this annotating. An instance can have multiple annotations over time.
-   "attribute_tokens":        <str> [n] -- Foreign keys. List of attributes for this annotation. Attributes can change over time, so they belong here, not in the object table.
+   "attribute_tokens":        <str> [n] -- Foreign keys. List of attributes for this annotation. Attributes can change over time, so they belong here, not in the instance table.
    "visibility_token":        <str> -- Foreign key. Visibility may also change over time. If no visibility is annotated, the token is an empty string.
    "translation":             <float> [3] -- Bounding box location in meters as center_x, center_y, center_z.
    "size":                    <float> [3] -- Bounding box size in meters as width, length, height.
@@ -148,9 +148,9 @@ sample_annotation {
    "prev":                    <str> -- Foreign key. Sample annotation from the same object instance that precedes this in time. Empty if this is the first annotation for this object.
 }
 ```
+
 sample_data
 ---------
-
 A sensor data e.g. image, point cloud or radar return. 
 For sample_data with is_key_frame=True, the time-stamps should be very close to the sample it points to.
 For non key-frames the sample_data points to the sample that follows closest in time.
@@ -170,9 +170,9 @@ sample_data {
    "prev":                    <str> -- Foreign key. Sample data from the same sensor that precedes this in time. Empty if start of scene.
 }
 ```
+
 scene
 ---------
-
 A scene is a 20s long sequence of consecutive frames extracted from a log. 
 Multiple scenes can come from the same log. 
 Note that object identities (instance tokens) are not preserved across scenes.
@@ -187,9 +187,9 @@ scene {
    "last_sample_token":       <str> -- Foreign key. Points to the last sample in scene.
 }
 ```
+
 sensor
 ---------
-
 A specific sensor type.
 ```
 sensor {
@@ -198,9 +198,9 @@ sensor {
    "modality":                <str> {camera, lidar, radar} -- Sensor modality. Supports category(ies) in brackets.
 }
 ```
+
 visibility
 ---------
-
 The visibility of an instance is the fraction of annotation visible in all 6 images. Binned into 4 bins 0-40%, 40-60%, 60-80% and 80-100%.
 ```
 visibility {

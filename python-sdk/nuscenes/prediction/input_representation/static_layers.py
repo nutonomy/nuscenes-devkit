@@ -20,10 +20,11 @@ from nuscenes.prediction.input_representation.utils import get_crops, get_rotati
 Color = Tuple[float, float, float]
 
 
-def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
+def load_all_maps(helper: PredictHelper, verbose: bool = False) -> Dict[str, NuScenesMap]:
     """
     Loads all NuScenesMap instances for all available maps.
     :param helper: Instance of PredictHelper.
+    :param verbose: Whether to print to stdout.
     :return: Mapping from map-name to the NuScenesMap api instance.
     """
     dataroot = helper.data.dataroot
@@ -35,8 +36,8 @@ def load_all_maps(helper: PredictHelper) -> Dict[str, NuScenesMap]:
     for map_file in json_files:
 
         map_name = str(map_file.split(".")[0])
-
-        print(f'static_layers.py - Loading Map: {map_name}')
+        if verbose:
+            print(f'static_layers.py - Loading Map: {map_name}')
 
         maps[map_name] = NuScenesMap(dataroot, map_name=map_name)
 
