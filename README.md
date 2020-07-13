@@ -1,5 +1,5 @@
 # nuScenes devkit
-Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) and nuImages datasets.
+Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [nuImages](https://www.nuscenes.org/nuimages) datasets.
 ![](https://www.nuscenes.org/public/images/road.jpg)
 
 ## Overview
@@ -14,11 +14,14 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) and nuImages d
   - [CAN bus expansion](#can-bus-expansion)
   - [Map expansion](#map-expansion)
   - [Getting started with nuScenes](#getting-started-with-nuscenes)
+- [Known issues](#known-issues)
 - [Citation](#citation)
 
 ## Changelog
-- Jul. 14, 2020: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
+- Jul. 14, 2020: Devkit v1.1.0: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
+- Jul. 7, 2020: Devkit v1.0.9: Misc updates on map and prediction code.
 - Apr. 30, 2020: nuImages v0.1 code release.
+- Apr. 1, 2020: Devkit v1.0.8: Relax pip requirements and reorganize prediction code.
 - Mar. 24, 2020: Devkit v1.0.7: nuScenes prediction challenge code released.
 - Feb. 12, 2020: Devkit v1.0.6: CAN bus expansion released.
 - Dec. 11, 2019: Devkit v1.0.5: Remove weight factor from AMOTA tracking metrics.
@@ -30,7 +33,6 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org) and nuImages d
 - Nov. 21, 2018: RADAR filtering and multi sweep aggregation.
 - Oct. 4, 2018: Code to parse RADAR data released.
 - Sep. 12, 2018: Devkit for teaser dataset released.
-
 
 ## Devkit setup
 We use a common devkit for nuScenes and nuImages.
@@ -89,7 +91,7 @@ In March 2020 we released code for the nuScenes prediction challenge.
 To get started:
 - Download the version 1.2 of the map expansion (see below).
 - Download the trajectory sets for [CoverNet](https://arxiv.org/abs/1911.10298) from [here](https://www.nuscenes.org/public/nuscenes-prediction-challenge-trajectory-sets.zip).
-- Go through the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/prediction_tutorial.ipynb).
+- Go through the [prediction tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/prediction_tutorial.ipynb).
 - For information on how submissions will be scored, visit the challenge [website](https://www.nuscenes.org/prediction).
 
 ### CAN bus expansion
@@ -100,7 +102,7 @@ To install this expansion, please follow these steps:
 - Move the can_bus folder to your nuScenes root directory (e.g. `/data/sets/nuscenes/can_bus`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md)): `pip install -r setup/requirements.txt`
-- Get started with the [readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/can_bus_tutorial.ipynb).
+- Get started with the [CAN bus readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/can_bus/README.md) or [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/can_bus_tutorial.ipynb).
 
 ### Map expansion
 In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
@@ -109,7 +111,7 @@ To install this expansion, please follow these steps:
 - Move the .json files to your nuScenes `maps` folder.
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md)): `pip install -r setup/requirements.txt`
-- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
+- Get started with the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/map_expansion_tutorial.ipynb).
 
 ### Getting started with nuScenes
 Please follow these steps to make yourself familiar with the nuScenes dataset:
@@ -122,11 +124,23 @@ Please follow these steps to make yourself familiar with the nuScenes dataset:
 jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_tutorial.ipynb
 ```
 - Read the [nuScenes paper](https://www.nuscenes.org/publications) for a detailed analysis of the dataset.
-- Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/map_expansion_tutorial.ipynb).
+- Run the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/map_expansion_tutorial.ipynb).
 - Take a look at the [experimental scripts](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/scripts).
 - For instructions related to the object detection task (results format, classes and evaluation metrics), please refer to [this readme](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md).
 - See the [database schema](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuscenes.md) and [annotator instructions](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/instructions_nuscenes.md).
 - See the [FAQs](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/faqs.md).
+
+## Known issues
+Great care has been taken to collate the nuScenes dataset and many users have praised the quality of the data and annotations.
+However, some minor issues remain:
+
+**Maps**:
+- For *singapore-hollandvillage* and *singapore-queenstown* the traffic light 3d poses are all 0 (except for tz).
+- For *boston-seaport*, the ego poses of 3 scenes (499, 515, 517) are slightly incorrect and 2 scenes (501, 502) are outside the annotated area. 
+- For *singapore-onenorth*, the ego poses of about 10 scenes were off the drivable surface. This has been **resolved in map v1.1**.
+
+**Annotations**:
+- A small number of 3d bounding boxes is annotated despite the object being temporarily occluded. For this reason we make sure to **filter objects without lidar or radar points** in the nuScenes benchmarks. See [issue 366](https://github.com/nutonomy/nuscenes-devkit/issues/366).
 
 ## Citation
 Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):

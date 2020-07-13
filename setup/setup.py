@@ -31,9 +31,9 @@ packages = [p for p in packages if not p.endswith('__pycache__')]
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='1.0.7',
+    version='1.1.0',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
-           'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle et al.',
+           'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit et al.',
     author_email='nuscenes@nutonomy.com',
     description='The official devkit of the nuScenes dataset (www.nuscenes.org).',
     long_description=long_description,

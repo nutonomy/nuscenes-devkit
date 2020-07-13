@@ -19,7 +19,7 @@ as well as estimating a set of attributes and the current velocity vector.
 The nuScenes detection [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) is open all year round for submission.
 To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356).
 Then upload your zipped result file including all of the required [meta data](#results-format).
-The results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/object-detection) shown above.
+After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/object-detection) shown above.
 This is the only way to benchmark your method against the test dataset. 
 
 ## Challenges

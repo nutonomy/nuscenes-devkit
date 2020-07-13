@@ -205,4 +205,4 @@ if __name__ == '__main__':
     parser.add_argument('--output_format', type=str, default='kml', help='Output format (kml or json).')
     args = parser.parse_args()
 
-    main(args.dataroot, args.version, args.output_prefix, args.format)
+    main(args.dataroot, args.version, args.output_prefix, args.output_format)

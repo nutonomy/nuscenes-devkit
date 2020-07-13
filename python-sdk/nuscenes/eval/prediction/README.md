@@ -13,14 +13,23 @@ The goal of the nuScenes prediction task is to predict the future trajectories o
 A trajectory is a sequence of x-y locations. For this challenge, the predictions are 6-seconds long and sampled at
 2 hertz.
 
+## Participation
+The nuScenes prediction [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/591) is open all year round for submission.
+To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/591).
+Then upload your zipped result file including all of the required [meta data](#results-format).
+After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/prediction) shown above.
+This is the only way to benchmark your method against the test dataset. 
+
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we will host a single leaderboard all year round.
 Additionally, we intend to organize a number of challenges at leading Computer Vision and Machine Learning conference workshops.
 Users that submit their results during the challenge period are eligible for awards. These awards may be different for each challenge.
 
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/591) for the **EvalAI prediction evaluation server**.
+
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
-The submission period will open April 1 and continue until May 28th, 2020.
+This challenge will be focused on predicting trajectories for vehicles. The submission period will open April 1 and continue until May 28th, 2020.
 Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
 Note that the evaluation server can still be used to benchmark your results after the challenge period.
 
@@ -32,7 +41,7 @@ to be eligible for the prizes.
 * The user can submit up to 25 proposed future trajectories, called `modes`, for each agent along with a probability the agent follows that proposal. Our metrics (explained below) will measure how well this proposed set of trajectories matches the ground truth.
 * Up to two seconds of past history can be used to predict the future trajectory for each agent.
 * Unlike previous challenges, the leaderboard will be ranked according to performance on the nuScenes val set. This is because we cannot release the annotations on the test set, so users would not be able to run their models on the test set and then submit their predictions to the server. To prevent overfitting on the val set, the top 5 submissions on the leaderboard will be asked to send us their code and we will run their model on the test set. The winners will be chosen based on their performance on the test set, not the val set.
-* Every submission to the challenge must be accompanied by a technical report describing the method in sufficient detail to allow for independent verification.
+* Every submission to the challenge must be accompanied by a brief technical report (no more than 1-2 pages) describing the method in sufficient detail to allow for independent verification.
 
 ### General rules
 * We release annotations for the train and val set, but not for the test set. We have created a hold out set for validation

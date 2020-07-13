@@ -89,7 +89,7 @@ Frequency: 100Hz
 
 Format: `scene_0001_steeranglefeedback.json`
 
-- value: \[1\] Steering angle feedback in radians in range \[-7.7, 6.3\]. 0 indicates no steering, positive values indicate right turns, negative values left turns.
+- value: \[1\] Steering angle feedback in radians in range \[-7.7, 6.3\]. 0 indicates no steering, positive values indicate left turns, negative values right turns.
 
 ### Vehicle Monitor
 Frequency: 2Hz

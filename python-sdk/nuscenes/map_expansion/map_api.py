@@ -220,7 +220,7 @@ class NuScenesMap:
                       layer_name: str,
                       token: str,
                       alpha: float = 0.5,
-                      figsize: Tuple[int, int] = (15, 15),
+                      figsize: Tuple[float, float] = None,
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
          Render a single map record. By default will also render 3 layers which are `drivable_area`, `lane`,
@@ -237,7 +237,7 @@ class NuScenesMap:
     def render_layers(self,
                       layer_names: List[str],
                       alpha: float = 0.5,
-                      figsize: Tuple[int, int] = (15, 15),
+                      figsize: Union[None, float, Tuple[float, float]] = None,
                       tokens: List[str] = None) -> Tuple[Figure, Axes]:
         """
         Render a list of layer names.
@@ -327,6 +327,17 @@ class NuScenesMap:
                                                           render_egoposes=render_egoposes,
                                                           render_egoposes_range=render_egoposes_range,
                                                           render_legend=render_legend)
+
+    def render_centerlines(self,
+                           resolution_meters: float = 0.5,
+                           figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+        """
+        Render the centerlines of all lanes and lane connectors.
+        :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
+            lanes are properly represented.
+        :param figsize: Size of the figure.
+        """
+        self.explorer.render_centerlines(resolution_meters=resolution_meters, figsize=figsize)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -470,6 +481,21 @@ class NuScenesMap:
         patch = (x - radius, y - radius, x + radius, y + radius)
         return self.explorer.get_records_in_patch(patch, layer_names, mode)
 
+    def discretize_centerlines(self, resolution_meters: float) -> List[np.array]:
+        """
+        Discretize the centerlines of lanes and lane connectors.
+        :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
+            lanes are properly represented.
+        :return: A list of np.arrays with x, y and z values for each point.
+        """
+        pose_lists = []
+        for lane in self.lane + self.lane_connector:
+            my_lane = self.arcline_path_3.get(lane['token'], [])
+            discretized = np.array(discretize_lane(my_lane, resolution_meters))
+            pose_lists.append(discretized)
+
+        return pose_lists
+
     def discretize_lanes(self, tokens: List[str],
                          resolution_meters: float) -> Dict[str, List[Tuple[float, float, float]]]:
         """
@@ -557,7 +583,7 @@ class NuScenesMap:
                           x: float,
                           y: float,
                           alpha: float = 0.5,
-                          figsize: Tuple[int, int] = (15, 15)) -> None:
+                          figsize: Union[None, float, Tuple[float, float]] = None) -> None:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
@@ -654,6 +680,24 @@ class NuScenesMapExplorer:
         self.canvas_max_y = self.map_api.canvas_edge[1]
         self.canvas_min_y = 0
         self.canvas_aspect_ratio = (self.canvas_max_x - self.canvas_min_x) / (self.canvas_max_y - self.canvas_min_y)
+
+    def render_centerlines(self,
+                           resolution_meters: float,
+                           figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+        """
+        Render the centerlines of all lanes and lane connectors.
+        :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
+            lanes are properly represented.
+        :param figsize: Size of the figure.
+        """
+        # Discretize all lanes and lane connectors.
+        pose_lists = self.map_api.discretize_centerlines(resolution_meters)
+
+        # Render connectivity lines.
+        plt.figure(figsize=self._get_figsize(figsize))
+        for pose_list in pose_lists:
+            if len(pose_list) > 0:
+                plt.plot(pose_list[:, 0], pose_list[:, 1])
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -801,7 +845,7 @@ class NuScenesMapExplorer:
                       layer_name: str,
                       token: str,
                       alpha: float = 0.5,
-                      figsize: Tuple[int, int] = (15, 15),
+                      figsize: Union[None, float, Tuple[float, float]] = None,
                       other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
         Render a single map record.
@@ -829,7 +873,7 @@ class NuScenesMapExplorer:
         local_aspect_ratio = local_width / local_height
 
         # We obtained the values 0.65 and 0.66 by trials.
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=self._get_figsize(figsize))
         global_ax = fig.add_axes([0, 0, 0.65, 0.65 / self.canvas_aspect_ratio])
         local_ax = fig.add_axes([0.66, 0.66 / self.canvas_aspect_ratio, 0.34, 0.34 / local_aspect_ratio])
 
@@ -875,7 +919,7 @@ class NuScenesMapExplorer:
     def render_layers(self,
                       layer_names: List[str],
                       alpha: float,
-                      figsize: Tuple[int, int],
+                      figsize: Union[None, float, Tuple[float, float]],
                       tokens: List[str] = None) -> Tuple[Figure, Axes]:
         """
         Render a list of layers.
@@ -885,7 +929,7 @@ class NuScenesMapExplorer:
         :param tokens: Optional list of tokens to render. None means all tokens are rendered.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=self._get_figsize(figsize))
         ax = fig.add_axes([0, 0, 1, 1 / self.canvas_aspect_ratio])
 
         ax.set_xlim(self.canvas_min_x, self.canvas_max_x)
@@ -904,7 +948,7 @@ class NuScenesMapExplorer:
                          box_coords: Tuple[float, float, float, float],
                          layer_names: List[str] = None,
                          alpha: float = 0.5,
-                         figsize: Tuple[int, int] = (15, 15),
+                         figsize: Tuple[float, float] = (15, 15),
                          render_egoposes_range: bool = True,
                          render_legend: bool = True) -> Tuple[Figure, Axes]:
         """
@@ -1212,7 +1256,7 @@ class NuScenesMapExplorer:
                           x: float,
                           y: float,
                           alpha: float = 0.5,
-                          figsize: Tuple[int, int] = (15, 15)) -> None:
+                          figsize: Union[None, float, Tuple[float, float]] = None) -> None:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
@@ -1944,3 +1988,25 @@ class NuScenesMapExplorer:
         patch = affinity.rotate(patch, patch_angle, origin=(patch_x, patch_y), use_radians=False)
 
         return patch
+
+    def _get_figsize(self, figsize: Union[None, float, Tuple[float, float]]) -> Tuple[float, float]:
+        """
+        Utility function that scales the figure size by the map canvas size.
+        If figsize is:
+        - None      => Return default scale.
+        - Scalar    => Scale canvas size.
+        - Two-tuple => Use the specified figure size.
+        :param figsize: The input figure size.
+        :return: The output figure size.
+        """
+        # Divide canvas size by arbitrary scalar to get into cm range.
+        canvas_size = np.array(self.map_api.canvas_edge)[::-1] / 200
+
+        if figsize is None:
+            return tuple(canvas_size)
+        elif type(figsize) in [int, float]:
+            return tuple(canvas_size * figsize)
+        elif type(figsize) == tuple and len(figsize) == 2:
+            return figsize
+        else:
+            raise Exception('Error: Invalid figsize: %s' % figsize)
