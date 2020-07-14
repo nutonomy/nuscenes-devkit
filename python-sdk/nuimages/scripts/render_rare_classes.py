@@ -10,7 +10,8 @@ from nuimages.scripts.render_images import render_images
 def render_rare_classes(nuim: NuImages,
                         render_args: Dict[str, Any],
                         filter_categories: List[str] = None,
-                        max_frequency: float = 0.001) -> None:
+                        max_frequency: float = 0.001,
+                        render_other_categories: bool = False) -> None:
     """
     Wrapper around render_images() that renders images with rare classes.
     :param nuim: NuImages instance.
@@ -21,6 +22,8 @@ def render_rare_classes(nuim: NuImages,
     :param max_frequency: The maximum relative frequency of the categories, at least one of which is required to be
         present in the image. E.g. 0.1 indicates that one of the classes that account for at most 10% of the annotations
         is present.
+    :param render_other_categories: Whether to render other categories than the selected.
+        This is only relevant for mode='annotated'.
     """
     # Checks.
     assert 'filter_categories' not in render_args.keys(), \
@@ -40,9 +43,17 @@ def render_rare_classes(nuim: NuImages,
     print('The rare classes are: %s' % filter_categories_freq)
 
     # If specified, additionally filter these categories by what was requested.
-    if filter_categories is not None:
+    if filter_categories is None:
+        filter_categories = filter_categories_freq
+    else:
         filter_categories = list(set(filter_categories_freq).intersection(set(filter_categories)))
         assert len(filter_categories) > 0, 'Error: No categories left after applying filter_categories!'
+
+    # If specified, render only the masks for the selected categories.
+    if not render_other_categories:
+        cat_name_to_token = {c['name']: c['token'] for c in nuim.category}
+        object_tokens = [cat_name_to_token[category_name] for category_name in filter_categories]
+        render_args['object_tokens'] = object_tokens
 
     # Call render function.
     render_images(nuim, filter_categories=filter_categories, **render_args)

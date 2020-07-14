@@ -349,6 +349,10 @@ class NuImages:
         :param verbose: Whether to print to stdout.
         :return: The object and surface annotation tokens in this sample.
         """
+        # Preload data if in lazy load to avoid confusing outputs.
+        if self.lazy:
+            self.load_tables(['sample', 'object_ann', 'surface_ann', 'category'])
+
         sample = self.get('sample', sample_token)
         sd_token_camera = sample['key_camera_token']
         object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]

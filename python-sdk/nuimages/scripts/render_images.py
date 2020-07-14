@@ -14,6 +14,7 @@ from nuimages.nuimages import NuImages
 def render_images(nuim: NuImages,
                   mode: str = 'all',
                   cam_name: str = None,
+                  log_name: str = None,
                   sample_limit: int = 100,
                   filter_categories: List[str] = None,
                   out_type: str = 'image',
@@ -32,6 +33,7 @@ def render_images(nuim: NuImages,
       "trajectory" for a rendering of the trajectory of the vehice,
       "all" to render all of the above separately.
     :param cam_name: Only render images from a particular camera, e.g. "CAM_BACK'.
+    :param log_name: Only render images from a particular log, e.g. "n013-2018-09-04-13-30-50+0800".
     :param sample_limit: Maximum number of samples (images) to render.
     :param filter_categories: Specify a list of object_ann category names. Every sample that is rendered must
         contain annotations of any of those categories.
@@ -78,6 +80,16 @@ def render_images(nuim: NuImages,
             if sensor['channel'] == cam_name:
                 sample_tokens_cam.append(sample_token)
         sample_tokens = sample_tokens_cam
+
+    # Filter by log.
+    if log_name is not None:
+        sample_tokens_cleaned = []
+        for sample_token in sample_tokens:
+            sample = nuim.get('sample', sample_token)
+            log = nuim.get('log', sample['log_token'])
+            if log['logfile'] == log_name:
+                sample_tokens_cleaned.append(sample_token)
+        sample_tokens = sample_tokens_cleaned
 
     # Filter samples by category.
     if filter_categories is not None:
@@ -199,6 +211,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', type=int, default=1)
     parser.add_argument('--mode', type=str, default='all')
     parser.add_argument('--cam_name', type=str, default=None)
+    parser.add_argument('--log_name', type=str, default=None)
     parser.add_argument('--sample_limit', type=int, default=100)
     parser.add_argument('--filter_categories', action='append')
     parser.add_argument('--out_type', type=str, default='image')
@@ -213,5 +226,5 @@ if __name__ == '__main__':
     nuim_ = NuImages(version=args.version, dataroot=args.dataroot, verbose=bool(args.verbose), lazy=False)
 
     # Render images.
-    render_images(nuim_, mode=args.mode, cam_name=args.cam_name, sample_limit=args.sample_limit,
+    render_images(nuim_, mode=args.mode, cam_name=args.cam_name, log_name=args.log_name, sample_limit=args.sample_limit,
                   filter_categories=args.filter_categories, out_type=args.out_type, out_dir=args.out_dir)

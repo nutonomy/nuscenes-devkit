@@ -146,3 +146,4 @@ if __name__ == '__main__':
         test = TestForeignKeys(version=nuim_version)
         test.test_foreign_keys()
         test.test_prev_next()
+        print()
