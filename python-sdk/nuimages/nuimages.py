@@ -765,6 +765,7 @@ class NuImages:
                             sd_token_camera: str,
                             render_scale: float = 1.0,
                             point_size: float = 10.0,
+                            render_stats: bool = False,
                             out_path: str = None) -> None:
         """
         This function plots an image and the projected lidar points.
@@ -772,6 +773,8 @@ class NuImages:
         :param sd_token_camera: The sample_data token of the camera image.
         :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
         :param point_size: The size of each lidar point in pixels.
+        :param render_stats: Whether to render information about ego speed and time difference in the top left corner
+            of the image.
         :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -793,6 +796,16 @@ class NuImages:
 
         # Overlay points.
         plt.scatter(points[0], points[1], marker='.', s=point_size, c=depths)
+
+        # Print velocity and time difference.
+        if render_stats:
+            sd_lidar = self.get('sample_data', self.find_corresponding_sample_data(sd_token_camera, 'lidar'))
+            ego_pose = self.get('ego_pose', sd_lidar['ego_pose_token'])
+            vel = ego_pose['speed']
+            time_camera = sd_camera['timestamp']
+            time_lidar = sd_lidar['timestamp']
+            time_diff = np.abs(time_camera - time_lidar) / 1e6
+            plt.text(5, 40, 'vel: %.1f, time_diff: %.3f' % (vel, time_diff), color='white')
 
         # Save to disk.
         if out_path is not None:

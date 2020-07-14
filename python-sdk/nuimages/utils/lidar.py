@@ -60,19 +60,20 @@ def depth_map(pts: np.ndarray,
     return depth_map
 
 
-def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_name: str, r_sq_max: float = 1.0) \
+def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_name: str) \
         -> Tuple[np.ndarray, np.ndarray]:
     """
     Distort the pointcloud coordinates to map into the image.
     Note: This function discards some invalid points, that do not project into the image.
           This happens if the radial distortion function is not injective, which is the case if k3 is negative.
           We also use the same mechanism to avoid float overflows in the k4 portion of CAM_BACK.
-    :param r_sq_max: Hand-tuned parameter to address warping and numerical overflow.
     :param cam_name: Name of the camera.
     :param points: Lidar pointcloud.
     :param camera_distortion: Distortion coefficents of the camera.
     :return: Distorted pointcloud and depth values.
     """
+    assert len(camera_distortion) > 0, 'Error: Empty camera_distortion! Check that the camera_distortion is from a' \
+                                       'lidar and not a camera sample_data!'
     k1 = camera_distortion[0]
     k2 = camera_distortion[1]
     p1 = camera_distortion[2]
@@ -91,6 +92,10 @@ def distort_pointcloud(points: np.ndarray, camera_distortion: np.ndarray, cam_na
     # This happens when the distortion function is not injective, i.e. when k3 < 0 for all cameras,
     # apart from CAM_BACK which has distortion coefficient k6, which prevents warping.
     # However, we also do it elsewhere to avoid numerical overflows.
+    if cam_name == 'CAM_BACK':
+        r_sq_max = 10000
+    else:
+        r_sq_max = 1
     mask = r_sq < r_sq_max
     depths = depths[mask]
     points_x = points_x[mask]
