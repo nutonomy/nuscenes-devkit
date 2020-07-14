@@ -775,7 +775,7 @@ class NuImages:
         :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
-        # Get depth and image.
+        # Get depth.
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
         # Init plot.
@@ -791,7 +791,7 @@ class NuImages:
         im = Image.open(im_path)
         plt.imshow(im)
 
-        # Overlay points
+        # Overlay points.
         plt.scatter(points[0], points[1], marker='.', s=point_size, c=depths)
 
         # Save to disk.
@@ -802,6 +802,10 @@ class NuImages:
     def render_depth_dense(self,
                            sd_token_camera: str,
                            max_depth: float = None,
+                           depth_map_scale: float = 0.5,
+                           n_dilate: int = 23,
+                           n_gauss: int = 11,
+                           sigma_gauss: float = 3,
                            cmap: str = 'viridis',
                            render_scale: float = 1.0,
                            out_path: str = None) -> None:
@@ -812,22 +816,21 @@ class NuImages:
         :param sd_token_camera: The sample_data token of the camera image.
         :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
         :param cmap: The matplotlib color map name. We recommend viridis or magma.
+        :param depth_map_scale: Down-sampling factor when computing the depth map.
+        :param n_dilate: Dilation filter size.
+        :param n_gauss: Gaussian filter size.
+        :param sigma_gauss: Gaussian filter sigma.
         :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
             A larger scale makes the point location more precise, but they will be harder to see.
             For the "dense" option, the depth completion parameters are optimized for the recommended size.
         :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
-        # Get depth and image.
+        # Get depth.
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
-        # Compute depth image.
-        # Show dense point image after depth completion.
-        scale = 1 / 2 * render_scale
-        n_dilate = 23
-        n_gauss = 11
-        sigma_gauss = 3
-        depth_im = depth_map(points, depths, im_size, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
+        # Compute dense depth image.
+        depth_im = depth_map(points, depths, im_size, scale=depth_map_scale, n_dilate=n_dilate, n_gauss=n_gauss,
                              sigma_gauss=sigma_gauss)
 
         # Scale depth_im to full image size.
