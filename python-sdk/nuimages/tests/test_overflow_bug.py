@@ -8,4 +8,4 @@ tokens = [
 
 nuim = NuImages(version='v1.0-val', verbose=False)
 for token in tokens:
-    nuim.render_depth(token)
+    nuim.render_depth_dense(token)
