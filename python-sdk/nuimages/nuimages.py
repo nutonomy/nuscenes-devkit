@@ -532,8 +532,8 @@ class NuImages:
         mask = np.logical_and(mask, points[0, :] < im_size[0] - 1)
         mask = np.logical_and(mask, points[1, :] > 1)
         mask = np.logical_and(mask, points[1, :] < im_size[1] - 1)
-        points = points[:, mask]
-        depths = depths[mask]
+        points = points[:2, mask]
+        depths = depths[mask].squeeze()
 
         return points, depths, closest_time_diff, im_size
 
@@ -761,19 +761,55 @@ class NuImages:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
 
-    def render_depth(self,
-                     sd_token_camera: str,
-                     mode: str = 'sparse',
-                     max_depth: float = None,
-                     cmap: str = 'viridis',
-                     render_scale: float = 1.0,
-                     out_path: str = None) -> None:
+    def render_depth_sparse(self,
+                            sd_token_camera: str,
+                            render_scale: float = 1.0,
+                            point_size: float = 10.0,
+                            out_path: str = None) -> None:
         """
-        This function plots an image and its depth map, either as a set of sparse points, or with depth completion.
+        This function plots an image and the projected lidar points.
+        The points are colored by depth.
+        :param sd_token_camera: The sample_data token of the camera image.
+        :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
+        :param point_size: The size of each lidar point in pixels.
+        :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
+            If a path is provided, the plot is not shown to the user.
+        """
+        # Get depth and image.
+        points, depths, _, im_size = self.get_depth(sd_token_camera)
+
+        # Init plot.
+        (width, height) = im_size
+        pix_to_inch = 100 / render_scale
+        figsize = (height / pix_to_inch, width / pix_to_inch)
+        plt.figure(figsize=figsize)
+        plt.axis('off')
+
+        # Show image.
+        sd_camera = self.get('sample_data', sd_token_camera)
+        im_path = osp.join(self.dataroot, sd_camera['filename'])
+        im = Image.open(im_path)
+        plt.imshow(im)
+
+        # Overlay points
+        plt.scatter(points[0], points[1], marker='.', s=point_size, c=depths)
+
+        # Save to disk.
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
+            plt.close()
+
+    def render_depth_dense(self,
+                           sd_token_camera: str,
+                           max_depth: float = None,
+                           cmap: str = 'viridis',
+                           render_scale: float = 1.0,
+                           out_path: str = None) -> None:
+        """
+        This function plots a dense depth map using depth completion.
         Depth completion dilates the sparse set of points in the image to "interpolate" between them.
         Default depth colors range from yellow (close) to blue (far). Missing values are blue.
         :param sd_token_camera: The sample_data token of the camera image.
-        :param mode: How to render the depth, either sparse or dense.
         :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
         :param cmap: The matplotlib color map name. We recommend viridis or magma.
         :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
@@ -786,17 +822,11 @@ class NuImages:
         points, depths, _, im_size = self.get_depth(sd_token_camera)
 
         # Compute depth image.
-        assert mode in ['sparse', 'dense'], 'Error: Unknown mode %s!' % mode
-        if mode == 'sparse':
-            scale = 1 / 8 * render_scale
-            n_dilate = None
-            n_gauss = None
-            sigma_gauss = None
-        else:
-            scale = 1 / 2 * render_scale
-            n_dilate = 23
-            n_gauss = 11
-            sigma_gauss = 3
+        # Show dense point image after depth completion.
+        scale = 1 / 2 * render_scale
+        n_dilate = 23
+        n_gauss = 11
+        sigma_gauss = 3
         depth_im = depth_map(points, depths, im_size, scale=scale, n_dilate=n_dilate, n_gauss=n_gauss,
                              sigma_gauss=sigma_gauss)
 

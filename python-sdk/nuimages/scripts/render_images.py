@@ -188,9 +188,9 @@ def write_image(nuim: NuImages, sd_token_camera: str, mode: str, out_path: str) 
     elif mode == 'image':
         nuim.render_image(sd_token_camera, with_annotations=False, out_path=out_path)
     elif mode == 'depth_dense':
-        nuim.render_depth(sd_token_camera, mode='dense', out_path=out_path)
+        nuim.render_depth_dense(sd_token_camera, out_path=out_path)
     elif mode == 'depth_sparse':
-        nuim.render_depth(sd_token_camera, mode='sparse', out_path=out_path)
+        nuim.render_depth_sparse(sd_token_camera, out_path=out_path)
     elif mode == 'pointcloud':
         nuim.render_pointcloud(sd_token_camera, out_path=out_path)
     elif mode == 'trajectory':
