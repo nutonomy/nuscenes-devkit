@@ -234,9 +234,10 @@ class NuImages:
 
     # ### List methods. ###
 
-    def list_attributes(self) -> None:
+    def list_attributes(self, sort_by: str = 'freq') -> None:
         """
         List all attributes and the number of annotations with each attribute.
+        :param sort_by: Sorting criteria, e.g. "name", "freq".
         """
         # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
@@ -248,11 +249,22 @@ class NuImages:
             for attribute_token in object_ann['attribute_tokens']:
                 attribute_freqs[attribute_token] += 1
 
+        # Sort entries.
+        if sort_by == 'name':
+            sort_order = [i for (i, _) in sorted(enumerate(self.attribute), key=lambda x: x[1]['name'])]
+        elif sort_by == 'freq':
+            attribute_freqs_order = [attribute_freqs[c['token']] for c in self.attribute]
+            sort_order = [i for (i, _) in
+                          sorted(enumerate(attribute_freqs_order), key=lambda x: x[1], reverse=True)]
+        else:
+            raise Exception('Error: Invalid sorting criterion %s!' % sort_by)
+
         # Print to stdout.
         format_str = '{:11} {:24.24} {:48.48}'
         print()
         print(format_str.format('Annotations', 'Name', 'Description'))
-        for attribute in self.attribute:
+        for s in sort_order:
+            attribute = self.attribute[s]
             print(format_str.format(
                 attribute_freqs[attribute['token']], attribute['name'], attribute['description']))
 
@@ -676,7 +688,8 @@ class NuImages:
         :param sd_token_camera: The token of the sample_data to be rendered.
         :param with_annotations: Whether to draw all annotations.
         :param with_category: Whether to include the category name at the top of a box.
-        :param with_attributes: Whether to include attributes in the label tags.
+        :param with_attributes: Whether to include attributes in the label tags. Note that with_attributes=True
+            will only work if with_category=True.
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
@@ -691,6 +704,8 @@ class NuImages:
         if not sample_data['is_key_frame']:
             assert not with_annotations, 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
+        if with_attributes:
+            assert with_category, 'In order to set with_attributes=True, with_category must be True.'
         assert type(box_line_width) == int, 'Error: box_line_width must be an integer!'
         if box_line_width == 0:
             box_line_width = int(round(render_scale))
