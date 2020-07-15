@@ -2,6 +2,7 @@
 # Code written by Oscar Beijbom, 2018.
 
 import json
+import ijson
 import math
 import os.path as osp
 import sys
