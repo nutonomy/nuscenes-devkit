@@ -49,7 +49,8 @@ For an advanced installation, see [installation](https://github.com/nutonomy/nus
 ## nuImages
 
 ### nuImages setup
-Note that until the release of nuImages v1.0, the files will not be available for public download.
+To download nuImages you need to go to the [Download page](https://www.nuscenes.org/download), 
+create an account and agree to the nuScenes [Terms of Use](https://www.nuscenes.org/terms-of-use).
 For the devkit to work you will need to download *all* archives.
 Please unpack the archives to the `/data/sets/nuimages` folder \*without\* overwriting folders that occur in multiple archives.
 Eventually you should have the following folder structure:
