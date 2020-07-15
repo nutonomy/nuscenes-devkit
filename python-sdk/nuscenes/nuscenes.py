@@ -103,8 +103,8 @@ class NuScenes:
             if table_name == "sample_data":
                 table = []
                 data = ijson.items(f, 'item')
-                for post in data:
-                    table.append(post)
+                for inst in data:
+                    table.append(inst)
             else:
                 table = json.load(f)
         return table
