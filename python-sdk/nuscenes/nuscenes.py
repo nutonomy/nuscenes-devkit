@@ -99,7 +99,13 @@ class NuScenes:
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
         with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
-            table = json.load(f)
+            if table_name == "sample_data":
+                table = []
+                data = ijson.items(f, 'item')
+                for post in data:
+                    table.append(post)
+            else:
+                table = json.load(f)
         return table
 
     def __make_reverse_index__(self, verbose: bool) -> None:
