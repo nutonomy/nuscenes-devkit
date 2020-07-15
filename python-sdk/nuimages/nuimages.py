@@ -288,9 +288,9 @@ class NuImages:
                 channel_freqs[sensor['channel']] += 1
 
         # Print to stdout.
-        format_str = '{:7} {:6} {:24}'
+        format_str = '{:15} {:7} {:25}'
         print()
-        print(format_str.format('Cameras', 'Samples', 'Channel'))
+        print(format_str.format('Calibr. sensors', 'Samples', 'Channel'))
         for channel in cs_freqs.keys():
             cs_freq = cs_freqs[channel]
             channel_freq = channel_freqs[channel]
