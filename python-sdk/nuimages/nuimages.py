@@ -371,13 +371,13 @@ class NuImages:
         surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
 
         if verbose:
-            print('Printing foreground annotations:')
+            print('Printing object annotations:')
             for object_ann in object_anns:
                 category = self.get('category', object_ann['category_token'])
                 attribute_names = [self.get('attribute', at)['name'] for at in object_ann['attribute_tokens']]
                 print('{} {} {}'.format(object_ann['token'], category['name'], attribute_names))
 
-            print('\nPrinting background annotations:')
+            print('\nPrinting surface annotations:')
             for surface_ann in surface_anns:
                 category = self.get('category', surface_ann['category_token'])
                 print(surface_ann['sample_data_token'], category['name'])
@@ -720,12 +720,12 @@ class NuImages:
         draw = ImageDraw.Draw(im, 'RGBA')
 
         if with_annotations:
-            # Load stuff / background regions.
+            # Load stuff / surface regions.
             surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
             if surface_tokens is not None:
                 surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
-            # Draw stuff / background regions.
+            # Draw stuff / surface regions.
             for ann in surface_anns:
                 # Get color and mask.
                 category_token = ann['category_token']
