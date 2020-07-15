@@ -675,7 +675,7 @@ class NuImages:
 
     def render_image(self,
                      sd_token_camera: str,
-                     with_annotations: bool = True,
+                     with_annotations: str = 'all',
                      with_category: bool = False,
                      with_attributes: bool = False,
                      object_tokens: List[str] = None,
@@ -686,7 +686,11 @@ class NuImages:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
         :param sd_token_camera: The token of the sample_data to be rendered.
-        :param with_annotations: Whether to draw all annotations.
+        :param with_annotations: The types of annotations to draw on the image; there are four options:
+            'all': Draw surfaces and objects, subject to any filtering done by object_tokens and surface_tokens.
+            'surfaces': Draw only surfaces, subject to any filtering done by surface_tokens.
+            'objects': Draw objects, subject to any filtering done by object_tokens.
+            'none': Neither surfaces nor objects will be drawn.
         :param with_category: Whether to include the category name at the top of a box.
         :param with_attributes: Whether to include attributes in the label tags. Note that with_attributes=True
             will only work if with_category=True.
@@ -719,49 +723,55 @@ class NuImages:
         font = ImageFont.load_default()
         draw = ImageDraw.Draw(im, 'RGBA')
 
-        if with_annotations:
-            # Load stuff / surface regions.
-            surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
-            if surface_tokens is not None:
-                surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
+        with_annotations_options = ['all', 'surfaces', 'objects', 'none']
+        assert with_annotations in with_annotations_options, \
+            'Error: {} is not a valid option for with_annotations. ' \
+            'Only {} are allowed.'.format(with_annotations, with_annotations_options)
+        if with_annotations is not 'none':
+            if with_annotations == 'all' or with_annotations == 'surfaces':
+                # Load stuff / surface regions.
+                surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+                if surface_tokens is not None:
+                    surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
-            # Draw stuff / surface regions.
-            for ann in surface_anns:
-                # Get color and mask.
-                category_token = ann['category_token']
-                category_name = self.get('category', category_token)['name']
-                color = self.color_map[category_name]
-                if ann['mask'] is None:
-                    continue
-                mask = mask_decode(ann['mask'])
+                # Draw stuff / surface regions.
+                for ann in surface_anns:
+                    # Get color and mask.
+                    category_token = ann['category_token']
+                    category_name = self.get('category', category_token)['name']
+                    color = self.color_map[category_name]
+                    if ann['mask'] is None:
+                        continue
+                    mask = mask_decode(ann['mask'])
 
-                # Draw mask. The label is obvious from the color.
-                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                    # Draw mask. The label is obvious from the color.
+                    draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-            # Load object instances.
-            object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
-            if object_tokens is not None:
-                object_anns = [o for o in object_anns if o['token'] in object_tokens]
+            if with_annotations == 'all' or with_annotations == 'objects':
+                # Load object instances.
+                object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+                if object_tokens is not None:
+                    object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
-            # Draw object instances.
-            for ann in object_anns:
-                # Get color, box, mask and name.
-                category_token = ann['category_token']
-                category_name = self.get('category', category_token)['name']
-                color = self.color_map[category_name]
-                bbox = ann['bbox']
-                attr_tokens = ann['attribute_tokens']
-                attributes = [self.get('attribute', at) for at in attr_tokens]
-                name = annotation_name(attributes, category_name, with_attributes=with_attributes)
-                if ann['mask'] is None:
-                    continue
-                mask = mask_decode(ann['mask'])
+                # Draw object instances.
+                for ann in object_anns:
+                    # Get color, box, mask and name.
+                    category_token = ann['category_token']
+                    category_name = self.get('category', category_token)['name']
+                    color = self.color_map[category_name]
+                    bbox = ann['bbox']
+                    attr_tokens = ann['attribute_tokens']
+                    attributes = [self.get('attribute', at) for at in attr_tokens]
+                    name = annotation_name(attributes, category_name, with_attributes=with_attributes)
+                    if ann['mask'] is None:
+                        continue
+                    mask = mask_decode(ann['mask'])
 
-                # Draw mask, rectangle and text.
-                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
-                draw.rectangle(bbox, outline=color, width=box_line_width)
-                if with_category:
-                    draw.text((bbox[0], bbox[1]), name, font=font)
+                    # Draw mask, rectangle and text.
+                    draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                    draw.rectangle(bbox, outline=color, width=box_line_width)
+                    if with_category:
+                        draw.text((bbox[0], bbox[1]), name, font=font)
 
         # Plot the image.
         (width, height) = im.size
