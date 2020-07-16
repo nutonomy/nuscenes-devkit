@@ -6,12 +6,12 @@ import os.path as osp
 import sys
 import time
 from collections import defaultdict
-from typing import Any, List, Dict, Optional, Tuple, Callable
+from typing import Any, List, Dict, Optional, Tuple, Callable, Union
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from pyquaternion import Quaternion
 
 from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
@@ -671,6 +671,78 @@ class NuImages:
 
         return translations, key_index
 
+    def get_segmentation(self,
+                         sd_token_camera: str) -> Union[np.ndarray, np.ndarray]:
+        """
+        Produces two segmentation masks as numpy arrays of size H x W each, where H and W are the height and width
+        of the camera image respectively:
+            - semantic segmentation mask: A mask in which each pixel is an integer value between 0 to C (inclusive),
+                                          where C is the number of categories in nuImages. Each integer corresponds to
+                                          the index of the class in the category.json
+            - instance segmentation mask: A mask in which each pixel is an integer value between 0 to N, where N is the
+                                          number of objects in a given camera sample_data. Each integer corresponds to
+                                          the order in which the object was drawn into the mask.
+        :param sd_token_camera: The token of the sample_data to be rendered.
+        :return: Two 2D numpy arrays (one semantic segmentation mask, and one instance segmentation mask.
+        """
+        # Validate inputs.
+        sample_data = self.get('sample_data', sd_token_camera)
+        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use get_seg() on lidar pointclouds!'
+        assert sample_data['is_key_frame'], 'Error: Cannot render annotations for non keyframes!'
+
+        # Build a mapping from name to index to look up index in O(1) time.
+        nuim_name2idx_mapping = dict()
+        for i, c in enumerate(self.category):
+            nuim_name2idx_mapping[c['name']] = i
+
+        # Get image data.
+        self.check_sweeps(sample_data['filename'])
+        im_path = osp.join(self.dataroot, sample_data['filename'])
+        im = Image.open(im_path)
+
+        (width, height) = im.size
+        semseg_mask, instanceseg_mask = np.zeros((height, width)), np.zeros((height, width))
+        num_instances = 0
+
+        # Load stuff / surface regions.
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+
+        # Draw stuff / surface regions.
+        for ann in surface_anns:
+            # Get color and mask.
+            category_token = ann['category_token']
+            category_name = self.get('category', category_token)['name']
+            if ann['mask'] is None:
+                continue
+            mask = mask_decode(ann['mask'])
+
+            # Draw mask for semantic segmentation.
+            semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
+
+        # Load object instances.
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+
+        # Draw object instances.
+        for ann in object_anns:
+            # Get color, box, mask and name.
+            category_token = ann['category_token']
+            category_name = self.get('category', category_token)['name']
+            if ann['mask'] is None:
+                continue
+            mask = mask_decode(ann['mask'])
+
+            # Draw masks for semantic segmentation and instance segmentation.
+            semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
+            instanceseg_mask[mask == 1] = num_instances
+            num_instances += 1  # Increment the number of object instances.
+
+        # Ensure that the number of instances in the instance segmentation mask is the same as the number of objects.
+        assert len(object_anns) == np.max(instanceseg_mask) + 1, \
+            'Error: There are {} objects but only {} instances ' \
+            'were drawn into the instance segmentation mask.'.format(len(object_anns), np.max(instanceseg_mask) + 1)
+
+        return semseg_mask, instanceseg_mask
+
     # ### Rendering methods. ###
 
     def render_image(self,
@@ -787,8 +859,6 @@ class NuImages:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
-
-        plt.show()
 
     def render_depth_sparse(self,
                             sd_token_camera: str,
