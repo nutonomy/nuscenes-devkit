@@ -692,7 +692,8 @@ class NuImages:
 
         # Build a mapping from name to index to look up index in O(1) time.
         nuim_name2idx_mapping = dict()
-        for i, c in enumerate(self.category):
+        # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
+        for i, c in enumerate(self.category, start=1):
             nuim_name2idx_mapping[c['name']] = i
 
         # Get image data.
@@ -733,13 +734,13 @@ class NuImages:
 
             # Draw masks for semantic segmentation and instance segmentation.
             semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
-            instanceseg_mask[mask == 1] = num_instances
             num_instances += 1  # Increment the number of object instances.
+            instanceseg_mask[mask == 1] = num_instances
 
         # Ensure that the number of instances in the instance segmentation mask is the same as the number of objects.
-        assert len(object_anns) == np.max(instanceseg_mask) + 1, \
+        assert len(object_anns) == np.max(instanceseg_mask), \
             'Error: There are {} objects but only {} instances ' \
-            'were drawn into the instance segmentation mask.'.format(len(object_anns), np.max(instanceseg_mask) + 1)
+            'were drawn into the instance segmentation mask.'.format(len(object_anns), np.max(instanceseg_mask))
 
         return semseg_mask, instanceseg_mask
 
