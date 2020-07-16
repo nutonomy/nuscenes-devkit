@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from pyquaternion import Quaternion
 
 from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
-from nuimages.utils.utils import annotation_name, mask_decode
+from nuimages.utils.utils import annotation_name, mask_decode, get_font
 from nuscenes.utils.color_map import get_colormap
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points, transform_matrix
@@ -682,6 +682,7 @@ class NuImages:
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
                      box_line_width: int = 0,
+                     font_size: int = 20,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
@@ -699,6 +700,7 @@ class NuImages:
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
         :param box_line_width: The box line width in pixels. The default is 0.
             If set to 0, box_line_width equals render_scale (rounded) to be larger in larger images.
+        :param font_size: Size of the text in the rendered image.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -720,7 +722,7 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = ImageFont.load_default()
+        font = get_font(fonts_valid=['FreeSerif.ttf', 'FreeSans.ttf'], font_size=font_size)
         draw = ImageDraw.Draw(im, 'RGBA')
 
         with_annotations_options = ['all', 'surfaces', 'objects', 'none']
@@ -785,6 +787,8 @@ class NuImages:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
             plt.close()
+
+        plt.show()
 
     def render_depth_sparse(self,
                             sd_token_camera: str,
