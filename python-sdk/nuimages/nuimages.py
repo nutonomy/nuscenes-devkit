@@ -268,7 +268,7 @@ class NuImages:
             print(format_str.format(
                 attribute_freqs[attribute['token']], attribute['name'], attribute['description']))
 
-    def list_cameras(self) -> None:
+    def list_sensors(self) -> None:
         """
         List all cameras and the number of samples for each.
         """
@@ -676,14 +676,14 @@ class NuImages:
         """
         Produces two segmentation masks as numpy arrays of size H x W each, where H and W are the height and width
         of the camera image respectively:
-            - semantic segmentation mask: A mask in which each pixel is an integer value between 0 to C (inclusive),
-                                          where C is the number of categories in nuImages. Each integer corresponds to
-                                          the index of the class in the category.json
-            - instance segmentation mask: A mask in which each pixel is an integer value between 0 to N, where N is the
-                                          number of objects in a given camera sample_data. Each integer corresponds to
-                                          the order in which the object was drawn into the mask.
+            - semantic mask: A mask in which each pixel is an integer value between 0 to C (inclusive),
+                             where C is the number of categories in nuImages. Each integer corresponds to
+                             the index of the class in the category.json.
+            - instance mask: A mask in which each pixel is an integer value between 0 to N, where N is the
+                             number of objects in a given camera sample_data. Each integer corresponds to
+                             the order in which the object was drawn into the mask.
         :param sd_token_camera: The token of the sample_data to be rendered.
-        :return: Two 2D numpy arrays (one semantic segmentation mask, and one instance segmentation mask.
+        :return: Two 2D numpy arrays (one semantic mask <int32: H, W>, and one instance mask <int32: H, W>).
         """
         # Validate inputs.
         sample_data = self.get('sample_data', sd_token_camera)
@@ -702,8 +702,8 @@ class NuImages:
         im = Image.open(im_path)
 
         (width, height) = im.size
-        semseg_mask, instanceseg_mask = np.zeros((height, width)), np.zeros((height, width))
-        num_instances = 0
+        semseg_mask = np.zeros((height, width)).astype('int32')
+        instanceseg_mask = np.zeros((height, width)).astype('int32')
 
         # Load stuff / surface regions.
         surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
@@ -722,9 +722,12 @@ class NuImages:
 
         # Load object instances.
         object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+        # Sort by token to ensure that objects always appear in the instance mask in the same order.
+        object_anns = sorted(object_anns, key=lambda k: k['token'])
 
         # Draw object instances.
-        for ann in object_anns:
+        # The 0 index is reserved for background; thus, the instances should start from index 1.
+        for i, ann in enumerate(object_anns, start=1):
             # Get color, box, mask and name.
             category_token = ann['category_token']
             category_name = self.get('category', category_token)['name']
@@ -734,8 +737,7 @@ class NuImages:
 
             # Draw masks for semantic segmentation and instance segmentation.
             semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
-            num_instances += 1  # Increment the number of object instances.
-            instanceseg_mask[mask == 1] = num_instances
+            instanceseg_mask[mask == 1] = i
 
         # Ensure that the number of instances in the instance segmentation mask is the same as the number of objects.
         assert len(object_anns) == np.max(instanceseg_mask), \
@@ -748,19 +750,19 @@ class NuImages:
 
     def render_image(self,
                      sd_token_camera: str,
-                     with_annotations: str = 'all',
+                     annotations_type: str = 'all',
                      with_category: bool = False,
                      with_attributes: bool = False,
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
-                     box_line_width: int = 0,
+                     box_line_width: int = -1,
                      font_size: int = 20,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
         :param sd_token_camera: The token of the sample_data to be rendered.
-        :param with_annotations: The types of annotations to draw on the image; there are four options:
+        :param annotations_type: The types of annotations to draw on the image; there are four options:
             'all': Draw surfaces and objects, subject to any filtering done by object_tokens and surface_tokens.
             'surfaces': Draw only surfaces, subject to any filtering done by surface_tokens.
             'objects': Draw objects, subject to any filtering done by object_tokens.
@@ -771,8 +773,8 @@ class NuImages:
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
-        :param box_line_width: The box line width in pixels. The default is 0.
-            If set to 0, box_line_width equals render_scale (rounded) to be larger in larger images.
+        :param box_line_width: The box line width in pixels. The default is -1.
+            If set to -1, box_line_width equals render_scale (rounded) to be larger in larger images.
         :param font_size: Size of the text in the rendered image.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
@@ -781,12 +783,12 @@ class NuImages:
         sample_data = self.get('sample_data', sd_token_camera)
         assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use render_image() on lidar pointclouds!'
         if not sample_data['is_key_frame']:
-            assert not with_annotations, 'Error: Cannot render annotations for non keyframes!'
+            assert not annotations_type, 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
         if with_attributes:
             assert with_category, 'In order to set with_attributes=True, with_category must be True.'
         assert type(box_line_width) == int, 'Error: box_line_width must be an integer!'
-        if box_line_width == 0:
+        if box_line_width == -1:
             box_line_width = int(round(render_scale))
 
         # Get image data.
@@ -795,15 +797,16 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = get_font(fonts_valid=['FreeSerif.ttf', 'FreeSans.ttf'], font_size=font_size)
+        font = get_font(fonts_valid=['FreeSerif.ttf', 'FreeSans.ttf', 'Century.ttf', 'Calibri.ttf', 'arial.ttf'],
+                        font_size=font_size)
         draw = ImageDraw.Draw(im, 'RGBA')
 
-        with_annotations_options = ['all', 'surfaces', 'objects', 'none']
-        assert with_annotations in with_annotations_options, \
+        annotations_types = ['all', 'surfaces', 'objects', 'none']
+        assert annotations_type in annotations_types, \
             'Error: {} is not a valid option for with_annotations. ' \
-            'Only {} are allowed.'.format(with_annotations, with_annotations_options)
-        if with_annotations is not 'none':
-            if with_annotations == 'all' or with_annotations == 'surfaces':
+            'Only {} are allowed.'.format(annotations_type, annotations_types)
+        if annotations_type is not 'none':
+            if annotations_type == 'all' or annotations_type == 'surfaces':
                 # Load stuff / surface regions.
                 surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
                 if surface_tokens is not None:
@@ -822,7 +825,7 @@ class NuImages:
                     # Draw mask. The label is obvious from the color.
                     draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-            if with_annotations == 'all' or with_annotations == 'objects':
+            if annotations_type == 'all' or annotations_type == 'objects':
                 # Load object instances.
                 object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
                 if object_tokens is not None:
@@ -838,15 +841,14 @@ class NuImages:
                     attr_tokens = ann['attribute_tokens']
                     attributes = [self.get('attribute', at) for at in attr_tokens]
                     name = annotation_name(attributes, category_name, with_attributes=with_attributes)
-                    if ann['mask'] is None:
-                        continue
-                    mask = mask_decode(ann['mask'])
+                    if ann['mask'] is not None:
+                        mask = mask_decode(ann['mask'])
 
-                    # Draw mask, rectangle and text.
-                    draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
-                    draw.rectangle(bbox, outline=color, width=box_line_width)
-                    if with_category:
-                        draw.text((bbox[0], bbox[1]), name, font=font)
+                        # Draw mask, rectangle and text.
+                        draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                        draw.rectangle(bbox, outline=color, width=box_line_width)
+                        if with_category:
+                            draw.text((bbox[0], bbox[1]), name, font=font)
 
         # Plot the image.
         (width, height) = im.size
