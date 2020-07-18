@@ -435,7 +435,12 @@ class NuImages:
         key_name = 'key_%s_token' % modality
         if sample[key_name] == '':
             # If we don't have a key lidar pointcloud, work the slow way by searching all sample_datas  # TODO: check this
-            sample_datas = [sd for sd in self.sample_data if sd['sample_token'] == sample_token]
+            if modality == 'camera':
+                fileformat = 'jpg'
+            else:
+                fileformat = 'bin'
+            sample_datas = [sd for sd in self.sample_data
+                            if sd['sample_token'] == sample_token and sd['fileformat'] == fileformat]
             sample_datas = sorted(sample_datas, key=lambda sd: sd['timestamp'])
             sample_data_tokens = [sd['token'] for sd in sample_datas]
             return sample_data_tokens
