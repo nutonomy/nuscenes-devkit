@@ -791,7 +791,11 @@ class NuImages:
             If a path is provided, the plot is not shown to the user.
         """
         # Get depth.
-        points, depths, _, im_size = self.get_depth(sd_token_camera)
+        try:
+            points, depths, _, im_size = self.get_depth(sd_token_camera)
+        except:
+            print('Warning: Cannot render depth for an image without a lidar pointcloud!') # TODO
+            return
 
         # Init plot.
         (width, height) = im_size
