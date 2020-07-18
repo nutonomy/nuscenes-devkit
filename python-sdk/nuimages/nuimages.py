@@ -852,7 +852,11 @@ class NuImages:
             If a path is provided, the plot is not shown to the user.
         """
         # Get depth.
-        points, depths, _, im_size = self.get_depth(sd_token_camera)
+        try:
+            points, depths, _, im_size = self.get_depth(sd_token_camera)
+        except:
+            print('Warning: Cannot render depth for an image without a lidar pointcloud!') # TODO
+            return
 
         # Compute dense depth image.
         depth_im = depth_map(points, depths, im_size, scale=depth_map_scale, n_dilate=n_dilate, n_gauss=n_gauss,
