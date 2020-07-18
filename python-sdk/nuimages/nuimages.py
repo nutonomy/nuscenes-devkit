@@ -432,7 +432,14 @@ class NuImages:
         """
         assert modality in ['camera', 'lidar'], 'Error: Invalid modality %s!' % modality
         sample = self.get('sample', sample_token)
-        key_sd = self.get('sample_data', sample['key_%s_token' % modality])
+        key_name = 'key_%s_token' % modality
+        if key_name not in sample:
+            # If we don't have a key lidar pointcloud, work the slow way by searching all sample_datas  # TODO: check this
+            sample_datas = [sd for sd in self.sample_data if sd['sample_token'] == sample_token]
+            sample_datas = sorted(sample_datas, key=lambda sd: sd['timestamp'])
+            sample_data_tokens = [sd['token'] for sd in sample_datas]
+            return sample_data_tokens
+        key_sd = self.get('sample_data', sample[key_name])
 
         # Go forward.
         cur_sd = key_sd
@@ -450,8 +457,8 @@ class NuImages:
 
         # Combine.
         result = backward[::-1] + [key_sd['token']] + forward
-        assert 7 <= len(result) <= 13, 'Error: There should be between 7 and 13 %s sample_datas for each sample!' \
-                                       % modality
+        #assert 7 <= len(result) <= 13, 'Error: There should be between 7 and 13 %s sample_datas for each sample!' \
+        #                               % modality # TODO: adjust
         return result
 
     def get_depth(self,
