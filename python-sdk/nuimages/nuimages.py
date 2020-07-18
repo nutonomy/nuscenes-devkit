@@ -433,7 +433,7 @@ class NuImages:
         assert modality in ['camera', 'lidar'], 'Error: Invalid modality %s!' % modality
         sample = self.get('sample', sample_token)
         key_name = 'key_%s_token' % modality
-        if key_name not in sample:
+        if sample[key_name] == '':
             # If we don't have a key lidar pointcloud, work the slow way by searching all sample_datas  # TODO: check this
             sample_datas = [sd for sd in self.sample_data if sd['sample_token'] == sample_token]
             sample_datas = sorted(sample_datas, key=lambda sd: sd['timestamp'])
