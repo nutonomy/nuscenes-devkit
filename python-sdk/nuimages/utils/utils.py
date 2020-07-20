@@ -45,15 +45,17 @@ def mask_decode(mask: dict) -> np.ndarray:
     return cocomask.decode(new_mask)
 
 
-def get_font(fonts_valid: List[str], font_size: int = 15) -> ImageFont:
+def get_font(font_size: int = 15) -> ImageFont:
     """
     Check if there is a desired font present in the user's system. If there is, use that font; otherwise, use a default
     font.
-    :param fonts_valid: A list of fonts which are desirable.
     :param font_size: The size of the font to set. Note that if the default font is used, then the font size
         cannot be set.
     :return: An ImageFont object to use as the font in a PIL image.
     """
+    # A hardcoded list of fonts which are desirable.
+    fonts_valid = ['FreeSerif.ttf', 'FreeSans.ttf', 'Century.ttf', 'Calibri.ttf', 'arial.ttf']
+
     # Find a list of fonts within the user's system.
     fonts_in_sys = matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
     # Sort the list of fonts to ensure that the desired fonts are always found in the same order.

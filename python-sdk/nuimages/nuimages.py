@@ -687,7 +687,7 @@ class NuImages:
         """
         # Validate inputs.
         sample_data = self.get('sample_data', sd_token_camera)
-        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use get_seg() on lidar pointclouds!'
+        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use get_segmentation() on lidar pointclouds!'
         assert sample_data['is_key_frame'], 'Error: Cannot render annotations for non keyframes!'
 
         # Build a mapping from name to index to look up index in O(1) time.
@@ -750,7 +750,7 @@ class NuImages:
 
     def render_image(self,
                      sd_token_camera: str,
-                     annotations_type: str = 'all',
+                     annotation_type: str = 'all',
                      with_category: bool = False,
                      with_attributes: bool = False,
                      object_tokens: List[str] = None,
@@ -762,7 +762,7 @@ class NuImages:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
         :param sd_token_camera: The token of the sample_data to be rendered.
-        :param annotations_type: The types of annotations to draw on the image; there are four options:
+        :param annotation_type: The types of annotations to draw on the image; there are four options:
             'all': Draw surfaces and objects, subject to any filtering done by object_tokens and surface_tokens.
             'surfaces': Draw only surfaces, subject to any filtering done by surface_tokens.
             'objects': Draw objects, subject to any filtering done by object_tokens.
@@ -783,7 +783,7 @@ class NuImages:
         sample_data = self.get('sample_data', sd_token_camera)
         assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use render_image() on lidar pointclouds!'
         if not sample_data['is_key_frame']:
-            assert not annotations_type, 'Error: Cannot render annotations for non keyframes!'
+            assert not annotation_type, 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
         if with_attributes:
             assert with_category, 'In order to set with_attributes=True, with_category must be True.'
@@ -797,16 +797,15 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = get_font(fonts_valid=['FreeSerif.ttf', 'FreeSans.ttf', 'Century.ttf', 'Calibri.ttf', 'arial.ttf'],
-                        font_size=font_size)
+        font = get_font(font_size=font_size)
         draw = ImageDraw.Draw(im, 'RGBA')
 
         annotations_types = ['all', 'surfaces', 'objects', 'none']
-        assert annotations_type in annotations_types, \
-            'Error: {} is not a valid option for with_annotations. ' \
-            'Only {} are allowed.'.format(annotations_type, annotations_types)
-        if annotations_type is not 'none':
-            if annotations_type == 'all' or annotations_type == 'surfaces':
+        assert annotation_type in annotations_types, \
+            'Error: {} is not a valid option for annotation_type. ' \
+            'Only {} are allowed.'.format(annotation_type, annotations_types)
+        if annotation_type is not 'none':
+            if annotation_type == 'all' or annotation_type == 'surfaces':
                 # Load stuff / surface regions.
                 surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
                 if surface_tokens is not None:
@@ -825,7 +824,7 @@ class NuImages:
                     # Draw mask. The label is obvious from the color.
                     draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-            if annotations_type == 'all' or annotations_type == 'objects':
+            if annotation_type == 'all' or annotation_type == 'objects':
                 # Load object instances.
                 object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
                 if object_tokens is not None:
