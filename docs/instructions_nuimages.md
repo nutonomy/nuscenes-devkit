@@ -12,12 +12,13 @@
 
 # Introduction
 In nuImages, we annotate objects with 2d boxes, instance masks and 2d segmentation masks. All the labels and attributes from nuScenes are carried over into nuImages.
+We have also added more attributes in nuImages. For segmentation, we have included ["stuff" (background) classes](#surfaces).
 
 
 
 # Objects
-nuImages contains the same [object classes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#labels) 
-and [attributes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes) from nuScenes.
+nuImages contains the same [object classes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#labels),
+while the [attributes](TODO link to website) are a superset of the [attributes in nuScenes.](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes).
 
 
 ## Bounding Boxes
@@ -54,15 +55,11 @@ and [attributes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/in
  - `vehicle.*`
    - In nighttime images, annotate the vehicles only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
    - If the pivoting joint of a bus cannot be seen, annotate it as `vehicle.bus.rigid`.
+   - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles, bicycles, and personal mobility vehicles), 
+   the rider (and, if applicable, the passengers as well as objects) should be included in the box for the vehicle.
+   - If there is a pedestrian standing next to the vehicle, do not include the pedestrian in the annotation.
    - For `vehicle.motorcycle`:
-     - If there is a rider, include the rider in the box.
-     - If there is a passenger, include the passenger in the box.
-     - If there is a pedestrian standing next to the motorcycle, do not include the pedestrian in the annotation.
      - If there is a sidecar attached to the motorcycle, include the sidecar in the box.
-   - For `vehicle.bicycle`:
-     - If there is a rider, include the rider in the box.
-     - If there is a passenger, include the passenger in the box.
-     - If there is a pedestrian standing next to the bicycle, do not include in the annotation.
    - For `vehicle.bicycle`:
      - Bicycles which are not part of a bicycle rack should be annotated as bicycles separately, rather than collectively as `static_object.bicycle_rack`.
    - For `vehicle.trailer`:
@@ -97,6 +94,7 @@ and [attributes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/in
  - If a static / moveable object has another object attached to it (signboard, rope), include it in the annotation.
  - If parts of an object is not visible due to lighting and / or shadow, it is best to have an educated guess on the non-visible area of the object.
  - If an object is reflected clearly in a glass window, then the reflection should be annotated.
+ 
 ### Detailed Instructions 
  - `human.pedestrian.*` 
   - If a pedestrian is carrying an object (i.e. bags, umbrellas, tools), include it in the polygon. 
@@ -106,6 +104,8 @@ and [attributes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/in
    (Exceptions are the crane arms on construction vehicles).
    - If a person is on a personal mobility vehicle (e.g. skateboard, Segway, scooter), include the person in the annotation for `human.pedestrian.personal_mobility`.
    - If a vehicle is carrying people or bicycles, these are considered part of the object and should be included in the polygon.
+   - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles, bicycles, and personal mobility vehicles), 
+   the rider (and, if applicable, the passengers as well as objects) should be included in the polygon for the vehicle.
  - `static_object.bicycle_rack`
    - All bicycles in a bicycle rack should not be annotated.
 
