@@ -41,7 +41,7 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
 ### Detailed Instructions 
  - `human.pedestrian.*`
    - People inside / on vehicles should not be annotated as pedestrians. They are considered as appendages of vehicles.
-   - In nighttime images, annotate the pedestrian only when either body part(s) of a person is clearly visible 
+   - In nighttime images, annotate the pedestrian only when either the body part(s) of a person is clearly visible 
    (leg, arm, head etc.), or the person is clearly in motion.
    - If a pedestrian is carrying an object (e.g. children, bags, umbrellas, tools), the object should be included 
    in the bounding box for the pedestrian.
@@ -52,9 +52,9 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
    - If a person is on a personal mobility vehicle (e.g. skateboard, Segway, scooter), include the person in the annotation for `human.pedestrian.personal_mobility`.
    - If there is uncertainty about the type of the pedestrian (`human.pedestrian.adult` vs `human.pedestrian.child` vs `human.pedestrian.construction_worker`, etc.), choose `human.pedestrian.adult`.
  - `vehicle.*`
-   - In nighttime images, annotate the vehicles only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
+   - In nighttime images, annotate a vehicle only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
    - If the pivoting joint of a bus cannot be seen, annotate it as `vehicle.bus.rigid`.
-   - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles, bicycles, and personal mobility vehicles), 
+   - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles and bicycles), 
    the rider (and, if applicable, the passengers as well as objects) should be included in the box for the vehicle.
    - If there is a pedestrian standing next to the vehicle, do not include the pedestrian in the annotation.
    - For `vehicle.motorcycle`:
@@ -64,8 +64,8 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
    - For `vehicle.trailer`:
      - A vehicle towed by another vehicle should be labeled with its corresponding vehicle type (not as `vehicle.trailer`).
  - `movable_object.*`
-   - Movable objects do not include pedestrians, bicycles, wheel-chairs, and strollers.
-   - Do not label movable signs or small barriers not on the road.
+   - Movable objects do not include pedestrians, bicycles, wheelchairs, and strollers.
+   - Do not label movable signs or small barriers which are not on the road.
    - Do not label permanent pedestrian walk signs, even when they are on the road.
    - Do not label permanently mounted poles.
    - For `movable_object.trafficcone`:
@@ -85,13 +85,13 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
  - There should be not be a discrepancy of more than 2 pixels between the edge of the object instance and the polygon.
  - If an object is occluded by another object whose width is less than 5 pixels (e.g. a thin fence), 
  then the external object can be included in the polygon.
- - If an object is loosely covered by another object (e.g. branches bushes), do not create several polygons for visible areas that are less than 15 pixels in diameter.
+ - If an object is loosely covered by another object (e.g. branches, bushes), do not create several polygons for visible areas that are less than 15 pixels in diameter.
  - If an object enclosed by the bounding box is occluded by another foreground object but has a visible area through a glass window (like for cars / vans / trucks), 
  not create a polygon on that visible area.
  - If an object has a visible area through a hole of another foreground object, create a polygon on the visible area. 
  Exemptions would be holes from bicycle / motorcycles / bike racks and holes that are less than 15 pixels diameter.
  - If a static / moveable object has another object attached to it (signboard, rope), include it in the annotation.
- - If parts of an object is not visible due to lighting and / or shadow, it is best to have an educated guess on the non-visible area of the object.
+ - If parts of an object are not visible due to lighting and / or shadow, it is best to have an educated guess on the non-visible areas of the object.
  - If an object is reflected clearly in a glass window, then the reflection should be annotated.
  
 ### Detailed Instructions 
@@ -100,7 +100,7 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
   If the pedestrian is dragging an object, then do not include it.
  - `vehicle.*`
    - Include extremities (e.g. side view mirrors, taxi heads, police sirens, etc.); exceptions are the crane arms on construction vehicles.
-   - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles, bicycles, and personal mobility vehicles), 
+   - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles and bicycles), 
    the rider (and, if applicable, the passengers as well as objects) should be included in the polygon for the vehicle.
  - `static_object.bicycle_rack`
    - All bicycles in a bicycle rack should not be annotated.
