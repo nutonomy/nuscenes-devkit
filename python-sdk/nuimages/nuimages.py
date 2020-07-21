@@ -694,7 +694,17 @@ class NuImages:
         nuim_name2idx_mapping = dict()
         # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
         for i, c in enumerate(self.category, start=1):
-            nuim_name2idx_mapping[c['name']] = i
+            if c['name'] == 'vehicle.ego':  # Ensure that vehicle.ego is always mapped to index 31.
+                nuim_name2idx_mapping[c['name']] = 31
+            else:
+                nuim_name2idx_mapping[c['name']] = i
+        # Ensure that each class name is uniquely paired with a class index, and vice versa.
+        assert len(nuim_name2idx_mapping) == len(set(nuim_name2idx_mapping.values())), \
+            'Error: There are {} class names but {} class indices'.format(len(nuim_name2idx_mapping),
+                                                                          len(set(nuim_name2idx_mapping.values())))
+        assert nuim_name2idx_mapping['flat.driveable_surface'] == 24, \
+            'Error: flat.driveable_surface should be ' \
+            'index 24, not {}.'.format(nuim_name2idx_mapping['flat.driveable_surface'])
 
         # Get image data.
         self.check_sweeps(sample_data['filename'])
