@@ -21,19 +21,10 @@ nuImages contains the same [object classes](https://github.com/nutonomy/nuscenes
 while the [attributes](#attributes) are a superset of the [attributes in nuScenes.](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes).
 
 ## Attributes
-The objects have attribute annotations such as whether a motorcycle has a rider, the pose of a pedestrian, the activity of a vehicle, 
-flashing emergency lights and whether an animal is flying. These are the attributes in nuImages:
+The following attributes are in addition to the existing ones in nuScenes:
 
 |  Attribute | Short Description |
 | --- | --- |
-| cycle.with_rider | There is a rider on the motorcycle. |
-| cycle.without_rider | There is no rider on the motorcycle. |
-| pedestrian.moving | The pedestrian is moving (e.g. running, walking). |
-| pedestrian.sitting_lying | The pedestrian is sitting (crouching and kneeling are also considered sitting) or lying down (i.e. the body of the pedestrian is horizontal to the ground plane). |
-| pedestrian.standing | The pedestrian is standing or bending down. |
-| vehicle.moving | The vehicle is moving. |
-| vehicle.parked | The vehicle is stationary (usually for a long duration) with no immediate intent to move. |
-| vehicle.stopped | The vehicle, with a driver/rider in / on it, is currently stationary but has an intent to move. |
 | vehicle_light.emergency.flashing | The emergency lights on the vehicle are flashing. |
 | vehicle_light.emergency.not_flashing | The emergency lights on the vehicle are not flashing. |
 | vertical_position.off_ground | The object is not in the ground (e.g. it is flying, falling, jumping or positioned in a tree or on a vehicle). |
