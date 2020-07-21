@@ -71,7 +71,7 @@ The following attributes are in **addition** to the existing ones in nuScenes:
  - If an object is occluded by another object whose width is less than 5 pixels (e.g. a thin fence), then the external object can be included in the polygon.
  - If an object is loosely covered by another object (e.g. branches, bushes), do not create several polygons for visible areas that are less than 15 pixels in diameter.
  - If an object enclosed by the bounding box is occluded by another foreground object but has a visible area through a glass window (like for cars / vans / trucks), 
- not create a polygon on that visible area.
+ do not create a polygon on that visible area.
  - If an object has a visible area through a hole of another foreground object, create a polygon on the visible area. 
  Exemptions would be holes from bicycle / motorcycles / bike racks and holes that are less than 15 pixels diameter.
  - If a static / moveable object has another object attached to it (signboard, rope), include it in the annotation.
