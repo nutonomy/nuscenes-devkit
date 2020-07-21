@@ -40,8 +40,7 @@ The following attributes are in addition to the existing ones in nuScenes:
  - If an object is reflected clearly in a glass window, then the reflection should be annotated.
  - If an object has extremities, the bounding box should include **all** the extremities (exceptions are the side view mirrors and antennas of vehicles).
  Note that this differs [from how the instance masks are annotated](#instance-segmentation), in which the extremities are included in the masks.
- - Only label objects if the object is clear enough to be certain of what it is. 
- If an object is so blurry it cannot be known, do not label the object.
+ - Only label objects if the object is clear enough to be certain of what it is. If an object is so blurry it cannot be known, do not label the object.
  - Do not label an object if its height is less than 10 pixels.
  - Do not label an object if its less than 20% visible. 
  The clarity and orientation of the object does not influence its visibility. 
@@ -52,8 +51,6 @@ The following attributes are in addition to the existing ones in nuScenes:
  - `human.pedestrian.*`
    - People inside / on vehicles should not be annotated as pedestrians. They are considered as appendages of vehicles.
    - In nighttime images, annotate the pedestrian only when either the body part(s) of a person is clearly visible (leg, arm, head etc.), or the person is clearly in motion.
-   - If two or more pedestrians are carrying the same object, the bounding box of only one of them will include the object.
-   - If a pedestrian is pulling or pushing an object, the pedestrian and the object should be annotated separately.
    - In nighttime images, annotate a vehicle only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
  - `movable_object.*`
    - For `movable_object.trafficcone`:
