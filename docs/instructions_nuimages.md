@@ -28,8 +28,7 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
  - If an object is occluded, then draw the bounding box to include the occluded part of the object according to your best guess.
  - If an object is cut off at the edge of the image, then the bounding box should stop at the image boundary.
  - If an object is reflected clearly in a glass window, then the reflection should be annotated.
- - If an object has extremities, the bounding box should include **all** the extremities. 
- (Exceptions are the side view mirrors and antennas of vehicles).
+ - If an object has extremities, the bounding box should include **all** the extremities (exceptions are the side view mirrors and antennas of vehicles).
  Note that this differs [from how the instance masks are annotated](#instance-segmentation), in which the extremities are included in the masks.
  - Only label objects if the object is clear enough to be certain of what it is. 
  If an object is so blurry it cannot be known, do not label the object.
@@ -100,10 +99,7 @@ while the [attributes](TODO link to website) are a superset of the [attributes i
   - If a pedestrian is carrying an object (i.e. bags, umbrellas, tools), include it in the polygon. 
   If the pedestrian is dragging an object, then do not include it.
  - `vehicle.*`
-   - Include extremities (e.g. side view mirrors, taxi heads, police sirens, etc.)
-   (Exceptions are the crane arms on construction vehicles).
-   - If a person is on a personal mobility vehicle (e.g. skateboard, Segway, scooter), include the person in the annotation for `human.pedestrian.personal_mobility`.
-   - If a vehicle is carrying people or bicycles, these are considered part of the object and should be included in the polygon.
+   - Include extremities (e.g. side view mirrors, taxi heads, police sirens, etc.); exceptions are the crane arms on construction vehicles.
    - If there is a rider (and any passengers or objects) in the vehicle (or on the vehicle, in the case of motorcycles, bicycles, and personal mobility vehicles), 
    the rider (and, if applicable, the passengers as well as objects) should be included in the polygon for the vehicle.
  - `static_object.bicycle_rack`
