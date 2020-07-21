@@ -21,7 +21,7 @@ nuImages contains the same [object classes](https://github.com/nutonomy/nuscenes
 while the [attributes](#attributes) are a superset of the [attributes in nuScenes.](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes).
 
 ## Attributes
-The following attributes are in addition to the existing ones in nuScenes:
+The following attributes are in **addition** to the existing ones in nuScenes:
 
 |  Attribute | Short Description |
 | --- | --- |
@@ -51,6 +51,7 @@ The following attributes are in addition to the existing ones in nuScenes:
  - `human.pedestrian.*`
    - People inside / on vehicles should not be annotated as pedestrians. They are considered as appendages of vehicles.
    - In nighttime images, annotate the pedestrian only when either the body part(s) of a person is clearly visible (leg, arm, head etc.), or the person is clearly in motion.
+  = `vehicle.*`
    - In nighttime images, annotate a vehicle only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
  - `movable_object.*`
    - For `movable_object.trafficcone`:
@@ -59,7 +60,6 @@ The following attributes are in addition to the existing ones in nuScenes:
      - Do not label traffic cones appended to vehicles.
    - For `movable_object.barrier`:
      - If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
-     - If the barriers are installed permanently, then do not include them.
 
 [Top](#overview)
    
