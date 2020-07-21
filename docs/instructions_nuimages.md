@@ -12,7 +12,7 @@
 
 # Introduction
 In nuImages, we annotate objects with 2d boxes, instance masks and 2d segmentation masks. All the labels and attributes from nuScenes are carried over into nuImages.
-We have also added more attributes in nuImages. For segmentation, we have included ["stuff" (background) classes](#surfaces).
+We have also [added more attributes](#attributes) in nuImages. For segmentation, we have included ["stuff" (background) classes](#surfaces).
 
 
 
