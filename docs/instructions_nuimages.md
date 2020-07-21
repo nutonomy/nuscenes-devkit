@@ -51,7 +51,7 @@ The following attributes are in **addition** to the existing ones in nuScenes:
  - `human.pedestrian.*`
    - People inside / on vehicles should not be annotated as pedestrians. They are considered as appendages of vehicles.
    - In nighttime images, annotate the pedestrian only when either the body part(s) of a person is clearly visible (leg, arm, head etc.), or the person is clearly in motion.
-  = `vehicle.*`
+ - `vehicle.*`
    - In nighttime images, annotate a vehicle only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
  - `movable_object.*`
    - For `movable_object.trafficcone`:
