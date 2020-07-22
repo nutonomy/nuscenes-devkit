@@ -121,9 +121,16 @@ nuImages includes surface classes as well:
 | [`vehicle.ego`](#2-vehicleego) | The vehicle on which the cameras, radar and lidar are mounted, that is sometimes visible at the bottom of the image. |
 
 ### 1. flat.driveable_surface
-[### TODO add examples images of class]
+![driveable_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/driveable_1.png)
+![driveable_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/driveable_2.png)
+![driveable_3](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/driveable_3.png)
+![driveable_4](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/driveable_4.png)
+
 ### 2. vehicle.ego
-[### TODO add examples images of class]
+![ego_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/ego_1.png)
+![ego_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/ego_2.png)
+![ego_3](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/ego_3.png)
+![ego_4](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/ego_4.png)
 
 ## Semantic Segmentation
 ### General Instructions
