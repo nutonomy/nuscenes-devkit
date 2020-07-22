@@ -5,6 +5,7 @@
 - [Objects](#objects)
   - [Bounding Boxes](#bounding-boxes)
   - [Instance Segmentation](#instance-segmentation)
+  - [Attributes](#attributes)
 - [Surfaces](#surfaces)
   - [Semantic Segmentation](#semantic-segmentation)
 
@@ -18,18 +19,7 @@ We have also [added more attributes](#attributes) in nuImages. For segmentation,
 
 # Objects
 nuImages contains the same [object classes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#labels),
-while the [attributes](#attributes) are a superset of the [attributes in nuScenes.](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes).
-
-## Attributes
-The following attributes are in **addition** to the existing ones in nuScenes:
-
-|  Attribute | Short Description |
-| --- | --- |
-| vehicle_light.emergency.flashing | The emergency lights on the vehicle are flashing. |
-| vehicle_light.emergency.not_flashing | The emergency lights on the vehicle are not flashing. |
-| vertical_position.off_ground | The object is not in the ground (e.g. it is flying, falling, jumping or positioned in a tree or on a vehicle). |
-| vertical_position.on_ground | The object is on the ground plane. |
-
+while the [attributes](#attributes) are a superset of the [attributes in nuScenes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes).
 
 ## Bounding Boxes
 ### General Instructions
@@ -42,24 +32,15 @@ The following attributes are in **addition** to the existing ones in nuScenes:
  Note that this differs [from how the instance masks are annotated](#instance-segmentation), in which the extremities are included in the masks.
  - Only label objects if the object is clear enough to be certain of what it is. If an object is so blurry it cannot be known, do not label the object.
  - Do not label an object if its height is less than 10 pixels.
- - Do not label an object if its less than 20% visible. 
- The clarity and orientation of the object does not influence its visibility. 
+ - Do not label an object if its less than 20% visible, unless you can confidently tell what the object is.
  An object can have low visibility when it is occluded or cut off by the image.
- However, even when the object is less than 20% visible, it should be labeled if you can confidently tell what the object is.
+ The clarity and orientation of the object does not influence its visibility. 
  
 ### Detailed Instructions 
  - `human.pedestrian.*`
-   - People inside / on vehicles should not be annotated as pedestrians. They are considered as appendages of vehicles.
    - In nighttime images, annotate the pedestrian only when either the body part(s) of a person is clearly visible (leg, arm, head etc.), or the person is clearly in motion.
  - `vehicle.*`
    - In nighttime images, annotate a vehicle only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
- - `movable_object.*`
-   - For `movable_object.trafficcone`:
-     - Traffic cones do not necessarily have to be cone-shaped (e.g. there may be traffic cones which are orange-striped barrels).
-     - Permanently mounted traffic delineator posts are not traffic cones.
-     - Do not label traffic cones appended to vehicles.
-   - For `movable_object.barrier`:
-     - If there are multiple barriers either connected or just placed next to each other, they should be annotated separately.
 
 [Top](#overview)
    
@@ -83,6 +64,19 @@ The following attributes are in **addition** to the existing ones in nuScenes:
    - Include extremities (e.g. side view mirrors, taxi heads, police sirens, etc.); exceptions are the crane arms on construction vehicles.
  - `static_object.bicycle_rack`
    - All bicycles in a bicycle rack should not be annotated.
+
+[Top](#overview)
+
+## Attributes
+In nuImages, each object comes with a box, a mask and a set of attributes. 
+The following attributes are in **addition** to the [existing ones in nuScenes]((https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes)):
+
+|  Attribute | Short Description |
+| --- | --- |
+| vehicle_light.emergency.flashing | The emergency lights on the vehicle are flashing. |
+| vehicle_light.emergency.not_flashing | The emergency lights on the vehicle are not flashing. |
+| vertical_position.off_ground | The object is not in the ground (e.g. it is flying, falling, jumping or positioned in a tree or on a vehicle). |
+| vertical_position.on_ground | The object is on the ground plane. |
 
 [Top](#overview)
 
