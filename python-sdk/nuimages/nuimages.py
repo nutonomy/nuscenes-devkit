@@ -380,7 +380,7 @@ class NuImages:
             print('\nPrinting surface annotations:')
             for surface_ann in surface_anns:
                 category = self.get('category', surface_ann['category_token'])
-                print(surface_ann['sample_data_token'], category['name'])
+                print(surface_ann['token'], category['name'])
 
         object_tokens = [o['token'] for o in object_anns]
         surface_tokens = [s['token'] for s in surface_anns]
