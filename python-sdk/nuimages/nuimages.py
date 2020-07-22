@@ -693,18 +693,26 @@ class NuImages:
         # Build a mapping from name to index to look up index in O(1) time.
         nuim_name2idx_mapping = dict()
         # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
-        for i, c in enumerate(self.category, start=1):
-            if c['name'] == 'vehicle.ego':  # Ensure that vehicle.ego is always mapped to index 31.
-                nuim_name2idx_mapping[c['name']] = 31
-            else:
+        # Also, sort the categories before looping so that the order is always the same (alphabetical).
+        i = 1
+        for c in sorted(self.category, key=lambda k: k['name']):
+            # Ignore the vehicle.ego and flat.driveable_surface classes first; they will be mapped later.
+            if c['name'] != 'vehicle.ego' and c['name'] != 'flat.driveable_surface':
                 nuim_name2idx_mapping[c['name']] = i
+                i += 1
+
+        assert max(nuim_name2idx_mapping.values()) < 24, \
+            'Error: There are {} classes (excluding vehicle.ego and flat.driveable_surface), ' \
+            'but there should be 23. Please check your category.json'.format(max(nuim_name2idx_mapping.values()))
+
+        # Now map the vehicle.ego and flat.driveable_surface classes.
+        nuim_name2idx_mapping['flat.driveable_surface'] = 24
+        nuim_name2idx_mapping['vehicle.ego'] = 31
+
         # Ensure that each class name is uniquely paired with a class index, and vice versa.
         assert len(nuim_name2idx_mapping) == len(set(nuim_name2idx_mapping.values())), \
             'Error: There are {} class names but {} class indices'.format(len(nuim_name2idx_mapping),
                                                                           len(set(nuim_name2idx_mapping.values())))
-        assert nuim_name2idx_mapping['flat.driveable_surface'] == 24, \
-            'Error: flat.driveable_surface should be ' \
-            'index 24, not {}.'.format(nuim_name2idx_mapping['flat.driveable_surface'])
 
         # Get image data.
         self.check_sweeps(sample_data['filename'])
