@@ -18,7 +18,7 @@ We have also [added more attributes](#attributes) in nuImages. For segmentation,
 
 
 # Objects
-nuImages contains the same [object classes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#labels),
+nuImages contains the [same object classes as nuScenes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#labels),
 while the [attributes](#attributes) are a superset of the [attributes in nuScenes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#attributes).
 
 ## Bounding Boxes
@@ -95,7 +95,7 @@ while the [attributes](#attributes) are a superset of the [attributes in nuScene
 ![instanceseg_extremity](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_extremity.png)
 ![instanceseg_extremity_exempt](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_extremity_exempt.png)
  - `static_object.bicycle_rack`
-   - All bicycles in a bicycle rack should not be annotated.
+   - All bicycles in a bicycle rack should be annotated collectively as bicycle rack.
 
 [Top](#overview)
 
