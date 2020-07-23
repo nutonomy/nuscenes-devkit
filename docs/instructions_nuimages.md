@@ -27,15 +27,17 @@ while the [attributes](#attributes) are a superset of the [attributes in nuScene
  - Do not apply more than one box to a single object.
  - If an object is occluded, then draw the bounding box to include the occluded part of the object according to your best guess.
  
- [![](occluded_vehicle_8.png)]() [![](occluded_vehicle_9.png)]() 
+![bboxes_occlusion_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_occlusion_1.png) 
+![bboxes_occlusion_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_occlusion_2.png)
  - If an object is cut off at the edge of the image, then the bounding box should stop at the image boundary.
  - If an object is reflected clearly in a glass window, then the reflection should be annotated.
  
- [![](mirror_image_1.png)]() 
+![bboxes_reflection](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_reflection.png) 
  - If an object has extremities, the bounding box should include **all** the extremities (exceptions are the side view mirrors and antennas of vehicles).
  Note that this differs [from how the instance masks are annotated](#instance-segmentation), in which the extremities are included in the masks.
  
- [![](extremity_5.png)]() [![](extremity_4.png)]()
+![bboxes_extremity_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_extremity_1.png)
+![bboxes_extremity_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_extremity_2.png)
  - Only label objects if the object is clear enough to be certain of what it is. If an object is so blurry it cannot be known, do not label the object.
  - Do not label an object if its height is less than 10 pixels.
  - Do not label an object if its less than 20% visible, unless you can confidently tell what the object is.
@@ -46,13 +48,14 @@ while the [attributes](#attributes) are a superset of the [attributes in nuScene
  - `human.pedestrian.*`
    - In nighttime images, annotate the pedestrian only when either the body part(s) of a person is clearly visible (leg, arm, head etc.), or the person is clearly in motion.
    
-   [![](nighttime_pedestrian_fp_1.png)]() [![](nighttime_pedestrian_fp_2.png)]() 
+![bboxes_pedestrian_nighttime_fp_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_pedestrian_nighttime_fp_1.png) 
+![bboxes_pedestrian_nighttime_fp_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_pedestrian_nighttime_fp_2.png)
  - `vehicle.*`
    - In nighttime images, annotate a vehicle only when a pair of lights is clearly visible (break or head or hazard lights), and it is clearly on the road surface.
    
-   [![](nighttime_vehicle_fp_1.png)]() 
-   [![](nighttime_vehicle_fp_2.png)]() 
-   [![](nighttime_vehicle_fn_1.png)]()
+![bboxes_vehicle_nighttime_fp_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_vehicle_nighttime_fp_1.png)
+![bboxes_vehicle_nighttime_fp_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_vehicle_nighttime_fp_2.png)
+![bboxes_vehicle_nighttime_fn_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/bboxes_vehicle_nighttime_fn_1.png)
    
 [Top](#overview)
    
@@ -63,36 +66,34 @@ while the [attributes](#attributes) are a superset of the [attributes in nuScene
  - There should not be a discrepancy of more than 2 pixels between the edge of the object instance and the polygon.
  - If an object is occluded by another object whose width is less than 5 pixels (e.g. a thin fence), then the external object can be included in the polygon.
  
- [![](inst11.png)]()
- [![](inst12.png)]()
+![instanceseg_occlusion5pix_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_occlusion5pix_1.png)
  - If an object is loosely covered by another object (e.g. branches, bushes), do not create several polygons for visible areas that are less than 15 pixels in diameter.
  
- [![](inst_seg_v2_19.png)]()
+![instanceseg_covered](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_covered.png)
  - If an object enclosed by the bounding box is occluded by another foreground object but has a visible area through a glass window (like for cars / vans / trucks), 
  do not create a polygon on that visible area.
  
- [![](inst16.png)]()
+![instanceseg_hole_another_object](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_hole_another_object.png)
  - If an object has a visible area through a hole of another foreground object, create a polygon on the visible area.
  Exemptions would be holes from bicycle / motorcycles / bike racks and holes that are less than 15 pixels diameter.
  
- [![](inst17.png)]()
+![instanceseg_hole_another_object_exempt](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_hole_another_object_exempt.png)
  - If a static / moveable object has another object attached to it (signboard, rope), include it in the annotation.
  
- [![](inst_seg_v2_21.png)]()
- [![](inst_seg_v2_22.png)]()
+![instanceseg_attached_object_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_attached_object_1.png)
  - If parts of an object are not visible due to lighting and / or shadow, it is best to have an educated guess on the non-visible areas of the object.
  
- [![](inst24.png)]()
+![instanceseg_guess](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_guess.png)
  - If an object is reflected clearly in a glass window, then the reflection should be annotated.
  
- [![](inst25.png)]()
+![instanceseg_reflection](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_reflection.png)
  
 ### Detailed Instructions 
  - `vehicle.*`
    - Include extremities (e.g. side view mirrors, taxi heads, police sirens, etc.); exceptions are the crane arms on construction vehicles.
    
-   [![](inst8.png)]()
-   [![](inst10.png)]()
+![instanceseg_extremity](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_extremity.png)
+![instanceseg_extremity_exempt](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_extremity_exempt.png)
  - `static_object.bicycle_rack`
    - All bicycles in a bicycle rack should not be annotated.
 
@@ -137,25 +138,25 @@ nuImages includes surface classes as well:
  - Only annotate a surface if its length and width are **both** greater than 20 pixels.
  - Annotations should tightly bound the edges of the area(s) of interest. 
  
- [![](no_gaps.png)]()
+![surface_no_gaps](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_no_gaps.png)
  - If two areas/objects of interest are adjacent to each other, there should be no gap between the two annotations.
  
- [![](polygon_tight.png)]()
+![surface_adjacent](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_adjacent.png)
  - Annotate a surface only as far as it is clearly visible.
- 
- [![](rules1.png)]()
+
+![surface_far_visible](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_far_visible.png)
  - If a surface is occluded (e.g. by branches, trees, fence poles), only annotate the visible areas (which are more than 20 pixels in length and width).
  
- [![]()]()
+![surface_occlusion_2](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_occlusion_2.png)
  - If a surface is covered by dirt or snow of less than 20 cm in height, include the dirt or snow in the annotation (since it can be safely driven over).
  
- [![]()]()
+![surface_snow](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_snow.png)
  - If a surface has puddles in it, always include them in the annotation.
  - Do not annotate reflections of surfaces.
 
 ### Detailed Instructions 
  - `flat.driveable_surface`
    - Include surfaces blocked by road blockers or pillars as long as they are the same surface as the driveable surface.
-   [![](dirveable_surface14.png)]()
+![surface_occlusion_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_occlusion_1.png)
 
 [Top](#overview)
