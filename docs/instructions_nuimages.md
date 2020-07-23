@@ -157,6 +157,7 @@ nuImages includes surface classes as well:
 ### Detailed Instructions 
  - `flat.driveable_surface`
    - Include surfaces blocked by road blockers or pillars as long as they are the same surface as the driveable surface.
+
 ![surface_occlusion_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/surface_occlusion_1.png)
 
 [Top](#overview)
