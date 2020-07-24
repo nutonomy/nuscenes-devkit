@@ -118,6 +118,8 @@ def render_images(nuim: NuImages,
     print('Rendering %s for mode %s to folder %s...' % (out_type, mode, out_dir))
     for sample_token in tqdm.tqdm(sample_tokens):
         sample = nuim.get('sample', sample_token)
+        log = nuim.get('log', sample['log_token'])
+        log_name = log['logfile']
         sd_token_camera = sample['key_camera_token']
         sensor = nuim.shortcut('sample_data', 'sensor', sd_token_camera)
         sample_cam_name = sensor['channel']
@@ -128,7 +130,7 @@ def render_images(nuim: NuImages,
             continue
 
         for mode in modes:
-            out_path_prefix = os.path.join(out_dir, '%s_%s_%s' % (sample_token, sample_cam_name, mode))
+            out_path_prefix = os.path.join(out_dir, '%s_%s_%s_%s' % (log_name, sample_token, sample_cam_name, mode))
             if out_type == 'image':
                 write_image(nuim, sd_token_camera, mode, '%s.jpg' % out_path_prefix)
             elif out_type == 'video':
