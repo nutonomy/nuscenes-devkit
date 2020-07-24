@@ -20,7 +20,7 @@ from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 from tqdm import tqdm
 
-from nuscenes.lidarseg.lidarseg_utils import filter_colors, colormap_to_colors, plt_to_cv2, get_stats, \
+from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, plt_to_cv2, get_stats, \
     get_key_from_value, get_labels_in_coloring, create_lidarseg_legend, paint_points_label
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
@@ -1150,7 +1150,7 @@ class NuScenesExplorer:
                     # Get aggregated lidar point cloud in lidar frame.
                     pc, times = LidarPointCloud.from_file_multisweep(self.nusc, sample_rec, chan, ref_chan,
                                                                      nsweeps=nsweeps)
-                    velocities = None
+                velocities = None
             else:
                 # Get aggregated radar point cloud in reference frame.
                 # The point cloud is transformed to the reference frame for visualization purposes.

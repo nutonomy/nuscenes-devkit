@@ -6,7 +6,7 @@ import os.path as osp
 import sys
 import time
 from collections import defaultdict
-from typing import Any, List, Dict, Optional, Tuple, Callable, Union
+from typing import Any, List, Dict, Optional, Tuple, Callable
 
 import cv2
 import matplotlib.pyplot as plt
@@ -446,7 +446,7 @@ class NuImages:
         sample = self.get('sample', sample_token)
         key_name = 'key_%s_token' % modality
         if sample[key_name] == '':
-            # If we don't have a key lidar pointcloud, work the slow way by searching all sample_datas  # TODO: check this
+            # If we don't have a key lidar pointcloud, work the slow way by searching all sample_datas.
             if modality == 'camera':
                 fileformat = 'jpg'
             else:
@@ -684,7 +684,7 @@ class NuImages:
         return translations, key_index
 
     def get_segmentation(self,
-                         sd_token_camera: str) -> Union[np.ndarray, np.ndarray]:
+                         sd_token_camera: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Produces two segmentation masks as numpy arrays of size H x W each, where H and W are the height and width
         of the camera image respectively:

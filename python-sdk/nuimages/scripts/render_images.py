@@ -15,7 +15,7 @@ def render_images(nuim: NuImages,
                   mode: str = 'all',
                   cam_name: str = None,
                   log_name: str = None,
-                  sample_limit: int = 100,
+                  sample_limit: int = 50,
                   filter_categories: List[str] = None,
                   out_type: str = 'image',
                   out_dir: str = '~/Downloads/nuImages',
@@ -34,7 +34,7 @@ def render_images(nuim: NuImages,
       "all" to render all of the above separately.
     :param cam_name: Only render images from a particular camera, e.g. "CAM_BACK'.
     :param log_name: Only render images from a particular log, e.g. "n013-2018-09-04-13-30-50+0800".
-    :param sample_limit: Maximum number of samples (images) to render.
+    :param sample_limit: Maximum number of samples (images) to render. Note that the mini split only includes 50 images.
     :param filter_categories: Specify a list of object_ann category names. Every sample that is rendered must
         contain annotations of any of those categories.
     :param out_type: The output type as one of the following:
@@ -184,9 +184,9 @@ def write_image(nuim: NuImages, sd_token_camera: str, mode: str, out_path: str) 
     :param out_path: The file to write the image to.
     """
     if mode == 'annotated':
-        nuim.render_image(sd_token_camera, with_annotations=True, out_path=out_path)
+        nuim.render_image(sd_token_camera, annotation_type='all', out_path=out_path)
     elif mode == 'image':
-        nuim.render_image(sd_token_camera, with_annotations=False, out_path=out_path)
+        nuim.render_image(sd_token_camera, annotation_type='none', out_path=out_path)
     elif mode == 'depth_dense':
         nuim.render_depth_dense(sd_token_camera, out_path=out_path)
     elif mode == 'depth_sparse':
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='all')
     parser.add_argument('--cam_name', type=str, default=None)
     parser.add_argument('--log_name', type=str, default=None)
-    parser.add_argument('--sample_limit', type=int, default=100)
+    parser.add_argument('--sample_limit', type=int, default=50)
     parser.add_argument('--filter_categories', action='append')
     parser.add_argument('--out_type', type=str, default='image')
     parser.add_argument('--out_dir', type=str, default='~/Downloads/nuImages')
