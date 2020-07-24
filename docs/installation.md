@@ -105,10 +105,6 @@ pip install -r setup/requirements.txt
 ```
 **Note:** The requirements file is internally divided into base requirements (`base`) and requirements specific to certain products or challenges (`nuimages`, `prediction` and `tracking`). If you only plan to use a subset of the codebase, feel free to comment out the lines that you do not need.
 
-## Verify install
-To verify your environment run `python -m unittest` in the `python-sdk` folder.
-You can also run `assert_download.py` in the `nuscenes/scripts` folder.
-
 ## Setup environment variable
 Finally, if you want to run the unit tests you need to point the devkit to the `nuscenes` folder on your disk.
 Set the NUSCENES environment variable to point to your data folder, e.g. `/data/sets/nuscenes`:
@@ -119,4 +115,9 @@ or for nuImages:
 ```
 export NUIMAGES="/data/sets/nuimages"
 ```
+
+## Verify install
+To verify your environment run `python -m unittest` in the `python-sdk` folder.
+You can also run `assert_download.py` in the `nuscenes/scripts` folder.
+
 That's it you should be good to go!

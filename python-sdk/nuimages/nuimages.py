@@ -6,16 +6,16 @@ import os.path as osp
 import sys
 import time
 from collections import defaultdict
-from typing import Any, List, Dict, Optional, Tuple, Callable
+from typing import Any, List, Dict, Optional, Tuple, Callable, Union
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from pyquaternion import Quaternion
 
 from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
-from nuimages.utils.utils import annotation_name, mask_decode
+from nuimages.utils.utils import annotation_name, mask_decode, get_font
 from nuscenes.utils.color_map import get_colormap
 from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.geometry_utils import view_points, transform_matrix
@@ -234,9 +234,10 @@ class NuImages:
 
     # ### List methods. ###
 
-    def list_attributes(self) -> None:
+    def list_attributes(self, sort_by: str = 'freq') -> None:
         """
         List all attributes and the number of annotations with each attribute.
+        :param sort_by: Sorting criteria, e.g. "name", "freq".
         """
         # Preload data if in lazy load to avoid confusing outputs.
         if self.lazy:
@@ -248,15 +249,26 @@ class NuImages:
             for attribute_token in object_ann['attribute_tokens']:
                 attribute_freqs[attribute_token] += 1
 
+        # Sort entries.
+        if sort_by == 'name':
+            sort_order = [i for (i, _) in sorted(enumerate(self.attribute), key=lambda x: x[1]['name'])]
+        elif sort_by == 'freq':
+            attribute_freqs_order = [attribute_freqs[c['token']] for c in self.attribute]
+            sort_order = [i for (i, _) in
+                          sorted(enumerate(attribute_freqs_order), key=lambda x: x[1], reverse=True)]
+        else:
+            raise Exception('Error: Invalid sorting criterion %s!' % sort_by)
+
         # Print to stdout.
         format_str = '{:11} {:24.24} {:48.48}'
         print()
         print(format_str.format('Annotations', 'Name', 'Description'))
-        for attribute in self.attribute:
+        for s in sort_order:
+            attribute = self.attribute[s]
             print(format_str.format(
                 attribute_freqs[attribute['token']], attribute['name'], attribute['description']))
 
-    def list_cameras(self) -> None:
+    def list_sensors(self) -> None:
         """
         List all cameras and the number of samples for each.
         """
@@ -276,9 +288,9 @@ class NuImages:
                 channel_freqs[sensor['channel']] += 1
 
         # Print to stdout.
-        format_str = '{:7} {:6} {:24}'
+        format_str = '{:15} {:7} {:25}'
         print()
-        print(format_str.format('Cameras', 'Samples', 'Channel'))
+        print(format_str.format('Calibr. sensors', 'Samples', 'Channel'))
         for channel in cs_freqs.keys():
             cs_freq = cs_freqs[channel]
             channel_freq = channel_freqs[channel]
@@ -359,16 +371,16 @@ class NuImages:
         surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
 
         if verbose:
-            print('Printing foreground annotations:')
+            print('Printing object annotations:')
             for object_ann in object_anns:
                 category = self.get('category', object_ann['category_token'])
                 attribute_names = [self.get('attribute', at)['name'] for at in object_ann['attribute_tokens']]
                 print('{} {} {}'.format(object_ann['token'], category['name'], attribute_names))
 
-            print('\nPrinting background annotations:')
+            print('\nPrinting surface annotations:')
             for surface_ann in surface_anns:
                 category = self.get('category', surface_ann['category_token'])
-                print(surface_ann['sample_data_token'], category['name'])
+                print(surface_ann['token'], category['name'])
 
         object_tokens = [o['token'] for o in object_anns]
         surface_tokens = [s['token'] for s in surface_anns]
@@ -671,29 +683,129 @@ class NuImages:
 
         return translations, key_index
 
+    def get_segmentation(self,
+                         sd_token_camera: str) -> Union[np.ndarray, np.ndarray]:
+        """
+        Produces two segmentation masks as numpy arrays of size H x W each, where H and W are the height and width
+        of the camera image respectively:
+            - semantic mask: A mask in which each pixel is an integer value between 0 to C (inclusive),
+                             where C is the number of categories in nuImages. Each integer corresponds to
+                             the index of the class in the category.json.
+            - instance mask: A mask in which each pixel is an integer value between 0 to N, where N is the
+                             number of objects in a given camera sample_data. Each integer corresponds to
+                             the order in which the object was drawn into the mask.
+        :param sd_token_camera: The token of the sample_data to be rendered.
+        :return: Two 2D numpy arrays (one semantic mask <int32: H, W>, and one instance mask <int32: H, W>).
+        """
+        # Validate inputs.
+        sample_data = self.get('sample_data', sd_token_camera)
+        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use get_segmentation() on lidar pointclouds!'
+        assert sample_data['is_key_frame'], 'Error: Cannot render annotations for non keyframes!'
+
+        # Build a mapping from name to index to look up index in O(1) time.
+        nuim_name2idx_mapping = dict()
+        # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
+        # Also, sort the categories before looping so that the order is always the same (alphabetical).
+        i = 1
+        for c in sorted(self.category, key=lambda k: k['name']):
+            # Ignore the vehicle.ego and flat.driveable_surface classes first; they will be mapped later.
+            if c['name'] != 'vehicle.ego' and c['name'] != 'flat.driveable_surface':
+                nuim_name2idx_mapping[c['name']] = i
+                i += 1
+
+        assert max(nuim_name2idx_mapping.values()) < 24, \
+            'Error: There are {} classes (excluding vehicle.ego and flat.driveable_surface), ' \
+            'but there should be 23. Please check your category.json'.format(max(nuim_name2idx_mapping.values()))
+
+        # Now map the vehicle.ego and flat.driveable_surface classes.
+        nuim_name2idx_mapping['flat.driveable_surface'] = 24
+        nuim_name2idx_mapping['vehicle.ego'] = 31
+
+        # Ensure that each class name is uniquely paired with a class index, and vice versa.
+        assert len(nuim_name2idx_mapping) == len(set(nuim_name2idx_mapping.values())), \
+            'Error: There are {} class names but {} class indices'.format(len(nuim_name2idx_mapping),
+                                                                          len(set(nuim_name2idx_mapping.values())))
+
+        # Get image data.
+        self.check_sweeps(sample_data['filename'])
+        im_path = osp.join(self.dataroot, sample_data['filename'])
+        im = Image.open(im_path)
+
+        (width, height) = im.size
+        semseg_mask = np.zeros((height, width)).astype('int32')
+        instanceseg_mask = np.zeros((height, width)).astype('int32')
+
+        # Load stuff / surface regions.
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+
+        # Draw stuff / surface regions.
+        for ann in surface_anns:
+            # Get color and mask.
+            category_token = ann['category_token']
+            category_name = self.get('category', category_token)['name']
+            if ann['mask'] is None:
+                continue
+            mask = mask_decode(ann['mask'])
+
+            # Draw mask for semantic segmentation.
+            semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
+
+        # Load object instances.
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+        # Sort by token to ensure that objects always appear in the instance mask in the same order.
+        object_anns = sorted(object_anns, key=lambda k: k['token'])
+
+        # Draw object instances.
+        # The 0 index is reserved for background; thus, the instances should start from index 1.
+        for i, ann in enumerate(object_anns, start=1):
+            # Get color, box, mask and name.
+            category_token = ann['category_token']
+            category_name = self.get('category', category_token)['name']
+            if ann['mask'] is None:
+                continue
+            mask = mask_decode(ann['mask'])
+
+            # Draw masks for semantic segmentation and instance segmentation.
+            semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
+            instanceseg_mask[mask == 1] = i
+
+        # Ensure that the number of instances in the instance segmentation mask is the same as the number of objects.
+        assert len(object_anns) == np.max(instanceseg_mask), \
+            'Error: There are {} objects but only {} instances ' \
+            'were drawn into the instance segmentation mask.'.format(len(object_anns), np.max(instanceseg_mask))
+
+        return semseg_mask, instanceseg_mask
+
     # ### Rendering methods. ###
 
     def render_image(self,
                      sd_token_camera: str,
-                     with_annotations: bool = True,
+                     annotation_type: str = 'all',
                      with_category: bool = False,
                      with_attributes: bool = False,
                      object_tokens: List[str] = None,
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
-                     box_line_width: int = 0,
+                     box_line_width: int = -1,
+                     font_size: int = 20,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
         :param sd_token_camera: The token of the sample_data to be rendered.
-        :param with_annotations: Whether to draw all annotations.
+        :param annotation_type: The types of annotations to draw on the image; there are four options:
+            'all': Draw surfaces and objects, subject to any filtering done by object_tokens and surface_tokens.
+            'surfaces': Draw only surfaces, subject to any filtering done by surface_tokens.
+            'objects': Draw objects, subject to any filtering done by object_tokens.
+            'none': Neither surfaces nor objects will be drawn.
         :param with_category: Whether to include the category name at the top of a box.
-        :param with_attributes: Whether to include attributes in the label tags.
+        :param with_attributes: Whether to include attributes in the label tags. Note that with_attributes=True
+            will only work if with_category=True.
         :param object_tokens: List of object annotation tokens. If given, only these annotations are drawn.
         :param surface_tokens: List of surface annotation tokens. If given, only these annotations are drawn.
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
-        :param box_line_width: The box line width in pixels. The default is 0.
-            If set to 0, box_line_width equals render_scale (rounded) to be larger in larger images.
+        :param box_line_width: The box line width in pixels. The default is -1.
+            If set to -1, box_line_width equals render_scale (rounded) to be larger in larger images.
+        :param font_size: Size of the text in the rendered image.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -701,10 +813,12 @@ class NuImages:
         sample_data = self.get('sample_data', sd_token_camera)
         assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use render_image() on lidar pointclouds!'
         if not sample_data['is_key_frame']:
-            assert not with_annotations, 'Error: Cannot render annotations for non keyframes!'
+            assert not annotation_type, 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
+        if with_attributes:
+            assert with_category, 'In order to set with_attributes=True, with_category must be True.'
         assert type(box_line_width) == int, 'Error: box_line_width must be an integer!'
-        if box_line_width == 0:
+        if box_line_width == -1:
             box_line_width = int(round(render_scale))
 
         # Get image data.
@@ -713,52 +827,57 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = ImageFont.load_default()
+        font = get_font(font_size=font_size)
         draw = ImageDraw.Draw(im, 'RGBA')
 
-        if with_annotations:
-            # Load stuff / background regions.
-            surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
-            if surface_tokens is not None:
-                surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
+        annotations_types = ['all', 'surfaces', 'objects', 'none']
+        assert annotation_type in annotations_types, \
+            'Error: {} is not a valid option for annotation_type. ' \
+            'Only {} are allowed.'.format(annotation_type, annotations_types)
+        if annotation_type is not 'none':
+            if annotation_type == 'all' or annotation_type == 'surfaces':
+                # Load stuff / surface regions.
+                surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+                if surface_tokens is not None:
+                    surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
-            # Draw stuff / background regions.
-            for ann in surface_anns:
-                # Get color and mask.
-                category_token = ann['category_token']
-                category_name = self.get('category', category_token)['name']
-                color = self.color_map[category_name]
-                if ann['mask'] is None:
-                    continue
-                mask = mask_decode(ann['mask'])
+                # Draw stuff / surface regions.
+                for ann in surface_anns:
+                    # Get color and mask.
+                    category_token = ann['category_token']
+                    category_name = self.get('category', category_token)['name']
+                    color = self.color_map[category_name]
+                    if ann['mask'] is None:
+                        continue
+                    mask = mask_decode(ann['mask'])
 
-                # Draw mask. The label is obvious from the color.
-                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                    # Draw mask. The label is obvious from the color.
+                    draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
-            # Load object instances.
-            object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
-            if object_tokens is not None:
-                object_anns = [o for o in object_anns if o['token'] in object_tokens]
+            if annotation_type == 'all' or annotation_type == 'objects':
+                # Load object instances.
+                object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+                if object_tokens is not None:
+                    object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
-            # Draw object instances.
-            for ann in object_anns:
-                # Get color, box, mask and name.
-                category_token = ann['category_token']
-                category_name = self.get('category', category_token)['name']
-                color = self.color_map[category_name]
-                bbox = ann['bbox']
-                attr_tokens = ann['attribute_tokens']
-                attributes = [self.get('attribute', at) for at in attr_tokens]
-                name = annotation_name(attributes, category_name, with_attributes=with_attributes)
-                if ann['mask'] is None:
-                    continue
-                mask = mask_decode(ann['mask'])
+                # Draw object instances.
+                for ann in object_anns:
+                    # Get color, box, mask and name.
+                    category_token = ann['category_token']
+                    category_name = self.get('category', category_token)['name']
+                    color = self.color_map[category_name]
+                    bbox = ann['bbox']
+                    attr_tokens = ann['attribute_tokens']
+                    attributes = [self.get('attribute', at) for at in attr_tokens]
+                    name = annotation_name(attributes, category_name, with_attributes=with_attributes)
+                    if ann['mask'] is not None:
+                        mask = mask_decode(ann['mask'])
 
-                # Draw mask, rectangle and text.
-                draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
-                draw.rectangle(bbox, outline=color, width=box_line_width)
-                if with_category:
-                    draw.text((bbox[0], bbox[1]), name, font=font)
+                        # Draw mask, rectangle and text.
+                        draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
+                        draw.rectangle(bbox, outline=color, width=box_line_width)
+                        if with_category:
+                            draw.text((bbox[0], bbox[1]), name, font=font)
 
         # Plot the image.
         (width, height) = im.size
