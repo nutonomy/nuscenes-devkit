@@ -527,8 +527,14 @@ class NuImages:
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
         pc.translate(np.array(poserecord['translation']))
 
+        # TODO: DEBUG: Print time offset between cam and lidar
+        cam_name = cam['filename'].split('__')[1]
+        time_offset_ego = self.get('ego_pose', cam['ego_pose_token'])['timestamp'] - cam['timestamp']
+        time_offset_lidar = self.get('ego_pose', pointsensor['ego_pose_token'])['timestamp'] - cam['timestamp']
+        print('%s\t%f\t%f' % (cam_name, time_offset_ego, time_offset_lidar))
+
         # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
-        if True:  # TODO: Debug only: Try mapping into a future ego pose
+        if False:  # TODO: Debug only: Try mapping into a future ego pose
             cur_cam = cam
             target_time = int(cur_cam['timestamp'] + 2e5)  # Move 200ms forward
             cur_target_diff = np.abs(target_time - cur_cam['timestamp'])
