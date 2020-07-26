@@ -528,7 +528,19 @@ class NuImages:
         pc.translate(np.array(poserecord['translation']))
 
         # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
-        poserecord = self.get('ego_pose', cam['ego_pose_token'])
+        if True:  # TODO: Debug only: Try mapping into a future ego pose
+            cur_cam = cam
+            target_time = int(cur_cam['timestamp'] + 2e5)  # Move 200ms forward
+            cur_target_diff = np.abs(target_time - cur_cam['timestamp'])
+            poserecord = self.get('ego_pose', cur_cam['ego_pose_token'])
+            while cur_cam['next'] != '':
+                cur_cam = self.get('sample_data', cur_cam['next'])
+                new_target_diff = np.abs(target_time - cur_cam['timestamp'])
+                if new_target_diff < cur_target_diff:
+                    poserecord = self.get('ego_pose', cur_cam['ego_pose_token'])
+                    cur_target_diff = new_target_diff
+        else:
+            poserecord = self.get('ego_pose', cam['ego_pose_token'])
         pc.translate(-np.array(poserecord['translation']))
         pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
 
