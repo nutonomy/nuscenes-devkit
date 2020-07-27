@@ -522,33 +522,16 @@ class NuImages:
         pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
         pc.translate(np.array(cs_record['translation']))
 
-        # Second step: transform from ego to the global frame.
-        poserecord = self.get('ego_pose', pointsensor['ego_pose_token'])
-        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
-        pc.translate(np.array(poserecord['translation']))
+        if False:  # TODO: For debugging purposes, stay in the ego vehicle frame
+            # Second step: transform from ego to the global frame.
+            poserecord = self.get('ego_pose', pointsensor['ego_pose_token'])
+            pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
+            pc.translate(np.array(poserecord['translation']))
 
-        # TODO: DEBUG: Print time offset between cam and lidar
-        cam_name = cam['filename'].split('__')[1]
-        time_offset_ego = self.get('ego_pose', cam['ego_pose_token'])['timestamp'] - cam['timestamp']
-        time_offset_lidar = self.get('ego_pose', pointsensor['ego_pose_token'])['timestamp'] - cam['timestamp']
-        print('%s\t%f\t%f' % (cam_name, time_offset_ego, time_offset_lidar))
-
-        # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
-        if False:  # TODO: Debug only: Try mapping into a future ego pose
-            cur_cam = cam
-            target_time = int(cur_cam['timestamp'] + 2e5)  # Move 200ms forward
-            cur_target_diff = np.abs(target_time - cur_cam['timestamp'])
-            poserecord = self.get('ego_pose', cur_cam['ego_pose_token'])
-            while cur_cam['next'] != '':
-                cur_cam = self.get('sample_data', cur_cam['next'])
-                new_target_diff = np.abs(target_time - cur_cam['timestamp'])
-                if new_target_diff < cur_target_diff:
-                    poserecord = self.get('ego_pose', cur_cam['ego_pose_token'])
-                    cur_target_diff = new_target_diff
-        else:
+            # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
             poserecord = self.get('ego_pose', cam['ego_pose_token'])
-        pc.translate(-np.array(poserecord['translation']))
-        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
+            pc.translate(-np.array(poserecord['translation']))
+            pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
 
         # Fourth step: transform from ego into the camera.
         cs_record = self.get('calibrated_sensor', cam['calibrated_sensor_token'])
