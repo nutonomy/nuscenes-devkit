@@ -23,7 +23,7 @@ sed -i.bak "/get_ipython.*/d; s/\(plt.imshow.*\)/#\1/"  python-sdk/tutorials/pre
 
 # Run tutorial
 xvfb-run python python-sdk/tutorials/nuscenes_tutorial.py
-xvfb-run python python-sdk/tutorials/nuimages_tutorial.py
+# xvfb-run python python-sdk/tutorials/nuimages_tutorial.py # skip until PR-440 merged
 xvfb-run python python-sdk/tutorials/can_bus_tutorial.py
 xvfb-run python python-sdk/tutorials/map_expansion_tutorial.py
 xvfb-run python python-sdk/tutorials/prediction_tutorial.py
