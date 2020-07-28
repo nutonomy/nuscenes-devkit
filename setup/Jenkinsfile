@@ -9,7 +9,7 @@ if( env.BRANCH_NAME != null && env.BRANCH_NAME != "master" ) {
 
 def update_deps() {
   sh '''#!/usr/bin/env bash
-    set -exu
+    set -e
     source activate nuscenes
     find . -name "*.txt" -exec sed -i -e '/pycocotools/d' {} \\;
     pip install --no-cache -r /nuscenes-dev/requirements.txt
