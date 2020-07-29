@@ -42,7 +42,7 @@ category
 ---------
 Taxonomy of object categories (e.g. vehicle, human). 
 Subcategories are delineated by a period (e.g. `human.pedestrian.adult`).
-The categories in nuImages are the same as in the nuScenes (w/o lidarseg), plus `flat.driveable_surface`.
+The categories in nuImages are the same as in nuScenes (w/o lidarseg), plus `flat.driveable_surface`.
 ```
 category {
    "token":                   <str> -- Unique record identifier.
