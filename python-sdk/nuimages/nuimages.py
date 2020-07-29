@@ -239,7 +239,7 @@ class NuImages:
             print(format_str.format(
                 attribute_freqs[attribute['token']], attribute['name'], attribute['description']))
 
-    def list_sensors(self) -> None:
+    def list_cameras(self) -> None:
         """
         List all cameras and the number of samples for each.
         """
@@ -637,7 +637,7 @@ class NuImages:
         # Validate inputs.
         sample_data = self.get('sample_data', sd_token)
         if not sample_data['is_key_frame']:
-            assert not annotation_type, 'Error: Cannot render annotations for non keyframes!'
+            assert annotation_type != 'none', 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
         if with_attributes:
             assert with_category, 'In order to set with_attributes=True, with_category must be True.'
