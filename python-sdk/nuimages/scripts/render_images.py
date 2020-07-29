@@ -142,7 +142,7 @@ def write_video(nuim: NuImages,
     """
     Render a video by combining all the images of type mode for each sample_data.
     :param nuim: NuImages instance.
-    :param sd_tokens: All camera sample_data tokens in chronological order.
+    :param sd_tokens: All sample_data tokens in chronological order.
     :param mode: The mode - see render_images().
     :param out_path_prefix: The file prefix used for the images and video.
     :param cleanup: Whether to delete images after rendering the video.

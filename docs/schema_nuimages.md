@@ -100,7 +100,7 @@ object_ann {
 
 sample_data
 ---------
-Sample_data contains the images and information about when they were capture.
+Sample_data contains the images and information about when they were captured.
 Sample_data covers all images, regardless of whether they are a keyframe or not.
 Only keyframes are annotated.
 For every keyframe, we also include up to 6 past and 6 future sweeps at 2 Hz.
