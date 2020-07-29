@@ -8,7 +8,6 @@ import time
 from collections import defaultdict
 from typing import Any, List, Dict, Optional, Tuple, Callable
 
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw
@@ -175,8 +174,8 @@ class NuImages:
         :return: The entry of the destination table correspondings to the source token.
         """
         if src_table == 'sample_data' and tgt_table == 'sensor':
-            sd_camera = self.get('sample_data', src_token)
-            calibrated_sensor = self.get('calibrated_sensor', sd_camera['calibrated_sensor_token'])
+            sample_data = self.get('sample_data', src_token)
+            calibrated_sensor = self.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
 
             return sensor
@@ -338,9 +337,9 @@ class NuImages:
             self.load_tables(['sample', 'object_ann', 'surface_ann', 'category'])
 
         sample = self.get('sample', sample_token)
-        sd_token_camera = sample['key_camera_token']
-        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
-        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+        key_camera_token = sample['key_camera_token']
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == key_camera_token]
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == key_camera_token]
 
         if verbose:
             print('Printing object annotations:')
@@ -493,8 +492,8 @@ class NuImages:
 
         # Find keyframe translation and rotation.
         sample = self.get('sample', sample_token)
-        sd_camera = self.get('sample_data', sample['key_camera_token'])
-        ego_pose = self.get('ego_pose', sd_camera['ego_pose_token'])
+        sample_data = self.get('sample_data', sample['key_camera_token'])
+        ego_pose = self.get('ego_pose', sample_data['ego_pose_token'])
         key_rotation = Quaternion(ego_pose['rotation'])
         key_timestamp = ego_pose['timestamp']
         key_index = [i for i, t in enumerate(timestamps) if t == key_timestamp][0]
@@ -511,7 +510,7 @@ class NuImages:
         return translations, key_index
 
     def get_segmentation(self,
-                         sd_token_camera: str) -> Tuple[np.ndarray, np.ndarray]:
+                         sd_token: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Produces two segmentation masks as numpy arrays of size H x W each, where H and W are the height and width
         of the camera image respectively:
@@ -521,11 +520,11 @@ class NuImages:
             - instance mask: A mask in which each pixel is an integer value between 0 to N, where N is the
                              number of objects in a given camera sample_data. Each integer corresponds to
                              the order in which the object was drawn into the mask.
-        :param sd_token_camera: The token of the sample_data to be rendered.
+        :param sd_token: The token of the sample_data to be rendered.
         :return: Two 2D numpy arrays (one semantic mask <int32: H, W>, and one instance mask <int32: H, W>).
         """
         # Validate inputs.
-        sample_data = self.get('sample_data', sd_token_camera)
+        sample_data = self.get('sample_data', sd_token)
         assert sample_data['is_key_frame'], 'Error: Cannot render annotations for non keyframes!'
 
         # Build a mapping from name to index to look up index in O(1) time.
@@ -562,7 +561,7 @@ class NuImages:
         instanceseg_mask = np.zeros((height, width)).astype('int32')
 
         # Load stuff / surface regions.
-        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token]
 
         # Draw stuff / surface regions.
         for ann in surface_anns:
@@ -577,7 +576,7 @@ class NuImages:
             semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
 
         # Load object instances.
-        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token]
         # Sort by token to ensure that objects always appear in the instance mask in the same order.
         object_anns = sorted(object_anns, key=lambda k: k['token'])
 
@@ -605,7 +604,7 @@ class NuImages:
     # ### Rendering methods. ###
 
     def render_image(self,
-                     sd_token_camera: str,
+                     sd_token: str,
                      annotation_type: str = 'all',
                      with_category: bool = False,
                      with_attributes: bool = False,
@@ -617,7 +616,7 @@ class NuImages:
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
-        :param sd_token_camera: The token of the sample_data to be rendered.
+        :param sd_token: The token of the sample_data to be rendered.
         :param annotation_type: The types of annotations to draw on the image; there are four options:
             'all': Draw surfaces and objects, subject to any filtering done by object_tokens and surface_tokens.
             'surfaces': Draw only surfaces, subject to any filtering done by surface_tokens.
@@ -636,7 +635,7 @@ class NuImages:
             If a path is provided, the plot is not shown to the user.
         """
         # Validate inputs.
-        sample_data = self.get('sample_data', sd_token_camera)
+        sample_data = self.get('sample_data', sd_token)
         if not sample_data['is_key_frame']:
             assert not annotation_type, 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
@@ -662,7 +661,7 @@ class NuImages:
         if annotation_type is not 'none':
             if annotation_type == 'all' or annotation_type == 'surfaces':
                 # Load stuff / surface regions.
-                surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+                surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token]
                 if surface_tokens is not None:
                     surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
@@ -681,7 +680,7 @@ class NuImages:
 
             if annotation_type == 'all' or annotation_type == 'objects':
                 # Load object instances.
-                object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+                object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token]
                 if object_tokens is not None:
                     object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
