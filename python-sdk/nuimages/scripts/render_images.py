@@ -25,11 +25,8 @@ def render_images(nuim: NuImages,
     Note: The images rendered here are keyframes only.
     :param nuim: NuImages instance.
     :param mode: What to render:
+      "image" for the image without annotations,
       "annotated" for the image with annotations,
-      "raw" for the image without annotations,
-      "dept_dense" for dense depth image,
-      "dept_sparse" for sparse depth image,
-      "pointcloud" for a birds-eye view of the pointcloud,
       "trajectory" for a rendering of the trajectory of the vehice,
       "all" to render all of the above separately.
     :param cam_name: Only render images from a particular camera, e.g. "CAM_BACK'.
@@ -45,7 +42,7 @@ def render_images(nuim: NuImages,
     """
     # Check and convert inputs.
     assert out_type in ['image', 'video'], ' Error: Unknown out_type %s!' % out_type
-    all_modes = ['annotated', 'image', 'depth_dense', 'depth_sparse', 'pointcloud', 'trajectory']
+    all_modes = ['image', 'annotated', 'trajectory']
     assert mode in all_modes + ['all'], 'Error: Unknown mode %s!' % mode
     assert not (out_type == 'video' and mode == 'trajectory'), 'Error: Cannot render "trajectory" for videos!'
 
@@ -123,7 +120,7 @@ def render_images(nuim: NuImages,
         sd_token_camera = sample['key_camera_token']
         sensor = nuim.shortcut('sample_data', 'sensor', sd_token_camera)
         sample_cam_name = sensor['channel']
-        sd_tokens_camera = nuim.get_sample_content(sample_token, modality='camera')
+        sd_tokens_camera = nuim.get_sample_content(sample_token)
 
         # We cannot render a video if there are missing camera sample_datas.
         if len(sd_tokens_camera) < 13 and out_type == 'video':
@@ -189,12 +186,6 @@ def write_image(nuim: NuImages, sd_token_camera: str, mode: str, out_path: str) 
         nuim.render_image(sd_token_camera, annotation_type='all', out_path=out_path)
     elif mode == 'image':
         nuim.render_image(sd_token_camera, annotation_type='none', out_path=out_path)
-    elif mode == 'depth_dense':
-        nuim.render_depth_dense(sd_token_camera, out_path=out_path)
-    elif mode == 'depth_sparse':
-        nuim.render_depth_sparse(sd_token_camera, out_path=out_path)
-    elif mode == 'pointcloud':
-        nuim.render_pointcloud(sd_token_camera, out_path=out_path)
     elif mode == 'trajectory':
         sd_camera = nuim.get('sample_data', sd_token_camera)
         nuim.render_trajectory(sd_camera['sample_token'], out_path=out_path)
