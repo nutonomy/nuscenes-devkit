@@ -119,7 +119,7 @@ nuImages includes surface classes as well:
 |  Label | Short Description |
 | --- | --- |
 | [`flat.driveable_surface`](#1-flatdriveable_surface) | All paved or unpaved surfaces that a car can drive on with no concern of traffic rules. |
-| [`vehicle.ego`](#2-vehicleego) | The vehicle on which the cameras, radar and lidar are mounted, that is sometimes visible at the bottom of the image. |
+| [`vehicle.ego`](#2-vehicleego) | The vehicle on which the sensors are mounted, that are sometimes visible at the bottom of the image. |
 
 ### 1. flat.driveable_surface
 ![driveable_1](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/driveable_1.png)
