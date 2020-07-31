@@ -171,7 +171,7 @@ class NuImages:
         :param src_table: The name of the source table.
         :param tgt_table: The name of the target table.
         :param src_token: The source token.
-        :return: The entry of the destination table correspondings to the source token.
+        :return: The entry of the destination table corresponding to the source token.
         """
         if src_table == 'sample_data' and tgt_table == 'sensor':
             sample_data = self.get('sample_data', src_token)
