@@ -115,28 +115,23 @@ class TestForeignKeys(unittest.TestCase):
         Test that the prev and next points in sample_data cover all entries and have the correct ordering.
         """
         # Register all sample_datas.
-        sample_to_sample_datas = {'camera': defaultdict(lambda: []), 'lidar': defaultdict(lambda: [])}
+        sample_to_sample_datas = defaultdict(lambda: [])
         for sample_data in self.nuim.sample_data:
-            if sample_data['fileformat'] == 'jpg':
-                modality = 'camera'
-            else:
-                modality = 'lidar'
-            sample_to_sample_datas[modality][sample_data['sample_token']].append(sample_data['token'])
+            sample_to_sample_datas[sample_data['sample_token']].append(sample_data['token'])
 
         print('Checking prev-next pointers for completeness and correct ordering...')
         for sample in self.nuim.sample:
-            for modality in ['camera', 'lidar']:
-                # Compare the above sample_datas against those retrieved by using prev and next pointers.
-                sd_tokens_pointers = self.nuim.get_sample_content(sample['token'], modality)
-                sd_tokens_all = sample_to_sample_datas[modality][sample['token']]
-                self.assertTrue(set(sd_tokens_pointers) == set(sd_tokens_all),
-                                'Error: Inconsistency in prev/next pointers!')
+            # Compare the above sample_datas against those retrieved by using prev and next pointers.
+            sd_tokens_pointers = self.nuim.get_sample_content(sample['token'])
+            sd_tokens_all = sample_to_sample_datas[sample['token']]
+            self.assertTrue(set(sd_tokens_pointers) == set(sd_tokens_all),
+                            'Error: Inconsistency in prev/next pointers!')
 
-                timestamps = []
-                for sd_token in sd_tokens_pointers:
-                    sample_data = self.nuim.get('sample_data', sd_token)
-                    timestamps.append(sample_data['timestamp'])
-                self.assertTrue(sorted(timestamps) == timestamps, 'Error: Timestamps not properly sorted!')
+            timestamps = []
+            for sd_token in sd_tokens_pointers:
+                sample_data = self.nuim.get('sample_data', sd_token)
+                timestamps.append(sample_data['timestamp'])
+            self.assertTrue(sorted(timestamps) == timestamps, 'Error: Timestamps not properly sorted!')
 
 
 if __name__ == '__main__':

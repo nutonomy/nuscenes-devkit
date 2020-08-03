@@ -25,11 +25,8 @@ def render_images(nuim: NuImages,
     Note: The images rendered here are keyframes only.
     :param nuim: NuImages instance.
     :param mode: What to render:
+      "image" for the image without annotations,
       "annotated" for the image with annotations,
-      "raw" for the image without annotations,
-      "dept_dense" for dense depth image,
-      "dept_sparse" for sparse depth image,
-      "pointcloud" for a birds-eye view of the pointcloud,
       "trajectory" for a rendering of the trajectory of the vehice,
       "all" to render all of the above separately.
     :param cam_name: Only render images from a particular camera, e.g. "CAM_BACK'.
@@ -45,7 +42,7 @@ def render_images(nuim: NuImages,
     """
     # Check and convert inputs.
     assert out_type in ['image', 'video'], ' Error: Unknown out_type %s!' % out_type
-    all_modes = ['annotated', 'image', 'depth_dense', 'depth_sparse', 'pointcloud', 'trajectory']
+    all_modes = ['image', 'annotated', 'trajectory']
     assert mode in all_modes + ['all'], 'Error: Unknown mode %s!' % mode
     assert not (out_type == 'video' and mode == 'trajectory'), 'Error: Cannot render "trajectory" for videos!'
 
@@ -75,8 +72,8 @@ def render_images(nuim: NuImages,
         sample_tokens_cam = []
         for sample_token in sample_tokens:
             sample = nuim.get('sample', sample_token)
-            sd_token_camera = sample['key_camera_token']
-            sensor = nuim.shortcut('sample_data', 'sensor', sd_token_camera)
+            key_camera_token = sample['key_camera_token']
+            sensor = nuim.shortcut('sample_data', 'sensor', key_camera_token)
             if sensor['channel'] == cam_name:
                 sample_tokens_cam.append(sample_token)
         sample_tokens = sample_tokens_cam
@@ -103,8 +100,8 @@ def render_images(nuim: NuImages,
         sample_tokens_cleaned = []
         for sample_token in sample_tokens:
             sample = nuim.get('sample', sample_token)
-            sd_token_camera = sample['key_camera_token']
-            category_names = sd_to_object_cat_names[sd_token_camera]
+            key_camera_token = sample['key_camera_token']
+            category_names = sd_to_object_cat_names[key_camera_token]
             if any([c in category_names for c in filter_categories]):
                 sample_tokens_cleaned.append(sample_token)
         sample_tokens = sample_tokens_cleaned
@@ -120,42 +117,42 @@ def render_images(nuim: NuImages,
         sample = nuim.get('sample', sample_token)
         log = nuim.get('log', sample['log_token'])
         log_name = log['logfile']
-        sd_token_camera = sample['key_camera_token']
-        sensor = nuim.shortcut('sample_data', 'sensor', sd_token_camera)
+        key_camera_token = sample['key_camera_token']
+        sensor = nuim.shortcut('sample_data', 'sensor', key_camera_token)
         sample_cam_name = sensor['channel']
-        sd_tokens_camera = nuim.get_sample_content(sample_token, modality='camera')
+        sd_tokens = nuim.get_sample_content(sample_token)
 
         # We cannot render a video if there are missing camera sample_datas.
-        if len(sd_tokens_camera) < 13 and out_type == 'video':
+        if len(sd_tokens) < 13 and out_type == 'video':
             continue
 
         for mode in modes:
             out_path_prefix = os.path.join(out_dir, '%s_%s_%s_%s' % (log_name, sample_token, sample_cam_name, mode))
             if out_type == 'image':
-                write_image(nuim, sd_token_camera, mode, '%s.jpg' % out_path_prefix)
+                write_image(nuim, key_camera_token, mode, '%s.jpg' % out_path_prefix)
             elif out_type == 'video':
-                write_video(nuim, sd_tokens_camera, mode, out_path_prefix, cleanup=cleanup)
+                write_video(nuim, sd_tokens, mode, out_path_prefix, cleanup=cleanup)
 
 
 def write_video(nuim: NuImages,
-                sd_tokens_camera: List[str],
+                sd_tokens: List[str],
                 mode: str,
                 out_path_prefix: str,
                 cleanup: bool = True) -> None:
     """
     Render a video by combining all the images of type mode for each sample_data.
     :param nuim: NuImages instance.
-    :param sd_tokens_camera: All camera sample_data tokens in chronological order.
+    :param sd_tokens: All sample_data tokens in chronological order.
     :param mode: The mode - see render_images().
     :param out_path_prefix: The file prefix used for the images and video.
     :param cleanup: Whether to delete images after rendering the video.
     """
     # Loop through each frame to create the video.
     out_paths = []
-    for i, sd_token_camera in enumerate(sd_tokens_camera):
+    for i, sd_token in enumerate(sd_tokens):
         out_path = '%s_%d.jpg' % (out_path_prefix, i)
         out_paths.append(out_path)
-        write_image(nuim, sd_token_camera, mode, out_path)
+        write_image(nuim, sd_token, mode, out_path)
 
     # Create video.
     first_im = cv2.imread(out_paths[0])
@@ -177,27 +174,21 @@ def write_video(nuim: NuImages,
     out.release()
 
 
-def write_image(nuim: NuImages, sd_token_camera: str, mode: str, out_path: str) -> None:
+def write_image(nuim: NuImages, sd_token: str, mode: str, out_path: str) -> None:
     """
     Render a single image of type mode for the given sample_data.
     :param nuim: NuImages instance.
-    :param sd_token_camera: The sample_data token of the camera.
+    :param sd_token: The sample_data token.
     :param mode: The mode - see render_images().
     :param out_path: The file to write the image to.
     """
     if mode == 'annotated':
-        nuim.render_image(sd_token_camera, annotation_type='all', out_path=out_path)
+        nuim.render_image(sd_token, annotation_type='all', out_path=out_path)
     elif mode == 'image':
-        nuim.render_image(sd_token_camera, annotation_type='none', out_path=out_path)
-    elif mode == 'depth_dense':
-        nuim.render_depth_dense(sd_token_camera, out_path=out_path)
-    elif mode == 'depth_sparse':
-        nuim.render_depth_sparse(sd_token_camera, out_path=out_path)
-    elif mode == 'pointcloud':
-        nuim.render_pointcloud(sd_token_camera, out_path=out_path)
+        nuim.render_image(sd_token, annotation_type='none', out_path=out_path)
     elif mode == 'trajectory':
-        sd_camera = nuim.get('sample_data', sd_token_camera)
-        nuim.render_trajectory(sd_camera['sample_token'], out_path=out_path)
+        sample_data = nuim.get('sample_data', sd_token)
+        nuim.render_trajectory(sample_data['sample_token'], out_path=out_path)
     else:
         raise Exception('Error: Unknown mode %s!' % mode)
 

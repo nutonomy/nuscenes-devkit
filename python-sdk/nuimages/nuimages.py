@@ -8,17 +8,13 @@ import time
 from collections import defaultdict
 from typing import Any, List, Dict, Optional, Tuple, Callable
 
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw
 from pyquaternion import Quaternion
 
-from nuimages.utils.lidar import depth_map, distort_pointcloud, InvertedNormalize
 from nuimages.utils.utils import annotation_name, mask_decode, get_font
 from nuscenes.utils.color_map import get_colormap
-from nuscenes.utils.data_classes import LidarPointCloud
-from nuscenes.utils.geometry_utils import view_points, transform_matrix
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -175,11 +171,11 @@ class NuImages:
         :param src_table: The name of the source table.
         :param tgt_table: The name of the target table.
         :param src_token: The source token.
-        :return: The entry of the destination table correspondings to the source token.
+        :return: The entry of the destination table corresponding to the source token.
         """
         if src_table == 'sample_data' and tgt_table == 'sensor':
-            sd_camera = self.get('sample_data', src_token)
-            calibrated_sensor = self.get('calibrated_sensor', sd_camera['calibrated_sensor_token'])
+            sample_data = self.get('sample_data', src_token)
+            calibrated_sensor = self.get('calibrated_sensor', sample_data['calibrated_sensor_token'])
             sensor = self.get('sensor', calibrated_sensor['sensor_token'])
 
             return sensor
@@ -206,31 +202,6 @@ class NuImages:
                 raise Exception('Error: You are missing the "%s" directory! The devkit generally works without this '
                                 'directory, but you cannot call methods that use non-keyframe sample_datas.'
                                 % sweeps_dir)
-
-    def find_corresponding_sample_data(self, sd_token: str, tgt_modality: str) -> str:
-        """
-        For a sample_data token from either camera or lidar, find the corresponding sample_data token of the
-        other modality.
-        :param sd_token: Source sample_data token.
-        :param tgt_modality: The modality of the target.
-        :return: The corresponding sample_data token with the target modality.
-        """
-        assert tgt_modality in ['camera', 'lidar'], 'Error: Invalid tgt_modality %s!' % tgt_modality
-        sample_data = self.get('sample_data', sd_token)
-
-        tgt_sd_tokens = self.get_sample_content(sample_data['sample_token'], tgt_modality)
-        timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in tgt_sd_tokens])
-        rel_times = np.abs(timestamps - sample_data['timestamp']) / 1e6
-
-        closest_idx = rel_times.argmin()
-        closest_time_diff = rel_times[closest_idx]
-        assert closest_time_diff < 0.25, 'Error: No corresponding sample_data exists!' \
-                                         'Note that this is the case for 0.9% of all sample_datas.'
-        tgt_sd_token = tgt_sd_tokens[closest_idx]
-        assert tgt_sd_token != sd_token, 'Error: Invalid usage of this method. ' \
-                                         'Source and target modality must differ!'
-
-        return tgt_sd_token
 
     # ### List methods. ###
 
@@ -268,7 +239,7 @@ class NuImages:
             print(format_str.format(
                 attribute_freqs[attribute['token']], attribute['name'], attribute['description']))
 
-    def list_sensors(self) -> None:
+    def list_cameras(self) -> None:
         """
         List all cameras and the number of samples for each.
         """
@@ -366,9 +337,9 @@ class NuImages:
             self.load_tables(['sample', 'object_ann', 'surface_ann', 'category'])
 
         sample = self.get('sample', sample_token)
-        sd_token_camera = sample['key_camera_token']
-        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
-        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+        key_camera_token = sample['key_camera_token']
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == key_camera_token]
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == key_camera_token]
 
         if verbose:
             print('Printing object annotations:')
@@ -421,42 +392,26 @@ class NuImages:
 
         # Print content for each modality.
         sample = self.get('sample', sample_token)
-        for modality in ['camera', 'lidar']:
-            sample_data_tokens = self.get_sample_content(sample_token, modality)
-            timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in sample_data_tokens])
-            rel_times = (timestamps - sample['timestamp']) / 1e6
+        sample_data_tokens = self.get_sample_content(sample_token)
+        timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in sample_data_tokens])
+        rel_times = (timestamps - sample['timestamp']) / 1e6
 
-            print('\nListing sample_datas for %s...' % modality)
-            print('Rel. time\tSample_data token')
-            for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
-                print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
+        print('\nListing sample_datas...')
+        print('Rel. time\tSample_data token')
+        for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
+            print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
 
     # ### Getter methods. ###
 
     def get_sample_content(self,
-                           sample_token: str,
-                           modality: str) -> List[str]:
+                           sample_token: str) -> List[str]:
         """
-        For a given sample and modality, return all the sample_datas.
+        For a given sample, return all the sample_datas in chronological order.
         :param sample_token: Sample token.
-        :param modality: Sensor modality, either camera or lidar.
         :return: A list of sample_data tokens sorted by their timestamp.
         """
-        assert modality in ['camera', 'lidar'], 'Error: Invalid modality %s!' % modality
         sample = self.get('sample', sample_token)
-        key_name = 'key_%s_token' % modality
-        if sample[key_name] == '':
-            # If we don't have a key lidar pointcloud, work the slow way by searching all sample_datas.
-            if modality == 'camera':
-                fileformat = 'jpg'
-            else:
-                fileformat = 'bin'
-            sample_datas = [sd for sd in self.sample_data
-                            if sd['sample_token'] == sample_token and sd['fileformat'] == fileformat]
-            sample_datas = sorted(sample_datas, key=lambda sd: sd['timestamp'])
-            sample_data_tokens = [sd['token'] for sd in sample_datas]
-            return sample_data_tokens
-        key_sd = self.get('sample_data', sample[key_name])
+        key_sd = self.get('sample_data', sample['key_camera_token'])
 
         # Go forward.
         cur_sd = key_sd
@@ -478,143 +433,13 @@ class NuImages:
         #                               % modality # TODO: adjust
         return result
 
-    def get_depth(self,
-                  sd_token_camera: str,
-                  min_dist: float = 1.0) -> Tuple[np.ndarray, np.ndarray, float, Tuple[int, int]]:
-        """
-        This function picks out the lidar pcl closest to the given image timestamp and projects it onto the image.
-        :param sd_token_camera: The sample_data token of the camera image.
-        :param min_dist: Distance from the camera below which points are discarded.
-        :return: (
-            points: Lidar points (x, y) in pixel coordinates.
-            depths: Depth in meters of each lidar point.
-            time_diff: Time difference between capturing the lidar and camera data.
-            im_size: Width and height.
-        )
-        """
-        # Find closest pointcloud.
-        sd_camera = self.get('sample_data', sd_token_camera)
-        sample_lidar_tokens = self.get_sample_content(sd_camera['sample_token'], 'lidar')
-        timestamps = np.array([self.get('sample_data', t)['timestamp'] for t in sample_lidar_tokens])
-        time_diffs = np.abs(timestamps - sd_camera['timestamp']) / 1e6
-        closest_idx = int(np.argmin(time_diffs))
-        closest_time_diff = time_diffs[closest_idx]
-        if closest_time_diff > 0.25:
-            raise Exception('Error: Cannot render depth for an image that has no associated lidar pointcloud!'
-                            'This is the case for about 0.9%% of the images.')
-        # TODO: revisit this number, as some of the images may also be missing
-        sd_token_lidar = sample_lidar_tokens[closest_idx]
-        sd_lidar = self.get('sample_data', sd_token_lidar)
-
-        # Retrieve size from meta data.
-        im_size = (sd_camera['width'], sd_camera['height'])
-
-        # Load pointcloud.
-        self.check_sweeps(sd_lidar['filename'])
-        pcl_path = osp.join(self.dataroot, sd_lidar['filename'])
-        pc = LidarPointCloud.from_file(pcl_path)
-        pointsensor = sd_lidar
-        cam = sd_camera
-
-        # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
-        # First step: transform the pointcloud to the ego vehicle frame for the timestamp of the sweep.
-        cs_record = self.get('calibrated_sensor', pointsensor['calibrated_sensor_token'])
-        pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix)
-        pc.translate(np.array(cs_record['translation']))
-
-        if False:  # TODO: For debugging purposes, stay in the ego vehicle frame
-            # Second step: transform from ego to the global frame.
-            poserecord = self.get('ego_pose', pointsensor['ego_pose_token'])
-            pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
-            pc.translate(np.array(poserecord['translation']))
-
-            # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
-            poserecord = self.get('ego_pose', cam['ego_pose_token'])
-            pc.translate(-np.array(poserecord['translation']))
-            pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
-
-        # Fourth step: transform from ego into the camera.
-        cs_record = self.get('calibrated_sensor', cam['calibrated_sensor_token'])
-        pc.translate(-np.array(cs_record['translation']))
-        pc.rotate(Quaternion(cs_record['rotation']).rotation_matrix.T)
-
-        # Fifth step: actually take a "picture" of the pointcloud.
-        # Distort in camera plane (note that this only happens in nuImages, not nuScenes.
-        # In nuScenes all images are undistorted, in nuImages they are not.
-        sensor = self.get('sensor', cs_record['sensor_token'])
-        points, depths = distort_pointcloud(pc.points, np.array(cs_record['camera_distortion']),
-                                            sensor['channel'])
-
-        # Take the actual picture (matrix multiplication with camera-matrix + renormalization).
-        points = view_points(points[:3, :], np.array(cs_record['camera_intrinsic']), normalize=True)
-
-        # Remove points that are either outside or behind the camera. Leave a margin of 1 pixel for aesthetic reasons.
-        # Also make sure points are at least 1m in front of the camera to avoid seeing the lidar points on the camera
-        # casing for non-keyframes which are slightly out of sync.
-        mask = np.ones(depths.shape[0], dtype=bool)
-        mask = np.logical_and(mask, depths > min_dist)
-        mask = np.logical_and(mask, points[0, :] > 1)
-        mask = np.logical_and(mask, points[0, :] < im_size[0] - 1)
-        mask = np.logical_and(mask, points[1, :] > 1)
-        mask = np.logical_and(mask, points[1, :] < im_size[1] - 1)
-        points = points[:2, mask]
-        depths = depths[mask].squeeze()
-
-        return points, depths, closest_time_diff, im_size
-
-    def get_pointcloud(self,
-                       sd_token_lidar: str,
-                       use_flat_vehicle_coordinates: bool = True) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Load a pointcloud and transform it to the specified viewpoint.
-        :param sd_token_lidar: Sample_data token of the lidar pointcloud.
-        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
-            aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
-            can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
-            setting is more correct and rotates the plot by ~90 degrees.
-        :return: The points as seen from the specified viewpoint and the points in the original (lidar) frame.
-        """
-        # Load lidar pointcloud.
-        sd_lidar = self.get('sample_data', sd_token_lidar)
-        self.check_sweeps(sd_lidar['filename'])
-        lidar_path = osp.join(self.dataroot, sd_lidar['filename'])
-        pc = LidarPointCloud.from_file(lidar_path)
-
-        # By default we render the sample_data top down in the sensor frame.
-        # This is slightly inaccurate when rendering the map as the sensor frame may not be perfectly upright.
-        # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
-        if use_flat_vehicle_coordinates:
-            # Retrieve transformation matrices for reference point cloud.
-            cs_record = self.get('calibrated_sensor', sd_lidar['calibrated_sensor_token'])
-            pose_record = self.get('ego_pose', sd_lidar['ego_pose_token'])
-            ref_to_ego = transform_matrix(translation=cs_record['translation'],
-                                          rotation=Quaternion(cs_record["rotation"]))
-
-            # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
-            ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
-            rotation_vehicle_flat_from_vehicle = np.dot(
-                Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
-                Quaternion(pose_record['rotation']).inverse.rotation_matrix)
-            vehicle_flat_from_vehicle = np.eye(4)
-            vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
-            viewpoint = np.dot(vehicle_flat_from_vehicle, ref_to_ego)
-        else:
-            viewpoint = np.eye(4)
-        original_points = pc.points[:3, :]
-        points = view_points(original_points, viewpoint, normalize=False)
-
-        return points, original_points
-
     def get_ego_pose_data(self,
                           sample_token: str,
-                          modality: str = 'camera',
                           attribute_name: str = 'translation') -> Tuple[np.ndarray, np.ndarray]:
         """
         Return the ego pose data of the <= 13 sample_datas associated with this sample.
         The method return translation, rotation, rotation_rate, acceleration and speed.
         :param sample_token: Sample token.
-        :param modality: Whether to look at the ego poses of camera or lidar (very similar, as long as all 13 images
-            and 13 pointclouds exist.
         :param attribute_name: The ego_pose field to extract, e.g. "translation", "acceleration" or "speed".
         :return: (
             timestamps: The timestamp of each ego_pose.
@@ -630,7 +455,7 @@ class NuImages:
         else:
             attribute_len = 3
 
-        sd_tokens = self.get_sample_content(sample_token, modality)
+        sd_tokens = self.get_sample_content(sample_token)
         attributes = np.zeros((len(sd_tokens), attribute_len))
         timestamps = np.zeros((len(sd_tokens)))
         for i, sd_token in enumerate(sd_tokens):
@@ -667,8 +492,8 @@ class NuImages:
 
         # Find keyframe translation and rotation.
         sample = self.get('sample', sample_token)
-        sd_camera = self.get('sample_data', sample['key_camera_token'])
-        ego_pose = self.get('ego_pose', sd_camera['ego_pose_token'])
+        sample_data = self.get('sample_data', sample['key_camera_token'])
+        ego_pose = self.get('ego_pose', sample_data['ego_pose_token'])
         key_rotation = Quaternion(ego_pose['rotation'])
         key_timestamp = ego_pose['timestamp']
         key_index = [i for i, t in enumerate(timestamps) if t == key_timestamp][0]
@@ -685,7 +510,7 @@ class NuImages:
         return translations, key_index
 
     def get_segmentation(self,
-                         sd_token_camera: str) -> Tuple[np.ndarray, np.ndarray]:
+                         sd_token: str) -> Tuple[np.ndarray, np.ndarray]:
         """
         Produces two segmentation masks as numpy arrays of size H x W each, where H and W are the height and width
         of the camera image respectively:
@@ -695,12 +520,11 @@ class NuImages:
             - instance mask: A mask in which each pixel is an integer value between 0 to N, where N is the
                              number of objects in a given camera sample_data. Each integer corresponds to
                              the order in which the object was drawn into the mask.
-        :param sd_token_camera: The token of the sample_data to be rendered.
+        :param sd_token: The token of the sample_data to be rendered.
         :return: Two 2D numpy arrays (one semantic mask <int32: H, W>, and one instance mask <int32: H, W>).
         """
         # Validate inputs.
-        sample_data = self.get('sample_data', sd_token_camera)
-        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use get_segmentation() on lidar pointclouds!'
+        sample_data = self.get('sample_data', sd_token)
         assert sample_data['is_key_frame'], 'Error: Cannot render annotations for non keyframes!'
 
         # Build a mapping from name to index to look up index in O(1) time.
@@ -737,7 +561,7 @@ class NuImages:
         instanceseg_mask = np.zeros((height, width)).astype('int32')
 
         # Load stuff / surface regions.
-        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+        surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token]
 
         # Draw stuff / surface regions.
         for ann in surface_anns:
@@ -752,7 +576,7 @@ class NuImages:
             semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
 
         # Load object instances.
-        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+        object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token]
         # Sort by token to ensure that objects always appear in the instance mask in the same order.
         object_anns = sorted(object_anns, key=lambda k: k['token'])
 
@@ -780,7 +604,7 @@ class NuImages:
     # ### Rendering methods. ###
 
     def render_image(self,
-                     sd_token_camera: str,
+                     sd_token: str,
                      annotation_type: str = 'all',
                      with_category: bool = False,
                      with_attributes: bool = False,
@@ -792,7 +616,7 @@ class NuImages:
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
-        :param sd_token_camera: The token of the sample_data to be rendered.
+        :param sd_token: The token of the sample_data to be rendered.
         :param annotation_type: The types of annotations to draw on the image; there are four options:
             'all': Draw surfaces and objects, subject to any filtering done by object_tokens and surface_tokens.
             'surfaces': Draw only surfaces, subject to any filtering done by surface_tokens.
@@ -811,10 +635,9 @@ class NuImages:
             If a path is provided, the plot is not shown to the user.
         """
         # Validate inputs.
-        sample_data = self.get('sample_data', sd_token_camera)
-        assert sample_data['fileformat'] == 'jpg', 'Error: Cannot use render_image() on lidar pointclouds!'
+        sample_data = self.get('sample_data', sd_token)
         if not sample_data['is_key_frame']:
-            assert not annotation_type, 'Error: Cannot render annotations for non keyframes!'
+            assert annotation_type != 'none', 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
         if with_attributes:
             assert with_category, 'In order to set with_attributes=True, with_category must be True.'
@@ -838,7 +661,7 @@ class NuImages:
         if annotation_type is not 'none':
             if annotation_type == 'all' or annotation_type == 'surfaces':
                 # Load stuff / surface regions.
-                surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token_camera]
+                surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token]
                 if surface_tokens is not None:
                     surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
@@ -857,7 +680,7 @@ class NuImages:
 
             if annotation_type == 'all' or annotation_type == 'objects':
                 # Load object instances.
-                object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token_camera]
+                object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token]
                 if object_tokens is not None:
                     object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
@@ -891,175 +714,6 @@ class NuImages:
         # Save to disk.
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
-            plt.close()
-
-    def render_depth_sparse(self,
-                            sd_token_camera: str,
-                            render_scale: float = 1.0,
-                            point_size: float = 10.0,
-                            render_stats: bool = False,
-                            out_path: str = None) -> None:
-        """
-        This function plots an image and the projected lidar points.
-        The points are colored by depth.
-        :param sd_token_camera: The sample_data token of the camera image.
-        :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
-        :param point_size: The size of each lidar point in pixels.
-        :param render_stats: Whether to render information about ego speed and time difference in the top left corner
-            of the image.
-        :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
-            If a path is provided, the plot is not shown to the user.
-        """
-        # Get depth.
-        try:
-            points, depths, _, im_size = self.get_depth(sd_token_camera)
-        except:
-            print('Warning: Cannot render depth for an image without a lidar pointcloud!') # TODO
-            return
-
-        # Init plot.
-        (width, height) = im_size
-        pix_to_inch = 100 / render_scale
-        figsize = (height / pix_to_inch, width / pix_to_inch)
-        plt.figure(figsize=figsize)
-        plt.axis('off')
-
-        # Show image.
-        sd_camera = self.get('sample_data', sd_token_camera)
-        im_path = osp.join(self.dataroot, sd_camera['filename'])
-        im = Image.open(im_path)
-        plt.imshow(im)
-
-        # Overlay points.
-        plt.scatter(points[0], points[1], marker='.', s=point_size, c=depths)
-
-        # Print velocity and time difference.
-        if render_stats:
-            sd_lidar = self.get('sample_data', self.find_corresponding_sample_data(sd_token_camera, 'lidar'))
-            ego_pose = self.get('ego_pose', sd_lidar['ego_pose_token'])
-            vel = ego_pose['speed']
-            time_camera = sd_camera['timestamp']
-            time_lidar = sd_lidar['timestamp']
-            time_diff = np.abs(time_camera - time_lidar) / 1e6
-            plt.text(5, 40, 'vel: %.1f, time_diff: %.3f' % (vel, time_diff), color='white')
-
-        # Save to disk.
-        if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
-            plt.close()
-
-    def render_depth_dense(self,
-                           sd_token_camera: str,
-                           max_depth: float = None,
-                           depth_map_scale: float = 0.5,
-                           n_dilate: int = 23,
-                           n_gauss: int = 11,
-                           sigma_gauss: float = 3,
-                           cmap: str = 'viridis',
-                           render_scale: float = 1.0,
-                           out_path: str = None) -> None:
-        """
-        This function plots a dense depth map using depth completion.
-        Depth completion dilates the sparse set of points in the image to "interpolate" between them.
-        Default depth colors range from yellow (close) to blue (far). Missing values are blue.
-        :param sd_token_camera: The sample_data token of the camera image.
-        :param max_depth: The maximum depth used for scaling the color values. If None, the actual maximum is used.
-        :param cmap: The matplotlib color map name. We recommend viridis or magma.
-        :param depth_map_scale: Down-sampling factor when computing the depth map.
-        :param n_dilate: Dilation filter size.
-        :param n_gauss: Gaussian filter size.
-        :param sigma_gauss: Gaussian filter sigma.
-        :param render_scale: The scale at which the depth image will be rendered. Use 1.0 for the recommended size.
-            A larger scale makes the point location more precise, but they will be harder to see.
-            For the "dense" option, the depth completion parameters are optimized for the recommended size.
-        :param out_path: Optional path to save the rendered figure to disk, or otherwise None.
-            If a path is provided, the plot is not shown to the user.
-        """
-        # Get depth.
-        try:
-            points, depths, _, im_size = self.get_depth(sd_token_camera)
-        except:
-            print('Warning: Cannot render depth for an image without a lidar pointcloud!') # TODO
-            return
-
-        # Compute dense depth image.
-        depth_im = depth_map(points, depths, im_size, scale=depth_map_scale, n_dilate=n_dilate, n_gauss=n_gauss,
-                             sigma_gauss=sigma_gauss)
-
-        # Scale depth_im to full image size.
-        depth_im = cv2.resize(depth_im, im_size)
-
-        # Determine color scaling.
-        min_depth = 0
-        if max_depth is None:
-            max_depth = depth_im.max()
-        norm = InvertedNormalize(vmin=min_depth, vmax=max_depth)
-
-        # Plot the image.
-        (width, height) = depth_im.shape[::-1]
-        pix_to_inch = 100 / render_scale
-        figsize = (height / pix_to_inch, width / pix_to_inch)
-        plt.figure(figsize=figsize)
-        plt.axis('off')
-        plt.imshow(depth_im, norm=norm, cmap=cmap)
-
-        # Save to disk.
-        if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=2.295 * pix_to_inch, pad_inches=0)
-            plt.close()
-
-    def render_pointcloud(self,
-                          sd_token_lidar: str,
-                          axes_limit: float = 10,
-                          color_mode: str = 'height',
-                          use_flat_vehicle_coordinates: bool = True,
-                          out_path: str = None) -> None:
-        """
-        Render sample data onto axis.
-        :param sd_token_lidar: Sample_data token of the lidar.
-            For compatibility with other render methods we also allow passing a camera sample_data token,
-            which is then converted to the corresponding lidar token.
-        :param axes_limit: Axes limit for lidar (measured in meters).
-        :param color_mode: How to color the lidar points, e.g. depth or height.
-        :param use_flat_vehicle_coordinates: See get_pointcloud().
-        :param out_path: Optional path to save the rendered figure to disk.
-            If a path is provided, the plot is not shown to the user.
-        """
-        # If we are provided a camera sd_token, we need to find the closest lidar token.
-        sample_data = self.get('sample_data', sd_token_lidar)
-        if sample_data['fileformat'] == 'jpg':
-            sd_token_lidar = self.find_corresponding_sample_data(sd_token_lidar, 'lidar')
-
-        # Load the pointcloud and transform it to the specified viewpoint.
-        points, original_points = self.get_pointcloud(sd_token_lidar, use_flat_vehicle_coordinates)
-
-        # Init axes.
-        plt.figure(figsize=(9, 9))
-        plt.axis('off')
-
-        # Show point cloud.
-        if color_mode == 'depth':
-            dists = np.sqrt(np.sum(original_points[:2, :] ** 2, axis=0))
-            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
-        elif color_mode == 'height':
-            heights = points[2, :]
-            colors = (heights - heights.min()) / (heights.max() - heights.min())
-            colors = np.sqrt(colors)
-        else:
-            raise Exception('Error: Invalid color mode %s!' % color_mode)
-        point_scale = 0.2
-        plt.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
-
-        # Show ego vehicle.
-        plt.plot(0, 0, 'x', color='red')
-
-        # Limit visible range.
-        plt.xlim(-axes_limit, axes_limit)
-        plt.ylim(-axes_limit, axes_limit)
-
-        # Save to disk.
-        if out_path is not None:
-            plt.savefig(out_path, bbox_inches='tight', dpi=150, pad_inches=0)
             plt.close()
 
     def render_trajectory(self,

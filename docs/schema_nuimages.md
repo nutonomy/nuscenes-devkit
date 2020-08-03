@@ -24,9 +24,9 @@ attribute {
 
 calibrated_sensor
 ---------
-Definition of a particular sensor (lidar/camera, but no radar) as calibrated on a particular vehicle.
+Definition of a particular camera as calibrated on a particular vehicle.
 All extrinsic parameters are given with respect to the ego vehicle body frame.
-All camera images come undistorted and rectified.
+Contrary to nuScenes, all camera images come distorted and unrectified.
 ```
 calibrated_sensor {
    "token":                   <str> -- Unique record identifier.
@@ -42,7 +42,7 @@ category
 ---------
 Taxonomy of object categories (e.g. vehicle, human). 
 Subcategories are delineated by a period (e.g. `human.pedestrian.adult`).
-The categories in nuImages are the same as in the nuScenes (w/o lidarseg), plus `flat.driveable_surface`.
+The categories in nuImages are the same as in nuScenes (w/o lidarseg), plus `flat.driveable_surface`.
 ```
 category {
    "token":                   <str> -- Unique record identifier.
@@ -100,11 +100,11 @@ object_ann {
 
 sample_data
 ---------
-A sensor data e.g. image or lidar pointcloud. Note that we don't have radar in nuImages.
-Sample_data covers all sensor data, regardless of whether it is a keyframe or not.
-For every keyframe image or lidar, we also include up to 6 past and 6 future sweeps at 2 Hz.
-We can navigate between consecutive lidar or camera sample_datas using the `prev` and `next` pointers.
-Only keyframe (sample) images are annotated.
+Sample_data contains the images and information about when they were captured.
+Sample_data covers all images, regardless of whether they are a keyframe or not.
+Only keyframes are annotated.
+For every keyframe, we also include up to 6 past and 6 future sweeps at 2 Hz.
+We can navigate between consecutive images using the `prev` and `next` pointers.
 The sample timestamp is inherited from the keyframe camera sample_data timestamp.
 ```
 sample_data {
@@ -126,15 +126,14 @@ sample_data {
 sample
 ---------
 A sample is an annotated keyframe selected from a large pool of images in a log.
-Every sample has up to 13 lidar sample_datas and 13 camera sample_datas corresponding to it.
-These include the actual lidar and camera keyframe sample_datas, which can be accessed via the `key_*_token` fields.
+Every sample has up to 13 camera sample_datas corresponding to it.
+These include the keyframe, which can be accessed via `key_camera_token`.
 ```
 sample {
    "token":                   <str> -- Unique record identifier.
    "timestamp":               <int> -- Unix time stamp.
    "log_token":               <str> -- Foreign key pointing to the log.
    "key_camera_token":        <str> -- Foreign key of the sample_data corresponding to the camera keyframe.
-   "key_lidar_token":         <str> -- Foreign key of the sample_data corresponding to the lidar keyframe.
 }
 ```
 
@@ -146,7 +145,7 @@ A specific sensor type.
 sensor {
    "token":                   <str> -- Unique record identifier.
    "channel":                 <str> -- Sensor channel name.
-   "modality":                <str> {camera, lidar} -- Sensor modality. Supports category(ies) in brackets.
+   "modality":                <str> -- Sensor modality. Always "camera" in nuImages.
 }
 ```
 
