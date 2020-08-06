@@ -104,6 +104,10 @@ class NuScenes:
                 self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
                 self.lidarseg_name2idx_mapping[lidarseg_category['name']] = lidarseg_category['index']
 
+            # Sort the colormap to ensure that it is ordered according to the indices in self.category.
+            self.colormap = dict({c['name']: self.colormap[c['name']]
+                                  for c in sorted(self.category, key=lambda k: k['index'])})
+
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
             self.image_annotations = self.__load_table__('image_annotations')
