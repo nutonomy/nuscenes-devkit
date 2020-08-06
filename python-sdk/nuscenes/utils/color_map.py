@@ -33,9 +33,9 @@ def get_colormap() -> Dict[str, Tuple[int, int, int]]:
         "movable_object.debris": (210, 105, 30),  # Chocolate
         "static_object.bicycle_rack": (188, 143, 143),  # Rosybrown
         "flat.driveable_surface": (0, 207, 191),  # nuTonomy green
+        "flat.other": (175, 0, 75),
         "flat.sidewalk": (75, 0, 75),
         "flat.terrain": (112, 180, 60),
-        "flat.other": (175, 0, 75),
         "static.manmade": (222, 184, 135),  # Burlywood
         "static.vegetation": (0, 175, 0),  # Green
         "static.other": (255, 228, 196),  # Bisque

@@ -19,7 +19,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
 - [Citation](#citation)
 
 ## Changelog
-- Jul. 14, 2020: Devkit v1.1.0: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
+- Aug. 31, 2020: Devkit v1.1.0: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
 - Jul. 7, 2020: Devkit v1.0.9: Misc updates on map and prediction code.
 - Apr. 30, 2020: nuImages v0.1 code release.
 - Apr. 1, 2020: Devkit v1.0.8: Relax pip requirements and reorganize prediction code.
@@ -56,8 +56,9 @@ Please unpack the archives to the `/data/sets/nuimages` folder \*without\* overw
 Eventually you should have the following folder structure:
 ```
 /data/sets/nuimages
-    imgs	-	Folder with the camera images.
-    v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (train, val, test) is provided in a separate folder.
+    samples	-	Sensor data for keyframes (annotated images).
+    sweeps  -   Sensor data for intermediate frames (unannotated images).
+    v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (train, val, test, mini) is provided in a separate folder.
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuImages class (see tutorial).
 
@@ -92,7 +93,7 @@ If you want to use another folder, specify the `dataroot` parameter of the NuSce
 In June 2020 we published [nuScenes-lidarseg](https://www.nuscenes.org/nuscenes#lidarseg) which contains the semantic labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
 To install nuScenes-lidarseg, please follow these steps:
 - Download the dataset from the [Download page](https://www.nuscenes.org/download),
-- Extract the `lidarseg` and `v1.0-*` folders to your root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
+- Extract the `lidarseg` and `v1.0-*` folders to your nuScenes root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/nuscenes_lidarseg_tutorial.ipynb).
@@ -154,7 +155,7 @@ However, some minor issues remain:
 - A small number of 3d bounding boxes is annotated despite the object being temporarily occluded. For this reason we make sure to **filter objects without lidar or radar points** in the nuScenes benchmarks. See [issue 366](https://github.com/nutonomy/nuscenes-devkit/issues/366).
 
 ## Citation
-Please use the following citation when referencing [nuScenes](https://arxiv.org/abs/1903.11027):
+Please use the following citation when referencing [nuScenes or nuImages](https://arxiv.org/abs/1903.11027):
 ```
 @article{nuscenes2019,
   title={nuScenes: A multimodal dataset for autonomous driving},
