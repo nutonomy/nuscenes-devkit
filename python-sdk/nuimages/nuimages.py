@@ -415,7 +415,7 @@ class NuImages:
             sample_counts[sample_data['sample_token']] += 1
 
         # Compute histogram.
-        sample_counts_list = np.array(sample_counts.values())
+        sample_counts_list = np.array(list(sample_counts.values()))
         bins, values = np.histogram(sample_counts_list,
                                     np.max(sample_counts_list) - np.min(sample_counts_list))
 
