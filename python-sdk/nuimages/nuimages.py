@@ -396,10 +396,34 @@ class NuImages:
         timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in sample_data_tokens])
         rel_times = (timestamps - sample['timestamp']) / 1e6
 
-        print('\nListing sample_datas...')
+        print('\nListing sample content...')
         print('Rel. time\tSample_data token')
         for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
             print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
+
+    def list_sample_data(self) -> None:
+        """
+        Show a histogram of the number of sample_datas per sample.
+        """
+        # Preload data if in lazy load to avoid confusing outputs.
+        if self.lazy:
+            self.load_tables(['sample_data'])
+
+        # Count sample_datas for each sample.
+        sample_counts = defaultdict(lambda: 0)
+        for sample_data in self.sample_data:
+            sample_counts[sample_data['sample_token']] += 1
+
+        # Compute histogram.
+        bins = np.zeros(13)
+        for sample_count in sample_counts.values():
+            bins[sample_count] += 1
+
+        # Print statistics.
+        print('\nListing sample_data frequencies..')
+        print('# sample_data\t# samples')
+        for bin_idx, val in enumerate(bins):
+            print('{:>14d}\t{}'.format(bin_idx, val))
 
     # ### Getter methods. ###
 
