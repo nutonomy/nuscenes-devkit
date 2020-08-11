@@ -416,14 +416,14 @@ class NuImages:
 
         # Compute histogram.
         sample_counts_list = np.array(list(sample_counts.values()))
-        bins, values = np.histogram(sample_counts_list,
+        values, bins = np.histogram(sample_counts_list,
                                     np.max(sample_counts_list) - np.min(sample_counts_list))
 
         # Print statistics.
         print('\nListing sample_data frequencies..')
-        print('# sample_data\t# samples')
+        print('# images\t# samples')
         for bin_idx, val in zip(bins, values):
-            print('{:>14d}\t{}'.format(bin_idx, val))
+            print('{:>9d}\t{:d}'.format(bin_idx, val))
 
     # ### Getter methods. ###
 
