@@ -418,12 +418,13 @@ class NuImages:
         sample_counts_list = np.array(list(sample_counts.values()))
         values, bins = np.histogram(sample_counts_list,
                                     np.max(sample_counts_list) - np.min(sample_counts_list))
+        freqs = bins[1:]  # To get the frequency we need to use the right side of the bin.
 
         # Print statistics.
         print('\nListing sample_data frequencies..')
         print('# images\t# samples')
-        for bin_idx, val in zip(bins, values):
-            print('{:>9d}\t{:d}'.format(int(bin_idx), int(val)))
+        for freq, val in zip(freqs, values):
+            print('{:>9d}\t{:d}'.format(int(freq), int(val)))
 
     # ### Getter methods. ###
 
