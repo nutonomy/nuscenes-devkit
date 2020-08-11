@@ -19,6 +19,8 @@ class MockNuScenes(NuScenes):
         """
         Mocks the NuScenes API needed to test PredictHelper.
         Note that we are skipping the call to the super class constructor on purpose to avoid loading the tables.
+        :param sample_annotations: The sample_annotations table used in this fake version of nuScenes.
+        :param samples: The sample table used in this fake version of nuScenes.
         """
         self._sample_annotation = {r['token']: r for r in sample_annotations}
         self._sample = {r['token']: r for r in samples}

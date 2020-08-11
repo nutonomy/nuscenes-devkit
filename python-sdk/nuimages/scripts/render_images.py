@@ -124,6 +124,7 @@ def render_images(nuim: NuImages,
 
         # We cannot render a video if there are missing camera sample_datas.
         if len(sd_tokens) < 13 and out_type == 'video':
+            print('Warning: Skipping video for sample token %s, as not all 13 frames exist!' % sample_token)
             continue
 
         for mode in modes:
