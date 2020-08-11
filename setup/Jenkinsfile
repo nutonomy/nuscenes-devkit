@@ -1,86 +1,119 @@
+@Library('jenkins-shared-libraries') _
+
+// Aborts previous builds of the same PR-
+if( env.BRANCH_NAME != null && env.BRANCH_NAME != "master" ) {
+  def buildNumber = env.BUILD_NUMBER as int
+  if (buildNumber > 1) milestone(buildNumber - 1)
+  milestone(buildNumber)
+}
+
+def update_deps() {
+  sh '''#!/usr/bin/env bash
+    set -e
+    source activate nuscenes
+    find . -name "*.txt" -exec sed -i -e '/pycocotools/d' {} \\;
+    pip install --no-cache -r /nuscenes-dev/requirements.txt
+    conda install --yes pycocotools
+  '''
+}
+
+def kubeagent(name, image) {
+  return jnlp.docker(name: name,
+                     docker_image: image,
+                     cpu: 7, maxcpu: 8,
+                     memory: "8G", maxmemory: "30G",
+                     cloud: "boston",
+                     yaml: """spec:
+  containers:
+  - name: docker
+    volumeMounts:
+      - mountPath: /data/
+        name: nudeep-ci
+        subPath: data
+  volumes:
+  - name: nudeep-ci
+    persistentVolumeClaim:
+      claimName: nudeep-ci""")
+}
+
 pipeline {
 
   agent {
-    kubernetes {
-      label 'nuscenes-builder-' + UUID.randomUUID().toString()
-      cloud 'boston'
-      yamlFile 'setup/docker.yaml'
-    }// kubernetes
+    kubernetes (jnlp.docker(name: "nuscenes-builder",
+                            cpu: 2, maxcpu: 2,
+                            memory: "2G", maxmemory: "4G",
+                            cloud: "boston"))
   } // agent
 
   environment {
-    PROD_IMAGE = "nuscenes:production"
-    TEST_IMAGE_3_6 = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
-    TEST_IMAGE_3_7 = "registry-local.nutonomy.team:5000/nuscenes-test:kube${UUID.nameUUIDFromBytes(new String(env.BUILD_TAG).getBytes())}"
+    PROD_IMAGE = "233885420847.dkr.ecr.us-east-1.amazonaws.com/nuscenes-test:production"
+    TEST_IMAGE = "233885420847.dkr.ecr.us-east-1.amazonaws.com/nuscenes-test:1.0"
+    TEST_IMAGE_3_6 = "${env.TEST_IMAGE}-3.6"
+    TEST_IMAGE_3_7 = "${env.TEST_IMAGE}-3.7"
     NUSCENES = "/data/sets/nuscenes"
+    NUIMAGES = "/data/sets/nuimages"
+    PYTHONPATH = "${env.WORKSPACE}/python-sdk"
+    PYTHONUNBUFFERED = "1"
+  }
+
+  parameters {
+    booleanParam(name: 'REBUILD_TEST_IMAGE', defaultValue: false, description: 'rebuild docker test image')
   }
 
   stages {
-    stage('Build'){
-      steps {
-        container('docker') {
-          // Build the Docker image, and then run python -m unittest inside
-          // an activated Conda environment inside of the container.
-          sh """#!/bin/bash
-            set -eux
-            docker build -t $TEST_IMAGE_3_6 -f setup/Dockerfile_3.6 .
-            docker push $TEST_IMAGE_3_6
-
-            docker build -t $TEST_IMAGE_3_7 -f setup/Dockerfile_3.7 .
-            docker push $TEST_IMAGE_3_7
-          """
-        } // container
-      } // steps
-    } // stage
+    stage('Build test docker image') {
+      when {
+        expression { return params.REBUILD_TEST_IMAGE }
+      }
+      failFast true
+      parallel  {
+        stage('Build 3.6') {
+          steps {
+            withAWS(credentials: 'ecr-233') {
+              container('docker') {
+                // Build the Docker image, and then run python -m unittest inside
+                // an activated Conda environment inside of the container.
+                sh """#!/bin/bash
+                  set -eux
+                  docker build --build-arg PYTHON_VERSION=3.6 -t $TEST_IMAGE_3_6 -f setup/Dockerfile .
+                  `aws ecr get-login --no-include-email --region us-east-1`
+                  docker push $TEST_IMAGE_3_6
+                """
+              } // container
+            }
+          } // steps
+        } // stage
+        stage('Build 3.7') {
+          steps {
+            withAWS(credentials: 'ecr-233') {
+              container('docker') {
+                // Build the Docker image, and then run python -m unittest inside
+                // an activated Conda environment inside of the container.
+                sh """#!/bin/bash
+                  set -eux
+                  docker build --build-arg PYTHON_VERSION=3.7 -t $TEST_IMAGE_3_7 -f setup/Dockerfile .
+                  `aws ecr get-login --no-include-email --region us-east-1`
+                  docker push $TEST_IMAGE_3_7
+                """
+              } // container
+            }
+          } // steps
+        } // stage
+      }
+    }
 
     stage('Tests') {
       failFast true
       parallel  {
-        stage('Test 3.6'){
+        stage('Test 3.6') {
           agent {
-            kubernetes {
-              label 'nuscenes-test3.6-' + UUID.randomUUID().toString()
-              cloud 'boston'
-              yaml """
-                apiVersion: v1
-                kind: Pod
-                metadata:
-                  labels:
-                    app: nuscenes
-                spec:
-                  containers:
-                  - name: jnlp
-                    image: registry.nutonomy.com:5000/nu/jnlp-slave:3.19-1-lfs
-                    imagePullPolicy: Always
-                  - name: docker
-                    image: $TEST_IMAGE_3_6
-                    command:
-                    - cat
-                    tty: true
-                    volumeMounts:
-                    - mountPath: /var/run/docker.sock
-                      name: docker
-                    - mountPath: /data/
-                      name: nudeep-ci
-                      subPath: data
-                  imagePullSecrets:
-                  - name: regcredjenkins
-                  volumes:
-                  - name: docker
-                    hostPath:
-                      path: /var/run/docker.sock
-                  - name: nudeep-ci
-                    persistentVolumeClaim:
-                      claimName: nudeep-ci
-                  env:
-                  - name: NUSCENES
-                    value: $NUSCENES
-              """
-            }// kubernetes
+            kubernetes(kubeagent("nuscenes-test3.6",
+                                env.TEST_IMAGE_3_6))
           } // agent
 
           steps {
             container('docker') {
+              update_deps()
               sh """#!/bin/bash
                 set -e
                 source activate nuscenes && python -m unittest discover python-sdk
@@ -90,51 +123,15 @@ pipeline {
           } // steps
         } // stage
 
-        stage('Test 3.7'){
+        stage('Test 3.7') {
           agent {
-            kubernetes {
-              label 'nuscenes-test3.7-' + UUID.randomUUID().toString()
-              cloud 'boston'
-              yaml """
-                apiVersion: v1
-                kind: Pod
-                metadata:
-                  labels:
-                    app: nuscenes
-                spec:
-                  containers:
-                  - name: jnlp
-                    image: registry.nutonomy.com:5000/nu/jnlp-slave:3.19-1-lfs
-                    imagePullPolicy: Always
-                  - name: docker
-                    image: $TEST_IMAGE_3_7
-                    command:
-                    - cat
-                    tty: true
-                    volumeMounts:
-                    - mountPath: /var/run/docker.sock
-                      name: docker
-                    - mountPath: /data/
-                      name: nudeep-ci
-                      subPath: data
-                  imagePullSecrets:
-                  - name: regcredjenkins
-                  volumes:
-                  - name: docker
-                    hostPath:
-                      path: /var/run/docker.sock
-                  - name: nudeep-ci
-                    persistentVolumeClaim:
-                      claimName: nudeep-ci
-                  env:
-                  - name: NUSCENES
-                    value: $NUSCENES
-              """
-            }// kubernetes
+            kubernetes(kubeagent("nuscenes-test3.7",
+                                env.TEST_IMAGE_3_7))
           } // agent
 
           steps {
             container('docker') {
+              update_deps()
               sh """#!/bin/bash
                 set -e
                 source activate nuscenes && python -m unittest discover python-sdk

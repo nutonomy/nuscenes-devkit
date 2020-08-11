@@ -155,7 +155,7 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
 
 
 def create_lidarseg_legend(labels_to_include_in_legend: List[int],
-                           idx2name: Dict[int, str], name2color: Dict[str, List[int]],
+                           idx2name: Dict[int, str], name2color: Dict[str, Tuple[int, int, int]],
                            loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
     """
     Given a list of class indices, the mapping from class index to class name, and the mapping from class name
@@ -186,7 +186,7 @@ def create_lidarseg_legend(labels_to_include_in_legend: List[int],
 
 
 def paint_points_label(lidarseg_labels_filename: str, filter_lidarseg_labels: List[int],
-                       name2idx: Dict[str, int], colormap: Dict[str, List[int]]) -> np.ndarray:
+                       name2idx: Dict[str, int], colormap: Dict[str, Tuple[int, int, int]]) -> np.ndarray:
     """
     Paint each label in a pointcloud with the corresponding RGB value, and set the opacity of the labels to
     be shown to 1 (the opacity of the rest will be set to 0); e.g.:
