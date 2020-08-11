@@ -423,7 +423,7 @@ class NuImages:
         print('\nListing sample_data frequencies..')
         print('# images\t# samples')
         for bin_idx, val in zip(bins, values):
-            print('{:>9d}\t{:d}'.format(bin_idx, val))
+            print('{:>9d}\t{:d}'.format(bin_idx, int(val)))
 
     # ### Getter methods. ###
 
