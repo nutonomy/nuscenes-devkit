@@ -418,8 +418,8 @@ class NuImages:
         sample_counts_list = np.array(list(sample_counts.values()))
         bin_range = np.max(sample_counts_list) - np.min(sample_counts_list)
         if bin_range == 0:
-            values = [sample_counts_list[0]]
-            freqs = [len(sample_counts_list)]
+            values = [len(sample_counts_list)]
+            freqs = [sample_counts_list[0]]
         else:
             values, bins = np.histogram(sample_counts_list, bin_range)
             freqs = bins[1:]  # To get the frequency we need to use the right side of the bin.
