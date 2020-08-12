@@ -771,8 +771,8 @@ class NuImages:
         # Render translations.
         plt.figure()
         plt.plot(translations[:, 0], translations[:, 1])
-        plt.plot(translations[key_index, 0], translations[key_index, 1], 'go', MarkerSize=10)  # Key image.
-        plt.plot(translations[0, 0], translations[0, 1], 'rx', MarkerSize=10)  # Start point.
+        plt.plot(translations[key_index, 0], translations[key_index, 1], 'go', markersize=10)  # Key image.
+        plt.plot(translations[0, 0], translations[0, 1], 'rx', markersize=10)  # Start point.
         max_dist = translations - translations[key_index, :]
         max_dist = np.ceil(np.max(np.abs(max_dist)) * 1.05)  # Leave some margin.
         max_dist = np.maximum(10, max_dist)
