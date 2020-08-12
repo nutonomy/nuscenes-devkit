@@ -401,7 +401,7 @@ class NuImages:
         for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
             print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
 
-    def list_sample_data(self) -> None:
+    def list_sample_data_histogram(self) -> None:
         """
         Show a histogram of the number of sample_datas per sample.
         """
@@ -424,7 +424,7 @@ class NuImages:
         print('\nListing sample_data frequencies..')
         print('# images\t# samples')
         for freq, val in zip(freqs, values):
-            print('{:>9d}\t{:d}'.format(int(freq), int(val)))
+            print('{:>8d}\t{:d}'.format(int(freq), int(val)))
 
     # ### Getter methods. ###
 
@@ -636,7 +636,7 @@ class NuImages:
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
                      box_line_width: int = -1,
-                     font_size: int = 20,
+                     font_size: int = None,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
@@ -654,7 +654,7 @@ class NuImages:
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
         :param box_line_width: The box line width in pixels. The default is -1.
             If set to -1, box_line_width equals render_scale (rounded) to be larger in larger images.
-        :param font_size: Size of the text in the rendered image.
+        :param font_size: Size of the text in the rendered image. Use None for the default size.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -675,7 +675,10 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = get_font(font_size=font_size)
+        if with_category and font_size is not None:
+            font = get_font(font_size=font_size)
+        else:
+            font = None
         draw = ImageDraw.Draw(im, 'RGBA')
 
         annotations_types = ['all', 'surfaces', 'objects', 'none']
