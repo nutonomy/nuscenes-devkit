@@ -12,7 +12,7 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
     """
     This script tars the image and metadata files for release on https://www.nuscenes.org/download.
     :param dataroot: The nuImages folder.
-    :param version" The nuImages dataset version.
+    :param version: The nuImages dataset version.
     """
     # Create export folder.
     export_dir = os.path.join(dataroot, 'export')
