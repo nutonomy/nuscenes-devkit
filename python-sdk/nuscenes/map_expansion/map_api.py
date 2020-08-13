@@ -912,7 +912,7 @@ class NuScenesMapExplorer:
         global_ax.legend()
 
         # Adds the zoomed in effect to the plot.
-        mark_inset(global_ax, local_ax, loc1=2, loc2=4, color='black')
+        mark_inset(global_ax, local_ax, loc1=2, loc2=4)
 
         return fig, (global_ax, local_ax)
 

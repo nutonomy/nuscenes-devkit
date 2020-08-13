@@ -396,10 +396,39 @@ class NuImages:
         timestamps = np.array([self.get('sample_data', sd_token)['timestamp'] for sd_token in sample_data_tokens])
         rel_times = (timestamps - sample['timestamp']) / 1e6
 
-        print('\nListing sample_datas...')
+        print('\nListing sample content...')
         print('Rel. time\tSample_data token')
         for rel_time, sample_data_token in zip(rel_times, sample_data_tokens):
             print('{:>9.1f}\t{}'.format(rel_time, sample_data_token))
+
+    def list_sample_data_histogram(self) -> None:
+        """
+        Show a histogram of the number of sample_datas per sample.
+        """
+        # Preload data if in lazy load to avoid confusing outputs.
+        if self.lazy:
+            self.load_tables(['sample_data'])
+
+        # Count sample_datas for each sample.
+        sample_counts = defaultdict(lambda: 0)
+        for sample_data in self.sample_data:
+            sample_counts[sample_data['sample_token']] += 1
+
+        # Compute histogram.
+        sample_counts_list = np.array(list(sample_counts.values()))
+        bin_range = np.max(sample_counts_list) - np.min(sample_counts_list)
+        if bin_range == 0:
+            values = [len(sample_counts_list)]
+            freqs = [sample_counts_list[0]]
+        else:
+            values, bins = np.histogram(sample_counts_list, bin_range)
+            freqs = bins[1:]  # To get the frequency we need to use the right side of the bin.
+
+        # Print statistics.
+        print('\nListing sample_data frequencies..')
+        print('# images\t# samples')
+        for freq, val in zip(freqs, values):
+            print('{:>8d}\t{:d}'.format(int(freq), int(val)))
 
     # ### Getter methods. ###
 
@@ -611,7 +640,7 @@ class NuImages:
                      surface_tokens: List[str] = None,
                      render_scale: float = 1.0,
                      box_line_width: int = -1,
-                     font_size: int = 20,
+                     font_size: int = None,
                      out_path: str = None) -> None:
         """
         Renders an image (sample_data), optionally with annotations overlaid.
@@ -629,7 +658,7 @@ class NuImages:
         :param render_scale: The scale at which the image will be rendered. Use 1.0 for the original image size.
         :param box_line_width: The box line width in pixels. The default is -1.
             If set to -1, box_line_width equals render_scale (rounded) to be larger in larger images.
-        :param font_size: Size of the text in the rendered image.
+        :param font_size: Size of the text in the rendered image. Use None for the default size.
         :param out_path: The path where we save the rendered image, or otherwise None.
             If a path is provided, the plot is not shown to the user.
         """
@@ -650,7 +679,10 @@ class NuImages:
         im = Image.open(im_path)
 
         # Initialize drawing.
-        font = get_font(font_size=font_size)
+        if with_category and font_size is not None:
+            font = get_font(font_size=font_size)
+        else:
+            font = None
         draw = ImageDraw.Draw(im, 'RGBA')
 
         annotations_types = ['all', 'surfaces', 'objects', 'none']
@@ -739,8 +771,8 @@ class NuImages:
         # Render translations.
         plt.figure()
         plt.plot(translations[:, 0], translations[:, 1])
-        plt.plot(translations[key_index, 0], translations[key_index, 1], 'go', MarkerSize=10)  # Key image.
-        plt.plot(translations[0, 0], translations[0, 1], 'rx', MarkerSize=10)  # Start point.
+        plt.plot(translations[key_index, 0], translations[key_index, 1], 'go', markersize=10)  # Key image.
+        plt.plot(translations[0, 0], translations[0, 1], 'rx', markersize=10)  # Start point.
         max_dist = translations - translations[key_index, :]
         max_dist = np.ceil(np.max(np.abs(max_dist)) * 1.05)  # Leave some margin.
         max_dist = np.maximum(10, max_dist)
