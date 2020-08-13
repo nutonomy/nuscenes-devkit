@@ -44,6 +44,7 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
     # Pack each folder.
     for key, folder_list in archives.items():
         out_path = os.path.join(export_dir, 'nuimages-%s-%s.tgz' % (version, key))
+        print('Compressing archive %s...' % out_path)
         pack_folder(out_path, dataroot, folder_list)
 
 
