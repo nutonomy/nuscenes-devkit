@@ -30,7 +30,7 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
 
     # Hard-code the mapping from archive names to their relative folder paths.
     archives = {
-        'all-metadata': [version + '-train', version + '-val', version + '-test'],
+        'all-metadata': [version + '-train', version + '-val', version + '-test', version + '-mini'],
         'all-samples': ['samples'],
         'all-sweeps-back': ['sweeps/CAM_BACK'],
         'all-sweeps-back-left': ['sweeps/CAM_BACK_LEFT'],
