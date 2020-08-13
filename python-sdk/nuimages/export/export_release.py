@@ -16,10 +16,7 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
     """
     # Create export folder.
     export_dir = os.path.join(dataroot, 'export')
-    if os.path.isdir(export_dir):
-        print('Warning: Skipping export as output folder already exists: %s' % export_dir)
-        return
-    else:
+    if not os.path.isdir(export_dir):
         os.makedirs(export_dir)
 
     # Determine the images from the mini split.
@@ -44,6 +41,9 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
     # Pack each folder.
     for key, folder_list in archives.items():
         out_path = os.path.join(export_dir, 'nuimages-%s-%s.tgz' % (version, key))
+        if os.path.exists(out_path):
+            print('Warning: Skipping export for file as it already exists: %s' % out_path)
+            continue
         print('Compressing archive %s...' % out_path)
         pack_folder(out_path, dataroot, folder_list)
 
@@ -53,7 +53,7 @@ def pack_folder(out_path: str, dataroot: str, folder_list: List[str], tar_format
     :param out_path:
     :param dataroot: The nuImages folder.
     :param folder_list: List of files or folders to include in the archive.
-    :param tar_format: The compression format to use. See tarfile package for more options. TODO: Try w:bz2 and w:xz
+    :param tar_format: The compression format to use. See tarfile package for more options.
     """
     tar = tarfile.open(out_path, tar_format)
     for name in folder_list:
