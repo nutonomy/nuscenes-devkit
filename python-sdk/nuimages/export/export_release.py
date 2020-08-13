@@ -32,12 +32,12 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
     archives = {
         'all-metadata': [version + '-train', version + '-val', version + '-test', version + '-mini'],
         'all-samples': ['samples'],
-        'all-sweeps-back': ['sweeps/CAM_BACK'],
-        'all-sweeps-back-left': ['sweeps/CAM_BACK_LEFT'],
-        'all-sweeps-back-right': ['sweeps/CAM_BACK_RIGHT'],
-        'all-sweeps-front': ['sweeps/CAM_FRONT'],
-        'all-sweeps-front-left': ['sweeps/CAM_FRONT_LEFT'],
-        'all-sweeps-front-right': ['sweeps/CAM_FRONT_RIGHT'],
+        'all-sweeps-cam-back': ['sweeps/CAM_BACK'],
+        'all-sweeps-cam-back-left': ['sweeps/CAM_BACK_LEFT'],
+        'all-sweeps-cam-back-right': ['sweeps/CAM_BACK_RIGHT'],
+        'all-sweeps-cam-front': ['sweeps/CAM_FRONT'],
+        'all-sweeps-cam-front-left': ['sweeps/CAM_FRONT_LEFT'],
+        'all-sweeps-cam-front-right': ['sweeps/CAM_FRONT_RIGHT'],
         'mini': [mini_src] + file_names
     }
 
