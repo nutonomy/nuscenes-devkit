@@ -51,7 +51,7 @@ For an advanced installation, see [installation](https://github.com/nutonomy/nus
 ### nuImages setup
 To download nuImages you need to go to the [Download page](https://www.nuscenes.org/download), 
 create an account and agree to the nuScenes [Terms of Use](https://www.nuscenes.org/terms-of-use).
-For the devkit to work you will need to download *all* archives.
+For the devkit to work you will need to download *at least the metadata and samples*, the *sweeps* are optional.
 Please unpack the archives to the `/data/sets/nuimages` folder \*without\* overwriting folders that occur in multiple archives.
 Eventually you should have the following folder structure:
 ```
@@ -63,6 +63,7 @@ Eventually you should have the following folder structure:
 If you want to use another folder, specify the `dataroot` parameter of the NuImages class (see tutorial).
 
 ### Getting started with nuImages
+
 Please follow these steps to make yourself familiar with the nuImages dataset:
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
 - Run the tutorial using:
@@ -127,11 +128,11 @@ To install this expansion, please follow these steps:
 
 ### Getting started with nuScenes
 Please follow these steps to make yourself familiar with the nuScenes dataset:
-- Read the [dataset description](https://www.nuscenes.org/overview).
-- [Explore](https://www.nuscenes.org/explore/scene-0011/0) the lidar viewer and videos.
+- Read the [dataset description](https://www.nuscenes.org/nuscenes#overview).
+- [Explore](https://www.nuscenes.org/nuscenes#explore) the lidar viewer and videos.
 - [Download](https://www.nuscenes.org/download) the dataset. 
 - Get the [nuscenes-devkit code](https://github.com/nutonomy/nuscenes-devkit).
-- Read the [online tutorial](https://www.nuscenes.org/tutorial) or run it yourself using:
+- Read the [online tutorial](https://www.nuscenes.org/nuscenes#tutorials) or run it yourself using:
 ```
 jupyter notebook $HOME/nuscenes-devkit/python-sdk/tutorials/nuscenes_tutorial.ipynb
 ```

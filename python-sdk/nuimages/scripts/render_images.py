@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2020.
+
 import argparse
 import gc
 import os

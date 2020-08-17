@@ -1,3 +1,6 @@
+# nuScenes dev-kit.
+# Code written by Holger Caesar, 2020.
+
 import os
 import unittest
 from typing import Any

@@ -6,17 +6,14 @@ On this page we try to answer questions frequently asked by our users.
     - For issues and bugs *with the devkit*, file an issue on [Github](https://github.com/nutonomy/nuscenes-devkit/issues).
     - For any other questions, please post in the [nuScenes user forum](https://forum.nuscenes.org/).
     
-- Can I use nuScenes for free?
-    - For non-commercial use [nuScenes is free](https://www.nuscenes.org/terms-of-use), e.g. for educational use and some research use.
+- Can I use nuScenes and nuImages for free?
+    - For non-commercial use [nuScenes and nuImages are free](https://www.nuscenes.org/terms-of-use), e.g. for educational use and some research use.
     - For commercial use please contact [nuScenes@nuTonomy.com](mailto:nuScenes@nuTonomy.com). To allow startups to use our dataset, we adjust the pricing terms to the use case and company size.
  
 - How can I participate in the nuScenes challenges?
     - See the overview site for the [object detection challenge](https://www.nuscenes.org/object-detection).
     - See the overview site for the [tracking challenge](https://www.nuscenes.org/tracking).
-    
-- What's next for nuScenes?
-    - Raw IMU & GPS data.
-    - Object detection, tracking and other challenges (see above).
+    - See the overview site for the [prediction challenge](https://www.nuscenes.org/prediction).
     
 - How can I get more information on the sensors used?
     - Read the [Data collection](https://www.nuscenes.org/data-collection) page.

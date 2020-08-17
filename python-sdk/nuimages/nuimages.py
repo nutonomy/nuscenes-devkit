@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from pyquaternion import Quaternion
 
-from nuimages.utils.utils import annotation_name, mask_decode, get_font
+from nuimages.utils.utils import annotation_name, mask_decode, get_font, name_to_index_mapping
 from nuscenes.utils.color_map import get_colormap
 
 PYTHON_VERSION = sys.version_info[0]
@@ -75,7 +75,7 @@ class NuImages:
         self.color_map = get_colormap()
 
         if verbose:
-            print("Done loading in {:.1f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
+            print("Done loading in {:.3f} seconds (lazy={}).\n======".format(time.time() - start_time, self.lazy))
 
     # ### Internal methods. ###
 
@@ -555,29 +555,7 @@ class NuImages:
         sample_data = self.get('sample_data', sd_token)
         assert sample_data['is_key_frame'], 'Error: Cannot render annotations for non keyframes!'
 
-        # Build a mapping from name to index to look up index in O(1) time.
-        nuim_name2idx_mapping = dict()
-        # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
-        # Also, sort the categories before looping so that the order is always the same (alphabetical).
-        i = 1
-        for c in sorted(self.category, key=lambda k: k['name']):
-            # Ignore the vehicle.ego and flat.driveable_surface classes first; they will be mapped later.
-            if c['name'] != 'vehicle.ego' and c['name'] != 'flat.driveable_surface':
-                nuim_name2idx_mapping[c['name']] = i
-                i += 1
-
-        assert max(nuim_name2idx_mapping.values()) < 24, \
-            'Error: There are {} classes (excluding vehicle.ego and flat.driveable_surface), ' \
-            'but there should be 23. Please check your category.json'.format(max(nuim_name2idx_mapping.values()))
-
-        # Now map the vehicle.ego and flat.driveable_surface classes.
-        nuim_name2idx_mapping['flat.driveable_surface'] = 24
-        nuim_name2idx_mapping['vehicle.ego'] = 31
-
-        # Ensure that each class name is uniquely paired with a class index, and vice versa.
-        assert len(nuim_name2idx_mapping) == len(set(nuim_name2idx_mapping.values())), \
-            'Error: There are {} class names but {} class indices'.format(len(nuim_name2idx_mapping),
-                                                                          len(set(nuim_name2idx_mapping.values())))
+        name_to_index = name_to_index_mapping(self.category)
 
         # Get image data.
         self.check_sweeps(sample_data['filename'])
@@ -601,10 +579,11 @@ class NuImages:
             mask = mask_decode(ann['mask'])
 
             # Draw mask for semantic segmentation.
-            semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
+            semseg_mask[mask == 1] = name_to_index[category_name]
 
         # Load object instances.
         object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token]
+
         # Sort by token to ensure that objects always appear in the instance mask in the same order.
         object_anns = sorted(object_anns, key=lambda k: k['token'])
 
@@ -619,7 +598,7 @@ class NuImages:
             mask = mask_decode(ann['mask'])
 
             # Draw masks for semantic segmentation and instance segmentation.
-            semseg_mask[mask == 1] = nuim_name2idx_mapping[category_name]
+            semseg_mask[mask == 1] = name_to_index[category_name]
             instanceseg_mask[mask == 1] = i
 
         # Ensure that the number of instances in the instance segmentation mask is the same as the number of objects.
@@ -683,6 +662,7 @@ class NuImages:
             font = get_font(font_size=font_size)
         else:
             font = None
+        im = im.convert('RGBA')
         draw = ImageDraw.Draw(im, 'RGBA')
 
         annotations_types = ['all', 'surfaces', 'objects', 'none']

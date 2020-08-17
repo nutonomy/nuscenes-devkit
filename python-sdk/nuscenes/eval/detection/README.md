@@ -47,7 +47,7 @@ Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/chall
 
 ## Submission rules
 ### Detection-specific rules
-* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
+* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 *past* camera images, 6 *past* radar sweeps and 10 *past* lidar sweeps). At training time there are no restrictions.
 
 ### General rules
 * We release annotations for the train and val set, but not for the test set.
@@ -112,7 +112,7 @@ Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
 This results in 10 classes for the detection challenge.
 Below we show the table of detection classes and their counterparts in the nuScenes dataset.
-For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
+For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
 |   nuScenes detection class|   nuScenes general class                  |
 |   ---                     |   ---                                     |
