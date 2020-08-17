@@ -111,13 +111,13 @@ Set the NUSCENES environment variable to point to your data folder:
 ```
 export NUSCENES="/data/sets/nuscenes"
 ```
-or for nuImages:
+or for NUIMAGES:
 ```
 export NUIMAGES="/data/sets/nuimages"
 ```
 
 ## Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder.
-You can also run `assert_download.py` in the `nuscenes/scripts` folder.
+You can also run `assert_download.py` in the `python-sdk/nuscenes/tests` and `python-sdk/nuimages/tests` folders to verify that all files are in the right place.
 
 That's it you should be good to go!
