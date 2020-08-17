@@ -47,7 +47,7 @@ Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/chall
 
 ## Submission rules
 ### Detection-specific rules
-* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 camera images, 6 radar sweeps and 10 lidar sweeps). At training time there are no restrictions.
+* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 *past* camera images, 6 *past* radar sweeps and 10 *past* lidar sweeps). At training time there are no restrictions.
 
 ### General rules
 * We release annotations for the train and val set, but not for the test set.
