@@ -5,8 +5,14 @@ import setuptools
 with open('../README.md', 'r') as fh:
     long_description = fh.read()
 
+# Since nuScenes 2.0 the requirements are stored in separate files.
 with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
+    req_paths = f.read().splitlines()
+requirements = []
+for req_path in req_paths:
+    req_path = req_path.replace('-r ', '')
+    with open(req_path) as f:
+        requirements += f.read().splitlines()
 
 
 def get_dirlist(_rootdir):
@@ -33,7 +39,7 @@ setuptools.setup(
     name='nuscenes-devkit',
     version='1.1.0',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
-           'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit et al.',
+           'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit, Asha Asvathaman et al.',
     author_email='nuscenes@nutonomy.com',
     description='The official devkit of the nuScenes dataset (www.nuscenes.org).',
     long_description=long_description,
