@@ -3,11 +3,11 @@
 
 import base64
 import os
-from typing import List, Dict, Tuple
+from typing import List, Dict
 import warnings
 
 import matplotlib.font_manager
-from PIL import ImageFont, Image
+from PIL import ImageFont
 import numpy as np
 from pycocotools import mask as cocomask
 
@@ -104,21 +104,3 @@ def name_to_index_mapping(category: List[dict]) -> Dict[str, int]:
                                                                       len(set(name_to_index.values())))
 
     return name_to_index
-
-
-def draw_mask(img: Image, mask: np.ndarray, color: Tuple[int, int, int] = None, alpha: int = 128) -> Image:  # TODO
-    """
-    Utility function for overlaying masks on images.
-    :param img: Input image.
-    :param mask: Mask of the same size as the image. Indicates the label of each pixel.
-    :param color: RGB color tuple.
-    :param alpha: Alpha-matting value to use for fill (0-255).
-    :return: Image with segmentation mask overlaid.
-    """
-
-    # Alpha-composite the color mask onto the original image.
-    # If we don't convert back from RGBA to RGB at the end, the bounding box
-    # edges rendered later aren't as sharp. We don't need the alpha channel
-    # anyway.
-    color_mask_image = Image.fromarray(color_mask, mode='RGBA')
-    return Image.alpha_composite(img, color_mask_image)

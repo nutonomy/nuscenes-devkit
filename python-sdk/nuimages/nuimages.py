@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from pyquaternion import Quaternion
 
-from nuimages.utils.utils import annotation_name, mask_decode, get_font, name_to_index_mapping, draw_mask
+from nuimages.utils.utils import annotation_name, mask_decode, get_font, name_to_index_mapping
 from nuscenes.utils.color_map import get_colormap
 
 PYTHON_VERSION = sys.version_info[0]
@@ -677,8 +677,6 @@ class NuImages:
                     surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
                 # Draw stuff / surface regions.
-                ncols, nrows = im.size
-                color_mask = np.zeros(shape=(nrows, ncols, 4), dtype='uint8')
                 for ann in surface_anns:
                     # Get color and mask.
                     category_token = ann['category_token']
@@ -689,9 +687,7 @@ class NuImages:
                     mask = mask_decode(ann['mask'])
 
                     # Draw mask. The label is obvious from the color.
-                    color_mask[mask == 1] = color + (127,)
-                color_mask_image = Image.fromarray(color_mask, mode='RGBA')
-                im = Image.alpha_composite(im, color_mask_image)
+                    draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
 
             if annotation_type == 'all' or annotation_type == 'objects':
                 # Load object instances.
@@ -700,8 +696,6 @@ class NuImages:
                     object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
                 # Draw object instances.
-                ncols, nrows = im.size
-                color_mask = np.zeros(shape=(nrows, ncols, 4), dtype='uint8')
                 for ann in object_anns:
                     # Get color, box, mask and name.
                     category_token = ann['category_token']
@@ -715,12 +709,10 @@ class NuImages:
                         mask = mask_decode(ann['mask'])
 
                         # Draw mask, rectangle and text.
-                        color_mask[mask == 1] = color + (127,)
+                        draw.bitmap((0, 0), Image.fromarray(mask * 128), fill=tuple(color + (128,)))
                         draw.rectangle(bbox, outline=color, width=box_line_width)
                         if with_category:
                             draw.text((bbox[0], bbox[1]), name, font=font)
-                color_mask_image = Image.fromarray(color_mask, mode='RGBA')
-                im = Image.alpha_composite(im, color_mask_image)
 
         # Plot the image.
         (width, height) = im.size

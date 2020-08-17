@@ -1641,7 +1641,7 @@ class NuScenesExplorer:
         :param out_path: Optional path to save the rendered figure to disk.
         """
         # Get logs by location.
-        log_tokens = [l['token'] for l in self.nusc.log if l['location'] == log_location]
+        log_tokens = [log['token'] for log in self.nusc.log if log['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
         # Filter scenes.
