@@ -119,7 +119,7 @@ class NuScenes:
         if verbose:
             for table in self.table_names:
                 print("{} {},".format(len(getattr(self, table)), table))
-            print("Done loading in {:.1f} seconds.\n======".format(time.time() - start_time))
+            print("Done loading in {:.3f} seconds.\n======".format(time.time() - start_time))
 
         # Make reverse indexes for common lookups.
         self.__make_reverse_index__(verbose)

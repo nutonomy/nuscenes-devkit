@@ -12,6 +12,7 @@ from nuimages import NuImages
 def verify_setup(nuim: NuImages):
     """
     Script to verify that the nuImages installation is complete.
+    Note that this may take several minutes or hours.
     """
 
     # Check that each sample_data file exists.

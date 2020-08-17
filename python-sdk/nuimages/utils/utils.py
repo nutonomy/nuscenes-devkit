@@ -3,11 +3,11 @@
 
 import base64
 import os
-from typing import List
+from typing import List, Dict, Tuple
 import warnings
 
 import matplotlib.font_manager
-from PIL import ImageFont
+from PIL import ImageFont, Image
 import numpy as np
 from pycocotools import mask as cocomask
 
@@ -71,3 +71,67 @@ def get_font(fonts_valid: List[str] = None, font_size: int = 15) -> ImageFont:
     warnings.warn('No suitable fonts were found in your system. '
                   'A default font will be used instead (the font size will not be adjustable).')
     return ImageFont.load_default()
+
+
+def name_to_index_mapping(category: List[dict]) -> Dict[str, int]:
+    """
+    Build a mapping from name to index to look up index in O(1) time.
+    :param category: The nuImages category table.
+    :return:
+    """
+    # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
+    # Also, sort the categories before looping so that the order is always the same (alphabetical).
+    name_to_index = dict()
+    i = 1
+    sorted_category: List = sorted(category.copy(), key=lambda k: k['name'])
+    for c in sorted_category:
+        # Ignore the vehicle.ego and flat.driveable_surface classes first; they will be mapped later.
+        if c['name'] != 'vehicle.ego' and c['name'] != 'flat.driveable_surface':
+            name_to_index[c['name']] = i
+            i += 1
+
+    assert max(name_to_index.values()) < 24, \
+        'Error: There are {} classes (excluding vehicle.ego and flat.driveable_surface), ' \
+        'but there should be 23. Please check your category.json'.format(max(name_to_index.values()))
+
+    # Now map the vehicle.ego and flat.driveable_surface classes.
+    name_to_index['flat.driveable_surface'] = 24
+    name_to_index['vehicle.ego'] = 31
+
+    # Ensure that each class name is uniquely paired with a class index, and vice versa.
+    assert len(name_to_index) == len(set(name_to_index.values())), \
+        'Error: There are {} class names but {} class indices'.format(len(name_to_index),
+                                                                      len(set(name_to_index.values())))
+
+    return name_to_index
+
+
+def draw_mask(img: Image, mask: np.ndarray, color: Tuple[int, int, int] = None, alpha: int = 128) -> Image:  # TODO
+    """
+    Utility function for overlaying masks on images.
+    :param img: Input image.
+    :param mask: Mask of the same size as the image. Indicates the label of each pixel.
+    :param color: RGB color tuple.
+    :param alpha: Alpha-matting value to use for fill (0-255).
+    :return: Image with segmentation mask overlaid.
+    """
+
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img, mode='RGBA')
+    else:
+        img = img.convert('RGBA')
+
+    color = color + (alpha,)
+
+    # Build a 'color mask' of the colors we want to overlay on the original
+    # image to show the pixel segmentation.
+    nrows, ncols = mask.shape
+    color_mask = np.zeros(shape=(nrows, ncols, 4), dtype='uint8')
+    color_mask[mask] = color
+
+    # Alpha-composite the color mask onto the original image.
+    # If we don't convert back from RGBA to RGB at the end, the bounding box
+    # edges rendered later aren't as sharp. We don't need the alpha channel
+    # anyway.
+    color_mask_image = Image.fromarray(color_mask, mode='RGBA')
+    return Image.alpha_composite(img, color_mask_image).convert('RGB')
