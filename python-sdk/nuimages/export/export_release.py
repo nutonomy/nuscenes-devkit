@@ -35,7 +35,7 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
         'all-sweeps-cam-front': ['sweeps/CAM_FRONT'],
         'all-sweeps-cam-front-left': ['sweeps/CAM_FRONT_LEFT'],
         'all-sweeps-cam-front-right': ['sweeps/CAM_FRONT_RIGHT'],
-        'mini': [mini_src] + file_names
+        'mini': [version + '-mini'] + file_names
     }
 
     # Pack each folder.
