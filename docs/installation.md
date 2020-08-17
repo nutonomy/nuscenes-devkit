@@ -107,7 +107,7 @@ pip install -r setup/requirements.txt
 
 ## Setup environment variable
 Finally, if you want to run the unit tests you need to point the devkit to the `nuscenes` folder on your disk.
-Set the NUSCENES environment variable to point to your data folder, e.g. `/data/sets/nuscenes`:
+Set the NUSCENES environment variable to point to your data folder:
 ```
 export NUSCENES="/data/sets/nuscenes"
 ```
