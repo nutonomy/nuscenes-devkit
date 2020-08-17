@@ -662,6 +662,7 @@ class NuImages:
             font = get_font(font_size=font_size)
         else:
             font = None
+        im = im.convert('RGBA')
         draw = ImageDraw.Draw(im, 'RGBA')
 
         annotations_types = ['all', 'surfaces', 'objects', 'none']
@@ -676,6 +677,8 @@ class NuImages:
                     surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
                 # Draw stuff / surface regions.
+                ncols, nrows = im.size
+                color_mask = np.zeros(shape=(nrows, ncols, 4), dtype='uint8')
                 for ann in surface_anns:
                     # Get color and mask.
                     category_token = ann['category_token']
@@ -686,7 +689,9 @@ class NuImages:
                     mask = mask_decode(ann['mask'])
 
                     # Draw mask. The label is obvious from the color.
-                    im = draw_mask(im, mask, color)
+                    color_mask[mask == 1] = color + (127,)
+                color_mask_image = Image.fromarray(color_mask, mode='RGBA')
+                im = Image.alpha_composite(im, color_mask_image)
 
             if annotation_type == 'all' or annotation_type == 'objects':
                 # Load object instances.
@@ -695,6 +700,8 @@ class NuImages:
                     object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
                 # Draw object instances.
+                ncols, nrows = im.size
+                color_mask = np.zeros(shape=(nrows, ncols, 4), dtype='uint8')
                 for ann in object_anns:
                     # Get color, box, mask and name.
                     category_token = ann['category_token']
@@ -708,10 +715,12 @@ class NuImages:
                         mask = mask_decode(ann['mask'])
 
                         # Draw mask, rectangle and text.
-                        im = draw_mask(im, mask, color)
+                        color_mask[mask == 1] = color + (127,)
                         draw.rectangle(bbox, outline=color, width=box_line_width)
                         if with_category:
                             draw.text((bbox[0], bbox[1]), name, font=font)
+                color_mask_image = Image.fromarray(color_mask, mode='RGBA')
+                im = Image.alpha_composite(im, color_mask_image)
 
         # Plot the image.
         (width, height) = im.size

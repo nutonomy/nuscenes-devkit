@@ -116,22 +116,9 @@ def draw_mask(img: Image, mask: np.ndarray, color: Tuple[int, int, int] = None, 
     :return: Image with segmentation mask overlaid.
     """
 
-    if isinstance(img, np.ndarray):
-        img = Image.fromarray(img, mode='RGBA')
-    else:
-        img = img.convert('RGBA')
-
-    color = color + (alpha,)
-
-    # Build a 'color mask' of the colors we want to overlay on the original
-    # image to show the pixel segmentation.
-    nrows, ncols = mask.shape
-    color_mask = np.zeros(shape=(nrows, ncols, 4), dtype='uint8')
-    color_mask[mask] = color
-
     # Alpha-composite the color mask onto the original image.
     # If we don't convert back from RGBA to RGB at the end, the bounding box
     # edges rendered later aren't as sharp. We don't need the alpha channel
     # anyway.
     color_mask_image = Image.fromarray(color_mask, mode='RGBA')
-    return Image.alpha_composite(img, color_mask_image).convert('RGB')
+    return Image.alpha_composite(img, color_mask_image)
