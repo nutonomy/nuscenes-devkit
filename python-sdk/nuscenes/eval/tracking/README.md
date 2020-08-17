@@ -28,7 +28,7 @@ They are based upon the [nuScenes dataset](http://www.nuScenes.org) \[1\] and th
 
 # Getting started
 To participate in the tracking challenge you should first [get familiar with the nuScenes dataset and install it](https://github.com/nutonomy/nuscenes-devkit/blob/master/README.md).
-In particular, the [tutorial](https://www.nuscenes.org/tutorial) explains how to use the various database tables.
+In particular, the [tutorial](https://www.nuscenes.org/nuscenes#tutorials) explains how to use the various database tables.
 The tutorial also shows how to retrieve the images, lidar pointclouds and annotations for each sample (timestamp).
 To retrieve the instance/track of an object, take a look at the [instance table](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/schema_nuscenes.md#instance).
 Now you are ready to train your tracking algorithm on the dataset.
@@ -122,12 +122,12 @@ sample_result {
 Note that except for the `tracking_*` fields the result format is identical to the [detection challenge](https://www.nuscenes.org/object-detection).
 
 ## Classes
-The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
+The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/nuscenes#data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
 From these *detection challenge classes* we further remove the classes *barrier*, *trafficcone* and *construction_vehicle*, as these are typically static.
 Below we show the table of the 7 tracking classes and their counterparts in the nuScenes dataset.
-For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
+For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
 |   nuScenes general class                  |   nuScenes tracking class |
 |   ---                                     |   ---                     |

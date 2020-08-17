@@ -112,7 +112,7 @@ Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
 This results in 10 classes for the detection challenge.
 Below we show the table of detection classes and their counterparts in the nuScenes dataset.
-For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/data-annotation).
+For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
 |   nuScenes detection class|   nuScenes general class                  |
 |   ---                     |   ---                                     |
