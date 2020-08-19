@@ -9,13 +9,9 @@
 - [Surfaces](#surfaces)
   - [Semantic Segmentation](#semantic-segmentation)
 
-
-
 # Introduction
 In nuImages, we annotate objects with 2d boxes, instance masks and 2d segmentation masks. All the labels and attributes from nuScenes are carried over into nuImages.
 We have also [added more attributes](#attributes) in nuImages. For segmentation, we have included ["stuff" (background) classes](#surfaces).
-
-
 
 # Objects
 nuImages contains the [same object classes as nuScenes](https://github.com/nutonomy/nuscenes-devkit/tree/master/docs/instructions_nuscenes.md#labels),
@@ -96,6 +92,7 @@ while the [attributes](#attributes) are a superset of the [attributes in nuScene
 ![instanceseg_extremity_exempt](https://www.nuscenes.org/public/images/taxonomy_imgs/nuimages/correct-wrong/instanceseg_extremity_exempt.png)
  - `static_object.bicycle_rack`
    - All bicycles in a bicycle rack should be annotated collectively as bicycle rack.
+   - **Note:** A previous version of this taxonomy did not include bicycle racks and therefore some images are missing bicycle rack annotations. We leave this class in the dataset, as it is merely an ignore label. The ignore label is used to avoid punishing false positives or false negatives on bicycle racks, where individual bicycles are difficult to identify.
 
 [Top](#overview)
 
