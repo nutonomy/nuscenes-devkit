@@ -674,6 +674,9 @@ class NuImages:
                 # Load stuff / surface regions.
                 surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token]
                 if surface_tokens is not None:
+                    sd_surface_tokens = set([s['token'] for s in surface_anns if s['token']])
+                    assert set(surface_tokens).issubset(sd_surface_tokens), \
+                        'Error: The provided surface_tokens do not belong to the sd_token!'
                     surface_anns = [o for o in surface_anns if o['token'] in surface_tokens]
 
                 # Draw stuff / surface regions.
@@ -693,6 +696,9 @@ class NuImages:
                 # Load object instances.
                 object_anns = [o for o in self.object_ann if o['sample_data_token'] == sd_token]
                 if object_tokens is not None:
+                    sd_object_tokens = set([o['token'] for o in object_anns if o['token']])
+                    assert set(object_tokens).issubset(sd_object_tokens), \
+                        'Error: The provided object_tokens do not belong to the sd_token!'
                     object_anns = [o for o in object_anns if o['token'] in object_tokens]
 
                 # Draw object instances.
