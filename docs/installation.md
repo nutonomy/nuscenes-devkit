@@ -6,8 +6,9 @@ We provide step-by-step instructions to install our devkit. These instructions a
 - [Setup a virtualenvwrapper environment](#setup-a-virtualenvwrapper-environment)
 - [Setup PYTHONPATH](#setup-pythonpath)
 - [Install required packages](#install-required-packages)
-- [Verify install](#verify-install)
 - [Setup environment variable](#setup-environment-variable)
+- [Setup Matplotlib backend](#setup-matplotlib-backend)
+- [Verify install](#verify-install)
 
 ## Download
 
@@ -116,16 +117,16 @@ or for NUIMAGES:
 export NUIMAGES="/data/sets/nuimages"
 ```
 
-## Setup matplotlib backend (for macOSX users)
-Note that if you are using MacOSX, you may find that `plt.plot()` fails with the following error:
+## Setup Matplotlib backend
+When using Matplotlib, it is generally recommended to define the backend used for rendering:
+1) Under Ubuntu the default backend `Agg` results in any plot not being rendered by default. This does not apply inside Jupyter notebooks.
+2) Under MacOSX a call to `plt.plot()` may fail with the following error (see [here](https://github.com/matplotlib/matplotlib/issues/13414) for more details):
+    ```
+    libc++abi.dylib: terminating with uncaught exception of type NSException
+    ```
+To set the backend, add the following to your `~/.matplotlib/matplotlibrc` file, which needs to be created if it does not exist yet: 
 ```
-libc++abi.dylib: terminating with uncaught exception of type NSException
-```
-In this case, try adding one of the following to your `.matplotlib/matplotlibrc` file as discussed [here](https://github.com/matplotlib/matplotlib/issues/13414): 
-```
-backend : TKAgg
-## or ##
-backend : macOSX
+backend: TKAgg
 ```
 
 ## Verify install
