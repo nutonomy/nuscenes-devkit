@@ -13,8 +13,7 @@ from nuimages.scripts.render_images import render_images
 def render_rare_classes(nuim: NuImages,
                         render_args: Dict[str, Any],
                         filter_categories: List[str] = None,
-                        max_frequency: float = 0.001,
-                        render_other_categories: bool = False) -> None:
+                        max_frequency: float = 0.1) -> None:
     """
     Wrapper around render_images() that renders images with rare classes.
     :param nuim: NuImages instance.
@@ -25,8 +24,6 @@ def render_rare_classes(nuim: NuImages,
     :param max_frequency: The maximum relative frequency of the categories, at least one of which is required to be
         present in the image. E.g. 0.1 indicates that one of the classes that account for at most 10% of the annotations
         is present.
-    :param render_other_categories: Whether to render other categories than the selected.
-        This is only relevant for mode='annotated'.
     """
     # Checks.
     assert 'filter_categories' not in render_args.keys(), \
@@ -52,12 +49,6 @@ def render_rare_classes(nuim: NuImages,
         filter_categories = list(set(filter_categories_freq).intersection(set(filter_categories)))
         assert len(filter_categories) > 0, 'Error: No categories left after applying filter_categories!'
 
-    # If specified, render only the masks for the selected categories.
-    if not render_other_categories:
-        cat_name_to_token = {c['name']: c['token'] for c in nuim.category}
-        object_tokens = [cat_name_to_token[category_name] for category_name in filter_categories]
-        render_args['object_tokens'] = object_tokens
-
     # Call render function.
     render_images(nuim, filter_categories=filter_categories, **render_args)
 
@@ -71,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='all')
     parser.add_argument('--cam_name', type=str, default=None)
     parser.add_argument('--sample_limit', type=int, default=100)
-    parser.add_argument('--max_frequency', type=float, default=0.001)
+    parser.add_argument('--max_frequency', type=float, default=0.1)
     parser.add_argument('--filter_categories', action='append')
     parser.add_argument('--out_type', type=str, default='image')
     parser.add_argument('--out_dir', type=str, default='~/Downloads/nuImages')
@@ -85,11 +76,11 @@ if __name__ == '__main__':
     nuim_ = NuImages(version=args.version, dataroot=args.dataroot, verbose=bool(args.verbose), lazy=False)
 
     # Render images.
-    render_args = {
+    _render_args = {
         'mode': args.mode,
         'cam_name': args.cam_name,
         'sample_limit': args.sample_limit,
         'out_type': args.out_type,
         'out_dir': args.out_dir
     }
-    render_rare_classes(nuim_, render_args, filter_categories=args.filter_categories, max_frequency=args.max_frequency)
+    render_rare_classes(nuim_, _render_args, filter_categories=args.filter_categories, max_frequency=args.max_frequency)

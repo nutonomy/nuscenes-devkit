@@ -14,7 +14,7 @@ class TestForeignKeys(unittest.TestCase):
     def __init__(self, _: Any = None, version: str = 'v1.0-mini', dataroot: str = None):
         """
         Initialize TestForeignKeys.
-        Note: The second parameter is a aummy parameter required by the TestCase class.
+        Note: The second parameter is a dummy parameter required by the TestCase class.
         :param version: The NuImages version.
         :param dataroot: The root folder where the dataset is installed.
         """

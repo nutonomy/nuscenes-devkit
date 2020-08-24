@@ -97,7 +97,7 @@ To install nuScenes-lidarseg, please follow these steps:
 - Extract the `lidarseg` and `v1.0-*` folders to your nuScenes root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/setup/installation.md)): `pip install -r setup/requirements.txt`
-- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/python-sdk/tutorials/nuscenes_lidarseg_tutorial.ipynb).
+- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/nuscenes_lidarseg_tutorial.ipynb).
 
 ### Prediction challenge
 In March 2020 we released code for the nuScenes prediction challenge.
