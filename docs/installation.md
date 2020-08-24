@@ -116,6 +116,18 @@ or for NUIMAGES:
 export NUIMAGES="/data/sets/nuimages"
 ```
 
+## Setup matplotlib backend (for macOSX users)
+Note that if you are using MacOSX, you may find that `plt.plot()` fails with the following error:
+```
+libc++abi.dylib: terminating with uncaught exception of type NSException
+```
+In this case, try adding one of the following to your `.matplotlib/matplotlibrc` file as discussed [here](https://github.com/matplotlib/matplotlib/issues/13414): 
+```
+backend : TKAgg
+## or ##
+backend : macOSX
+```
+
 ## Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder.
 You can also run `assert_download.py` in the `python-sdk/nuscenes/tests` and `python-sdk/nuimages/tests` folders to verify that all files are in the right place.
