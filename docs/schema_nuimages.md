@@ -5,7 +5,7 @@ All annotations and meta data (including calibration, maps, vehicle coordinates 
 The database tables are listed below.
 Every row can be identified by its unique primary key `token`.
 Foreign keys such as `sample_token` may be used to link to the `token` of the table `sample`.
-Please refer to the [tutorial](https://www.nuscenes.org/nuimages#tutorial) for an introduction to the most important database tables.
+Please refer to the [tutorial](https://www.nuscenes.org/nuimages#tutorials) for an introduction to the most important database tables.
 
 ![](https://www.nuscenes.org/public/images/nuimages-schema.svg)
 
