@@ -1,1 +1,1 @@
-pycocotools
+pycocotools>=2.0.1

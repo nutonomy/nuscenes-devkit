@@ -5,7 +5,7 @@ jupyter
 matplotlib
 numpy
 opencv-python
-Pillow<=6.2.1  # Latest Pillow is incompatible with current torchvision, https://github.com/pytorch/vision/issues/1712
+Pillow
 pyquaternion>=0.9.5
 scikit-learn
 scipy
