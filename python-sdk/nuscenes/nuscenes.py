@@ -21,7 +21,7 @@ from pyquaternion import Quaternion
 from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, plt_to_cv2, get_stats, \
-    get_key_from_value, get_labels_in_coloring, create_lidarseg_legend, paint_points_label
+    get_labels_in_coloring, create_lidarseg_legend, paint_points_label
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
@@ -473,7 +473,7 @@ class NuScenes:
 
         for class_name, count in out:
             if count > 0:
-                idx = get_key_from_value(self.lidarseg_idx2name_mapping, class_name)
+                idx = self.lidarseg_name2idx_mapping[class_name]
                 print('{:3}  {:40} n={:12,}'.format(idx, class_name, count))
 
         print('=' * len(header))
@@ -676,7 +676,7 @@ class NuScenesExplorer:
 
         # Print frequency counts of each class in the lidarseg dataset.
         for class_name, count in out:
-            idx = get_key_from_value(self.nusc.lidarseg_idx2name_mapping, class_name)
+            idx = self.nusc.lidarseg_name2idx_mapping[class_name]
             print('{:3}  {:40} nbr_points={:12,}'.format(idx, class_name, count))
 
         print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
