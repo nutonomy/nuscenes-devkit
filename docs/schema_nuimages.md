@@ -139,7 +139,6 @@ sample {
 
 sensor
 ---------
----------
 A specific sensor type.
 ```
 sensor {

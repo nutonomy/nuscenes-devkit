@@ -77,7 +77,7 @@ def name_to_index_mapping(category: List[dict]) -> Dict[str, int]:
     """
     Build a mapping from name to index to look up index in O(1) time.
     :param category: The nuImages category table.
-    :return:
+    :return: The mapping from category name to category index.
     """
     # The 0 index is reserved for non-labelled background; thus, the categories should start from index 1.
     # Also, sort the categories before looping so that the order is always the same (alphabetical).

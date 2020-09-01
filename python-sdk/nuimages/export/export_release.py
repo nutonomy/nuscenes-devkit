@@ -50,7 +50,7 @@ def export_release(dataroot='/data/sets/nuimages', version: str = 'v1.0') -> Non
 
 def pack_folder(out_path: str, dataroot: str, folder_list: List[str], tar_format: str = 'w:gz') -> None:
     """
-    :param out_path:
+    :param out_path: The output path where we write the tar file.
     :param dataroot: The nuImages folder.
     :param folder_list: List of files or folders to include in the archive.
     :param tar_format: The compression format to use. See tarfile package for more options.

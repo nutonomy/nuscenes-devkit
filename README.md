@@ -47,6 +47,9 @@ pip install nuscenes-devkit
 For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md) for detailed instructions.
 
 ## nuImages
+nuImages is a stand-alone large-scale image dataset.
+It uses the same sensor setup as the 3d nuScenes dataset.
+The structure is similar to nuScenes and both use the same devkit, which make the installation process simple.
 
 ### nuImages setup
 To download nuImages you need to go to the [Download page](https://www.nuscenes.org/download), 
@@ -91,7 +94,7 @@ Eventually you should have the following folder structure:
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
 ### nuScenes-lidarseg
-In June 2020 we published [nuScenes-lidarseg](https://www.nuscenes.org/nuscenes#lidarseg) which contains the semantic labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
+In August 2020 we published [nuScenes-lidarseg](https://www.nuscenes.org/nuscenes#lidarseg) which contains the semantic labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
 To install nuScenes-lidarseg, please follow these steps:
 - Download the dataset from the [Download page](https://www.nuscenes.org/download),
 - Extract the `lidarseg` and `v1.0-*` folders to your nuScenes root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
