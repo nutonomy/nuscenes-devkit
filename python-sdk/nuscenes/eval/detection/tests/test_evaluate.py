@@ -74,7 +74,7 @@ class TestMain(unittest.TestCase):
             if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
                 val_samples.append(sample)
 
-        for sample in tqdm(val_samples):
+        for sample in tqdm(val_samples, leave=False):
             sample_res = []
             for ann_token in sample['anns']:
                 ann = nusc.get('sample_annotation', ann_token)

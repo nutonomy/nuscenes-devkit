@@ -101,7 +101,7 @@ class NuScenesCanBus:
         plt.figure()
         plt.plot(route[:, 0], route[:, 1])
         plt.plot(pose[:, 0], pose[:, 1])
-        plt.plot(pose[0, 0], pose[0, 1], 'rx', MarkerSize=10)
+        plt.plot(pose[0, 0], pose[0, 1], 'rx', markersize=10)
         plt.legend(('Route', 'Pose', 'Start'))
         plt.xlabel('Map coordinate x in m')
         plt.ylabel('Map coordinate y in m')

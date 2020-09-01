@@ -1,13 +1,14 @@
 # Advanced Installation
-We provide step-by-step instructions to install our devkit. 
+We provide step-by-step instructions to install our devkit. These instructions apply to both nuScenes and nuImages.
 - [Download](#download)
 - [Install Python](#install-python)
 - [Setup a Conda environment](#setup-a-conda-environment)
 - [Setup a virtualenvwrapper environment](#setup-a-virtualenvwrapper-environment)
 - [Setup PYTHONPATH](#setup-pythonpath)
 - [Install required packages](#install-required-packages)
+- [Setup environment variable](#setup-environment-variable)
+- [Setup Matplotlib backend](#setup-matplotlib-backend)
 - [Verify install](#verify-install)
-- [Setup NUSCENES environment variable](#setup-nuscenes-environment-variable)
 
 ## Download
 
@@ -36,7 +37,7 @@ An alternative to Conda is to use virtualenvwrapper, as described [below](#setup
 See the [official Miniconda page](https://conda.io/en/latest/miniconda.html).
 
 #### Setup a Conda environment
-We create a new Conda environment named `nuscenes`.
+We create a new Conda environment named `nuscenes`. We will use this environment for both nuScenes and nuImages.
 ```
 conda create --name nuscenes python=3.7
 ```
@@ -103,16 +104,33 @@ To install the required packages, run the following command in your favourite vi
 ```
 pip install -r setup/requirements.txt
 ```
+**Note:** The requirements file is internally divided into base requirements (`base`) and requirements specific to certain products or challenges (`nuimages`, `prediction` and `tracking`). If you only plan to use a subset of the codebase, feel free to comment out the lines that you do not need.
 
-## Verify install
-To verify your environment run `python -m unittest` in the `python-sdk` folder.
-You can also run `assert_download.py` in the `nuscenes/scripts` folder.
-
-## Setup NUSCENES environment variable
+## Setup environment variable
 Finally, if you want to run the unit tests you need to point the devkit to the `nuscenes` folder on your disk.
-Set the NUSCENES environment variable to point to your data folder, e.g. `/data/sets/nuscenes`:
+Set the NUSCENES environment variable to point to your data folder:
 ```
 export NUSCENES="/data/sets/nuscenes"
 ```
+or for NUIMAGES:
+```
+export NUIMAGES="/data/sets/nuimages"
+```
+
+## Setup Matplotlib backend
+When using Matplotlib, it is generally recommended to define the backend used for rendering:
+1) Under Ubuntu the default backend `Agg` results in any plot not being rendered by default. This does not apply inside Jupyter notebooks.
+2) Under MacOSX a call to `plt.plot()` may fail with the following error (see [here](https://github.com/matplotlib/matplotlib/issues/13414) for more details):
+    ```
+    libc++abi.dylib: terminating with uncaught exception of type NSException
+    ```
+To set the backend, add the following to your `~/.matplotlib/matplotlibrc` file, which needs to be created if it does not exist yet: 
+```
+backend: TKAgg
+```
+
+## Verify install
+To verify your environment run `python -m unittest` in the `python-sdk` folder.
+You can also run `assert_download.py` in the `python-sdk/nuscenes/tests` and `python-sdk/nuimages/tests` folders to verify that all files are in the right place.
 
 That's it you should be good to go!
