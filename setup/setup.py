@@ -39,7 +39,7 @@ setuptools.setup(
     name='nuscenes-devkit',
     version='1.1.0',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
-           'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit, Asha Asvathaman et al.',
+           'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit Fong, Asha Asvathaman et al.',
     author_email='nuscenes@nutonomy.com',
     description='The official devkit of the nuScenes dataset (www.nuscenes.org).',
     long_description=long_description,

@@ -474,7 +474,8 @@ class NuImages:
             attributes: A matrix with sample_datas x len(attribute) number of fields.
         )
         """
-        assert attribute_name in ['translation', 'rotation', 'rotation_rate', 'acceleration', 'speed']
+        assert attribute_name in ['translation', 'rotation', 'rotation_rate', 'acceleration', 'speed'], \
+            'Error: The attribute_name %s is not a valid option!' % attribute_name
 
         if attribute_name == 'speed':
             attribute_len = 1
