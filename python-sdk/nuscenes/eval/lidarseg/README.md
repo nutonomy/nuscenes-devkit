@@ -40,15 +40,14 @@ Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/chall
 *Note:* Due to the COVID-19 situation, participants are **not** required to attend in person to be eligible for the prizes.
 
 ## Submission rules
-### Detection-specific rules
-* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 *past* camera images, 6 *past* radar sweeps and 10 *past* lidar sweeps). At training time there are no restrictions.
+### lidar segmentation-specific rules
+* N.A.
 
 ### General rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
 * Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
 * We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
-* Users must limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
 * Each user or team can have at most one one account on the evaluation server.
@@ -56,14 +55,14 @@ Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/chall
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges. 
 
 ## Results format
-We define a standardized detection result format that serves as an input to the evaluation code.
-Results are evaluated for each 2Hz keyframe, also known as `sample`.
+We define a standardized lidar segmentation result format that serves as an input to the evaluation code.
+Results are evaluated for each 2Hz keyframe, also known as a `sample`.
 The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
-For the train and val sets the evaluation can be performed by the user on their local machine.
-For the test set the user needs to zip the single JSON result file and submit it to the official evaluation server.
+For the train and val sets, the evaluation can be performed by the user on their local machine.
+For the test set, the user needs to zip the single JSON result file and submit it to the official evaluation server.
 The JSON file includes meta data `meta` on the type of inputs used for this method.
 Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
-Each `sample_token` from the current evaluation set must be included in `results`, although the list of predictions may be empty if no object is detected.
+Each `sample_token` from the current evaluation set must be included in `results`.
 ```
 submission {
     "meta": {
@@ -84,31 +83,25 @@ This allows for processing of results and annotations using the same tools.
 A `sample_result` is a dictionary defined as follows:
 ```
 sample_result {
-    "sample_token":       <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
-    "translation":        <float> [3]   -- Estimated bounding box location in m in the global frame: center_x, center_y, center_z.
-    "size":               <float> [3]   -- Estimated bounding box size in m: width, length, height.
-    "rotation":           <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
-    "velocity":           <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
-    "detection_name":     <str>         -- The predicted class for this sample_result, e.g. car, pedestrian.
-    "detection_score":    <float>       -- Object prediction score between 0 and 1 for the class identified by detection_name.
-    "attribute_name":     <str>         -- Name of the predicted attribute or empty string for classes without attributes.
-                                           See table below for valid attributes for each class, e.g. cycle.with_rider.
-                                           Attributes are ignored for classes without attributes.
-                                           There are a few cases (0.4%) where attributes are missing also for classes
-                                           that should have them. We ignore the predicted attributes for these cases.
+    "sample_token":                 <str>                   -- Foreign key. Identifies the sample/keyframe for the pointcloud is segmented.
+    "segmentation_preds":           List[<int>]             -- The list of predicted classes for the lidar points for this sample_result (e.g. [1, 5, 4, 1, ...])
+    "segmentation_preds_score":     List[List[<float>]      -- The list of scores (between 0 and 1) for each point, e.g.
+                                                                    [ [0.78213, 0.65112, ...],
+                                                                      [0.23122, 0.72341, ...],
+                                                                      ... ] 
 }
 ```
-Note that the detection classes may differ from the general nuScenes classes, as detailed below.
+Note that the lidar segmentation classes may differ from the general nuScenes classes, as detailed below.
 
-## Classes, attributes, and detection ranges
-The nuScenes dataset comes with annotations for 23 classes ([details](https://www.nuscenes.org/data-annotation)).
+## Classes
+The nuScenes-lidarseg dataset comes with annotations for 32 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
-This results in 10 classes for the detection challenge.
-Below we show the table of detection classes and their counterparts in the nuScenes dataset.
+This results in # TODO XX classes for the lidar segmentation challenge.
+Below we show the table of lidar segmentation classes and their counterparts in the nuScenes-lidarseg dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
-|   nuScenes detection class|   nuScenes general class                  |
+|   lidar segmentation class|   nuScenes-lidarseg general class         |
 |   ---                     |   ---                                     |
 |   void / ignore           |   animal                                  |
 |   void / ignore           |   human.pedestrian.personal_mobility      |
@@ -134,28 +127,8 @@ For more information on the classes and their frequencies, see [this page](https
 |   trailer                 |   vehicle.trailer                         |
 |   truck                   |   vehicle.truck                           |
 
-Below we list which nuScenes classes can have which attributes.
-Note that some annotations are missing attributes (0.4% of all sample_annotations).
-
-For each nuScenes detection class, the number of annotations decreases with increasing range from the ego vehicle, 
-but the number of annotations per range varies by class. Therefore, each class has its own upper bound on evaluated
-detection range, as shown below:
-
-|   nuScenes detection class    |   Attributes                                          | Detection range (meters)  |
-|   ---                         |   ---                                                 |   ---                     |
-|   barrier                     |   void                                                |   30                      |
-|   traffic_cone                |   void                                                |   30                      |
-|   bicycle                     |   cycle.{with_rider, without_rider}                   |   40                      |
-|   motorcycle                  |   cycle.{with_rider, without_rider}                   |   40                      |
-|   pedestrian                  |   pedestrian.{moving, standing, sitting_lying_down}   |   40                      |
-|   car                         |   vehicle.{moving, parked, stopped}                   |   50                      |
-|   bus                         |   vehicle.{moving, parked, stopped}                   |   50                      |
-|   construction_vehicle        |   vehicle.{moving, parked, stopped}                   |   50                      |
-|   trailer                     |   vehicle.{moving, parked, stopped}                   |   50                      |
-|   truck                       |   vehicle.{moving, parked, stopped}                   |   50                      |
-
 ## Evaluation metrics
-Below we define the metrics for the nuScenes detection task.
+Below we define the metrics for the nuScenes lidar segmentation task.
 Our final score is a weighted sum of mean Average Precision (mAP) and several True Positive (TP) metrics.
 
 ### Preprocessing
@@ -213,11 +186,6 @@ Furthermore, there will also be an award for novel ideas, as well as the best st
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
   
-**Vision track**: 
-* Only camera input allowed.
-* External data or map data <u>not allowed</u>.
-* May use pre-training.
- 
 **Open track**: 
 * Any sensor input allowed.
 * External data and map data allowed.  
@@ -242,7 +210,7 @@ Note that `instance`, `sample_annotation` and `scene` description are not provid
 * *Pre-training:*
 By pre-training we mean training a network for the task of image classification using only image-level labels,
 as done in [[Krizhevsky NIPS 2012]](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networ).
-The pre-training may not involve bounding box, mask or other localized annotations.
+The pre-training may not involve bounding boxes, masks or other localized annotations.
 
 * *Reporting:* 
 Users are required to report detailed information on their method regarding sensor input, map data, meta data and pre-training.
