@@ -41,13 +41,12 @@ Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/chall
 
 ## Submission rules
 ### lidar segmentation-specific rules
-* N.A.
+* The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 past camera images, 6 past radar sweeps and 10 past lidar sweeps). At training time there are no restrictions.
 
 ### General rules
 * We release annotations for the train and val set, but not for the test set.
 * We release sensor data for train, val and test set.
 * Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
-* We do not use strata. Instead, we filter annotations and predictions beyond class specific distances.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
 * Each user or team can have at most one one account on the evaluation server.
