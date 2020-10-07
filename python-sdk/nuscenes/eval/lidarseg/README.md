@@ -7,7 +7,7 @@
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
 - [Results format](#results-format)
-- [Classes and attributes](#classes-attributes-and-detection-ranges)
+- [Classes](#classes)
 - [Evaluation metrics](#evaluation-metrics)
 
 ## Introduction
