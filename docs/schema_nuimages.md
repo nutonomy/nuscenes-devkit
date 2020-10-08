@@ -34,7 +34,7 @@ calibrated_sensor {
    "translation":             <float> [3] -- Coordinate system origin in meters: x, y, z.
    "rotation":                <float> [4] -- Coordinate system orientation as quaternion: w, x, y, z.
    "camera_intrinsic":        <float> [3, 3] -- Intrinsic camera calibration. Empty for sensors that are not cameras.
-   "camera_distortion":       <float> [5 or 6] -- Camera calibration parameters. We use the 5 parameter camera convention of the CalTech camera calibration toolbox, that is also used in OpenCV. Only for fish-eye lenses in CAM_BACK do we use the 6th parameter.
+   "camera_distortion":       <float> [5 or 6] -- Camera calibration parameters [k1, k2, p1, p2, k3, k4]. We use the 5 parameter camera convention of the CalTech camera calibration toolbox, that is also used in OpenCV. Only for fish-eye lenses in CAM_BACK do we use the 6th parameter (k4).
 }
 ```
 
