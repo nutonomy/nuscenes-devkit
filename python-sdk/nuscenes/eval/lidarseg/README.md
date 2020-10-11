@@ -70,37 +70,29 @@ The folder structure of the results should be as follows:
                                 the submission
 ```
 
-The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
-Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
-Each `sample_token` from the current evaluation set must be included in `results`.
-```
-submission {
-    "meta": {
-        "use_camera":   <bool>          -- Whether this submission uses camera data as an input.
-        "use_lidar":    <bool>          -- Whether this submission uses lidar data as an input.
-        "use_radar":    <bool>          -- Whether this submission uses radar data as an input.
-        "use_map":      <bool>          -- Whether this submission uses map data as an input.
-        "use_external": <bool>          -- Whether this submission uses external data as an input.
-    },
-    "mapping": {
-        class_idx <int>: class_name <str> -- Maps each class index to a class name..
-    }
-}
-```
-For the predictions we create a new database table called `sample_result`.
-The `sample_result` table is designed to mirror the `sample_annotation` table.
-This allows for processing of results and annotations using the same tools.
-A `sample_result` is a dictionary defined as follows:
-```
-sample_result {
-    "sample_token":                 <str>                   -- Foreign key. Identifies the sample/keyframe for the pointcloud is segmented.
-    "segmentation_preds":           List[<int>]             -- The list of predicted classes for the lidar points for this sample_result (e.g. [1, 5, 4, 1, ...])
-    "segmentation_preds_score":     List[List[<float>]      -- The list of scores (between 0 and 1) for each point, e.g.
-                                                                    [ [0.78213, 0.65112, ...],
-                                                                      [0.23122, 0.72341, ...],
-                                                                      ... ] 
-}
-```
+The contents of the `submision.json` file and `v1.0-test` folder are defined below: 
+* The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
+  Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
+  Each `sample_token` from the current evaluation set must be included in `results`.
+  ```
+  "meta": {
+      "use_camera":   <bool>          -- Whether this submission uses camera data as an input.
+      "use_lidar":    <bool>          -- Whether this submission uses lidar data as an input.
+      "use_radar":    <bool>          -- Whether this submission uses radar data as an input.
+      "use_map":      <bool>          -- Whether this submission uses map data as an input.
+      "use_external": <bool>          -- Whether this submission uses external data as an input.
+  },
+  "mapping": {
+      class_idx <int>: class_name <str> -- Maps each class index to a class name.
+  }
+  ```
+* The `v1.0-test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
+  Pay special attention that each set of predictions in the folder must be a .bin file and named as <lidar_sample_data_token>_lidarseg.bin.
+  A .bin file contains an array of `int` in which each value is the predicted class index of the corresponding point in the point cloud, e.g.:
+  ```
+  [1, 5, 4, 1, ...])
+  ```
+
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
 
@@ -114,61 +106,54 @@ This results in # TODO XX classes for the lidar segmentation challenge.
 Below we show the table of lidar segmentation classes and their counterparts in the nuScenes-lidarseg dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
-|   lidar segmentation class|   nuScenes-lidarseg general class         |
-|   ---                     |   ---                                     |
-|   void / ignore           |   animal                                  |
-|   void / ignore           |   human.pedestrian.personal_mobility      |
-|   void / ignore           |   human.pedestrian.stroller               |
-|   void / ignore           |   human.pedestrian.wheelchair             |
-|   void / ignore           |   movable_object.debris                   |
-|   void / ignore           |   movable_object.pushable_pullable        |
-|   void / ignore           |   static_object.bicycle_rack              |
-|   void / ignore           |   vehicle.emergency.ambulance             |
-|   void / ignore           |   vehicle.emergency.police                |
-|   void / ignore           |   noise                                   |
-|   void / ignore           |   static.other                            |
-|   void / ignore           |   vehicle.ego                             |
-|   barrier                 |   movable_object.barrier                  |
-|   bicycle                 |   vehicle.bicycle                         |
-|   bus                     |   vehicle.bus.bendy                       |
-|   bus                     |   vehicle.bus.rigid                       |
-|   car                     |   vehicle.car                             |
-|   construction_vehicle    |   vehicle.construction                    |
-|   motorcycle              |   vehicle.motorcycle                      |
-|   pedestrian              |   human.pedestrian.adult                  |
-|   pedestrian              |   human.pedestrian.child                  |
-|   pedestrian              |   human.pedestrian.construction_worker    |
-|   pedestrian              |   human.pedestrian.police_officer         |
-|   traffic_cone            |   movable_object.trafficcone              |
-|   trailer                 |   vehicle.trailer                         |
-|   truck                   |   vehicle.truck                           |
-|   driveable_surface       |   flat.driveable_surface                  |
-|   other_flat              |   flat.other                              |
-|   sidewalk                |   flat.sidewalk                           |
-|   terrain                 |   flat.terrain                            |
-|   manmade                 |   static.manmade                          |
-|   vegetation              |   static.vegetation                       |
+|   lidar segmentation class    |   nuScenes-lidarseg general class         |
+|   ---                         |   ---                                     |
+|   void / ignore               |   animal                                  |
+|   void / ignore               |   human.pedestrian.personal_mobility      |
+|   void / ignore               |   human.pedestrian.stroller               |
+|   void / ignore               |   human.pedestrian.wheelchair             |
+|   void / ignore               |   movable_object.debris                   |
+|   void / ignore               |   movable_object.pushable_pullable        |
+|   void / ignore               |   static_object.bicycle_rack              |
+|   void / ignore               |   vehicle.emergency.ambulance             |
+|   void / ignore               |   vehicle.emergency.police                |
+|   void / ignore               |   noise                                   |
+|   void / ignore               |   static.other                            |
+|   void / ignore               |   vehicle.ego                             |
+|   barrier                     |   movable_object.barrier                  |
+|   bicycle                     |   vehicle.bicycle                         |
+|   bus                         |   vehicle.bus.bendy                       |
+|   bus                         |   vehicle.bus.rigid                       |
+|   car                         |   vehicle.car                             |
+|   construction_vehicle        |   vehicle.construction                    |
+|   motorcycle                  |   vehicle.motorcycle                      |
+|   pedestrian                  |   human.pedestrian.adult                  |
+|   pedestrian                  |   human.pedestrian.child                  |
+|   pedestrian                  |   human.pedestrian.construction_worker    |
+|   pedestrian                  |   human.pedestrian.police_officer         |
+|   traffic_cone                |   movable_object.trafficcone              |
+|   trailer                     |   vehicle.trailer                         |
+|   truck                       |   vehicle.truck                           |
+|   driveable_surface           |   flat.driveable_surface                  |
+|   other_flat                  |   flat.other                              |
+|   sidewalk                    |   flat.sidewalk                           |
+|   terrain                     |   flat.terrain                            |
+|   manmade                     |   static.manmade                          |
+|   vegetation                  |   static.vegetation                       |
 
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes lidar segmentation task.
-Our final score is a weighted sum of mean Intersection Over Union (IOU) and boundary IOU.
+Our final score is a weighted sum of mean intersection-over-union (IOU) and boundary IOU.
 
 ### Preprocessing
-Before running the evaluation code the following pre-processing is done on the data
-* All boxes (GT and prediction) are removed if they exceed the class-specific detection range. 
-* All bikes and motorcycle boxes (GT and prediction) that fall inside a bike-rack are removed. The reason is that we do not annotate bikes inside bike-racks.  
-* All boxes (GT) without lidar or radar points in them are removed. The reason is that we can not guarantee that they are actually visible in the frame. We do not filter the predicted boxes based on number of points.
+N.A.
 
-### Average Precision metric
-* **mean Average Precision (mAP)**:
-We use the well-known Average Precision metric,
-but define a match by considering the 2D center distance on the ground plane rather than intersection over union based affinities. 
-Specifically, we match predictions with the ground truth objects that have the smallest center-distance up to a certain threshold.
-For a given match threshold we calculate average precision (AP) by integrating the recall vs precision curve for recalls and precisions > 0.1.
-We finally average over match thresholds of {0.5, 1, 2, 4} meters and compute the mean across classes.
+### Mean IOU:
+We use the well-known IOU metric, which is defined as TP / (TP + FP + FN). 
+The IOU score is calculated separately for each class, and then the mean is computed across classes.
 
-### True Positive metrics
+### Boundary IOU
 Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
 All TP metrics are calculated using a threshold of 2m center distance during matching, and they are all designed to be positive scalars.
 
@@ -185,14 +170,14 @@ All errors are >= 0, but note that for translation and velocity errors the error
 
 The TP metrics are defined per class, and we then take a mean over classes to calculate mATE, mASE, mAOE, mAVE and mAAE.
 
-### nuScenes detection score
-* **nuScenes detection score (NDS)**:
+### nuScenes-lidarseg score
+* **nuScenes-lidarseg score (NLS)**:
 We consolidate the above metrics by computing a weighted sum: mAP, mATE, mASE, mAOE, mAVE and mAAE.
 As a first step we convert the TP errors to TP scores as *TP_score = max(1 - TP_error, 0.0)*.
 We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
 
 ### Configuration
-The default evaluation metrics configurations can be found in `nuscenes/eval/detection/configs/detection_cvpr_2019.json`. 
+The default evaluation metrics configurations can be found in `nuscenes/eval/detection/configs/detection_cvpr_2019.json`. ## TODO
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the lidar segmentation task.
