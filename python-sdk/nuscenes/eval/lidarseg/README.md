@@ -87,10 +87,10 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
   }
   ```
 * The `v1.0-test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
-  Pay special attention that each set of predictions in the folder must be a .bin file and named as <lidar_sample_data_token>_lidarseg.bin.
+  Pay special attention that each set of predictions in the folder must be a .bin file and named as **<lidar_sample_data_token>_lidarseg.bin**.
   A .bin file contains an array of `int` in which each value is the predicted class index of the corresponding point in the point cloud, e.g.:
   ```
-  [1, 5, 4, 1, ...])
+  [1, 5, 4, 1, ...]
   ```
 
 For the train and val sets, the evaluation can be performed by the user on their local machine.
