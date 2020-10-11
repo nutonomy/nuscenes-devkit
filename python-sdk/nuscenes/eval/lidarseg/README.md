@@ -111,6 +111,9 @@ For more information on the classes and their frequencies, see [this page](https
 |   void / ignore           |   static_object.bicycle_rack              |
 |   void / ignore           |   vehicle.emergency.ambulance             |
 |   void / ignore           |   vehicle.emergency.police                |
+|   void / ignore           |   noise                                   |
+|   void / ignore           |   static.other                            |
+|   void / ignore           |   vehicle.ego                             |
 |   barrier                 |   movable_object.barrier                  |
 |   bicycle                 |   vehicle.bicycle                         |
 |   bus                     |   vehicle.bus.bendy                       |
@@ -125,10 +128,17 @@ For more information on the classes and their frequencies, see [this page](https
 |   traffic_cone            |   movable_object.trafficcone              |
 |   trailer                 |   vehicle.trailer                         |
 |   truck                   |   vehicle.truck                           |
+|   driveable_surface       |   flat.driveable_surface                  |
+|   other_flat              |   flat.other                              |
+|   sidewalk                |   flat.sidewalk                           |
+|   terrain                 |   flat.terrain                            |
+|   manmade                 |   static.manmade                          |
+|   vegetation              |   static.vegetation                       |
+
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes lidar segmentation task.
-Our final score is a weighted sum of mean Average Precision (mAP) and several True Positive (TP) metrics.
+Our final score is a weighted sum of mean Intersection Over Union (IOU) and boundary IOU.
 
 ### Preprocessing
 Before running the evaluation code the following pre-processing is done on the data
