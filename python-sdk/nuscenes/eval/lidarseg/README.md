@@ -56,10 +56,21 @@ Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/chall
 ## Results format
 We define a standardized lidar segmentation result format that serves as an input to the evaluation code.
 Results are evaluated for each 2Hz keyframe, also known as a `sample`.
-The detection results for a particular evaluation set (train/val/test) are stored in a single JSON file. 
-For the train and val sets, the evaluation can be performed by the user on their local machine.
-For the test set, the user needs to zip the single JSON result file and submit it to the official evaluation server.
-The JSON file includes meta data `meta` on the type of inputs used for this method.
+The lidar segmentation results for a particular evaluation set (train/val/test) are stored in a folder. 
+
+The folder structure of the results should be as follows:
+```
+└── results_folder
+    ├── lidarseg
+    │   └── v1.0-test <- Contains the .bin files; a .bin file 
+    │                    contains the labels of the points in a 
+    │                    point cloud         
+    └── v1.0-test
+        └── submission.json  <- contains certain information about 
+                                the submission
+```
+
+The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
 Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
 Each `sample_token` from the current evaluation set must be included in `results`.
 ```
@@ -71,8 +82,8 @@ submission {
         "use_map":      <bool>          -- Whether this submission uses map data as an input.
         "use_external": <bool>          -- Whether this submission uses external data as an input.
     },
-    "results": {
-        sample_token <str>: List[sample_result] -- Maps each sample_token to a list of sample_results.
+    "mapping": {
+        class_idx <int>: class_name <str> -- Maps each class index to a class name..
     }
 }
 ```
@@ -90,6 +101,9 @@ sample_result {
                                                                       ... ] 
 }
 ```
+For the train and val sets, the evaluation can be performed by the user on their local machine.
+For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
+
 Note that the lidar segmentation classes may differ from the general nuScenes classes, as detailed below.
 
 ## Classes
@@ -181,12 +195,11 @@ We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and cal
 The default evaluation metrics configurations can be found in `nuscenes/eval/detection/configs/detection_cvpr_2019.json`. 
 
 ## Leaderboard
-nuScenes will maintain a single leaderboard for the detection task.
+nuScenes will maintain a single leaderboard for the lidar segmentation task.
 For each submission the leaderboard will list method aspects and evaluation metrics.
 Method aspects include input modalities (lidar, radar, vision), use of map data and use of external data.
 To enable a fair comparison between methods, the user will be able to filter the methods by method aspects.
- 
-We define three such filters here which correspond to the tracks in the nuScenes detection challenge.
+
 Methods will be compared within these tracks and the winners will be decided for each track separately.
 Furthermore, there will also be an award for novel ideas, as well as the best student submission.
 
@@ -202,11 +215,9 @@ Furthermore, there will also be an award for novel ideas, as well as the best st
 
 **Details**:
 * *Sensor input:*
-For the lidar and vision tracks we restrict the type of sensor input that may be used.
+For the lidar track we restrict the type of sensor input that may be used.
 Note that this restriction applies only at test time.
 At training time any sensor input may be used.
-In particular this also means that at training time you are allowed to filter the GT boxes using `num_lidar_pts` and `num_radar_pts`, regardless of the track.
-However, during testing the predicted boxes may *not* be filtered based on input from other sensor modalities.
 
 * *Map data:*
 By `map data` we mean using the *semantic* map provided in nuScenes. 
