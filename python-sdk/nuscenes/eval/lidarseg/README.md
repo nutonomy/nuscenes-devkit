@@ -12,14 +12,14 @@
 
 ## Introduction
 Here we define the lidar segmentation task on nuScenes.
-The goal of this task is to predict the category of every point in a set of point clouds. There are #TODO XX categories.
+The goal of this task is to predict the category of every point in a set of point clouds. There are #TODO 16 categories (10 foreground classes and 6 background classes).
 
 ## Participation
-The nuScenes lidarseg segementation [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356 ---> @TODO) is open 
+The nuScenes lidarseg segmentation [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356 ---> @TODO) is open 
 all year round for submission.
 To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356 ---> @TODO).
-Then upload your zipped result file including all of the required [meta data](#results-format).
-After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation) shown above.
+Then upload your zipped result folder with the required [content](#results-format).
+After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 This is the only way to benchmark your method against the test dataset. 
 
 ## Challenges
@@ -149,26 +149,13 @@ Our final score is a weighted sum of mean intersection-over-union (IOU) and boun
 ### Preprocessing
 N.A.
 
-### Mean IOU:
+### Mean IOU
 We use the well-known IOU metric, which is defined as TP / (TP + FP + FN). 
 The IOU score is calculated separately for each class, and then the mean is computed across classes.
 
 ### Boundary IOU
-Here we define metrics for a set of true positives (TP) that measure translation / scale / orientation / velocity and attribute errors. 
-All TP metrics are calculated using a threshold of 2m center distance during matching, and they are all designed to be positive scalars.
-
-Matching and scoring happen independently per class and each metric is the average of the cumulative mean at each achieved recall level above 10%.
-If 10% recall is not achieved for a particular class, all TP errors for that class are set to 1.
-We define the following TP errors:
-* **Average Translation Error (ATE)**: Euclidean center distance in 2D in meters.
-* **Average Scale Error (ASE)**: Calculated as *1 - IOU* after aligning centers and orientation.
-* **Average Orientation Error (AOE)**: Smallest yaw angle difference between prediction and ground-truth in radians. Orientation error is evaluated at 360 degree for all classes except barriers where it is only evaluated at 180 degrees. Orientation errors for cones are ignored.
-* **Average Velocity Error (AVE)**: Absolute velocity error in m/s. Velocity error for barriers and cones are ignored.
-* **Average Attribute Error (AAE)**: Calculated as *1 - acc*, where acc is the attribute classification accuracy. Attribute error for barriers and cones are ignored.
-
-All errors are >= 0, but note that for translation and velocity errors the errors are unbounded, and can be any positive value.
-
-The TP metrics are defined per class, and we then take a mean over classes to calculate mATE, mASE, mAOE, mAVE and mAAE.
+To better evaluate the performance of the predicted segmentation, we introduce an additional metric to measure the accuracy for boundary delineation.
+Note that the boundary IOU is class-agnostic, i.e. it is **not** evaluated per class.
 
 ### nuScenes-lidarseg score
 * **nuScenes-lidarseg score (NLS)**:
