@@ -138,7 +138,9 @@ class PredictHelper:
 
         annotations = []
 
-        while time_elapsed <= seconds_with_buffer:
+        expected_samples_per_sec = 2
+        max_annotations = int(expected_samples_per_sec * seconds)
+        while time_elapsed <= seconds_with_buffer and len(annotations) < max_annotations:
 
             if next_annotation[direction] == '':
                 break
