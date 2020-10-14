@@ -12,7 +12,7 @@
 
 ## Introduction
 Here we define the lidar segmentation task on nuScenes.
-The goal of this task is to predict the category of every point in a set of point clouds. There are #TODO 16 categories (10 foreground classes and 6 background classes).
+The goal of this task is to predict the category of every point in a set of point clouds. There are 16 categories (10 foreground classes and 6 background classes).
 
 ## Participation
 The nuScenes lidarseg segmentation [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356 ---> @TODO) is open 
@@ -28,7 +28,7 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/356 --> @ TODO) for the **EvalAI detection evaluation server**.
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/356 --> @ TODO) for the **EvalAI lidar segementation evaluation server**.
 
 ### Workshop ___@TODO___, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at NeurIPS 2020.
@@ -72,8 +72,6 @@ The folder structure of the results should be as follows:
 
 The contents of the `submision.json` file and `v1.0-test` folder are defined below: 
 * The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
-  Furthermore it includes a dictionary `results` that maps each sample_token to a list of `sample_result` entries.
-  Each `sample_token` from the current evaluation set must be included in `results`.
   ```
   "meta": {
       "use_camera":   <bool>          -- Whether this submission uses camera data as an input.
@@ -88,11 +86,12 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
   ```
 * The `v1.0-test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
   Pay special attention that each set of predictions in the folder must be a .bin file and named as **<lidar_sample_data_token>_lidarseg.bin**.
-  A .bin file contains an array of `int` in which each value is the predicted class index of the corresponding point in the point cloud, e.g.:
+  A .bin file contains an array of `int` in which each value is the predicted [class index](#classes) of the corresponding point in the point cloud, e.g.:
   ```
   [1, 5, 4, 1, ...]
   ```
-
+  Each `lidar_sample_data_token` from the current evaluation set must be included in the `v1.0-test` folder.
+  
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
 
@@ -102,44 +101,44 @@ Note that the lidar segmentation classes may differ from the general nuScenes cl
 The nuScenes-lidarseg dataset comes with annotations for 32 classes ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples.
 Hence we merge similar classes and remove rare classes.
-This results in # TODO XX classes for the lidar segmentation challenge.
+This results in 16 classes for the lidar segmentation challenge.
 Below we show the table of lidar segmentation classes and their counterparts in the nuScenes-lidarseg dataset.
 For more information on the classes and their frequencies, see [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
-|   lidar segmentation class    |   nuScenes-lidarseg general class         |
-|   ---                         |   ---                                     |
-|   void / ignore               |   animal                                  |
-|   void / ignore               |   human.pedestrian.personal_mobility      |
-|   void / ignore               |   human.pedestrian.stroller               |
-|   void / ignore               |   human.pedestrian.wheelchair             |
-|   void / ignore               |   movable_object.debris                   |
-|   void / ignore               |   movable_object.pushable_pullable        |
-|   void / ignore               |   static_object.bicycle_rack              |
-|   void / ignore               |   vehicle.emergency.ambulance             |
-|   void / ignore               |   vehicle.emergency.police                |
-|   void / ignore               |   noise                                   |
-|   void / ignore               |   static.other                            |
-|   void / ignore               |   vehicle.ego                             |
-|   barrier                     |   movable_object.barrier                  |
-|   bicycle                     |   vehicle.bicycle                         |
-|   bus                         |   vehicle.bus.bendy                       |
-|   bus                         |   vehicle.bus.rigid                       |
-|   car                         |   vehicle.car                             |
-|   construction_vehicle        |   vehicle.construction                    |
-|   motorcycle                  |   vehicle.motorcycle                      |
-|   pedestrian                  |   human.pedestrian.adult                  |
-|   pedestrian                  |   human.pedestrian.child                  |
-|   pedestrian                  |   human.pedestrian.construction_worker    |
-|   pedestrian                  |   human.pedestrian.police_officer         |
-|   traffic_cone                |   movable_object.trafficcone              |
-|   trailer                     |   vehicle.trailer                         |
-|   truck                       |   vehicle.truck                           |
-|   driveable_surface           |   flat.driveable_surface                  |
-|   other_flat                  |   flat.other                              |
-|   sidewalk                    |   flat.sidewalk                           |
-|   terrain                     |   flat.terrain                            |
-|   manmade                     |   static.manmade                          |
-|   vegetation                  |   static.vegetation                       |
+|   lidar segmentation index    |   lidar segmentation class    |   nuScenes-lidarseg general class         |
+|   ---                         |   ---                         |   ---                                     |
+|   N.A.                        |   void / ignore               |   animal                                  |
+|   N.A.                        |   void / ignore               |   human.pedestrian.personal_mobility      |
+|   N.A.                        |   void / ignore               |   human.pedestrian.stroller               |
+|   N.A.                        |   void / ignore               |   human.pedestrian.wheelchair             |
+|   N.A.                        |   void / ignore               |   movable_object.debris                   |
+|   N.A.                        |   void / ignore               |   movable_object.pushable_pullable        |
+|   N.A.                        |   void / ignore               |   static_object.bicycle_rack              |
+|   N.A.                        |   void / ignore               |   vehicle.emergency.ambulance             |
+|   N.A.                        |   void / ignore               |   vehicle.emergency.police                |
+|   N.A.                        |   void / ignore               |   noise                                   |
+|   N.A.                        |   void / ignore               |   static.other                            |
+|   N.A.                        |   void / ignore               |   vehicle.ego                             |
+|   1                           |   barrier                     |   movable_object.barrier                  |
+|   2                           |   bicycle                     |   vehicle.bicycle                         |
+|   3                           |   bus                         |   vehicle.bus.bendy                       |
+|   3                           |   bus                         |   vehicle.bus.rigid                       |
+|   4                           |   car                         |   vehicle.car                             |
+|   5                           |   construction_vehicle        |   vehicle.construction                    |
+|   6                           |   motorcycle                  |   vehicle.motorcycle                      |
+|   7                           |   pedestrian                  |   human.pedestrian.adult                  |
+|   7                           |   pedestrian                  |   human.pedestrian.child                  |
+|   7                           |   pedestrian                  |   human.pedestrian.construction_worker    |
+|   7                           |   pedestrian                  |   human.pedestrian.police_officer         |
+|   8                           |   traffic_cone                |   movable_object.trafficcone              |
+|   9                           |   trailer                     |   vehicle.trailer                         |
+|   10                          |   truck                       |   vehicle.truck                           |
+|   11                          |   driveable_surface           |   flat.driveable_surface                  |
+|   12                          |   other_flat                  |   flat.other                              |
+|   13                          |   sidewalk                    |   flat.sidewalk                           |
+|   14                          |   terrain                     |   flat.terrain                            |
+|   15                          |   manmade                     |   static.manmade                          |
+|   16                          |   vegetation                  |   static.vegetation                       |
 
 
 ## Evaluation metrics
@@ -149,19 +148,20 @@ Our final score is a weighted sum of mean intersection-over-union (IOU) and boun
 ### Preprocessing
 N.A.
 
-### Mean IOU
+### Mean IOU (mIOU)
 We use the well-known IOU metric, which is defined as TP / (TP + FP + FN). 
 The IOU score is calculated separately for each class, and then the mean is computed across classes.
 
-### Boundary IOU
+### Boundary IOU (bIOU)
 To better evaluate the performance of the predicted segmentation, we introduce an additional metric to measure the accuracy for boundary delineation.
+Here, we project the lidar point cloud into the range view and determine which "pixels" in the range view image are boundary "pixels".
+We then define boundary IOU as TP / (TP + FP + FN) but taken only on the boundary "pixels".
+This is inspired by the work done by [Milioto et al.](http://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/milioto2019iros.pdf)
 Note that the boundary IOU is class-agnostic, i.e. it is **not** evaluated per class.
 
 ### nuScenes-lidarseg score
 * **nuScenes-lidarseg score (NLS)**:
-We consolidate the above metrics by computing a weighted sum: mAP, mATE, mASE, mAOE, mAVE and mAAE.
-As a first step we convert the TP errors to TP scores as *TP_score = max(1 - TP_error, 0.0)*.
-We then assign a weight of *5* to mAP and *1* to each of the 5 TP scores and calculate the normalized sum.
+We consolidate the above metrics by taking the average of mIOU and bIOU (i.e. equal weighting is given to both).
 
 ### Configuration
 The default evaluation metrics configurations can be found in `nuscenes/eval/detection/configs/detection_cvpr_2019.json`. ## TODO
