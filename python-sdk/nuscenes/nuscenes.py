@@ -1,8 +1,11 @@
 # nuScenes dev-kit.
-# Code written by Oscar Beijbom, 2018.
+# Code written by Oscar Beijbom, Holger Caesar & Whye Kit Fong, 2018.
 
 import json
-import ijson
+try:
+    import ijson
+except ImportError as e:
+    pass  # If ijson does not exist, we'll fall back to the default json module.
 import math
 import os.path as osp
 import sys
@@ -98,9 +101,13 @@ class NuScenes:
         return osp.join(self.dataroot, self.version)
 
     def __load_table__(self, table_name) -> dict:
-        """ Loads a table. """
+        """
+        Loads a table.
+        For the large sample_data table we use the ijson package (if installed) to load the table to avoid running
+        out of memory.
+        """
         with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
-            if table_name == "sample_data":
+            if table_name == "sample_data" and 'ijson' in sys.modules:
                 table = []
                 data = ijson.items(f, 'item')
                 for inst in data:
