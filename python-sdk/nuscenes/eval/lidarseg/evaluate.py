@@ -179,9 +179,24 @@ class LidarSegEval:
 
 
 if __name__ == '__main__':
-    path_to_results = '/data/sets/nuscenes/'
+    # Settings.
+    parser = argparse.ArgumentParser(description='Evaluate nuScenes lidar segmentation results.')
+    parser.add_argument('--result_path', type=str,
+                        help='The path to the results folder.')
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
+                        help='Default nuScenes data directory.')
+    parser.add_argument('--version', type=str, default='v1.0-trainval',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
+    parser.add_argument('--verbose', type=bool, default=False,
+                        help='Whether to print to stdout.')
+    args = parser.parse_args()
 
-    nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
+    result_path_ = args.result_path
+    dataroot_ = args.dataroot
+    version_ = args.version
+    verbose_ = args.verbose
 
-    evaluator = LidarSegEval(nusc_, path_to_results)
-    evaluator.evaluate(verbose=True)
+    nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
+
+    evaluator = LidarSegEval(nusc_, result_path_)
+    evaluator.evaluate(verbose=verbose_)
