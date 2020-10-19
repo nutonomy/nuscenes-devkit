@@ -65,7 +65,6 @@ class LidarSegEval:
     def evaluate(self) -> Dict:
         """
         Performs the actual evaluation.
-
         :return: A dictionary containing the IOU of the individual classes and the mIOU.
         """
         for sample in tqdm(self.nusc.sample):
@@ -140,7 +139,7 @@ class LidarSegEval:
     def _get_confusion_matrix(self, gt_array: np.ndarray, pred_array: np.ndarray) -> np.ndarray:
         """
         Obtains the confusion matrix for the segmentation of a single point cloud.
-        :param gt_array: An array containing the ground truth lables.
+        :param gt_array: An array containing the ground truth labels.
         :param pred_array: An array containing the predicted labels.
         :return: N x N array where N is the number of classes.
         """
@@ -160,7 +159,7 @@ class LidarSegEval:
     def _get_per_class_iou(self, confusion_matrix: np.ndarray) -> List[float]:
         """
         Gets the IOU of each class in a confusion matrix. The index of the class to be ignored is set to NaN.
-        :param confusion_matrix:
+        :param confusion_matrix: The confusion matrix to calculate IOU for each class on.
         :return: An array in which the IOU of a particular class sits at the array index corresponding to the
                  class index (the index of the class ot be ignored is set to NaN).
         """
