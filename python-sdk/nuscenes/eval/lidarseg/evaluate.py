@@ -33,12 +33,14 @@ class LidarSegEval:
     def __init__(self,
                  nusc: NuScenes,
                  results_folder: str,
-                 ignore_idx: int = 0):
+                 ignore_idx: int = 0,
+                 verbose: bool = False):
         """
-        Initializr a LidarSegEval object.
-        nusc: A NuScenes object.
-        results_folder: Path to the folder.
-        ignore_idx: Index of the class to be ignored in the evaluation.
+        Initialize a LidarSegEval object.
+        :param nusc: A NuScenes object.
+        :param results_folder: Path to the folder.
+        :param ignore_idx: Index of the class to be ignored in the evaluation.
+        :param verbose: Whether to print messages during the evaluation.
         """
         # Check there are ground truth annotations.
         assert len(nusc.lidarseg) > 0, 'Error: No ground truth annotations found in {}.'.format(nusc.version)
@@ -49,20 +51,21 @@ class LidarSegEval:
 
         self.nusc = nusc
         self.results_folder = results_folder
-
         self.ignore_idx = ignore_idx
+        self.verbose = verbose
 
         self.global_cm = None
 
         self.adaptor = LidarsegChallengeAdaptor(self.nusc)
 
         self.num_classes = len(self.adaptor.merged_name_2_merged_idx_mapping)
-        print('There are {} classes.'.format(self.num_classes))
+        if self.verbose:
+            print('There are {} classes.'.format(self.num_classes))
 
-    def evaluate(self, verbose: bool = False) -> Dict:
+    def evaluate(self) -> Dict:
         """
         Performs the actual evaluation.
-        :param verbose: Whether to print the evaluation.
+
         :return: A dictionary containing the IOU of the individual classes and the mIOU.
         """
         for sample in tqdm(self.nusc.sample):
@@ -102,8 +105,12 @@ class LidarSegEval:
         results['miou'] = miou
 
         # Print the results if desired.
-        if verbose:
-            print(json.dumps(results, indent=4, sort_keys=False))
+        if self.verbose:
+            print("======\nnuScenes lidar segmentation evaluation for version {}".format(self.nusc.version))
+            for iou_name, iou in results.items():
+                print('{:30}  {:.5f}'.format(iou_name, iou))
+            # print(json.dumps(results, indent=4, sort_keys=False))
+            print("======")
 
         return results
 
@@ -198,5 +205,5 @@ if __name__ == '__main__':
 
     nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
 
-    evaluator = LidarSegEval(nusc_, result_path_)
-    evaluator.evaluate(verbose=verbose_)
+    evaluator = LidarSegEval(nusc_, result_path_, verbose=verbose_)
+    evaluator.evaluate()
