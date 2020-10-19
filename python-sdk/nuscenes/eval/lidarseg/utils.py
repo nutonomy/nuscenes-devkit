@@ -1,7 +1,9 @@
+import numpy as np
+
 from nuscenes import NuScenes
 
 
-class LidarsegChallengeMappings:
+class LidarsegChallengeAdaptor:
     def __init__(self, nusc: NuScenes):
         self.rawname2mergedname_mapping = self.get_raw2merged()
         self.mergedname2mergedidx_mapping = self.get_merged2idx()
@@ -12,8 +14,6 @@ class LidarsegChallengeMappings:
         for rawname, rawidx in nusc.lidarseg_name2idx_mapping.items():
             self.rawidx2mergedidx_mapping[rawidx] = self.mergedname2mergedidx_mapping[
                 self.rawname2mergedname_mapping[rawname]]
-
-        print(self.rawidx2mergedidx_mapping)
 
     @staticmethod
     def get_raw2merged():
@@ -80,7 +80,26 @@ class LidarsegChallengeMappings:
         assert len(merged_set) == len(self.mergedname2mergedidx_mapping), 'Error: Number of merged classes is not ' \
                                                                           'the same as the number of merged indices.'
 
+    def convert_label(self, points_label: np.ndarray) -> np.ndarray:
+        """
+        Convert the labels in a single .bin file according to the provided mapping
+        :param points_label: The .bin to be converted (e.g. './i_contain_the_labels_for_a_pointcloud.bin')
+        """
+
+        # counter_before = get_stats(points_label)  # get stats before conversion
+
+        # Map the labels accordingly; if there are labels present in points_label but not in the map,
+        # an error will be thrown
+        points_label = np.vectorize(self.rawidx2mergedidx_mapping.__getitem__)(points_label)
+
+        # counter_after = get_stats(points_label)  # get stats after conversion
+        """
+        assert compare_stats(counter_before, counter_after), 'Error: Statistics of labels for {} have changed ' \
+                                                             'after conversion. Pls check.'.format(bin_file_in)
+        """
+        return points_label
+
 
 if __name__ == '__main__':
     nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
-    a = LidarsegChallengeMappings(nusc_)
+    mappings_ = LidarsegChallengeAdaptor(nusc_)
