@@ -7,11 +7,13 @@ from nuscenes import NuScenes
 
 class LidarsegChallengeAdaptor:
     """
-
+    An adaptor to map the (raw) classes in nuScenes-lidarseg to the (merged) classes for the nuScenes lidar
+    segmentation challenge.
     """
     def __init__(self, nusc: NuScenes):
         """
-
+        Initialize a LidarsegChallengeAdaptor object.
+        :param nusc: A NuScenes object.
         """
         self.nusc = nusc
 
@@ -25,8 +27,8 @@ class LidarsegChallengeAdaptor:
     @staticmethod
     def get_raw2merged() -> Dict:
         """
-        Returns the mapping from
-        :return:
+        Returns the mapping from the raw classes to the merged classes.
+        :return: A dictionary containing the mapping from the raw classes to the merged classes.
         """
         return {'noise': 'void_ignore',
                 'human.pedestrian.adult': 'pedestrian',
@@ -87,7 +89,9 @@ class LidarsegChallengeAdaptor:
 
     def get_raw_idx_2_merged_idx(self) -> Dict:
         """
-
+        Returns the mapping from the the indices of the merged classes to that of the merged classes.
+        :return: A dictionary containing the mapping from the the indices of the merged classes to that of the
+                 merged classes.
         """
         raw_idx_2_merged_idx_mapping = dict()
         for raw_name, raw_idx in self.nusc.lidarseg_name2idx_mapping.items():
