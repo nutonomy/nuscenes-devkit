@@ -1,30 +1,51 @@
+import argparse
+import json
 import os
+from typing import Dict, List
 
-from tqdm import tqdm
 import numpy as np
+from tqdm import tqdm
 
 from nuscenes import NuScenes
 
-from utils import LidarsegChallengeAdaptor
+from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor
 
 
 class LidarSegEval:
+    """
+    This is the official nuScenes lidar segmentation evaluation code.
+    Results are written to the provided output_dir.
+
+    nuScenes uses the following lidar segmentation metrics:
+    - Mean Intersection-over-Union (mIOU): We use the well-known IOU metric, which is defined as TP / (TP + FP + FN).
+                                           The IOU score is calculated separately for each class, and then the mean is
+                                           computed across classes.
+
+    We assume that:
+    - For each pointcloud, the label for every point is present in a .bin file, in the same order as that of the points
+      stored in the corresponding .bin file.
+    - The naming convention of the .bin files containing the labels for a single point cloud is:
+        <lidar_sample_data_token>_lidarseg.bin
+    - The labels are between 0 and 16 (inclusive), where 0 is the index of the ignored class.
+
+    Please see https://www.nuscenes.org/lidar-segmentation for more details.
+    """
     def __init__(self,
                  nusc: NuScenes,
                  results_folder: str,
                  ignore_idx: int = 0):
         """
-        """
-
+        Initializr a LidarSegEval object.
+        nusc: A NuScenes object.
+        results_folder: Path to the folder.
+        ignore_idx: Index of the class to be ignored in the evaluation.
         """
         # Check there are ground truth annotations.
-        self.gt_samples = nusc.sample # check if test set has samples?? Might have to check data itself.
-        assert len(self.samples) > 0, 'Error: There are no ground truth ______'
+        assert len(nusc.lidarseg) > 0, 'Error: No ground truth annotations found in {}.'.format(nusc.version)
 
         # Check results folder exists.
         self.results_folder = results_folder
-        assert os.path.exists(results_folder), 'Error: The result folder ({}) does not exist!'.format(results_folder)
-        """
+        assert os.path.exists(results_folder), 'Error: The result folder ({}) does not exist.'.format(results_folder)
 
         self.nusc = nusc
         self.results_folder = results_folder
@@ -38,20 +59,24 @@ class LidarSegEval:
         self.num_classes = len(self.adaptor.merged_name_2_merged_idx_mapping)
         print('There are {} classes.'.format(self.num_classes))
 
-    def evaluate(self) -> None:
+    def evaluate(self, verbose: bool = False) -> Dict:
+        """
+        Performs the actual evaluation.
+        :param verbose: Whether to print the evaluation.
+        :return: A dictionary containing the IOU of the individual classes and the mIOU.
+        """
         for sample in tqdm(self.nusc.sample):
+            # Get the sample data token of the point cloud.
             sd_token = sample['data']['LIDAR_TOP']
 
-            # Load ground truth labels for sample data.
+            # Load the ground truth labels for the point cloud.
             lidarseg_label_filename = os.path.join(self.nusc.dataroot,
                                                    self.nusc.get('lidarseg', sd_token)['filename'])
             lidarseg_label = self.load_bin_file(lidarseg_label_filename)
 
-            # print(lidarseg_label)
             lidarseg_label = self.adaptor.convert_label(lidarseg_label)
-            # print(lidarseg_label)
 
-            # Load predictions for sample data.
+            # Load the predictions for the point cloud.
             lidarseg_pred_filename = os.path.join(self.results_folder, 'lidarseg',
                                                   self.nusc.version, sd_token + '_lidarseg.bin')
             lidarseg_pred = self.load_bin_file(lidarseg_pred_filename)
@@ -65,51 +90,58 @@ class LidarSegEval:
             # Update the confusion matrix for the sample data into the confusion matrix for the split.
             self._update_confusion_matrix(sd_cm)
 
-        """
-        # Can do some printing of each class IOU with the mapping
-        id2name = {label_id: label.name for label_id, label in res.labelmap.items() if label.name != 'ignore_label'}
-        """
-
         iou_per_class = self._get_per_class_iou(self.global_cm)
         miou = np.nanmean(iou_per_class)
 
-        print(iou_per_class, miou)
-        # https://evalai.readthedocs.io/en/latest/evaluation_scripts.html
+        # Put everything nicely into a dict.
+        id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
+        results = dict()
+        for i, class_iou in enumerate(iou_per_class):
+            if not np.isnan(class_iou):
+                results['iou_' + id2name[i]] = class_iou
+        results['miou'] = miou
+
+        # Print the results if desired.
+        if verbose:
+            print(json.dumps(results, indent=4, sort_keys=False))
+
+        return results
 
     @staticmethod
     def load_bin_file(bin_path: str) -> np.ndarray:
+        """
+        Loads a .bin file containing the labels.
+        :param bin_path: Path to the .bin file.
+        :return: An array containing the labels.
+        """
         assert os.path.exists(bin_path), 'Error: Unable to find {}.'.format(bin_path)
         bin_content = np.fromfile(bin_path, dtype=np.uint8)
         assert len(bin_content) > 0, 'Error: {} is empty.'.format(bin_path)
 
         return bin_content
 
-    def _update_confusion_matrix(self, cm) -> None:
+    def _update_confusion_matrix(self, cm: np.ndarray) -> None:
         """
-        Updates segmentation confusion matrix.
-        :param cm: Confusion matrix to be updated.
-        :param res: Lidar segmentation results.
+        Updates the global confusion matrix.
+        :param cm: Confusion matrix to be updated into the global confusion matrix.
         """
         if self.global_cm is None:
             self.global_cm = cm
         else:
             self.global_cm += cm
 
-        # TODO test that final global_cm matches counts from nusc.list_lidarseg_categories(sort_by='count')
-        # TODO test that sample cm matches counts from nusc.get_sample_lidarseg_stats(my_sample['token'], sort_by='count')
-
-    def _get_confusion_matrix(self, gt_array, pred_array):
-        assert all((gt_array >= 0) & (
-                    gt_array < self.num_classes)), "Error: Array for ground truth must be between 0 and {}".format(
-            self.num_classes - 1)
-        assert all((pred_array >= 0) & (
-                    pred_array < self.num_classes)), "Error: Array for predictions must be between 0 and {}".format(
-            self.num_classes - 1)
-
+    def _get_confusion_matrix(self, gt_array: np.ndarray, pred_array: np.ndarray) -> np.ndarray:
         """
-        mask = (gt_array >= 0) & (gt_array < num_classes)
-        label = num_classes * gt_array[mask].astype('int') + pred_array[mask]
+        Obtains the confusion matrix for the segmentation of a single point cloud.
+        :param gt_array: An array containing the ground truth lables.
+        :param pred_array: An array containing the predicted labels.
+        :return: N x N array where N is the number of classes.
         """
+        assert all((gt_array >= 0) & (gt_array < self.num_classes)), \
+            "Error: Array for ground truth must be between 0 and {}".format(self.num_classes - 1)
+        assert all((pred_array >= 0) & (pred_array < self.num_classes)), \
+            "Error: Array for predictions must be between 0 and {}".format(self.num_classes - 1)
+
         label = self.num_classes * gt_array.astype('int') + pred_array
         count = np.bincount(label, minlength=self.num_classes ** 2)
 
@@ -118,40 +150,38 @@ class LidarSegEval:
 
         return confusion_matrix
 
-    def _get_per_class_iou(self, confusion_matrix):
+    def _get_per_class_iou(self, confusion_matrix: np.ndarray) -> List[float]:
+        """
+        Gets the IOU of each class in a confusion matrix. The index of the class to be ignored is set to NaN.
+        :param confusion_matrix:
+        :return: An array in which the IOU of a particular class sits at the array index corresponding to the
+                 class index (the index of the class ot be ignored is set to NaN).
+        """
         conf = confusion_matrix.copy()
 
-        """
-        # For the index to be ignored, remove counts for tp, fp and fn from the confusion matrix.
-        conf[ignore_idx] = 0  # Remove tp and fn (row)
-        conf[:, ignore_idx] = 0  # Remove fp (col)
-
-        print(conf)
-        """
-        """
-        np.diag(hist) / (hist.sum(1) + hist.sum(0) - np.diag(hist))
-        """
-
-        """
-        # Get tp, fp, fn
-        tp = np.diagonal(conf)
-        fp = np.sum(conf, axis=0) - tp
-        fn = np.sum(conf, axis=1) - tp
-        iou_check = tp / (tp + fp + fn + 1e-15)
-        print(iou_check, '@@@##')
-        """
-
+        # Get the intersection for each class.
         intersection = np.diagonal(conf)
 
+        # Get the union for each class.
         ground_truth_set = conf.sum(axis=1)
         predicted_set = conf.sum(axis=0)
         union = ground_truth_set + predicted_set - intersection
 
+        # Get the IOU for each class.
         iou_per_class = intersection / (
-                    union.astype(np.float32) + 1e-15)  # Add a small value to guard against division by zero
+                    union.astype(np.float32) + 1e-15)  # Add a small value to guard against division by zero.
 
         # Set the IoU for the ignored class to NaN.
         if self.ignore_idx is not None:
             iou_per_class[self.ignore_idx] = np.nan
 
         return iou_per_class
+
+
+if __name__ == '__main__':
+    path_to_results = '/data/sets/nuscenes/'
+
+    nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
+
+    evaluator = LidarSegEval(nusc_, path_to_results)
+    evaluator.evaluate(verbose=True)
