@@ -185,9 +185,14 @@ class LidarSegEval:
         iou_per_class = intersection / (
                     union.astype(np.float32) + 1e-15)  # Add a small value to guard against division by zero.
 
-        # Set the IoU for the ignored class to NaN.
+        # Set the IOU for the ignored class to NaN.
         if self.ignore_idx is not None:
             iou_per_class[self.ignore_idx] = np.nan
+
+        # If there are no points belonging to a certain class, then set the the IOU of that class to NaN too.
+        idxs_no_ground_truth = np.where(iou_per_class == 0)
+        if len(idxs_no_ground_truth) > 0:
+            iou_per_class[idxs_no_ground_truth] = np.nan
 
         return iou_per_class
 
