@@ -30,15 +30,15 @@ class LidarsegChallengeAdaptor:
         Returns the mapping from the raw classes to the merged classes.
         :return: A dictionary containing the mapping from the raw classes to the merged classes.
         """
-        return {'noise': 'void_ignore',
+        return {'noise': 'ignore',
                 'human.pedestrian.adult': 'pedestrian',
                 'human.pedestrian.child': 'pedestrian',
-                'human.pedestrian.wheelchair': 'void_ignore',
-                'human.pedestrian.stroller': 'void_ignore',
-                'human.pedestrian.personal_mobility': 'void_ignore',
+                'human.pedestrian.wheelchair': 'ignore',
+                'human.pedestrian.stroller': 'ignore',
+                'human.pedestrian.personal_mobility': 'ignore',
                 'human.pedestrian.police_officer': 'pedestrian',
                 'human.pedestrian.construction_worker': 'pedestrian',
-                'animal': 'void_ignore',
+                'animal': 'ignore',
                 'vehicle.car': 'car',
                 'vehicle.motorcycle': 'motorcycle',
                 'vehicle.bicycle': 'bicycle',
@@ -46,22 +46,22 @@ class LidarsegChallengeAdaptor:
                 'vehicle.bus.rigid': 'bus',
                 'vehicle.truck': 'truck',
                 'vehicle.construction': 'construction_vehicle',
-                'vehicle.emergency.ambulance': 'void_ignore',
-                'vehicle.emergency.police': 'void_ignore',
+                'vehicle.emergency.ambulance': 'ignore',
+                'vehicle.emergency.police': 'ignore',
                 'vehicle.trailer': 'trailer',
                 'movable_object.barrier': 'barrier',
                 'movable_object.trafficcone': 'traffic_cone',
-                'movable_object.pushable_pullable': 'void_ignore',
-                'movable_object.debris': 'void_ignore',
-                'static_object.bicycle_rack': 'void_ignore',
+                'movable_object.pushable_pullable': 'ignore',
+                'movable_object.debris': 'ignore',
+                'static_object.bicycle_rack': 'ignore',
                 'flat.driveable_surface': 'driveable_surface',
                 'flat.sidewalk': 'sidewalk',
                 'flat.terrain': 'terrain',
                 'flat.other': 'other_flat',
                 'static.manmade': 'manmade',
                 'static.vegetation': 'vegetation',
-                'static.other': 'void_ignore',
-                'vehicle.ego': 'void_ignore'}
+                'static.other': 'ignore',
+                'vehicle.ego': 'ignore'}
 
     @staticmethod
     def get_merged2idx() -> Dict:
@@ -69,7 +69,7 @@ class LidarsegChallengeAdaptor:
         Returns the mapping from the merged class names to the merged class indices.
         :return: A dictionary containing the mapping from the merged class names to the merged class indices.
         """
-        return {'void_ignore': 0,
+        return {'ignore': 0,
                 'barrier': 1,
                 'bicycle': 2,
                 'bus': 3,
