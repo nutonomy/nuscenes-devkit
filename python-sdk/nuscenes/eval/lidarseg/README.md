@@ -161,12 +161,12 @@ Methods will be compared within these tracks and the winners will be decided for
 Furthermore, there will also be an award for novel ideas, as well as the best student submission.
 
 **Lidar track**: 
-* Only lidar input (i.e. lidar segmentation annotations in nuScenes-lidarseg) allowed.
+* Only lidar segmentation annotations from nuScenes-lidarseg are allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
   
 **Open track**: 
-* Any sensor input (bounding boxes from nuScenes, segmentation masks from nuImages, etc.) allowed.
+* All nuScenes, nuScenes-lidarseg and nuImages annotations are allowed.
 * External data and map data allowed (these include lidar segmentation annotations and bounding boxes from other datasets).
 * May use pre-training.
 
