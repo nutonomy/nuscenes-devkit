@@ -9,6 +9,7 @@
 - [Results format](#results-format)
 - [Classes](#classes)
 - [Evaluation metrics](#evaluation-metrics)
+- [Leaderboard](#leaderboard)
 
 ## Introduction
 Here we define the lidar segmentation task on nuScenes.
