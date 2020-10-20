@@ -7,8 +7,8 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-
 from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor
+from nuscenes.utils.splits import create_splits_scenes
 
 
 class LidarSegEval:
@@ -33,12 +33,14 @@ class LidarSegEval:
     def __init__(self,
                  nusc: NuScenes,
                  results_folder: str,
+                 eval_set: str,
                  ignore_idx: int = 0,
                  verbose: bool = False):
         """
         Initialize a LidarSegEval object.
         :param nusc: A NuScenes object.
         :param results_folder: Path to the folder.
+        :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
         :param ignore_idx: Index of the class to be ignored in the evaluation.
         :param verbose: Whether to print messages during the evaluation.
         """
@@ -51,6 +53,7 @@ class LidarSegEval:
 
         self.nusc = nusc
         self.results_folder = results_folder
+        self.eval_set = eval_set
         self.ignore_idx = ignore_idx
         self.verbose = verbose
 
@@ -62,12 +65,18 @@ class LidarSegEval:
         if self.verbose:
             print('There are {} classes.'.format(self.num_classes))
 
+        self.sample_tokens = self.get_samples_in_eval_set()
+        if self.verbose:
+            print('There are {} samples.'.format(len(self.sample_tokens)))
+
     def evaluate(self) -> Dict:
         """
         Performs the actual evaluation.
         :return: A dictionary containing the IOU of the individual classes and the mIOU.
         """
-        for sample in tqdm(self.nusc.sample):
+        for sample_token in tqdm(self.sample_tokens):
+            sample = self.nusc.get('sample', sample_token)
+
             # Get the sample data token of the point cloud.
             sd_token = sample['data']['LIDAR_TOP']
 
@@ -183,12 +192,51 @@ class LidarSegEval:
 
         return iou_per_class
 
+    def get_samples_in_eval_set(self) -> List[str]:
+        """
+
+        """
+        # Create a dict to map from scene name to scene token for quick lookup later on.
+        scene_name2tok = dict()
+        for rec in self.nusc.scene:
+            scene_name2tok[rec['name']] = rec['token']
+
+        # Get scenes splits from nuScenes.
+        scenes_splits = create_splits_scenes(verbose=False)
+
+        # Collect sample tokens for each scene.
+        samples = []
+        for scene in scenes_splits[self.eval_set]:
+            scene_record = self.nusc.get('scene', scene_name2tok[scene])
+            total_num_samples = scene_record['nbr_samples']
+            first_sample_token = scene_record['first_sample_token']
+            last_sample_token = scene_record['last_sample_token']
+
+            sample_token = first_sample_token
+            i = 0
+            while sample_token != '':
+                sample_record = self.nusc.get('sample', sample_token)
+                samples.append(sample_record['token'])
+
+                if sample_token == last_sample_token:
+                    sample_token = ''
+                else:
+                    sample_token = sample_record['next']
+                i += 1
+
+            assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
+                                           'but only {} keyframes were processed'.format(total_num_samples, i)
+
+        return samples
+
 
 if __name__ == '__main__':
     # Settings.
     parser = argparse.ArgumentParser(description='Evaluate nuScenes lidar segmentation results.')
     parser.add_argument('--result_path', type=str,
                         help='The path to the results folder.')
+    parser.add_argument('--eval_set', type=str, default='val',
+                        help='Which dataset split to evaluate on, train, val or test.')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
@@ -198,11 +246,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     result_path_ = args.result_path
+    eval_set_ = args.eval_set
     dataroot_ = args.dataroot
     version_ = args.version
     verbose_ = args.verbose
 
     nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
 
-    evaluator = LidarSegEval(nusc_, result_path_, verbose=verbose_)
+    evaluator = LidarSegEval(nusc_, result_path_, eval_set=eval_set_, verbose=verbose_)
     evaluator.evaluate()
