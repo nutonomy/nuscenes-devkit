@@ -106,18 +106,17 @@ class LidarSegEval:
 
         # Put everything nicely into a dict.
         id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
-        results = dict()
-        for i, class_iou in enumerate(iou_per_class):
-            if not np.isnan(class_iou):
-                results['iou_' + id2name[i]] = class_iou
-        results['miou'] = miou
+        results = {'iou_per_class': {id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)
+                                     if not np.isnan(class_iou)},
+                   'miou': miou,
+                   'freq_weighted_iou': None}
 
         # Print the results if desired.
         if self.verbose:
             print("======\nnuScenes lidar segmentation evaluation for version {}".format(self.nusc.version))
-            for iou_name, iou in results.items():
-                print('{:30}  {:.5f}'.format(iou_name, iou))
-            # print(json.dumps(results, indent=4, sort_keys=False))
+            # for iou_name, iou in results.items():
+            #     print('{:30}  {:.5f}'.format(iou_name, iou))
+            print(json.dumps(results, indent=4, sort_keys=False))
             print("======")
 
         return results
