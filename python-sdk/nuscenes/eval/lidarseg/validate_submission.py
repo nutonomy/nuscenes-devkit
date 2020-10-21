@@ -32,6 +32,7 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
     :param nusc: A NuScenes object.
     :param results_folder: Path to the folder.
     :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
+    :param verbose: Whether to print messages during the evaluation.
     """
     if verbose:
         print('Checking if folder structure of {} is correct...'.format(results_folder))
