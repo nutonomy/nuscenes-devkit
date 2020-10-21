@@ -42,7 +42,7 @@ class TestAllMaps(unittest.TestCase):
                 'Error: Map %s has a different number of layers: \n%s vs. \n%s' % \
                 (map_name, ref_counts[map_name], layer_counts[map_name])
 
-    def test_empty_connectivity(self):
+    def test_disconnected_lanes(self):
         """ Check if any lanes are disconnected. """
         found_error = False
         for map_name in locations:
@@ -58,8 +58,18 @@ class TestAllMaps(unittest.TestCase):
     def get_disconnected_lanes(cls, nusc_map: NuScenesMap) -> List[str]:
         disconnected = []
         for lane_token, connectivity in nusc_map.json_obj['connectivity'].items():
-            if len(connectivity['incoming']) + len(connectivity['outgoing']) == 0:
+            # Lanes which are disconnected.
+            inout_lanes = connectivity['incoming'] + connectivity['outgoing']
+            if len(inout_lanes) == 0:
                 disconnected.append(lane_token)
+                continue
+
+            # Lanes that only exist in connectivity (not currently an issue).
+            for inout_lane_token in inout_lanes:
+                if inout_lane_token not in nusc_map._token2ind['lane'] and \
+                        inout_lane_token not in nusc_map._token2ind['lane_connector']:
+                    print('Error: Not a lane or lane_connector: %s' % inout_lane_token)
+                    disconnected.append(inout_lane_token)
 
         return disconnected
 
@@ -75,15 +85,16 @@ class TestAllMaps(unittest.TestCase):
         nusc_map.lane = [lane for lane in nusc_map.lane if lane['token'] not in disconnected]
         print('After: ', len(nusc_map.lane))
 
-        # Remove lane_connector. # TODO: Has no impact.
-        #print('Before: ', len(nusc_map.lane))
-        #nusc_map.lane_connector = [lane for lane in nusc_map.lane_connector if l['token'] not in disconnected]
-        #print('After: ', len(nusc_map.lane))
+        # Remove lane_connector.
+        print('Before: ', len(nusc_map.lane))
+        nusc_map.lane_connector = [lane for lane in nusc_map.lane_connector if lane['token'] not in disconnected]
+        print('After: ', len(nusc_map.lane))
 
         # Remove connectivity.
         print('Before: ', len(nusc_map.lane))
         for lane_token in disconnected:
-            del nusc_map.connectivity[lane_token]
+            if lane_token in nusc_map.connectivity:
+                del nusc_map.connectivity[lane_token]
         print('After: ', len(nusc_map.lane))
 
         # To fix the map class, we need to update some indices.
