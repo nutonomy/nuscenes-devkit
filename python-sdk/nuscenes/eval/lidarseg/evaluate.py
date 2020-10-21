@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor
+from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor, ConfusionMatrix
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -57,13 +57,13 @@ class LidarSegEval:
         self.ignore_idx = ignore_idx
         self.verbose = verbose
 
-        self.global_cm = None
-
         self.adaptor = LidarsegChallengeAdaptor(self.nusc)
 
         self.num_classes = len(self.adaptor.merged_name_2_merged_idx_mapping)
         if self.verbose:
             print('There are {} classes.'.format(self.num_classes))
+
+        self.global_cm = ConfusionMatrix(self.num_classes, self.ignore_idx)
 
         self.sample_tokens = self.get_samples_in_eval_set()
         if self.verbose:
@@ -72,7 +72,7 @@ class LidarSegEval:
     def evaluate(self) -> Dict:
         """
         Performs the actual evaluation.
-        :return: A dictionary containing the IOU of the individual classes and the mIOU.
+        :return: A dictionary containing the evaluated metrics.
         """
         for sample_token in tqdm(self.sample_tokens):
             sample = self.nusc.get('sample', sample_token)
@@ -96,12 +96,10 @@ class LidarSegEval:
             lidarseg_pred = self.adaptor.convert_label(lidarseg_pred)
 
             # Get the confusion matrix between the ground truth and predictions.
-            sd_cm = self._get_confusion_matrix(lidarseg_label, lidarseg_pred)
+            # Update the confusion matrix for the sample data into the confusion matrix for the eval set.
+            self.global_cm.update(lidarseg_label, lidarseg_pred)
 
-            # Update the confusion matrix for the sample data into the confusion matrix for the split.
-            self._update_confusion_matrix(sd_cm)
-
-        iou_per_class = self._get_per_class_iou(self.global_cm)
+        iou_per_class = self.global_cm.get_per_class_iou()
         miou = np.nanmean(iou_per_class)
 
         # Put everything nicely into a dict.
@@ -113,7 +111,7 @@ class LidarSegEval:
 
         # Print the results if desired.
         if self.verbose:
-            print("======\nnuScenes lidar segmentation evaluation for version {}".format(self.nusc.version))
+            print("======\nnuScenes lidar segmentation evaluation for {}".format(self.eval_set))
             # for iou_name, iou in results.items():
             #     print('{:30}  {:.5f}'.format(iou_name, iou))
             print(json.dumps(results, indent=4, sort_keys=False))
@@ -134,71 +132,10 @@ class LidarSegEval:
 
         return bin_content
 
-    def _update_confusion_matrix(self, cm: np.ndarray) -> None:
-        """
-        Updates the global confusion matrix.
-        :param cm: Confusion matrix to be updated into the global confusion matrix.
-        """
-        if self.global_cm is None:
-            self.global_cm = cm
-        else:
-            self.global_cm += cm
-
-    def _get_confusion_matrix(self, gt_array: np.ndarray, pred_array: np.ndarray) -> np.ndarray:
-        """
-        Obtains the confusion matrix for the segmentation of a single point cloud.
-        :param gt_array: An array containing the ground truth labels.
-        :param pred_array: An array containing the predicted labels.
-        :return: N x N array where N is the number of classes.
-        """
-        assert all((gt_array >= 0) & (gt_array < self.num_classes)), \
-            "Error: Array for ground truth must be between 0 and {}".format(self.num_classes - 1)
-        assert all((pred_array >= 0) & (pred_array < self.num_classes)), \
-            "Error: Array for predictions must be between 0 and {}".format(self.num_classes - 1)
-
-        label = self.num_classes * gt_array.astype('int') + pred_array
-        count = np.bincount(label, minlength=self.num_classes ** 2)
-
-        # Make confusion matrix (rows = gt, cols = preds).
-        confusion_matrix = count.reshape(self.num_classes, self.num_classes)
-
-        return confusion_matrix
-
-    def _get_per_class_iou(self, confusion_matrix: np.ndarray) -> List[float]:
-        """
-        Gets the IOU of each class in a confusion matrix. The index of the class to be ignored is set to NaN.
-        :param confusion_matrix: The confusion matrix to calculate IOU for each class on.
-        :return: An array in which the IOU of a particular class sits at the array index corresponding to the
-                 class index (the index of the class ot be ignored is set to NaN).
-        """
-        conf = confusion_matrix.copy()
-
-        # Get the intersection for each class.
-        intersection = np.diagonal(conf)
-
-        # Get the union for each class.
-        ground_truth_set = conf.sum(axis=1)
-        predicted_set = conf.sum(axis=0)
-        union = ground_truth_set + predicted_set - intersection
-
-        # Get the IOU for each class.
-        iou_per_class = intersection / (
-                    union.astype(np.float32) + 1e-15)  # Add a small value to guard against division by zero.
-
-        # Set the IOU for the ignored class to NaN.
-        if self.ignore_idx is not None:
-            iou_per_class[self.ignore_idx] = np.nan
-
-        # If there are no points belonging to a certain class, then set the the IOU of that class to NaN too.
-        idxs_no_ground_truth = np.where(iou_per_class == 0)
-        if len(idxs_no_ground_truth) > 0:
-            iou_per_class[idxs_no_ground_truth] = np.nan
-
-        return iou_per_class
-
     def get_samples_in_eval_set(self) -> List[str]:
         """
-
+        Gets all the sample tokens from the split that are relevant to the eval set.
+        :return: A list of sample tokens.
         """
         # Create a dict to map from scene name to scene token for quick lookup later on.
         scene_name2tok = dict()

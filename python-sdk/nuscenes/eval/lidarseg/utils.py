@@ -1,14 +1,98 @@
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 
 from nuscenes import NuScenes
 
 
+class ConfusionMatrix:
+    """
+
+    """
+    def __init__(self, num_classes: int, ignore_idx: int = None):
+        """
+        Initialize a ConfusionMatrix object.
+        :param num_classes:
+        :param ignore_idx:
+        """
+        self.num_classes = num_classes
+        self.ignore_idx = ignore_idx
+
+        self.global_cm = None
+
+    def update(self, gt_array: np.ndarray, pred_array: np.ndarray) -> None:
+        """
+        Updates the global confusion matrix.
+        :param gt_array: An array containing the ground truth labels.
+        :param pred_array: An array containing the predicted labels.
+        """
+        cm = self._get_confusion_matrix(gt_array, pred_array)
+
+        if self.global_cm is None:
+            self.global_cm = cm
+        else:
+            self.global_cm += cm
+
+    def _get_confusion_matrix(self, gt_array: np.ndarray, pred_array: np.ndarray) -> np.ndarray:
+        """
+        Obtains the confusion matrix for the segmentation of a single point cloud.
+        :param gt_array: An array containing the ground truth labels.
+        :param pred_array: An array containing the predicted labels.
+        :return: N x N array where N is the number of classes.
+        """
+        assert all((gt_array >= 0) & (gt_array < self.num_classes)), \
+            "Error: Array for ground truth must be between 0 and {}".format(self.num_classes - 1)
+        assert all((pred_array >= 0) & (pred_array < self.num_classes)), \
+            "Error: Array for predictions must be between 0 and {}".format(self.num_classes - 1)
+
+        label = self.num_classes * gt_array.astype('int') + pred_array
+        count = np.bincount(label, minlength=self.num_classes ** 2)
+
+        # Make confusion matrix (rows = gt, cols = preds).
+        confusion_matrix = count.reshape(self.num_classes, self.num_classes)
+
+        return confusion_matrix
+
+    def get_per_class_iou(self) -> List[float]:
+        """
+        Gets the IOU of each class in a confusion matrix. The index of the class to be ignored is set to NaN.
+        :return: An array in which the IOU of a particular class sits at the array index corresponding to the
+                 class index (the index of the class ot be ignored is set to NaN).
+        """
+        conf = self.global_cm.copy()
+
+        # Get the intersection for each class.
+        intersection = np.diagonal(conf)
+
+        # Get the union for each class.
+        ground_truth_set = conf.sum(axis=1)
+        predicted_set = conf.sum(axis=0)
+        union = ground_truth_set + predicted_set - intersection
+
+        # Get the IOU for each class.
+        iou_per_class = intersection / (
+                    union.astype(np.float32) + 1e-15)  # Add a small value to guard against division by zero.
+
+        # Set the IOU for the ignored class to NaN.
+        if self.ignore_idx is not None:
+            iou_per_class[self.ignore_idx] = np.nan
+
+        # If there are no points belonging to a certain class, then set the the IOU of that class to NaN too.
+        idxs_no_ground_truth = np.where(iou_per_class == 0)
+        if len(idxs_no_ground_truth) > 0:
+            iou_per_class[idxs_no_ground_truth] = np.nan
+
+        return iou_per_class
+
+
 class LidarsegChallengeAdaptor:
     """
     An adaptor to map the (raw) classes in nuScenes-lidarseg to the (merged) classes for the nuScenes lidar
     segmentation challenge.
+
+    Example usage::
+        nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
+        adaptor_ = LidarsegChallengeAdaptor(nusc_)
     """
     def __init__(self, nusc: NuScenes):
         """
@@ -64,7 +148,7 @@ class LidarsegChallengeAdaptor:
                 'vehicle.ego': 'ignore'}
 
     @staticmethod
-    def get_merged2idx() -> Dict:
+    def get_merged2idx() -> Dict[str, int]:
         """
         Returns the mapping from the merged class names to the merged class indices.
         :return: A dictionary containing the mapping from the merged class names to the merged class indices.
@@ -87,7 +171,7 @@ class LidarsegChallengeAdaptor:
                 'manmade': 15,
                 'vegetation': 16}
 
-    def get_raw_idx_2_merged_idx(self) -> Dict:
+    def get_raw_idx_2_merged_idx(self) -> Dict[int, int]:
         """
         Returns the mapping from the the indices of the merged classes to that of the merged classes.
         :return: A dictionary containing the mapping from the the indices of the merged classes to that of the
@@ -167,8 +251,3 @@ class LidarsegChallengeAdaptor:
             lidarseg_counts[class_idx] += class_count  # Increment the count for the particular class name.
 
         return lidarseg_counts
-
-
-if __name__ == '__main__':
-    nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
-    mappings_ = LidarsegChallengeAdaptor(nusc_)
