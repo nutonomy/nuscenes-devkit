@@ -132,6 +132,8 @@ class LidarsegChallengeAdaptor:
         """
         self.nusc = nusc
 
+        self.ignore_class = self.get_ignore_class()
+
         self.raw_name_2_merged_name_mapping = self.get_raw2merged()
         self.merged_name_2_merged_idx_mapping = self.get_merged2idx()
 
@@ -140,20 +142,27 @@ class LidarsegChallengeAdaptor:
         self.raw_idx_2_merged_idx_mapping = self.get_raw_idx_2_merged_idx()
 
     @staticmethod
-    def get_raw2merged() -> Dict:
+    def get_ignore_class() -> Dict[str, int]:
+        """
+        Defines the name and index of the ignore class.
+        :return: A dictionary containing the name and index of the ignore class.
+        """
+        return {'name': 'ignore', 'index': 0}
+
+    def get_raw2merged(self) -> Dict:
         """
         Returns the mapping from the raw classes to the merged classes.
         :return: A dictionary containing the mapping from the raw classes to the merged classes.
         """
-        return {'noise': 'ignore',
+        return {'noise': self.ignore_class['name'],
                 'human.pedestrian.adult': 'pedestrian',
                 'human.pedestrian.child': 'pedestrian',
-                'human.pedestrian.wheelchair': 'ignore',
-                'human.pedestrian.stroller': 'ignore',
-                'human.pedestrian.personal_mobility': 'ignore',
+                'human.pedestrian.wheelchair': self.ignore_class['name'],
+                'human.pedestrian.stroller': self.ignore_class['name'],
+                'human.pedestrian.personal_mobility': self.ignore_class['name'],
                 'human.pedestrian.police_officer': 'pedestrian',
                 'human.pedestrian.construction_worker': 'pedestrian',
-                'animal': 'ignore',
+                'animal': self.ignore_class['name'],
                 'vehicle.car': 'car',
                 'vehicle.motorcycle': 'motorcycle',
                 'vehicle.bicycle': 'bicycle',
@@ -161,30 +170,29 @@ class LidarsegChallengeAdaptor:
                 'vehicle.bus.rigid': 'bus',
                 'vehicle.truck': 'truck',
                 'vehicle.construction': 'construction_vehicle',
-                'vehicle.emergency.ambulance': 'ignore',
-                'vehicle.emergency.police': 'ignore',
+                'vehicle.emergency.ambulance': self.ignore_class['name'],
+                'vehicle.emergency.police': self.ignore_class['name'],
                 'vehicle.trailer': 'trailer',
                 'movable_object.barrier': 'barrier',
                 'movable_object.trafficcone': 'traffic_cone',
-                'movable_object.pushable_pullable': 'ignore',
-                'movable_object.debris': 'ignore',
-                'static_object.bicycle_rack': 'ignore',
+                'movable_object.pushable_pullable': self.ignore_class['name'],
+                'movable_object.debris': self.ignore_class['name'],
+                'static_object.bicycle_rack': self.ignore_class['name'],
                 'flat.driveable_surface': 'driveable_surface',
                 'flat.sidewalk': 'sidewalk',
                 'flat.terrain': 'terrain',
                 'flat.other': 'other_flat',
                 'static.manmade': 'manmade',
                 'static.vegetation': 'vegetation',
-                'static.other': 'ignore',
-                'vehicle.ego': 'ignore'}
+                'static.other': self.ignore_class['name'],
+                'vehicle.ego': self.ignore_class['name']}
 
-    @staticmethod
-    def get_merged2idx() -> Dict[str, int]:
+    def get_merged2idx(self) -> Dict[str, int]:
         """
         Returns the mapping from the merged class names to the merged class indices.
         :return: A dictionary containing the mapping from the merged class names to the merged class indices.
         """
-        return {'ignore': 0,
+        return {self.ignore_class['name']: self.ignore_class['index'],
                 'barrier': 1,
                 'bicycle': 2,
                 'bus': 3,

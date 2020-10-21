@@ -34,14 +34,12 @@ class LidarSegEval:
                  nusc: NuScenes,
                  results_folder: str,
                  eval_set: str,
-                 ignore_idx: int = 0,
                  verbose: bool = False):
         """
         Initialize a LidarSegEval object.
         :param nusc: A NuScenes object.
         :param results_folder: Path to the folder.
         :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
-        :param ignore_idx: Index of the class to be ignored in the evaluation.
         :param verbose: Whether to print messages during the evaluation.
         """
         # Check there are ground truth annotations.
@@ -56,10 +54,10 @@ class LidarSegEval:
         self.nusc = nusc
         self.results_folder = results_folder
         self.eval_set = eval_set
-        self.ignore_idx = ignore_idx
         self.verbose = verbose
 
         self.adaptor = LidarsegChallengeAdaptor(nusc_)
+        self.ignore_idx = self.adaptor.ignore_class['index']
         self.id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
         self.num_classes = len(self.adaptor.merged_name_2_merged_idx_mapping)
 
