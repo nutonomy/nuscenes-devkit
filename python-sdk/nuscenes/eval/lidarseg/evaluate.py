@@ -7,8 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor, ConfusionMatrix
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor, ConfusionMatrix, get_samples_in_eval_set
 
 
 class LidarSegEval:
@@ -66,7 +65,7 @@ class LidarSegEval:
 
         self.global_cm = ConfusionMatrix(self.num_classes, self.ignore_idx)
 
-        self.sample_tokens = self.get_samples_in_eval_set()
+        self.sample_tokens = get_samples_in_eval_set(self.nusc, self.eval_set)
         if self.verbose:
             print('There are {} samples.'.format(len(self.sample_tokens)))
 
@@ -129,44 +128,6 @@ class LidarSegEval:
         assert len(bin_content) > 0, 'Error: {} is empty.'.format(bin_path)
 
         return bin_content
-
-    def get_samples_in_eval_set(self) -> List[str]:
-        """
-        Gets all the sample tokens from the split that are relevant to the eval set.
-        :return: A list of sample tokens.
-        """
-        # Create a dict to map from scene name to scene token for quick lookup later on.
-        scene_name2tok = dict()
-        for rec in self.nusc.scene:
-            scene_name2tok[rec['name']] = rec['token']
-
-        # Get scenes splits from nuScenes.
-        scenes_splits = create_splits_scenes(verbose=False)
-
-        # Collect sample tokens for each scene.
-        samples = []
-        for scene in scenes_splits[self.eval_set]:
-            scene_record = self.nusc.get('scene', scene_name2tok[scene])
-            total_num_samples = scene_record['nbr_samples']
-            first_sample_token = scene_record['first_sample_token']
-            last_sample_token = scene_record['last_sample_token']
-
-            sample_token = first_sample_token
-            i = 0
-            while sample_token != '':
-                sample_record = self.nusc.get('sample', sample_token)
-                samples.append(sample_record['token'])
-
-                if sample_token == last_sample_token:
-                    sample_token = ''
-                else:
-                    sample_token = sample_record['next']
-                i += 1
-
-            assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
-                                           'but only {} keyframes were processed'.format(total_num_samples, i)
-
-        return samples
 
 
 if __name__ == '__main__':

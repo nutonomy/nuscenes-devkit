@@ -3,6 +3,7 @@ from typing import Dict, List
 import numpy as np
 
 from nuscenes import NuScenes
+from nuscenes.utils.splits import create_splits_scenes
 
 
 class ConfusionMatrix:
@@ -290,3 +291,44 @@ class LidarsegChallengeAdaptor:
             lidarseg_counts[class_idx] += class_count  # Increment the count for the particular class name.
 
         return lidarseg_counts
+
+
+def get_samples_in_eval_set(nusc: NuScenes, eval_set: str) -> List[str]:
+    """
+    Gets all the sample tokens from the split that are relevant to the eval set.
+    :param nusc: A NuScenes object.
+    :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
+    :return: A list of sample tokens.
+    """
+    # Create a dict to map from scene name to scene token for quick lookup later on.
+    scene_name2tok = dict()
+    for rec in nusc.scene:
+        scene_name2tok[rec['name']] = rec['token']
+
+    # Get scenes splits from nuScenes.
+    scenes_splits = create_splits_scenes(verbose=False)
+
+    # Collect sample tokens for each scene.
+    samples = []
+    for scene in scenes_splits[eval_set]:
+        scene_record = nusc.get('scene', scene_name2tok[scene])
+        total_num_samples = scene_record['nbr_samples']
+        first_sample_token = scene_record['first_sample_token']
+        last_sample_token = scene_record['last_sample_token']
+
+        sample_token = first_sample_token
+        i = 0
+        while sample_token != '':
+            sample_record = nusc.get('sample', sample_token)
+            samples.append(sample_record['token'])
+
+            if sample_token == last_sample_token:
+                sample_token = ''
+            else:
+                sample_token = sample_record['next']
+            i += 1
+
+        assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
+                                       'but only {} keyframes were processed'.format(total_num_samples, i)
+
+    return samples
