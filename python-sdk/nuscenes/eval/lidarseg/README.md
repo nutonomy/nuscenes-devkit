@@ -145,16 +145,22 @@ For more information on the classes and their frequencies, see [this page](https
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes lidar segmentation task.
-Our final score is a weighted sum of mean intersection-over-union (mIOU).
+Our final score is the mean intersection-over-union (mIOU).
 
 ### Preprocessing
 Contrary to the [nuScenes detection task](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md), 
 we do not perform any preprocessing, such as removing GT / predictions if they exceed the class-specific detection range
-or if they full inside a bike-rack.
+or if they fall inside a bike-rack.
 
 ### Mean IOU (mIOU)
 We use the well-known IOU metric, which is defined as TP / (TP + FP + FN). 
 The IOU score is calculated separately for each class, and then the mean is computed across classes.
+Note that lidar segmentation index 0 is ignored in the calculation.
+
+### Frequency-weighted IOU (FWIOU)
+Instead of taking the mean of the IOUs across all the classes, a weighted mean is taken proportionately based on the frequency of the classes.
+Note that lidar segmentation index 0 is ignored in the calculation.
+FWIOU is not used for the challenge.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the lidar segmentation task.

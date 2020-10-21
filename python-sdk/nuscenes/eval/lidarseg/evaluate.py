@@ -89,11 +89,10 @@ class LidarSegEval:
 
             # Load the predictions for the point cloud.
             lidarseg_pred_filename = os.path.join(self.results_folder, 'lidarseg',
-                                                  self.nusc.version, sd_token + '_lidarseg.bin')
+                                                  self.eval_set, sd_token + '_lidarseg.bin')
             lidarseg_pred = self.load_bin_file(lidarseg_pred_filename)
 
-            # TODO remove!!
-            lidarseg_pred = self.adaptor.convert_label(lidarseg_pred)
+            # lidarseg_pred = self.adaptor.convert_label(lidarseg_pred)  # TODO remove!!
 
             # Get the confusion matrix between the ground truth and predictions.
             # Update the confusion matrix for the sample data into the confusion matrix for the eval set.
