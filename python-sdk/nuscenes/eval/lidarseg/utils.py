@@ -185,13 +185,13 @@ class LidarsegChallengeAdaptor:
 
     def check_mapping(self) -> None:
         """
-
+        Convenient method to check that the mappings for raw2merged and merged2idx are synced.
         """
         merged_set = set()
         for raw_name, merged_name in self.raw_name_2_merged_name_mapping.items():
             merged_set.add(merged_name)
 
-        assert len(merged_set) == len(self.merged_name_2_merged_idx_mapping), \
+        assert merged_set == set(self.merged_name_2_merged_idx_mapping.keys()), \
             'Error: Number of merged classes is not the same as the number of merged indices.'
 
     def convert_label(self, points_label: np.ndarray) -> np.ndarray:
@@ -212,7 +212,7 @@ class LidarsegChallengeAdaptor:
 
         return points_label
 
-    def compare_stats(self, counter_before: np.array, counter_after: np.array) -> bool:
+    def compare_stats(self, counter_before: List[int], counter_after: List[int]) -> bool:
         """
         Compare stats for a single .bin file before and after conversion.
         :param counter_before: A numPy array which contains the counts of each class (the index of the array corresponds
@@ -230,7 +230,7 @@ class LidarsegChallengeAdaptor:
 
         return comparison
 
-    def get_stats(self, points_label: np.array) -> np.ndarray:
+    def get_stats(self, points_label: np.array) -> List[int]:
         """
         Get frequency of each label in a point cloud.
         :param points_label: A numPy array which contains the labels of the point cloud;
