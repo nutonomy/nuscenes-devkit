@@ -74,7 +74,7 @@ class LidarSegEval:
         Performs the actual evaluation.
         :return: A dictionary containing the evaluated metrics.
         """
-        for sample_token in tqdm(self.sample_tokens):
+        for sample_token in tqdm(self.sample_tokens, disable=not self.verbose):
             sample = self.nusc.get('sample', sample_token)
 
             # Get the sample data token of the point cloud.
