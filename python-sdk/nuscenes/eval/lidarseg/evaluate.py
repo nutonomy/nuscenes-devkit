@@ -101,13 +101,14 @@ class LidarSegEval:
 
         iou_per_class = self.global_cm.get_per_class_iou()
         miou = np.nanmean(iou_per_class)
+        freqweighted_iou = self.global_cm.get_freqweighted_iou()
 
         # Put everything nicely into a dict.
         id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
         results = {'iou_per_class': {id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)
                                      if not np.isnan(class_iou)},
                    'miou': miou,
-                   'freq_weighted_iou': None}
+                   'freq_weighted_iou': freqweighted_iou}
 
         # Print the results if desired.
         if self.verbose:

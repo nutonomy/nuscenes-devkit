@@ -12,8 +12,8 @@ class ConfusionMatrix:
     def __init__(self, num_classes: int, ignore_idx: int = None):
         """
         Initialize a ConfusionMatrix object.
-        :param num_classes:
-        :param ignore_idx:
+        :param num_classes: Number of classes in the confusion matrix.
+        :param ignore_idx: Index of the class to be ignored in the confusion matrix.
         """
         self.num_classes = num_classes
         self.ignore_idx = ignore_idx
@@ -83,6 +83,30 @@ class ConfusionMatrix:
             iou_per_class[idxs_no_ground_truth] = np.nan
 
         return iou_per_class
+
+    def get_freqweighted_iou(self) -> float:
+        """
+        Gets the frequency-weighted IOU over the classes.
+        :return: Frequency-weighted IOU over the classes.
+        """
+        conf = self.global_cm.copy()
+
+        # Get the number of points per class (based on ground truth).
+        num_points_per_class = conf.sum(axis=1)
+
+        # Get the total number of points in the eval set.
+        num_points_total = conf.sum()
+
+        # Get the frequency per class.
+        freq = num_points_per_class / num_points_total
+
+        # Get the IOU per class.
+        iou_per_class = self.get_per_class_iou()
+
+        # Weight the IOU by frequency and sum across the classes.
+        freqweighted_iou = np.nansum((freq[freq != np.nan] * iou_per_class[freq != np.nan]))
+
+        return freqweighted_iou
 
 
 class LidarsegChallengeAdaptor:
