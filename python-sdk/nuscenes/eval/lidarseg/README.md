@@ -1,5 +1,5 @@
 # nuScenes lidar segmentation task
-![nuScenes lidar segementation logo](https://www.nuscenes.org/public/images/tasks.png)
+![nuScenes lidar segementation logo](https://www.nuscenes.org/public/images/lidarseg_challenge.png)
 
 ## Overview
 - [Introduction](#introduction)
