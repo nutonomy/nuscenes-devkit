@@ -49,7 +49,9 @@ class LidarSegEval:
 
         # Check results folder exists.
         self.results_folder = results_folder
-        assert os.path.exists(results_folder), 'Error: The result folder ({}) does not exist.'.format(results_folder)
+        self.results_bin_folder = os.path.join(results_folder, 'lidarseg', eval_set)
+        assert os.path.exists(self.results_bin_folder), \
+            'Error: The folder containing the .bin files ({}) does not exist.'.format(self.results_bin_folder)
 
         self.nusc = nusc
         self.results_folder = results_folder
@@ -57,9 +59,10 @@ class LidarSegEval:
         self.ignore_idx = ignore_idx
         self.verbose = verbose
 
-        self.adaptor = LidarsegChallengeAdaptor(self.nusc)
-
+        self.adaptor = LidarsegChallengeAdaptor(nusc_)
+        self.id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
         self.num_classes = len(self.adaptor.merged_name_2_merged_idx_mapping)
+
         if self.verbose:
             print('There are {} classes.'.format(self.num_classes))
 
@@ -92,19 +95,16 @@ class LidarSegEval:
                                                   self.eval_set, sd_token + '_lidarseg.bin')
             lidarseg_pred = self.load_bin_file(lidarseg_pred_filename)
 
-            # lidarseg_pred = self.adaptor.convert_label(lidarseg_pred)  # TODO remove!!
-
             # Get the confusion matrix between the ground truth and predictions.
             # Update the confusion matrix for the sample data into the confusion matrix for the eval set.
             self.global_cm.update(lidarseg_label, lidarseg_pred)
 
         iou_per_class = self.global_cm.get_per_class_iou()
-        miou = np.nanmean(iou_per_class)
+        miou = self.global_cm.get_mean_iou()
         freqweighted_iou = self.global_cm.get_freqweighted_iou()
 
         # Put everything nicely into a dict.
-        id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
-        results = {'iou_per_class': {id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)
+        results = {'iou_per_class': {self.id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)
                                      if not np.isnan(class_iou)},
                    'miou': miou,
                    'freq_weighted_iou': freqweighted_iou}

@@ -82,6 +82,15 @@ class ConfusionMatrix:
 
         return iou_per_class
 
+    def get_mean_iou(self) -> float:
+        """
+        Gets the mean IOU (mIOU) over the classes.
+        :return: mIOU over the classes.
+        """
+        iou_per_class = self.get_per_class_iou()
+        miou = float(np.nanmean(iou_per_class))
+        return miou
+
     def get_freqweighted_iou(self) -> float:
         """
         Gets the frequency-weighted IOU over the classes.
@@ -102,7 +111,7 @@ class ConfusionMatrix:
         iou_per_class = self.get_per_class_iou()
 
         # Weight the IOU by frequency and sum across the classes.
-        freqweighted_iou = np.nansum((freq[freq != np.nan] * iou_per_class[freq != np.nan]))
+        freqweighted_iou = float(np.nansum((freq[freq != np.nan] * iou_per_class[freq != np.nan])))
 
         return freqweighted_iou
 
