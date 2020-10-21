@@ -62,10 +62,10 @@ The folder structure of the results should be as follows:
 ```
 └── results_folder
     ├── lidarseg
-    │   └── v1.0-test <- Contains the .bin files; a .bin file 
+    │   └── test <- Contains the .bin files; a .bin file 
     │                    contains the labels of the points in a 
     │                    point cloud         
-    └── v1.0-test
+    └── test
         └── submission.json  <- contains certain information about 
                                 the submission
 ```
@@ -83,9 +83,14 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
   ```
 * The `v1.0-test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
   Pay special attention that each set of predictions in the folder must be a .bin file and named as **<lidar_sample_data_token>_lidarseg.bin**.
-  A .bin file contains an array of `int` in which each value is the predicted [class index](#classes) of the corresponding point in the point cloud, e.g.:
+  A .bin file contains an array of `uint8` values in which each value is the predicted [class index](#classes) of the corresponding point in the point cloud, e.g.:
   ```
   [1, 5, 4, 1, ...]
+  ```
+  Below is an example of how to save the predictions for a single point cloud:
+  ```
+  bin_file_path = lidar_sample_data_token + '_lidarseg.bin"
+  np.array(predicted_labels).astype(np.uint8).tofile(bin_file_path)
   ```
   Each `lidar_sample_data_token` from the current evaluation set must be included in the `v1.0-test` folder.
   
