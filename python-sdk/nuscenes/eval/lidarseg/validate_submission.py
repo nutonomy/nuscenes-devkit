@@ -89,7 +89,8 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
                                                nusc.get('lidarseg', sd_token)['filename'])
         lidarseg_label = np.fromfile(lidarseg_label_filename, dtype=np.uint8)
         assert len(lidarseg_label) == len(lidarseg_pred), \
-            'Error: Predictions for lidar sample data token {} is {} but there are only {} points in the point cloud.'\
+            'Error: There are {} predictions for lidar sample data token {} ' \
+            'but there are only {} points in the point cloud.'\
             .format(sd_token, len(lidarseg_pred), len(lidarseg_label))
 
     if verbose:
