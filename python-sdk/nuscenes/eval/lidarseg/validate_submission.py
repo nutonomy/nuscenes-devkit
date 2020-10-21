@@ -100,10 +100,6 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
 
 
 if __name__ == '__main__':
-    """
-    Example usage::
-        python validate_submission.py --result_path ~/Desktop/logs/maplsn_rangeview_val/ --eval_set val --verbose True
-    """
     # Settings.
     parser = argparse.ArgumentParser(description='Check if a results folder is valid.')
     parser.add_argument('--result_path', type=str,
