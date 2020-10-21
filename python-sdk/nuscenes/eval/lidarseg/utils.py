@@ -7,7 +7,7 @@ from nuscenes import NuScenes
 
 class ConfusionMatrix:
     """
-
+    Class for confusion matrix with various convenient methods.
     """
     def __init__(self, num_classes: int, ignore_idx: int = None):
         """
