@@ -33,6 +33,8 @@ plt.style.use('seaborn-whitegrid')
 # Define a map geometry type for polygons and lines.
 Geometry = Union[Polygon, LineString]
 
+locations = ['singapore-onenorth', 'singapore-hollandvillage', 'singapore-queenstown', 'boston-seaport']
+
 
 class NuScenesMap:
     """
@@ -64,7 +66,7 @@ class NuScenesMap:
         :param map_name: Which map out of `singapore-onenorth`, `singepore-hollandvillage`, `singapore-queenstown`,
         `boston-seaport` that we want to load.
         """
-        assert map_name in ['singapore-onenorth', 'singapore-hollandvillage', 'singapore-queenstown', 'boston-seaport']
+        assert map_name in locations
 
         self.dataroot = dataroot
         self.map_name = map_name
@@ -112,15 +114,13 @@ class NuScenesMap:
         """
         return self.json_obj[layer_name]
 
-    def _load_arcline_path(self,) -> Dict[str, List[ArcLinePath]]:
+    def _load_layer_dict(self, layer_name: str) -> Dict[str, dict]:
         """
-        Returns a dictionary mapping arcline_path_3 token to arcline_path_3 record.
-        :return: Dictionary Mapping token to arcline_path_3.
+        Returns a dict of records corresponding to the layer name.
+        :param layer_name: Name of the layer that will be loaded.
+        :return: A dict of records corresponding to a layer.
         """
-        return self.json_obj['arcline_path_3']
-
-    def _load_lane_connectivity(self) -> Dict[str, Dict[str, List[str]]]:
-        return self.json_obj['connectivity']
+        return self.json_obj[layer_name]
 
     def _load_layers(self) -> None:
         """ Loads each available layer. """
@@ -140,9 +140,10 @@ class NuScenesMap:
         self.road_divider = self._load_layer('road_divider')
         self.lane_divider = self._load_layer('lane_divider')
         self.traffic_light = self._load_layer('traffic_light')
-        self.arcline_path_3 = self._load_arcline_path()
+
+        self.arcline_path_3 = self._load_layer_dict('arcline_path_3')
+        self.connectivity = self._load_layer_dict('connectivity')
         self.lane_connector = self._load_layer('lane_connector')
-        self.connectivity = self._load_lane_connectivity()
 
     def _make_token2ind(self) -> None:
         """ Store the mapping from token to layer index for each layer. """
