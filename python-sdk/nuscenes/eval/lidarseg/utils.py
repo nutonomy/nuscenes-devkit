@@ -58,9 +58,9 @@ class ConfusionMatrix:
 
     def get_per_class_iou(self) -> List[float]:
         """
-        Gets the IOU of each class in a confusion matrix. The index of the class to be ignored is set to NaN.
+        Gets the IOU of each class in a confusion matrix.
         :return: An array in which the IOU of a particular class sits at the array index corresponding to the
-                 class index (the index of the class ot be ignored is set to NaN).
+                 class index.
         """
         conf = self.global_cm.copy()
 
