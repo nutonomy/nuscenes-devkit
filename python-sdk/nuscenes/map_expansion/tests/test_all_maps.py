@@ -2,6 +2,8 @@ import os
 import unittest
 from collections import defaultdict
 from typing import List
+
+import matplotlib.pyplot as plt
 import tqdm
 
 from nuscenes.map_expansion.map_api import NuScenesMap, locations
@@ -9,22 +11,35 @@ from nuscenes.nuscenes import NuScenes
 
 
 class TestAllMaps(unittest.TestCase):
-    version = 'v1.0-trainval'  # TODO
+    version = 'v1.0-trainval'
 
     def setUp(self):
         """ Initialize the map for each location. """
+        use_new_map = True
+        drop_lanes = False
+        render = False
+
         self.nusc_maps = dict()
         for map_name in locations:
-            if False:  # TODO map_name == 'singapore-onenorth':
-                nusc_map = NuScenesMap(map_name=map_name, dataroot=os.path.expanduser('~'))  # TODO
+            # Load map.
+            if use_new_map and map_name == 'singapore-onenorth':
+                nusc_map = NuScenesMap(map_name=map_name, dataroot=os.path.expanduser('~'))
+                nusc_map.connectivity = dict()
             else:
                 nusc_map = NuScenesMap(map_name=map_name, dataroot=os.environ['NUSCENES'])
 
             # Postprocess lanes until they are fixed.
-            nusc_map = self.drop_disconnected_lanes(nusc_map)
+            if drop_lanes:
+                nusc_map = self.drop_disconnected_lanes(nusc_map)
+
+            # Render for debugging.
+            if render:
+                fig, ax = nusc_map.render_layers(nusc_map.non_geometric_layers, figsize=1)
+                plt.show()
 
             self.nusc_maps[map_name] = nusc_map
 
+    @unittest.skip
     def test_layer_stats(self):
         """ Test if each layer has the right number of instances. This is useful to compare between map versions. """
         layer_counts = defaultdict(lambda: [])
@@ -45,6 +60,7 @@ class TestAllMaps(unittest.TestCase):
                 'Error: Map %s has a different number of layers: \n%s vs. \n%s' % \
                 (map_name, ref_counts[map_name], layer_counts[map_name])
 
+    @unittest.skip
     def test_disconnected_lanes(self):
         """ Check if any lanes are disconnected. """
         found_error = False
@@ -59,21 +75,21 @@ class TestAllMaps(unittest.TestCase):
 
     @classmethod
     def get_disconnected_lanes(cls, nusc_map: NuScenesMap) -> List[str]:
-        disconnected = []
-        for lane_token, connectivity in nusc_map.json_obj['connectivity'].items():
+        disconnected = set()
+        for lane_token, connectivity in nusc_map.connectivity.items():
             # Lanes which are disconnected.
             inout_lanes = connectivity['incoming'] + connectivity['outgoing']
             if len(inout_lanes) == 0:
-                disconnected.append(lane_token)
+                disconnected.add(lane_token)
                 continue
 
             # Lanes that only exist in connectivity (not currently an issue).
             for inout_lane_token in inout_lanes:
                 if inout_lane_token not in nusc_map._token2ind['lane'] and \
                         inout_lane_token not in nusc_map._token2ind['lane_connector']:
-                    disconnected.append(inout_lane_token)
+                    disconnected.add(inout_lane_token)
 
-        return disconnected
+        return sorted(list(disconnected))
 
     @classmethod
     def drop_disconnected_lanes(cls, nusc_map: NuScenesMap) -> NuScenesMap:
@@ -94,7 +110,7 @@ class TestAllMaps(unittest.TestCase):
                 del nusc_map.connectivity[lane_token]
 
         # Remove connectivity references.
-        for lane_token, connectivity in nusc_map.json_obj['connectivity'].items():
+        for lane_token, connectivity in nusc_map.connectivity.items():
             connectivity['incoming'] = [i for i in connectivity['incoming'] if i not in disconnected]
             connectivity['outgoing'] = [o for o in connectivity['outgoing'] if o not in disconnected]
 
@@ -113,7 +129,7 @@ class TestAllMaps(unittest.TestCase):
             nusc_map = self.nusc_maps[map_name]
             ratio_valid = self.get_egoposes_on_map_ratio(nusc, nusc_map, scene['token'])
             if ratio_valid != 1.0:
-                print('Error: Scene %s has a valid ratio of %f!' % (scene['name'], ratio_valid))
+                print('Error: Scene %s has a ratio of %f ego poses on the driveable area!' % (scene['name'], ratio_valid))
                 invalid_scenes.append(scene['name'])
 
         self.assertEqual(len(invalid_scenes), 0)
