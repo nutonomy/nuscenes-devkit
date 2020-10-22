@@ -13,22 +13,15 @@ from nuscenes.utils.data_classes import LidarPointCloud
 def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verbose: bool = False) -> None:
     """
     Checks if a results folder is valid. The following checks are performed:
-    - Check that the submission folder is of the following structure:
-        └── results_folder
-            ├── lidarseg
-            │   └── test <- Contains the .bin files; a .bin file
-            │               contains the labels of the points in a
-            │               point cloud
-            └── test
-                └── submission.json  <- contains certain information about
-                                        the submission
+    - Check that the submission folder is according to that described in
+      https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/lidarseg/README.md
     - Check that the submission.json is of the following structure:
         {"meta": {"use_camera": false,
                   "use_lidar": true,
                   "use_radar": false,
                   "use_map": false,
                   "use_external": false}}
-    - Check that each each lidar sample data in the evaluation set is present.
+    - Check that each each lidar sample data in the evaluation set is present and valid.
 
     :param nusc: A NuScenes object.
     :param results_folder: Path to the folder.
