@@ -101,8 +101,7 @@ class LidarSegEval:
         freqweighted_iou = self.global_cm.get_freqweighted_iou()
 
         # Put everything nicely into a dict.
-        results = {'iou_per_class': {self.id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)
-                                     if not np.isnan(class_iou)},
+        results = {'iou_per_class': {self.id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)},
                    'miou': miou,
                    'freq_weighted_iou': freqweighted_iou}
 
