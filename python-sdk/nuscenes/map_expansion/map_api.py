@@ -114,7 +114,7 @@ class NuScenesMap:
         """
         return self.json_obj[layer_name]
 
-    def _load_layer_dict(self, layer_name: str) -> Dict[str, dict]:
+    def _load_layer_dict(self, layer_name: str) -> Dict[str, Union[dict, list]]:
         """
         Returns a dict of records corresponding to the layer name.
         :param layer_name: Name of the layer that will be loaded.
@@ -141,8 +141,8 @@ class NuScenesMap:
         self.lane_divider = self._load_layer('lane_divider')
         self.traffic_light = self._load_layer('traffic_light')
 
-        self.arcline_path_3 = self._load_layer_dict('arcline_path_3')
-        self.connectivity = self._load_layer_dict('connectivity')
+        self.arcline_path_3: Dict[str, List[dict]] = self._load_layer_dict('arcline_path_3')
+        self.connectivity: Dict[str, dict] = self._load_layer_dict('connectivity')
         self.lane_connector = self._load_layer('lane_connector')
 
     def _make_token2ind(self) -> None:
@@ -421,14 +421,15 @@ class NuScenesMap:
         """
         return self.explorer.is_record_in_patch(layer_name, token, box_coords, mode)
 
-    def layers_on_point(self, x: float, y: float) -> Dict[str, str]:
+    def layers_on_point(self, x: float, y: float, layer_names: List[str] = None) -> Dict[str, str]:
         """
         Returns all the polygonal layers that a particular point is on.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
+        :param layer_names: The names of the layers to search for.
         :return: All the polygonal layers that a particular point is on. {<layer name>: <list of tokens>}
         """
-        return self.explorer.layers_on_point(x, y)
+        return self.explorer.layers_on_point(x, y, layer_names)
 
     def record_on_point(self, x: float, y: float, layer_name: str) -> str:
         """
@@ -436,7 +437,7 @@ class NuScenesMap:
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
         :param layer_name: The non geometric polygonal layer name that we are interested in.
-        :return: The record token of a layer a particular point is on.
+        :return: The first token of a layer a particular point is on or '' if no layer is found.
         """
         return self.explorer.record_on_point(x, y, layer_name)
 
@@ -1399,20 +1400,25 @@ class NuScenesMapExplorer:
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
 
-    def layers_on_point(self, x: float, y: float) -> Dict[str, str]:
+    def layers_on_point(self, x: float, y: float, layer_names: List[str] = None) -> Dict[str, str]:
         """
         Returns all the polygonal layers that a particular point is on.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
+        :param layer_names: The names of the layers to search for.
         :return: All the polygonal layers that a particular point is on.
         """
+        # Default option.
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_polygon_layers
+
         layers_on_point = dict()
-        for layer_name in self.map_api.non_geometric_polygon_layers:
+        for layer_name in layer_names:
             layers_on_point.update({layer_name: self.record_on_point(x, y, layer_name)})
 
         return layers_on_point
 
-    def record_on_point(self, x, y, layer_name) -> str:
+    def record_on_point(self, x: float, y: float, layer_name: str) -> str:
         """
         Query what record of a layer a particular point is on.
         :param x: x coordinate of the point of interest.
