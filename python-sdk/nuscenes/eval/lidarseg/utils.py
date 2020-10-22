@@ -42,9 +42,9 @@ class ConfusionMatrix:
         :return: N x N array where N is the number of classes.
         """
         assert all((gt_array >= 0) & (gt_array < self.num_classes)), \
-            "Error: Array for ground truth must be between 0 and {}".format(self.num_classes - 1)
-        assert all((pred_array >= 0) & (pred_array < self.num_classes)), \
-            "Error: Array for predictions must be between 0 and {}".format(self.num_classes - 1)
+            "Error: Array for ground truth must be between 0 and {} (inclusive).".format(self.num_classes - 1)
+        assert all((pred_array > 0) & (pred_array < self.num_classes)), \
+            "Error: Array for predictions must be between 1 and {} (inclusive).".format(self.num_classes - 1)
 
         label = self.num_classes * gt_array.astype('int') + pred_array
         count = np.bincount(label, minlength=self.num_classes ** 2)
@@ -52,7 +52,9 @@ class ConfusionMatrix:
         # Make confusion matrix (rows = gt, cols = preds).
         confusion_matrix = count.reshape(self.num_classes, self.num_classes)
 
-        confusion_matrix[self.ignore_idx] = 0
+        # For the class to be ignored, set both the row and column to 0.
+        confusion_matrix[self.ignore_idx, :] = 0
+        confusion_matrix[:, self.ignore_idx] = 0
 
         return confusion_matrix
 
@@ -73,13 +75,9 @@ class ConfusionMatrix:
         union = ground_truth_set + predicted_set - intersection
 
         # Get the IOU for each class.
-        iou_per_class = intersection / (
-                    union.astype(np.float32) + 1e-15)  # Add a small value to guard against division by zero.
-
-        # If there are no points belonging to a certain class, then set the the IOU of that class to NaN.
-        idxs_no_ground_truth = np.where(iou_per_class == 0)
-        if len(idxs_no_ground_truth) > 0:
-            iou_per_class[idxs_no_ground_truth] = np.nan
+        # In case we get a division by 0, ignore / hide the error.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            iou_per_class = intersection / (union.astype(np.float32))
 
         return iou_per_class
 
