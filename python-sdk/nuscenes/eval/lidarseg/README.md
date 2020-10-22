@@ -62,10 +62,10 @@ The folder structure of the results should be as follows:
 ```
 └── results_folder
     ├── lidarseg
-    │   └── test <- Contains the .bin files; a .bin file 
-    │                    contains the labels of the points in a 
-    │                    point cloud         
-    └── test
+    │   └── {test, train, val} <- Contains the .bin files; a .bin file 
+    │                             contains the labels of the points in a 
+    │                             point cloud         
+    └── {testm train, val}
         └── submission.json  <- contains certain information about 
                                 the submission
 ```
@@ -92,7 +92,7 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
   bin_file_path = lidar_sample_data_token + '_lidarseg.bin"
   np.array(predicted_labels).astype(np.uint8).tofile(bin_file_path)
   ```
-  Note that the arrays should **not** contain the ignored class (i.e. class index 0). 
+  Note that the arrays should **not** contain the `ignore` class (i.e. class index 0). 
   Each `lidar_sample_data_token` from the current evaluation set must be included in the `v1.0-test` folder.
   
 For the train and val sets, the evaluation can be performed by the user on their local machine.
@@ -146,7 +146,7 @@ For more information on the classes and their frequencies, see [this page](https
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes lidar segmentation task.
-Our final score is the mean intersection-over-union (mIOU).
+The challenge winners and leaderboard ranking will be determined by the mean intersection-over-union (mIOU) score.
 
 ### Preprocessing
 Contrary to the [nuScenes detection task](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md), 
@@ -159,7 +159,7 @@ The IOU score is calculated separately for each class, and then the mean is comp
 Note that lidar segmentation index 0 is ignored in the calculation.
 
 ### Frequency-weighted IOU (FWIOU)
-Instead of taking the mean of the IOUs across all the classes, a weighted mean is taken proportionately based on the frequency of the classes.
+Instead of taking the mean of the IOUs across all the classes, each IOU is weighted by the point-level frequency of its class.
 Note that lidar segmentation index 0 is ignored in the calculation.
 FWIOU is not used for the challenge.
 
@@ -173,13 +173,15 @@ Methods will be compared within these tracks and the winners will be decided for
 Furthermore, there will also be an award for novel ideas, as well as the best student submission.
 
 **Lidar track**: 
+* Only lidar input allowed.
 * Only lidar segmentation annotations from nuScenes-lidarseg are allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
-  
+
 **Open track**: 
+* Any sensor input allowed.
 * All nuScenes, nuScenes-lidarseg and nuImages annotations are allowed.
-* External data and map data allowed (these include lidar segmentation annotations and bounding boxes from other datasets).
+* External data and map data allowed.
 * May use pre-training.
 
 **Details**:
