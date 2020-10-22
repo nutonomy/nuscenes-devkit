@@ -52,9 +52,11 @@ class ConfusionMatrix:
         # Make confusion matrix (rows = gt, cols = preds).
         confusion_matrix = count.reshape(self.num_classes, self.num_classes)
 
-        # For the class to be ignored, set both the row and column to 0.
-        confusion_matrix[self.ignore_idx, :] = 0
-        confusion_matrix[:, self.ignore_idx] = 0
+        # For the class to be ignored, set both the row and column to 0 (adapted from
+        # https://github.com/davidtvs/PyTorch-ENet/blob/master/metric/iou.py).
+        if self.ignore_idx is not None:
+            confusion_matrix[self.ignore_idx, :] = 0
+            confusion_matrix[:, self.ignore_idx] = 0
 
         return confusion_matrix
 
@@ -75,7 +77,8 @@ class ConfusionMatrix:
         union = ground_truth_set + predicted_set - intersection
 
         # Get the IOU for each class.
-        # In case we get a division by 0, ignore / hide the error.
+        # In case we get a division by 0, ignore / hide the error(adapted from
+        # https://github.com/davidtvs/PyTorch-ENet/blob/master/metric/iou.py).
         with np.errstate(divide='ignore', invalid='ignore'):
             iou_per_class = intersection / (union.astype(np.float32))
 
@@ -103,30 +106,26 @@ class ConfusionMatrix:
         # Get the total number of points in the eval set.
         num_points_total = conf.sum()
 
-        # Get the frequency per class.
-        freq = num_points_per_class / num_points_total
-
         # Get the IOU per class.
         iou_per_class = self.get_per_class_iou()
 
         # Weight the IOU by frequency and sum across the classes.
-        freqweighted_iou = float(np.nansum((freq[freq != np.nan] * iou_per_class[freq != np.nan])))
+        freqweighted_iou = float(np.nansum(num_points_per_class * iou_per_class) / num_points_total)
 
         return freqweighted_iou
 
 
-class LidarsegChallengeAdaptor:
+class LidarsegClassMapper:
     """
-    An adaptor to map the (raw) classes in nuScenes-lidarseg to the (merged) classes for the nuScenes lidar
-    segmentation challenge.
+    Maps the (raw) classes in nuScenes-lidarseg to the (merged) classes for the nuScenes-lidarseg challenge.
 
     Example usage::
         nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
-        adaptor_ = LidarsegChallengeAdaptor(nusc_)
+        mapper_ = LidarsegClassMapper(nusc_)
     """
     def __init__(self, nusc: NuScenes):
         """
-        Initialize a LidarsegChallengeAdaptor object.
+        Initialize a LidarsegClassMapper object.
         :param nusc: A NuScenes object.
         """
         self.nusc = nusc
@@ -243,7 +242,7 @@ class LidarsegChallengeAdaptor:
         # an error will be thrown
         points_label = np.vectorize(self.raw_idx_2_merged_idx_mapping.__getitem__)(points_label)
 
-        counter_after = self.get_stats(points_label)  # get stats after conversion
+        counter_after = self.get_stats(points_label)  # Get stats after conversion.
 
         assert self.compare_stats(counter_before, counter_after), 'Error: Statistics of labels have changed ' \
                                                                   'after conversion. Pls check.'
@@ -253,15 +252,15 @@ class LidarsegChallengeAdaptor:
     def compare_stats(self, counter_before: List[int], counter_after: List[int]) -> bool:
         """
         Compare stats for a single .bin file before and after conversion.
-        :param counter_before: A numPy array which contains the counts of each class (the index of the array corresponds
+        :param counter_before: A numpy array which contains the counts of each class (the index of the array corresponds
                                to the class label), before conversion; e.g. np.array([0, 1, 34, ...]) --> class 0 has
                                no points, class 1 has 1 point, class 2 has 34 points, etc.
-        :param counter_after: A numPy array which contains the counts of each class (the index of the array corresponds
+        :param counter_after: A numpy array which contains the counts of each class (the index of the array corresponds
                               to the class label) after conversion
         :return: True or False; True if the stats before and after conversion are the same, and False if otherwise.
         """
         counter_check = [0] * len(counter_after)
-        for i, count in enumerate(counter_before):  # Note that it is expected that the class labels are 0-indexed.
+        for i, count in enumerate(counter_before):  # Note that the class labels are 0-indexed.
             counter_check[self.raw_idx_2_merged_idx_mapping[i]] += count
 
         comparison = counter_check == counter_after
@@ -271,7 +270,7 @@ class LidarsegChallengeAdaptor:
     def get_stats(self, points_label: np.array) -> List[int]:
         """
         Get frequency of each label in a point cloud.
-        :param points_label: A numPy array which contains the labels of the point cloud;
+        :param points_label: A numpy array which contains the labels of the point cloud;
                              e.g. np.array([2, 1, 34, ..., 38])
         :return: An array which contains the counts of each label in the point cloud. The index of the point cloud
                   corresponds to the index of the class label. E.g. [0, 2345, 12, 451] means that there are no points
