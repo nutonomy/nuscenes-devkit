@@ -7,25 +7,29 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.lidarseg.utils import LidarsegChallengeAdaptor, ConfusionMatrix, get_samples_in_eval_set
+from nuscenes.eval.lidarseg.utils import LidarsegClassMapper, ConfusionMatrix, get_samples_in_eval_set
 
 
 class LidarSegEval:
     """
-    This is the official nuScenes lidar segmentation evaluation code.
+    This is the official nuScenes-lidarseg evaluation code.
     Results are written to the provided output_dir.
 
-    nuScenes uses the following lidar segmentation metrics:
+    nuScenes-lidarseg uses the following metrics:
     - Mean Intersection-over-Union (mIOU): We use the well-known IOU metric, which is defined as TP / (TP + FP + FN).
                                            The IOU score is calculated separately for each class, and then the mean is
-                                           computed across classes.
+                                           computed across classes. Note that in the challenge, index 0 is ignored in
+                                           the calculation.
+    - Frequency-weighted IOU (FWIOU): Instead of taking the mean of the IOUs across all the classes, each IOU is
+                                      weighted by the point-level frequency of its class. Note that in the challenge,
+                                      index 0 is ignored in the calculation. FWIOU is not used for the challenge.
 
     We assume that:
-    - For each pointcloud, the label for every point is present in a .bin file, in the same order as that of the points
-      stored in the corresponding .bin file.
-    - The naming convention of the .bin files containing the labels for a single point cloud is:
+    - For each pointcloud, the prediction for every point is present in a .bin file, in the same order as that of the
+      points stored in the corresponding .bin file.
+    - The naming convention of the .bin files containing the predictions for a single point cloud is:
         <lidar_sample_data_token>_lidarseg.bin
-    - The labels are between 0 and 16 (inclusive), where 0 is the index of the ignored class.
+    - The predictions are between 1 and 16 (inclusive); 0 is the index of the ignored class.
 
     Please see https://www.nuscenes.org/lidar-segmentation for more details.
     """
@@ -55,10 +59,10 @@ class LidarSegEval:
         self.eval_set = eval_set
         self.verbose = verbose
 
-        self.adaptor = LidarsegChallengeAdaptor(nusc_)
-        self.ignore_idx = self.adaptor.ignore_class['index']
-        self.id2name = {idx: name for name, idx in self.adaptor.merged_name_2_merged_idx_mapping.items()}
-        self.num_classes = len(self.adaptor.merged_name_2_merged_idx_mapping)
+        self.mapper = LidarsegClassMapper(nusc_)
+        self.ignore_idx = self.mapper.ignore_class['index']
+        self.id2name = {idx: name for name, idx in self.mapper.merged_name_2_merged_idx_mapping.items()}
+        self.num_classes = len(self.mapper.merged_name_2_merged_idx_mapping)
 
         if self.verbose:
             print('There are {} classes.'.format(self.num_classes))
@@ -85,7 +89,7 @@ class LidarSegEval:
                                                    self.nusc.get('lidarseg', sd_token)['filename'])
             lidarseg_label = self.load_bin_file(lidarseg_label_filename)
 
-            lidarseg_label = self.adaptor.convert_label(lidarseg_label)
+            lidarseg_label = self.mapper.convert_label(lidarseg_label)
 
             # Load the predictions for the point cloud.
             lidarseg_pred_filename = os.path.join(self.results_folder, 'lidarseg',
@@ -107,9 +111,7 @@ class LidarSegEval:
 
         # Print the results if desired.
         if self.verbose:
-            print("======\nnuScenes lidar segmentation evaluation for {}".format(self.eval_set))
-            # for iou_name, iou in results.items():
-            #     print('{:30}  {:.5f}'.format(iou_name, iou))
+            print("======\nnuScenes-lidarseg evaluation for {}".format(self.eval_set))
             print(json.dumps(results, indent=4, sort_keys=False))
             print("======")
 
@@ -131,7 +133,7 @@ class LidarSegEval:
 
 if __name__ == '__main__':
     # Settings.
-    parser = argparse.ArgumentParser(description='Evaluate nuScenes lidar segmentation results.')
+    parser = argparse.ArgumentParser(description='Evaluate nuScenes-lidarseg results.')
     parser.add_argument('--result_path', type=str,
                         help='The path to the results folder.')
     parser.add_argument('--eval_set', type=str, default='val',
