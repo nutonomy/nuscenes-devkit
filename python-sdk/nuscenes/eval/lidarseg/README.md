@@ -92,6 +92,7 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
   bin_file_path = lidar_sample_data_token + '_lidarseg.bin"
   np.array(predicted_labels).astype(np.uint8).tofile(bin_file_path)
   ```
+  Note that the arrays should **not** contain the ignored class (i.e. class index 0). 
   Each `lidar_sample_data_token` from the current evaluation set must be included in the `v1.0-test` folder.
   
 For the train and val sets, the evaluation can be performed by the user on their local machine.
