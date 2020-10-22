@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.lidarseg.utils import get_samples_in_eval_set
+from nuscenes.utils.data_classes import LidarPointCloud
 
 
 def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verbose: bool = False) -> None:
@@ -85,14 +86,16 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
             'Error: The prediction .bin file {} does not exist.'.format(lidarseg_pred_filename)
         lidarseg_pred = np.fromfile(lidarseg_pred_filename, dtype=np.uint8)
 
-        # Load the ground truth labels for the point cloud.
-        lidarseg_label_filename = os.path.join(nusc.dataroot,
-                                               nusc.get('lidarseg', sd_token)['filename'])
-        lidarseg_label = np.fromfile(lidarseg_label_filename, dtype=np.uint8)
-        assert len(lidarseg_label) == len(lidarseg_pred), \
+        # Check number of points in the point cloud.
+        pointsensor = nusc.get('sample_data', sd_token)
+        pcl_path = os.path.join(nusc.dataroot, pointsensor['filename'])
+        pc = LidarPointCloud.from_file(pcl_path)
+        points = pc.points
+
+        assert points.shape[1] == len(lidarseg_pred), \
             'Error: There are {} predictions for lidar sample data token {} ' \
             'but there are only {} points in the point cloud.'\
-            .format(sd_token, len(lidarseg_pred), len(lidarseg_label))
+            .format(sd_token, len(lidarseg_pred), points.shape[1])
 
     if verbose:
         print('\tPassed.')
