@@ -15,8 +15,8 @@ class TestAllMaps(unittest.TestCase):
 
     def setUp(self):
         """ Initialize the map for each location. """
-        use_new_map = True
-        drop_lanes = False
+        use_new_map = False
+        drop_lanes = True
         render = False
 
         self.nusc_maps = dict()
@@ -34,12 +34,11 @@ class TestAllMaps(unittest.TestCase):
 
             # Render for debugging.
             if render:
-                fig, ax = nusc_map.render_layers(nusc_map.non_geometric_layers, figsize=1)
+                nusc_map.render_layers(nusc_map.non_geometric_layers, figsize=1)
                 plt.show()
 
             self.nusc_maps[map_name] = nusc_map
 
-    @unittest.skip
     def test_layer_stats(self):
         """ Test if each layer has the right number of instances. This is useful to compare between map versions. """
         layer_counts = defaultdict(lambda: [])
@@ -60,7 +59,6 @@ class TestAllMaps(unittest.TestCase):
                 'Error: Map %s has a different number of layers: \n%s vs. \n%s' % \
                 (map_name, ref_counts[map_name], layer_counts[map_name])
 
-    @unittest.skip
     def test_disconnected_lanes(self):
         """ Check if any lanes are disconnected. """
         found_error = False
@@ -75,6 +73,11 @@ class TestAllMaps(unittest.TestCase):
 
     @classmethod
     def get_disconnected_lanes(cls, nusc_map: NuScenesMap) -> List[str]:
+        """
+        Get a list of all disconnected lanes and lane_connectors.
+        :param nusc_map: The NuScenesMap instance of a particular map location.
+        :return: A list of lane or lane_connector tokens.
+        """
         disconnected = set()
         for lane_token, connectivity in nusc_map.connectivity.items():
             # Lanes which are disconnected.
@@ -93,7 +96,11 @@ class TestAllMaps(unittest.TestCase):
 
     @classmethod
     def drop_disconnected_lanes(cls, nusc_map: NuScenesMap) -> NuScenesMap:
-        """ Remove any disconnected lanes. """
+        """
+        Remove any disconnected lanes.
+        :param nusc_map: The NuScenesMap instance of a particular map location.
+        :return: The cleaned NuScenesMap instance.
+        """
 
         # Get disconnected lanes.
         disconnected = cls.get_disconnected_lanes(nusc_map)
@@ -110,9 +117,14 @@ class TestAllMaps(unittest.TestCase):
                 del nusc_map.connectivity[lane_token]
 
         # Remove connectivity references.
+        empty_connectivity = []
         for lane_token, connectivity in nusc_map.connectivity.items():
             connectivity['incoming'] = [i for i in connectivity['incoming'] if i not in disconnected]
             connectivity['outgoing'] = [o for o in connectivity['outgoing'] if o not in disconnected]
+            if len(connectivity['incoming']) + len(connectivity['outgoing']) == 0:
+                empty_connectivity.append(lane_token)
+        for lane_token in empty_connectivity:
+            del nusc_map.connectivity[lane_token]
 
         # To fix the map class, we need to update some indices.
         nusc_map._make_token2ind()
@@ -121,15 +133,20 @@ class TestAllMaps(unittest.TestCase):
 
     def test_egoposes_on_map(self):
         nusc = NuScenes(version=self.version, dataroot=os.environ['NUSCENES'], verbose=False)
+        whitelist = ['scene-0499', 'scene-0501', 'scene-0502', 'scene-0515', 'scene-0517']
 
         invalid_scenes = []
         for scene in tqdm.tqdm(nusc.scene):
+            if scene['name'] in whitelist:
+                continue
+
             log = nusc.get('log', scene['log_token'])
             map_name = log['location']
             nusc_map = self.nusc_maps[map_name]
             ratio_valid = self.get_egoposes_on_map_ratio(nusc, nusc_map, scene['token'])
             if ratio_valid != 1.0:
-                print('Error: Scene %s has a ratio of %f ego poses on the driveable area!' % (scene['name'], ratio_valid))
+                print('Error: Scene %s has a ratio of %f ego poses on the driveable area!'
+                      % (scene['name'], ratio_valid))
                 invalid_scenes.append(scene['name'])
 
         self.assertEqual(len(invalid_scenes), 0)
@@ -137,6 +154,10 @@ class TestAllMaps(unittest.TestCase):
     @classmethod
     def get_egoposes_on_map_ratio(cls, nusc: NuScenes, nusc_map: NuScenesMap, scene_token: str) -> float:
         """
+        Get the ratio of ego poses on the drivable area.
+        :param nusc: A NuScenes instance.
+        :param nusc_map: The NuScenesMap instance of a particular map location.
+        :param scene_token: The token of the current scene.
         :return: The ratio of poses that fall on the driveable area.
         """
 
