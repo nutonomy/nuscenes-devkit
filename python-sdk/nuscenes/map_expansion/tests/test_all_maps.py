@@ -1,7 +1,7 @@
 import os
 import unittest
 from collections import defaultdict
-from typing import List
+from typing import List, Dict, Set
 
 import matplotlib.pyplot as plt
 import tqdm
@@ -12,29 +12,29 @@ from nuscenes.nuscenes import NuScenes
 
 class TestAllMaps(unittest.TestCase):
     version = 'v1.0-trainval'
+    use_new_map = False
+    drop_lanes = False
+    render = False
 
     def setUp(self):
         """ Initialize the map for each location. """
-        use_new_map = False
-        drop_lanes = True
-        render = False
 
         self.nusc_maps = dict()
         for map_name in locations:
             # Load map.
-            if use_new_map and map_name == 'singapore-onenorth':
+            if self.use_new_map and map_name == 'singapore-onenorth':
                 nusc_map = NuScenesMap(map_name=map_name, dataroot=os.path.expanduser('~'))
                 nusc_map.connectivity = dict()
             else:
                 nusc_map = NuScenesMap(map_name=map_name, dataroot=os.environ['NUSCENES'])
 
             # Postprocess lanes until they are fixed.
-            if drop_lanes:
+            if self.drop_lanes:
                 nusc_map = self.drop_disconnected_lanes(nusc_map)
 
             # Render for debugging.
-            if render:
-                nusc_map.render_layers(nusc_map.non_geometric_layers, figsize=1)
+            if self.render:
+                nusc_map.render_layers(['lane'], figsize=1)
                 plt.show()
 
             self.nusc_maps[map_name] = nusc_map
@@ -91,6 +91,10 @@ class TestAllMaps(unittest.TestCase):
                 if inout_lane_token not in nusc_map._token2ind['lane'] and \
                         inout_lane_token not in nusc_map._token2ind['lane_connector']:
                     disconnected.add(inout_lane_token)
+
+        # Lanes that are part of disconnected subtrees.
+        subtrees = cls.get_disconnected_subtrees(nusc_map.connectivity)
+        disconnected = disconnected.union(subtrees)
 
         return sorted(list(disconnected))
 
@@ -181,6 +185,41 @@ class TestAllMaps(unittest.TestCase):
         ratio_valid = poses_valid / poses_all
 
         return ratio_valid
+
+    @classmethod
+    def get_disconnected_subtrees(cls, connectivity: Dict[str, dict]) -> Set[str]:
+        """
+        Compute lanes or lane_connectors that are part of disconnected subtrees.
+        :param connectivity: The connectivity of the current NuScenesMap.
+        :return: The lane_tokens for lanes that are part of a disconnected subtree.
+        """
+        # Init.
+        connected = set()
+        todo = set()
+
+        # Add first lane.
+        all_keys = list(connectivity.keys())
+        first_key = all_keys[0]
+        all_keys = set(all_keys)
+        todo.add(first_key)
+
+        while len(todo) > 0:
+            # Get next lane.
+            lane_token = todo.pop()
+            connected.add(lane_token)
+
+            # Add lanes connected to this lane.
+            if lane_token in connectivity:
+                incoming = connectivity[lane_token]['incoming']
+                outgoing = connectivity[lane_token]['outgoing']
+                inout_lanes = set(incoming + outgoing)
+                for other_lane_token in inout_lanes:
+                    if other_lane_token not in connected:
+                        todo.add(other_lane_token)
+
+        disconnected = all_keys - connected
+        assert len(disconnected) < len(connected), 'Error: Bad initialization chosen!'
+        return disconnected
 
 
 if __name__ == '__main__':
