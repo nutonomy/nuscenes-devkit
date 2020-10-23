@@ -19,6 +19,10 @@ def fix_map(dataroot: str, map_name: str, out_suffix: str) -> None:
     # Drop disconnected lanes.
     nusc_map = drop_disconnected_lanes(nusc_map)
 
+    # Remove non-informative traffic light pose.
+    for tl in nusc_map.traffic_light:
+        del tl['pose']
+
     # Load a clean version of the map file.
     # Some fields have been modified and therefore we need to use the originals.
     in_path = os.path.join(dataroot, 'maps', map_name + '.json')
@@ -26,7 +30,7 @@ def fix_map(dataroot: str, map_name: str, out_suffix: str) -> None:
         nusc_dict = json.load(f)
 
     # Save to disk.
-    for field in ['arcline_path_3', 'connectivity', 'lane', 'lane_connector']:
+    for field in ['arcline_path_3', 'connectivity', 'lane', 'lane_connector', 'traffic_light']:
         nusc_dict[field] = nusc_map.json_obj[field]
     out_path = os.path.join(dataroot, 'maps', '%s_%s.json' % (map_name, out_suffix))
     with open(out_path, 'w') as f:
