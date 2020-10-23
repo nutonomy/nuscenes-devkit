@@ -6,7 +6,7 @@
 import json
 import os
 import random
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional, Union, Any
 
 import cv2
 import descartes
