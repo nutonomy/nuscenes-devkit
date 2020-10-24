@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.lidarseg.utils import get_samples_in_eval_set
+from nuscenes.eval.lidarseg.utils import LidarsegClassMapper, get_samples_in_eval_set
 from nuscenes.utils.data_classes import LidarPointCloud
 
 
@@ -28,6 +28,9 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
     :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
     :param verbose: Whether to print messages during the evaluation.
     """
+    mapper = LidarsegClassMapper(nusc)
+    num_classes = len(mapper.coarse_name_2_coarse_idx_mapping)
+
     if verbose:
         print('Checking if folder structure of {} is correct...'.format(results_folder))
 
@@ -89,6 +92,10 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
             'Error: There are {} predictions for lidar sample data token {} ' \
             'but there are only {} points in the point cloud.'\
             .format(sd_token, len(lidarseg_pred), points.shape[1])
+
+        assert all((lidarseg_pred > 0) & (lidarseg_pred < num_classes)), \
+            "Error: Array for predictions in {} must be between 1 and {} (inclusive)."\
+            .format(lidarseg_pred_filename, num_classes - 1)
 
     if verbose:
         print('\tPassed.')
