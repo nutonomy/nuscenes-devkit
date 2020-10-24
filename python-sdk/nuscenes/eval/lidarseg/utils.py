@@ -117,7 +117,7 @@ class ConfusionMatrix:
 
 class LidarsegClassMapper:
     """
-    Maps the (raw) classes in nuScenes-lidarseg to the (merged) classes for the nuScenes-lidarseg challenge.
+    Maps the (fine) classes in nuScenes-lidarseg to the (coarse) classes for the nuScenes-lidarseg challenge.
 
     Example usage::
         nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
@@ -132,12 +132,12 @@ class LidarsegClassMapper:
 
         self.ignore_class = self.get_ignore_class()
 
-        self.raw_name_2_merged_name_mapping = self.get_raw2merged()
-        self.merged_name_2_merged_idx_mapping = self.get_merged2idx()
+        self.fine_name_2_coarse_name_mapping = self.get_fine2coarse()
+        self.coarse_name_2_coarse_idx_mapping = self.get_coarse2idx()
 
         self.check_mapping()
 
-        self.raw_idx_2_merged_idx_mapping = self.get_raw_idx_2_merged_idx()
+        self.fine_idx_2_coarse_idx_mapping = self.get_fine_idx_2_coarse_idx()
 
     @staticmethod
     def get_ignore_class() -> Dict[str, int]:
@@ -147,10 +147,10 @@ class LidarsegClassMapper:
         """
         return {'name': 'ignore', 'index': 0}
 
-    def get_raw2merged(self) -> Dict:
+    def get_fine2coarse(self) -> Dict:
         """
-        Returns the mapping from the raw classes to the merged classes.
-        :return: A dictionary containing the mapping from the raw classes to the merged classes.
+        Returns the mapping from the fine classes to the coarse classes.
+        :return: A dictionary containing the mapping from the fine classes to the coarse classes.
         """
         return {'noise': self.ignore_class['name'],
                 'human.pedestrian.adult': 'pedestrian',
@@ -185,10 +185,10 @@ class LidarsegClassMapper:
                 'static.other': self.ignore_class['name'],
                 'vehicle.ego': self.ignore_class['name']}
 
-    def get_merged2idx(self) -> Dict[str, int]:
+    def get_coarse2idx(self) -> Dict[str, int]:
         """
-        Returns the mapping from the merged class names to the merged class indices.
-        :return: A dictionary containing the mapping from the merged class names to the merged class indices.
+        Returns the mapping from the coarse class names to the coarse class indices.
+        :return: A dictionary containing the mapping from the coarse class names to the coarse class indices.
         """
         return {self.ignore_class['name']: self.ignore_class['index'],
                 'barrier': 1,
@@ -208,28 +208,28 @@ class LidarsegClassMapper:
                 'manmade': 15,
                 'vegetation': 16}
 
-    def get_raw_idx_2_merged_idx(self) -> Dict[int, int]:
+    def get_fine_idx_2_coarse_idx(self) -> Dict[int, int]:
         """
-        Returns the mapping from the the indices of the merged classes to that of the merged classes.
-        :return: A dictionary containing the mapping from the the indices of the merged classes to that of the
-                 merged classes.
+        Returns the mapping from the the indices of the coarse classes to that of the coarse classes.
+        :return: A dictionary containing the mapping from the the indices of the coarse classes to that of the
+                 coarse classes.
         """
-        raw_idx_2_merged_idx_mapping = dict()
-        for raw_name, raw_idx in self.nusc.lidarseg_name2idx_mapping.items():
-            raw_idx_2_merged_idx_mapping[raw_idx] = self.merged_name_2_merged_idx_mapping[
-                self.raw_name_2_merged_name_mapping[raw_name]]
-        return raw_idx_2_merged_idx_mapping
+        fine_idx_2_coarse_idx_mapping = dict()
+        for fine_name, fine_idx in self.nusc.lidarseg_name2idx_mapping.items():
+            fine_idx_2_coarse_idx_mapping[fine_idx] = self.coarse_name_2_coarse_idx_mapping[
+                self.fine_name_2_coarse_name_mapping[fine_name]]
+        return fine_idx_2_coarse_idx_mapping
 
     def check_mapping(self) -> None:
         """
-        Convenient method to check that the mappings for raw2merged and merged2idx are synced.
+        Convenient method to check that the mappings for fine2coarse and coarse2idx are synced.
         """
-        merged_set = set()
-        for raw_name, merged_name in self.raw_name_2_merged_name_mapping.items():
-            merged_set.add(merged_name)
+        coarse_set = set()
+        for fine_name, coarse_name in self.fine_name_2_coarse_name_mapping.items():
+            coarse_set.add(coarse_name)
 
-        assert merged_set == set(self.merged_name_2_merged_idx_mapping.keys()), \
-            'Error: Number of merged classes is not the same as the number of merged indices.'
+        assert coarse_set == set(self.coarse_name_2_coarse_idx_mapping.keys()), \
+            'Error: Number of coarse classes is not the same as the number of coarse indices.'
 
     def convert_label(self, points_label: np.ndarray) -> np.ndarray:
         """
@@ -240,7 +240,7 @@ class LidarsegClassMapper:
 
         # Map the labels accordingly; if there are labels present in points_label but not in the map,
         # an error will be thrown
-        points_label = np.vectorize(self.raw_idx_2_merged_idx_mapping.__getitem__)(points_label)
+        points_label = np.vectorize(self.fine_idx_2_coarse_idx_mapping.__getitem__)(points_label)
 
         counter_after = self.get_stats(points_label)  # Get stats after conversion.
 
@@ -261,7 +261,7 @@ class LidarsegClassMapper:
         """
         counter_check = [0] * len(counter_after)
         for i, count in enumerate(counter_before):  # Note that the class labels are 0-indexed.
-            counter_check[self.raw_idx_2_merged_idx_mapping[i]] += count
+            counter_check[self.fine_idx_2_coarse_idx_mapping[i]] += count
 
         comparison = counter_check == counter_after
 
@@ -278,8 +278,8 @@ class LidarsegClassMapper:
         """
         # Create "buckets" to store the counts for each label; the number of "buckets" is the larger of the number
         # of classes in nuScenes-lidarseg and lidarseg challenge.
-        lidarseg_counts = [0] * (max(max(self.raw_idx_2_merged_idx_mapping.keys()),
-                                     max(self.raw_idx_2_merged_idx_mapping.values())) + 1)
+        lidarseg_counts = [0] * (max(max(self.fine_idx_2_coarse_idx_mapping.keys()),
+                                     max(self.fine_idx_2_coarse_idx_mapping.values())) + 1)
 
         indices: np.ndarray = np.bincount(points_label)
         ii = np.nonzero(indices)[0]

@@ -61,8 +61,8 @@ class LidarSegEval:
 
         self.mapper = LidarsegClassMapper(nusc_)
         self.ignore_idx = self.mapper.ignore_class['index']
-        self.id2name = {idx: name for name, idx in self.mapper.merged_name_2_merged_idx_mapping.items()}
-        self.num_classes = len(self.mapper.merged_name_2_merged_idx_mapping)
+        self.id2name = {idx: name for name, idx in self.mapper.coarse_name_2_coarse_idx_mapping.items()}
+        self.num_classes = len(self.mapper.coarse_name_2_coarse_idx_mapping)
 
         if self.verbose:
             print('There are {} classes.'.format(self.num_classes))
