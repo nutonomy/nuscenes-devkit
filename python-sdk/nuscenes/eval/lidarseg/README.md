@@ -65,12 +65,12 @@ The folder structure of the results should be as follows:
     │   └── {test, train, val} <- Contains the .bin files; a .bin file 
     │                             contains the labels of the points in a 
     │                             point cloud         
-    └── {testm train, val}
+    └── {test, train, val}
         └── submission.json  <- contains certain information about 
                                 the submission
 ```
 
-The contents of the `submision.json` file and `v1.0-test` folder are defined below: 
+The contents of the `submision.json` file and `test` folder are defined below: 
 * The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
   ```
   "meta": {
@@ -81,7 +81,7 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
       "use_external": <bool>          -- Whether this submission uses external data as an input.
   },
   ```
-* The `v1.0-test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
+* The `test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
   Pay special attention that each set of predictions in the folder must be a .bin file and named as **<lidar_sample_data_token>_lidarseg.bin**.
   A .bin file contains an array of `uint8` values in which each value is the predicted [class index](#classes) of the corresponding point in the point cloud, e.g.:
   ```
@@ -93,10 +93,12 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
   np.array(predicted_labels).astype(np.uint8).tofile(bin_file_path)
   ```
   Note that the arrays should **not** contain the `ignore` class (i.e. class index 0). 
-  Each `lidar_sample_data_token` from the current evaluation set must be included in the `v1.0-test` folder.
+  Each `lidar_sample_data_token` from the current evaluation set must be included in the `test` folder.
   
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
+
+For convenience, a `validate_submission.py` script has been provided to check that a given results folder is of the correct format.
 
 Note that the lidar segmentation classes differ from the general nuScenes classes, as detailed below.
 
