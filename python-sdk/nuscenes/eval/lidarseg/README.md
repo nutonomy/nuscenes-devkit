@@ -37,8 +37,6 @@ Results and winners will be announced at the 5th AI Driving Olympics at [NeurIPS
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation) (coming soon).
 Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/) (coming soon) can still be used to benchmark your results.
 
-*Note:* Due to the COVID-19 situation, participants are **not** required to attend in person to be eligible for the prizes.
-
 ## Submission rules
 ### Lidar segmentation-specific rules
 * The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 past camera images, 6 past radar sweeps and 10 past lidar sweeps). At training time there are no restrictions.
