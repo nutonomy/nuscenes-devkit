@@ -31,13 +31,11 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/) for the **EvalAI lidar segmentation evaluation server** (coming soon).
 
 ### 5th AI Driving Olympics, NeurIPS 2020
-The first nuScenes lidar segmentation challenge will be held at NeurIPS 2020.
+The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submission will open on Nov 15, 2020 and close in early Dec, 2020.
-Results and winners will be announced at the 5th AI Driving Olympics at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
+Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation) (coming soon).
 Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/) (coming soon) can still be used to benchmark your results.
-
-*Note:* Due to the COVID-19 situation, participants are **not** required to attend in person to be eligible for the prizes.
 
 ## Submission rules
 ### Lidar segmentation-specific rules
