@@ -1,5 +1,5 @@
 # nuScenes lidar segmentation task
-![nuScenes lidar segementation logo](https://www.nuscenes.org/public/images/lidarseg_challenge.png)
+![nuScenes lidar segmentation logo](https://www.nuscenes.org/public/images/lidarseg_challenge.jpg)
 
 ## Overview
 - [Introduction](#introduction)
@@ -28,7 +28,7 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/) for the **EvalAI lidar segementation evaluation server** (coming soon).
+Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/) for the **EvalAI lidar segmentation evaluation server** (coming soon).
 
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at NeurIPS 2020.
