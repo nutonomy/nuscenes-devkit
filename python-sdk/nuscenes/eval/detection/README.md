@@ -34,7 +34,7 @@ Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/356) for th
 ### 5th AI Driving Olympics, NeurIPS 2020 
 The third nuScenes detection challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submission will open on Nov 15, 2020 and close in early Dec, 2020.
-Results and winners will be announced at the 5th AI Driving Olympics at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
+Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 Note that this challenge uses the same [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) as previous detection challenges.
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
