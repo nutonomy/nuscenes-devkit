@@ -9,6 +9,7 @@
 - [Results format](#results-format)
 - [Classes and attributes](#classes-attributes-and-detection-ranges)
 - [Evaluation metrics](#evaluation-metrics)
+- [Leaderboard](#leaderboard)
 
 ## Introduction
 Here we define the 3D object detection task on nuScenes.
