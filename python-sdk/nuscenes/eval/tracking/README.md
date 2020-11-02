@@ -38,7 +38,7 @@ In `loaders.py` we provide some methods to organize the raw box data into tracks
  
 ## Participation
 The nuScenes tracking evaluation server is open all year round for submission.
-To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/475).
+To participate in the challenge, please create an account at [EvalAI](https://eval.ai/web/challenges/challenge-page/476/overview).
 Then upload your zipped result file including all of the required [meta data](#results-format).
 The results will be exported to the nuScenes leaderboard shown above (coming soon).
 This is the only way to benchmark your method against the test dataset.
@@ -49,7 +49,7 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/475) for the **EvalAI tracking evaluation server**.
+Click [here](https://eval.ai/web/challenges/challenge-page/476/overview) for the **EvalAI tracking evaluation server**.
 
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
