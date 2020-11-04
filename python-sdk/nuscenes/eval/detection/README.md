@@ -9,6 +9,7 @@
 - [Results format](#results-format)
 - [Classes and attributes](#classes-attributes-and-detection-ranges)
 - [Evaluation metrics](#evaluation-metrics)
+- [Leaderboard](#leaderboard)
 
 ## Introduction
 Here we define the 3D object detection task on nuScenes.
@@ -16,8 +17,8 @@ The goal of this task is to place a 3D bounding box around 10 different object c
 as well as estimating a set of attributes and the current velocity vector.
 
 ## Participation
-The nuScenes detection [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) is open all year round for submission.
-To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org/web/challenges/challenge-page/356).
+The nuScenes detection [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) is open all year round for submission.
+To participate in the challenge, please create an account at [EvalAI](https://eval.ai/web/challenges/challenge-page/356/overview).
 Then upload your zipped result file including all of the required [meta data](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/object-detection) shown above.
 This is the only way to benchmark your method against the test dataset. 
@@ -28,22 +29,26 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/356) for the **EvalAI detection evaluation server**.
+Click [here](https://eval.ai/web/challenges/challenge-page/356/overview) for the **EvalAI detection evaluation server**.
+
+### 5th AI Driving Olympics, NeurIPS 2020 
+The third nuScenes detection challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
+Submission will open on Nov 15, 2020 and close in early Dec, 2020.
+Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) as previous detection challenges.
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The second nuScenes detection challenge will be held at [ICRA 2020](https://www.icra2020.org/).
 The submission period will open April 1 and continue until May 28th, 2020.
 Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
-Note that the previous [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) can still be used to benchmark your results after the challenge period.
-
-*Update:* Due to the COVID-19 situation, participants are **not** required to attend in person to be eligible for the prizes.
+Note that the previous [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) can still be used to benchmark your results after the challenge period.
 
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge was held at CVPR 2019.
 Submission opened May 6 and closed June 12, 2019.
 Results and winners were announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 For more information see the [leaderboard](https://www.nuscenes.org/object-detection).
-Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/356) can still be used to benchmark your results.
+Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) can still be used to benchmark your results.
 
 ## Submission rules
 ### Detection-specific rules
