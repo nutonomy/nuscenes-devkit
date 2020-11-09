@@ -59,7 +59,7 @@ class LidarSegEval:
         self.eval_set = eval_set
         self.verbose = verbose
 
-        self.mapper = LidarsegClassMapper(nusc_)
+        self.mapper = LidarsegClassMapper(self.nusc)
         self.ignore_idx = self.mapper.ignore_class['index']
         self.id2name = {idx: name for name, idx in self.mapper.coarse_name_2_coarse_idx_mapping.items()}
         self.num_classes = len(self.mapper.coarse_name_2_coarse_idx_mapping)

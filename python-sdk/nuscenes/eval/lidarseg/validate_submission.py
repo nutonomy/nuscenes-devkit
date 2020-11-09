@@ -82,16 +82,24 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
             'Error: The prediction .bin file {} does not exist.'.format(lidarseg_pred_filename)
         lidarseg_pred = np.fromfile(lidarseg_pred_filename, dtype=np.uint8)
 
-        # Check number of points in the point cloud.
-        pointsensor = nusc.get('sample_data', sd_token)
-        pcl_path = os.path.join(nusc.dataroot, pointsensor['filename'])
-        pc = LidarPointCloud.from_file(pcl_path)
-        points = pc.points
+        # Check number of predictions for the point cloud.
+        if len(nusc.lidarseg) > 0:  # If ground truth exists, compare the no. of predictions with that of ground truth.
+            lidarseg_label_filename = os.path.join(results_bin_folder, sd_token + '_lidarseg.bin')
+            assert os.path.exists(lidarseg_pred_filename), \
+                'Error: The ground truth .bin file {} does not exist.'.format(lidarseg_label_filename)
+            lidarseg_label = np.fromfile(lidarseg_label_filename, dtype=np.uint8)
+            num_points = len(lidarseg_label)
+        else:  # If no ground truth is available, compare the no. of predictions with that of points in a point cloud.
+            pointsensor = nusc.get('sample_data', sd_token)
+            pcl_path = os.path.join(nusc.dataroot, pointsensor['filename'])
+            pc = LidarPointCloud.from_file(pcl_path)
+            points = pc.points
+            num_points = points.shape[1]
 
-        assert points.shape[1] == len(lidarseg_pred), \
+        assert num_points == len(lidarseg_pred), \
             'Error: There are {} predictions for lidar sample data token {} ' \
             'but there are only {} points in the point cloud.'\
-            .format(sd_token, len(lidarseg_pred), points.shape[1])
+            .format(sd_token, len(lidarseg_pred), num_points)
 
         assert all((lidarseg_pred > 0) & (lidarseg_pred < num_classes)), \
             "Error: Array for predictions in {} must be between 1 and {} (inclusive)."\
