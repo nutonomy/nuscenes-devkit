@@ -84,8 +84,8 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
 
         # Check number of predictions for the point cloud.
         if len(nusc.lidarseg) > 0:  # If ground truth exists, compare the no. of predictions with that of ground truth.
-            lidarseg_label_filename = os.path.join(results_bin_folder, sd_token + '_lidarseg.bin')
-            assert os.path.exists(lidarseg_pred_filename), \
+            lidarseg_label_filename = os.path.join(nusc.dataroot, nusc.get('lidarseg', sd_token)['filename'])
+            assert os.path.exists(lidarseg_label_filename), \
                 'Error: The ground truth .bin file {} does not exist.'.format(lidarseg_label_filename)
             lidarseg_label = np.fromfile(lidarseg_label_filename, dtype=np.uint8)
             num_points = len(lidarseg_label)
@@ -99,7 +99,7 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
         assert num_points == len(lidarseg_pred), \
             'Error: There are {} predictions for lidar sample data token {} ' \
             'but there are only {} points in the point cloud.'\
-            .format(sd_token, len(lidarseg_pred), num_points)
+            .format(len(lidarseg_pred), sd_token, num_points)
 
         assert all((lidarseg_pred > 0) & (lidarseg_pred < num_classes)), \
             "Error: Array for predictions in {} must be between 1 and {} (inclusive)."\
