@@ -231,8 +231,8 @@ Tracks with a score below the confidence threshold are discarded.
 * **MOTA** (multi object tracking accuracy) \[3\]: This measure combines three error sources: false positives, missed targets and identity switches.
 * **MOTP** (multi object tracking precision) \[3\]: The misalignment between the annotated and the predicted bounding boxes.
 * **FAF**: The average number of false alarms per frame.
-* **MT** (ratio of mostly tracked trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at least 80% of their respective life span.
-* **ML** (ratio of mostly lost trajectories): The ratio of ground-truth trajectories that are covered by a track hypothesis for at most 20% of their respective life span.
+* **MT** (number of mostly tracked trajectories): The number of ground-truth trajectories that are covered by a track hypothesis for at least 80% of their respective life span.
+* **ML** (number of mostly lost trajectories): The number of ground-truth trajectories that are covered by a track hypothesis for at most 20% of their respective life span.
 * **FP** (number of false positives): The total number of false positives.
 * **FN** (number of false negatives): The total number of false negatives (missed targets).
 * **IDS** (number of identity switches): The total number of identity switches.
