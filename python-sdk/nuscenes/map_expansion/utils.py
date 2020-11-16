@@ -4,7 +4,7 @@ from nuscenes.map_expansion.map_api import NuScenesMap
 from nuscenes.nuscenes import NuScenes
 
 
-def get_egoposes_on_map_ratio(nusc: NuScenes, nusc_map: NuScenesMap, scene_token: str) -> float:
+def get_egoposes_on_drivable_ratio(nusc: NuScenes, nusc_map: NuScenesMap, scene_token: str) -> float:
     """
     Get the ratio of ego poses on the drivable area.
     :param nusc: A NuScenes instance.

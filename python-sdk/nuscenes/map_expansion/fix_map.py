@@ -9,6 +9,8 @@ from nuscenes.map_expansion.utils import drop_disconnected_lanes
 def fix_map(dataroot: str, map_name: str, out_suffix: str) -> None:
     """
     Fix a map file by dropping disconnected lanes.
+    Note that we do not recommend the use of this script as even disconnected lanes have useful information.
+
     :param dataroot: Path of the nuScenes dataset.
     :param map_name: Which map out of `singapore-onenorth`, `singepore-hollandvillage`, `singapore-queenstown`,
     :param out_suffix: A suffix to the output file name, e.g. "fixed" results in "<map>_fixed.json".
@@ -38,7 +40,7 @@ def fix_map(dataroot: str, map_name: str, out_suffix: str) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Fixes known issues in a map file.')
+    parser = argparse.ArgumentParser(description='Fix connectivity issues in a map file.')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes', help="Path where nuScenes is saved.")
     parser.add_argument('--map_name', type=str, default='singapore-onenorth', help='Path to the map json file.')
     parser.add_argument('--out_suffix', type=str, default='fixed', help='Output file name suffix.')
