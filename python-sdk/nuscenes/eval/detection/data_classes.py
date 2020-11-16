@@ -21,7 +21,7 @@ class DetectionConfig:
                  dist_th_tp: float,
                  min_recall: float,
                  min_precision: float,
-                 max_boxes_per_sample: float,
+                 max_boxes_per_sample: int,
                  mean_ap_weight: int):
 
         assert set(class_range.keys()) == set(DETECTION_NAMES), "Class count mismatch."

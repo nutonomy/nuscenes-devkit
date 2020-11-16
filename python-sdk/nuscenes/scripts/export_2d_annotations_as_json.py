@@ -174,7 +174,7 @@ def main(args):
 
     # For debugging purposes: Only produce the first n images.
     if args.image_limit != -1:
-         sample_data_camera_tokens = sample_data_camera_tokens[:args.image_limit]
+        sample_data_camera_tokens = sample_data_camera_tokens[:args.image_limit]
 
     # Loop through the records and apply the re-projection algorithm.
     reprojections = []
