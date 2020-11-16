@@ -602,11 +602,6 @@ class NuImages:
             semseg_mask[mask == 1] = name_to_index[category_name]
             instanceseg_mask[mask == 1] = i
 
-        # Ensure that the number of instances in the instance segmentation mask is the same as the number of objects.
-        assert len(object_anns) == np.max(instanceseg_mask), \
-            'Error: There are {} objects but only {} instances ' \
-            'were drawn into the instance segmentation mask.'.format(len(object_anns), np.max(instanceseg_mask))
-
         return semseg_mask, instanceseg_mask
 
     # ### Rendering methods. ###
