@@ -16,10 +16,10 @@ Here we define the lidar segmentation task on nuScenes.
 The goal of this task is to predict the category of every point in a set of point clouds. There are 16 categories (10 foreground classes and 6 background classes).
 
 ## Participation
-The nuScenes lidarseg segmentation [evaluation server](https://eval.ai) will be coming soon.
+The nuScenes lidarseg segmentation [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) is open all year round for submission.
 To participate in the challenge, please create an account at [EvalAI](https://eval.ai).
 Then upload your zipped result folder with the required [content](#results-format).
-After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation) (coming soon).
+After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 This is the only way to benchmark your method against the test dataset. 
 
 ## Challenges
@@ -28,14 +28,14 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](https://eval.ai) for the **EvalAI lidar segmentation evaluation server** (coming soon).
+Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the **EvalAI lidar segmentation evaluation server**.
 
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submission will open on Nov 15, 2020 and close in early Dec, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
-For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation) (coming soon).
-Note that the [evaluation server](https://eval.ai) (coming soon) can still be used to benchmark your results.
+For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
+Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
 
 ## Submission rules
 ### Lidar segmentation-specific rules
