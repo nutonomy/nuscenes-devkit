@@ -1,5 +1,5 @@
 # nuScenes lidar segmentation task
-![nuScenes lidar segementation logo](https://www.nuscenes.org/public/images/tasks.png)
+![nuScenes lidar segmentation logo](https://www.nuscenes.org/public/images/lidarseg_challenge.jpg)
 
 ## Overview
 - [Introduction](#introduction)
@@ -9,16 +9,17 @@
 - [Results format](#results-format)
 - [Classes](#classes)
 - [Evaluation metrics](#evaluation-metrics)
+- [Leaderboard](#leaderboard)
 
 ## Introduction
 Here we define the lidar segmentation task on nuScenes.
 The goal of this task is to predict the category of every point in a set of point clouds. There are 16 categories (10 foreground classes and 6 background classes).
 
 ## Participation
-The nuScenes lidarseg segmentation [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/) will be coming soon.
-To participate in the challenge, please create an account at [EvalAI](http://evalai.cloudcv.org).
+The nuScenes lidarseg segmentation [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) is open all year round for submission.
+To participate in the challenge, please create an account at [EvalAI](https://eval.ai).
 Then upload your zipped result folder with the required [content](#results-format).
-After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation) (coming soon).
+After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 This is the only way to benchmark your method against the test dataset. 
 
 ## Challenges
@@ -27,16 +28,14 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](http://evalai.cloudcv.org/web/challenges/challenge-page/) for the **EvalAI lidar segementation evaluation server** (coming soon).
+Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the **EvalAI lidar segmentation evaluation server**.
 
 ### 5th AI Driving Olympics, NeurIPS 2020
-The first nuScenes lidar segmentation challenge will be held at NeurIPS 2020.
+The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submission will open on Nov 15, 2020 and close in early Dec, 2020.
-Results and winners will be announced at the 5th AI Driving Olympics at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
-For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation) (coming soon).
-Note that the [evaluation server](http://evalai.cloudcv.org/web/challenges/challenge-page/) (coming soon) can still be used to benchmark your results.
-
-*Note:* Due to the COVID-19 situation, participants are **not** required to attend in person to be eligible for the prizes.
+Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
+For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
+Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
 
 ## Submission rules
 ### Lidar segmentation-specific rules
@@ -61,15 +60,15 @@ The folder structure of the results should be as follows:
 ```
 └── results_folder
     ├── lidarseg
-    │   └── v1.0-test <- Contains the .bin files; a .bin file 
-    │                    contains the labels of the points in a 
-    │                    point cloud         
-    └── v1.0-test
+    │   └── {test, train, val} <- Contains the .bin files; a .bin file 
+    │                             contains the labels of the points in a 
+    │                             point cloud         
+    └── {test, train, val}
         └── submission.json  <- contains certain information about 
                                 the submission
 ```
 
-The contents of the `submision.json` file and `v1.0-test` folder are defined below: 
+The contents of the `submision.json` file and `test` folder are defined below: 
 * The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
   ```
   "meta": {
@@ -80,16 +79,24 @@ The contents of the `submision.json` file and `v1.0-test` folder are defined bel
       "use_external": <bool>          -- Whether this submission uses external data as an input.
   },
   ```
-* The `v1.0-test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
+* The `test` folder contains .bin files, where each .bin file contains the labels of the points for the point cloud.
   Pay special attention that each set of predictions in the folder must be a .bin file and named as **<lidar_sample_data_token>_lidarseg.bin**.
-  A .bin file contains an array of `int` in which each value is the predicted [class index](#classes) of the corresponding point in the point cloud, e.g.:
+  A .bin file contains an array of `uint8` values in which each value is the predicted [class index](#classes) of the corresponding point in the point cloud, e.g.:
   ```
   [1, 5, 4, 1, ...]
   ```
-  Each `lidar_sample_data_token` from the current evaluation set must be included in the `v1.0-test` folder.
+  Below is an example of how to save the predictions for a single point cloud:
+  ```
+  bin_file_path = lidar_sample_data_token + '_lidarseg.bin"
+  np.array(predicted_labels).astype(np.uint8).tofile(bin_file_path)
+  ```
+  Note that the arrays should **not** contain the `ignore` class (i.e. class index 0). 
+  Each `lidar_sample_data_token` from the current evaluation set must be included in the `test` folder.
   
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
+
+For convenience, a `validate_submission.py` script has been provided to check that a given results folder is of the correct format.
 
 Note that the lidar segmentation classes differ from the general nuScenes classes, as detailed below.
 
@@ -139,16 +146,22 @@ For more information on the classes and their frequencies, see [this page](https
 
 ## Evaluation metrics
 Below we define the metrics for the nuScenes lidar segmentation task.
-Our final score is a weighted sum of mean intersection-over-union (mIOU).
+The challenge winners and leaderboard ranking will be determined by the mean intersection-over-union (mIOU) score.
 
 ### Preprocessing
 Contrary to the [nuScenes detection task](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/detection/README.md), 
 we do not perform any preprocessing, such as removing GT / predictions if they exceed the class-specific detection range
-or if they full inside a bike-rack.
+or if they fall inside a bike-rack.
 
 ### Mean IOU (mIOU)
 We use the well-known IOU metric, which is defined as TP / (TP + FP + FN). 
 The IOU score is calculated separately for each class, and then the mean is computed across classes.
+Note that lidar segmentation index 0 is ignored in the calculation.
+
+### Frequency-weighted IOU (FWIOU)
+Instead of taking the mean of the IOUs across all the classes, each IOU is weighted by the point-level frequency of its class.
+Note that lidar segmentation index 0 is ignored in the calculation.
+FWIOU is not used for the challenge.
 
 ## Leaderboard
 nuScenes will maintain a single leaderboard for the lidar segmentation task.
@@ -161,12 +174,14 @@ Furthermore, there will also be an award for novel ideas, as well as the best st
 
 **Lidar track**: 
 * Only lidar input allowed.
+* Only lidar segmentation annotations from nuScenes-lidarseg are allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
-  
+
 **Open track**: 
 * Any sensor input allowed.
-* External data and map data allowed.  
+* All nuScenes, nuScenes-lidarseg and nuImages annotations are allowed.
+* External data and map data allowed.
 * May use pre-training.
 
 **Details**:
