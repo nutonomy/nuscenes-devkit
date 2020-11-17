@@ -556,18 +556,20 @@ class NuScenesMap:
 
         return self._get_connected_lanes(lane_token, 'incoming')
 
-    def get_lane(self, lane_token: str) -> List[ArcLinePath]:
+    def get_arcline_path(self, lane_token: str) -> List[ArcLinePath]:
         """
-        Get the arc line path representation for a lane.
+        Get the arcline path representation for a lane.
+        Note: This function was previously called `get_lane()`, but renamed to avoid confusion between lanes and
+              arcline paths.
         :param lane_token: Token for the lane.
         :return: Arc line path representation of the lane.
         """
 
-        lane = self.arcline_path_3.get(lane_token)
-        if not lane:
-            raise ValueError(f'Lane token {lane_token} is not a valid lane.')
+        arcline_path = self.arcline_path_3.get(lane_token)
+        if not arcline_path:
+            raise ValueError(f'Error: Lane with token {lane_token} does not have a valid arcline path!')
 
-        return lane
+        return arcline_path
 
     def get_closest_lane(self, x: float, y: float, radius: float = 5) -> str:
         """
