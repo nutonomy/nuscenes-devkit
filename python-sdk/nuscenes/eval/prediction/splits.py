@@ -15,7 +15,7 @@ def get_prediction_challenge_split(split: str, dataroot: str = '/data/sets/nusce
     """
     Gets a list of {instance_token}_{sample_token} strings for each split.
     :param split: One of 'mini_train', 'mini_val', 'train', 'val'.
-    :param dataroot: Path to the nuScenes data set.
+    :param dataroot: Path to the nuScenes dataset.
     :return: List of tokens belonging to the split. Format {instance_token}_{sample_token}.
     """
     if split not in {'mini_train', 'mini_val', 'train', 'train_val', 'val'}:

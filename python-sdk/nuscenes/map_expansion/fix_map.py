@@ -12,7 +12,8 @@ def fix_map(dataroot: str, map_name: str, out_suffix: str) -> None:
     Note that we do not recommend the use of this script as even disconnected lanes have useful information.
 
     :param dataroot: Path of the nuScenes dataset.
-    :param map_name: Which map out of `singapore-onenorth`, `singepore-hollandvillage`, `singapore-queenstown`,
+    :param map_name: Which map out of `singapore-onenorth`, `singepore-hollandvillage`, `singapore-queenstown` and
+        'boston-seaport'.
     :param out_suffix: A suffix to the output file name, e.g. "fixed" results in "<map>_fixed.json".
     """
     # Load map.

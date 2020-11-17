@@ -207,7 +207,7 @@ class MinADEK(Metric):
         """
         Computes the minimum average displacement error over the top k predictions.
         :param k_to_report:  Will report the top k result for the k in this list.
-        :param aggregators: How to aggregate the results across the data set.
+        :param aggregators: How to aggregate the results across the dataset.
         """
         super().__init__()
         self.k_to_report = k_to_report
@@ -242,7 +242,7 @@ class MinFDEK(Metric):
         """
         Computes the minimum final displacement error over the top k predictions.
         :param k_to_report:  Will report the top k result for the k in this list.
-        :param aggregators: How to aggregate the results across the data set.
+        :param aggregators: How to aggregate the results across the dataset.
         """
         super().__init__()
         self.k_to_report = k_to_report
@@ -279,7 +279,7 @@ class MissRateTopK(Metric):
         If any point in the prediction is more than tolerance meters from the ground truth, it is a miss.
         This metric computes the fraction of predictions that are misses over the top k most likely predictions.
         :param k_to_report: Will report the top k result for the k in this list.
-        :param aggregators: How to aggregate the results across the data set.
+        :param aggregators: How to aggregate the results across the dataset.
         :param tolerance: Threshold to consider if a prediction is a hit or not.
         """
         self.k_to_report = k_to_report
@@ -318,7 +318,7 @@ class OffRoadRate(Metric):
         The OffRoadRate is defined as the fraction of trajectories that are not entirely contained
         in the drivable area of the map.
         :param helper: Instance of PredictHelper. Used to determine the map version for each prediction.
-        :param aggregators: How to aggregate the results across the data set.
+        :param aggregators: How to aggregate the results across the dataset.
         """
         self._aggregators = aggregators
         self.helper = helper

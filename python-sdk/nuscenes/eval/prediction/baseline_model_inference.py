@@ -18,7 +18,7 @@ def main(version: str, data_root: str,
          split_name: str, output_dir: str, config_name: str = 'predict_2020_icra.json') -> None:
     """
     Performs inference for all of the baseline models defined in the physics model module.
-    :param version: nuScenes data set version.
+    :param version: nuScenes dataset version.
     :param data_root: Directory where the NuScenes data is stored.
     :param split_name: nuScenes data split name, e.g. train, val, mini_train, etc.
     :param output_dir: Directory where predictions should be stored.
