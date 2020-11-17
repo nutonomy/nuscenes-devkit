@@ -600,15 +600,17 @@ class NuScenesMap:
                           x: float,
                           y: float,
                           alpha: float = 0.5,
-                          figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+                          figsize: Union[None, float, Tuple[float, float]] = None,
+                          bitmap: Optional[BitMap] = None) -> None:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         """
-        self.explorer.render_next_roads(x, y, alpha, figsize)
+        self.explorer.render_next_roads(x, y, alpha, figsize=figsize, bitmap=bitmap)
 
     def get_next_roads(self, x: float, y: float) -> Dict[str, List[str]]:
         """
@@ -1297,13 +1299,15 @@ class NuScenesMapExplorer:
                           x: float,
                           y: float,
                           alpha: float = 0.5,
-                          figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+                          figsize: Union[None, float, Tuple[float, float]] = None,
+                          bitmap: Optional[BitMap] = None) -> None:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         """
         # Get next roads.
         next_roads = self.map_api.get_next_roads(x, y)
@@ -1315,7 +1319,7 @@ class NuScenesMapExplorer:
                 tokens.extend(layer_tokens)
 
         # Render them.
-        fig, ax = self.render_layers(layer_names, alpha, figsize, tokens)
+        fig, ax = self.render_layers(layer_names, alpha, figsize, tokens=tokens, bitmap=bitmap)
 
         # Render current location with an x.
         ax.plot(x, y, 'x', markersize=12, color='red')
