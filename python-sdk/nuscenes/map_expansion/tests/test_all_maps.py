@@ -6,13 +6,12 @@ import matplotlib.pyplot as plt
 import tqdm
 
 from nuscenes.map_expansion.map_api import NuScenesMap, locations
-from nuscenes.map_expansion.utils import get_egoposes_on_drivable_ratio, drop_disconnected_lanes, get_disconnected_lanes
+from nuscenes.map_expansion.utils import get_egoposes_on_drivable_ratio, get_disconnected_lanes
 from nuscenes.nuscenes import NuScenes
 
 
 class TestAllMaps(unittest.TestCase):
     version = 'v1.0-mini'
-    drop_lanes = False
     render = False
 
     def setUp(self):
@@ -22,10 +21,6 @@ class TestAllMaps(unittest.TestCase):
         for map_name in locations:
             # Load map.
             nusc_map = NuScenesMap(map_name=map_name, dataroot=os.environ['NUSCENES'])
-
-            # Postprocess lanes until they are fixed.
-            if self.drop_lanes:
-                nusc_map = drop_disconnected_lanes(nusc_map)
 
             # Render for debugging.
             if self.render:

@@ -291,7 +291,7 @@ class NuScenesMap:
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
                             verbose: bool = True,
-                            out_path: str = None) -> None:
+                            out_path: str = None) -> Tuple[Figure, Axes]:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
         Note that the projections are not always accurate as the localization is in 2d.
@@ -308,10 +308,11 @@ class NuScenesMap:
         :param verbose: Whether to print to stdout.
         :param out_path: Optional path to save the rendered figure to disk.
         """
-        self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
-                                          patch_radius=patch_radius, min_polygon_area=min_polygon_area,
-                                          render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
-                                          layer_names=layer_names, verbose=verbose, out_path=out_path)
+        return self.explorer.render_map_in_image(
+            nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
+            patch_radius=patch_radius, min_polygon_area=min_polygon_area,
+            render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
+            layer_names=layer_names, verbose=verbose, out_path=out_path)
 
     def render_egoposes_on_fancy_map(self,
                                      nusc: NuScenes,
@@ -321,7 +322,7 @@ class NuScenesMap:
                                      render_egoposes: bool = True,
                                      render_egoposes_range: bool = True,
                                      render_legend: bool = True,
-                                     bitmap: Optional[BitMap] = None) -> np.ndarray:
+                                     bitmap: Optional[BitMap] = None) -> Tuple[np.ndarray, Figure, Axes]:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -344,7 +345,7 @@ class NuScenesMap:
     def render_centerlines(self,
                            resolution_meters: float = 0.5,
                            figsize: Union[None, float, Tuple[float, float]] = None,
-                           bitmap: Optional[BitMap] = None) -> None:
+                           bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Render the centerlines of all lanes and lane connectors.
         :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
@@ -352,7 +353,7 @@ class NuScenesMap:
         :param figsize: Size of the figure.
         :param bitmap: Optional BitMap object to render below the other map layers.
         """
-        self.explorer.render_centerlines(resolution_meters=resolution_meters, figsize=figsize, bitmap=bitmap)
+        return self.explorer.render_centerlines(resolution_meters=resolution_meters, figsize=figsize, bitmap=bitmap)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -603,7 +604,7 @@ class NuScenesMap:
                           y: float,
                           alpha: float = 0.5,
                           figsize: Union[None, float, Tuple[float, float]] = None,
-                          bitmap: Optional[BitMap] = None) -> None:
+                          bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
@@ -612,7 +613,7 @@ class NuScenesMap:
         :param figsize: Size of the whole figure.
         :param bitmap: Optional BitMap object to render below the other map layers.
         """
-        self.explorer.render_next_roads(x, y, alpha, figsize=figsize, bitmap=bitmap)
+        return self.explorer.render_next_roads(x, y, alpha, figsize=figsize, bitmap=bitmap)
 
     def get_next_roads(self, x: float, y: float) -> Dict[str, List[str]]:
         """
@@ -705,7 +706,7 @@ class NuScenesMapExplorer:
     def render_centerlines(self,
                            resolution_meters: float,
                            figsize: Union[None, float, Tuple[float, float]] = None,
-                           bitmap: Optional[BitMap] = None) -> None:
+                           bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Render the centerlines of all lanes and lane connectors.
         :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
@@ -726,6 +727,8 @@ class NuScenesMapExplorer:
         for pose_list in pose_lists:
             if len(pose_list) > 0:
                 plt.plot(pose_list[:, 0], pose_list[:, 1])
+
+        return fig, ax
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -1050,7 +1053,7 @@ class NuScenesMapExplorer:
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
                             verbose: bool = True,
-                            out_path: str = None) -> None:
+                            out_path: str = None) -> Tuple[Figure, Axes]:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
         Note that the projections are not always accurate as the localization is in 2d.
@@ -1194,6 +1197,8 @@ class NuScenesMapExplorer:
             plt.tight_layout()
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
+        return fig, ax
+
     def render_egoposes_on_fancy_map(self,
                                      nusc: NuScenes,
                                      scene_tokens: List = None,
@@ -1202,7 +1207,7 @@ class NuScenesMapExplorer:
                                      render_egoposes: bool = True,
                                      render_egoposes_range: bool = True,
                                      render_legend: bool = True,
-                                     bitmap: Optional[BitMap] = None) -> np.ndarray:
+                                     bitmap: Optional[BitMap] = None) -> Tuple[np.ndarray, Figure, Axes]:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -1295,14 +1300,14 @@ class NuScenesMapExplorer:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
-        return map_poses
+        return map_poses, fig, ax
 
     def render_next_roads(self,
                           x: float,
                           y: float,
                           alpha: float = 0.5,
                           figsize: Union[None, float, Tuple[float, float]] = None,
-                          bitmap: Optional[BitMap] = None) -> None:
+                          bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
@@ -1325,6 +1330,8 @@ class NuScenesMapExplorer:
 
         # Render current location with an x.
         ax.plot(x, y, 'x', markersize=12, color='red')
+
+        return fig, ax
 
     @staticmethod
     def _clip_points_behind_camera(points, near_plane: float):
