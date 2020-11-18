@@ -47,7 +47,11 @@ class BitMap:
             raise Exception('Error: Invalid bitmap layer: %s' % self.layer_name)
 
         # Convert to numpy.
-        image = np.array(Image.open(map_path))
+        if os.path.exists(map_path):
+            image = np.array(Image.open(map_path))
+        else:
+            raise Exception('Error: Cannot find %s %s! Please make sure that the map is correctly installed.'
+                            % (self.layer_name, map_path))
 
         # Invert semantic prior colors.
         if self.layer_name == 'semantic_prior':
