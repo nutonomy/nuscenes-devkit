@@ -72,8 +72,6 @@ class NuScenesMap:
         self.dataroot = dataroot
         self.map_name = map_name
 
-        self.json_fname = os.path.join(self.dataroot, "maps", "{}.json".format(self.map_name))
-
         self.geometric_layers = ['polygon', 'line', 'node']
 
         # These are the non-geometric layers which have polygons as the geometric descriptors.
@@ -88,17 +86,12 @@ class NuScenesMap:
         self.non_geometric_layers = self.non_geometric_polygon_layers + self.non_geometric_line_layers
         self.layer_names = self.geometric_layers + self.lookup_polygon_layers + self.non_geometric_line_layers
 
+        # Load the selected map.
+        self.json_fname = os.path.join(self.dataroot, "maps", "{}.json".format(self.map_name))
         with open(self.json_fname, 'r') as fh:
             self.json_obj = json.load(fh)
 
-        self.canvas_edge = self.json_obj['canvas_edge']
-        self._load_layers()
-        self._make_token2ind()
-        self._make_shortcuts()
-
-        self.explorer = NuScenesMapExplorer(self)
-
-        # Parse the map version and print a warning for deprecated maps.
+        # Parse the map version and print an error for deprecated maps.
         if 'version' in self.json_obj:
             self.version = self.json_obj['version']
         else:
@@ -106,6 +99,13 @@ class NuScenesMap:
         if self.version < '1.2':
             raise Exception('Error: You are using an outdated map version! '
                             'Please go to https://www.nuscenes.org/download to download the latest map!')
+
+        self.canvas_edge = self.json_obj['canvas_edge']
+        self._load_layers()
+        self._make_token2ind()
+        self._make_shortcuts()
+
+        self.explorer = NuScenesMapExplorer(self)
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
