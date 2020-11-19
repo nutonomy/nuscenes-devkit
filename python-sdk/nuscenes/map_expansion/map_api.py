@@ -87,7 +87,7 @@ class NuScenesMap:
         self.layer_names = self.geometric_layers + self.lookup_polygon_layers + self.non_geometric_line_layers
 
         # Load the selected map.
-        self.json_fname = os.path.join(self.dataroot, "maps", "{}.json".format(self.map_name))
+        self.json_fname = os.path.join(self.dataroot, 'maps', 'expansion', '{}.json'.format(self.map_name))
         with open(self.json_fname, 'r') as fh:
             self.json_obj = json.load(fh)
 
@@ -96,7 +96,7 @@ class NuScenesMap:
             self.version = self.json_obj['version']
         else:
             self.version = '1.0'
-        if self.version < '1.2':
+        if self.version < '1.3':
             raise Exception('Error: You are using an outdated map version! '
                             'Please go to https://www.nuscenes.org/download to download the latest map!')
 
