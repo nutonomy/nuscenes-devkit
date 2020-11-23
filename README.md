@@ -14,11 +14,13 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
   - [Prediction challenge](#prediction-challenge)
   - [CAN bus expansion](#can-bus-expansion)
   - [Map expansion](#map-expansion)
+  - [Map versions](#map-versions)
   - [Getting started with nuScenes](#getting-started-with-nuscenes)
 - [Known issues](#known-issues)
 - [Citation](#citation)
 
 ## Changelog
+- Nov. 23, 2020: Devkit v1.1.2: Release map-expansion v1.3 with lidar basemap.
 - Nov. 9, 2020: Devkit v1.1.1: Lidarseg evaluation code, NeurIPS challenge announcement.
 - Aug. 31, 2020: Devkit v1.1.0: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
 - Jul. 7, 2020: Devkit v1.0.9: Misc updates on map and prediction code.
@@ -125,10 +127,19 @@ To install this expansion, please follow these steps:
 In July 2019 we published a map expansion with 11 semantic layers (crosswalk, sidewalk, traffic lights, stop lines, lanes, etc.).
 To install this expansion, please follow these steps:
 - Download the expansion from the [Download page](https://www.nuscenes.org/download),
-- Extract the .json files to your nuScenes `maps` folder.
+- Extract the contents (folders `basemap`, `expansion` and `prediction`) to your nuScenes `maps` folder.
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md)): `pip install -r setup/requirements.txt`
 - Get started with the [map expansion tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/map_expansion_tutorial.ipynb).
+For more information, see the [map versions](#map-versions) below.
+
+### Map versions
+Here we give a brief overview of the different map versions:
+- **v1.3**: Add BitMap class that supports new lidar basemap and legacy semantic prior map. Remove [one broken lane](https://github.com/nutonomy/nuscenes-devkit/issues/493).
+- **v1.2**: Expand devkit and maps to include arcline paths and lane connectivity for the prediction challenge.
+- **v1.1**: Resolved issues with ego poses being off the drivable surface.
+- **v1.0**: Initial map expansion release from July 2019. Supports 11 semantic layers.
+- **nuScenes v1.0**: Came with a bitmap for the semantic prior. All code is contained in nuscenes.py.
 
 ### Getting started with nuScenes
 Please follow these steps to make yourself familiar with the nuScenes dataset:
@@ -155,6 +166,7 @@ However, some minor issues remain:
 - For *singapore-hollandvillage* and *singapore-queenstown* the traffic light 3d poses are all 0 (except for tz).
 - For *boston-seaport*, the ego poses of 3 scenes (499, 515, 517) are slightly incorrect and 2 scenes (501, 502) are outside the annotated area. 
 - For *singapore-onenorth*, the ego poses of about 10 scenes were off the drivable surface. This has been **resolved in map v1.1**.
+- Some lanes are disconnected from the rest of the lanes. We chose to keep these as they still provide valuable information. 
 
 **Annotations**:
 - A small number of 3d bounding boxes is annotated despite the object being temporarily occluded. For this reason we make sure to **filter objects without lidar or radar points** in the nuScenes benchmarks. See [issue 366](https://github.com/nutonomy/nuscenes-devkit/issues/366).

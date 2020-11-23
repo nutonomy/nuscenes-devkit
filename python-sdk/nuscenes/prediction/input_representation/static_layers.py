@@ -9,7 +9,7 @@ import numpy as np
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.utils import quaternion_yaw
-from nuscenes.map_expansion.map_api import NuScenesMap
+from nuscenes.map_expansion.map_api import NuScenesMap, locations
 from nuscenes.prediction import PredictHelper
 from nuscenes.prediction.helper import angle_of_rotation, angle_diff
 from nuscenes.prediction.input_representation.combinators import Rasterizer
@@ -28,14 +28,9 @@ def load_all_maps(helper: PredictHelper, verbose: bool = False) -> Dict[str, NuS
     :return: Mapping from map-name to the NuScenesMap api instance.
     """
     dataroot = helper.data.dataroot
-
-    json_files = filter(lambda f: "json" in f and "prediction_scenes" not in f,
-                        os.listdir(os.path.join(dataroot, "maps")))
     maps = {}
 
-    for map_file in json_files:
-
-        map_name = str(map_file.split(".")[0])
+    for map_name in locations:
         if verbose:
             print(f'static_layers.py - Loading Map: {map_name}')
 
