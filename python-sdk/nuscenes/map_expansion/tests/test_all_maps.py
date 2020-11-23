@@ -34,7 +34,7 @@ class TestAllMaps(unittest.TestCase):
         layer_counts = defaultdict(lambda: [])
         ref_counts = {
             'singapore-onenorth': [1, 783, 645, 936, 120, 838, 451, 39, 152, 357, 127],
-            'singapore-hollandvillage': [426, 167, 387, 602, 28, 498, 300, 0, 107, 220, 119],
+            'singapore-hollandvillage': [426, 167, 387, 601, 28, 498, 300, 0, 107, 220, 119],
             'singapore-queenstown': [219, 260, 676, 910, 75, 457, 437, 40, 172, 257, 81],
             'boston-seaport': [2, 928, 969, 1215, 340, 301, 775, 275, 377, 671, 307]
         }

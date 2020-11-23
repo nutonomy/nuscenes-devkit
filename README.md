@@ -135,7 +135,7 @@ For more information, see the [map versions](#map-versions) below.
 
 ### Map versions
 Here we give a brief overview of the different map versions:
-- **v1.3**: Add BitMap class that supports new lidar basemap and legacy semantic prior map.
+- **v1.3**: Add BitMap class that supports new lidar basemap and legacy semantic prior map. Remove [one broken lane](https://github.com/nutonomy/nuscenes-devkit/issues/493).
 - **v1.2**: Expand devkit and maps to include arcline paths and lane connectivity for the prediction challenge.
 - **v1.1**: Resolved issues with ego poses being off the drivable surface.
 - **v1.0**: Initial map expansion release from July 2019. Supports 11 semantic layers.
@@ -166,6 +166,7 @@ However, some minor issues remain:
 - For *singapore-hollandvillage* and *singapore-queenstown* the traffic light 3d poses are all 0 (except for tz).
 - For *boston-seaport*, the ego poses of 3 scenes (499, 515, 517) are slightly incorrect and 2 scenes (501, 502) are outside the annotated area. 
 - For *singapore-onenorth*, the ego poses of about 10 scenes were off the drivable surface. This has been **resolved in map v1.1**.
+- Some lanes are disconnected from the rest of the lanes. We chose to keep these as they still provide valuable information. 
 
 **Annotations**:
 - A small number of 3d bounding boxes is annotated despite the object being temporarily occluded. For this reason we make sure to **filter objects without lidar or radar points** in the nuScenes benchmarks. See [issue 366](https://github.com/nutonomy/nuscenes-devkit/issues/366).
