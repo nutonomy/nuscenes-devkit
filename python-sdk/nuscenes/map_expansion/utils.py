@@ -73,6 +73,9 @@ def get_disconnected_subtrees(connectivity: Dict[str, dict]) -> Set[str]:
 def drop_disconnected_lanes(nusc_map: NuScenesMap) -> NuScenesMap:
     """
     Remove any disconnected lanes.
+    Note: This function is currently not used and we do not recommend using it. Some lanes that we do not drive on are
+    disconnected from the other lanes. Removing them would create a single connected graph. It also removes
+    meaningful information, which is why we do not drop these.
     :param nusc_map: The NuScenesMap instance of a particular map location.
     :return: The cleaned NuScenesMap instance.
     """
