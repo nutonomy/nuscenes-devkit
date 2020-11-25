@@ -19,6 +19,15 @@ To participate in the challenge, please create an account at [EvalAI](https://ev
 Then upload your zipped result file including all of the required [meta data](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/prediction) shown above.
 This is the only way to benchmark your method against the test dataset. 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+- Team name
+- Method name
+- Authors
+- Affiliations
+- Method description (5+ sentences)
+- Project URL
+- Paper URL
+- FPS in Hz (and the hardware used to measure it)
 
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we will host a single leaderboard all year round.
