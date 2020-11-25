@@ -105,7 +105,7 @@ The contents of the `submision.json` file and `test` folder are defined below:
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
 
-For convenience, a `validate_submission.py` script has been provided to check that a given results folder is of the correct format.
+For convenience, a `validate_submission.py` [script](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/lidarseg/validate_submission.py) has been provided to check that a given results folder is of the correct format.
 
 Note that the lidar segmentation classes differ from the general nuScenes classes, as detailed below.
 
