@@ -21,6 +21,15 @@ To participate in the challenge, please create an account at [EvalAI](https://ev
 Then upload your zipped result folder with the required [content](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 This is the only way to benchmark your method against the test dataset. 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+- Team name
+- Method name
+- Authors
+- Affiliations
+- Method description (5+ sentences)
+- Project URL
+- Paper URL
+- FPS in Hz (and the hardware used to measure it)
 
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](https://www.nuscenes.org/lidar-segmentation) all-year round.
@@ -32,7 +41,7 @@ Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the
 
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
-Submission will open on Nov 15, 2020 and close in early Dec, 2020.
+Submission will open on Nov 15, 2020 and close on 8 Dec, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
@@ -96,7 +105,7 @@ The contents of the `submision.json` file and `test` folder are defined below:
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
 
-For convenience, a `validate_submission.py` script has been provided to check that a given results folder is of the correct format.
+For convenience, a `validate_submission.py` [script](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/lidarseg/validate_submission.py) has been provided to check that a given results folder is of the correct format.
 
 Note that the lidar segmentation classes differ from the general nuScenes classes, as detailed below.
 
@@ -158,7 +167,7 @@ We use the well-known IOU metric, which is defined as TP / (TP + FP + FN).
 The IOU score is calculated separately for each class, and then the mean is computed across classes.
 Note that lidar segmentation index 0 is ignored in the calculation.
 
-### Frequency-weighted IOU (FWIOU)
+### Frequency-weighted IOU (fwIOU)
 Instead of taking the mean of the IOUs across all the classes, each IOU is weighted by the point-level frequency of its class.
 Note that lidar segmentation index 0 is ignored in the calculation.
 FWIOU is not used for the challenge.
