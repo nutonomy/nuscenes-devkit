@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.lidarseg.utils import LidarsegClassMapper, ConfusionMatrix, get_samples_in_eval_set
+from nuscenes.eval.lidarseg.utils import LidarsegClassMapper, ConfusionMatrix, get_samples_in_eval_set, load_bin_file
 
 
 class LidarSegEval:
@@ -87,14 +87,14 @@ class LidarSegEval:
             # Load the ground truth labels for the point cloud.
             lidarseg_label_filename = os.path.join(self.nusc.dataroot,
                                                    self.nusc.get('lidarseg', sd_token)['filename'])
-            lidarseg_label = self.load_bin_file(lidarseg_label_filename)
+            lidarseg_label = load_bin_file(lidarseg_label_filename)
 
             lidarseg_label = self.mapper.convert_label(lidarseg_label)
 
             # Load the predictions for the point cloud.
             lidarseg_pred_filename = os.path.join(self.results_folder, 'lidarseg',
                                                   self.eval_set, sd_token + '_lidarseg.bin')
-            lidarseg_pred = self.load_bin_file(lidarseg_pred_filename)
+            lidarseg_pred = load_bin_file(lidarseg_pred_filename)
 
             # Get the confusion matrix between the ground truth and predictions.
             # Update the confusion matrix for the sample data into the confusion matrix for the eval set.
@@ -116,19 +116,6 @@ class LidarSegEval:
             print("======")
 
         return results
-
-    @staticmethod
-    def load_bin_file(bin_path: str) -> np.ndarray:
-        """
-        Loads a .bin file containing the labels.
-        :param bin_path: Path to the .bin file.
-        :return: An array containing the labels.
-        """
-        assert os.path.exists(bin_path), 'Error: Unable to find {}.'.format(bin_path)
-        bin_content = np.fromfile(bin_path, dtype=np.uint8)
-        assert len(bin_content) > 0, 'Error: {} is empty.'.format(bin_path)
-
-        return bin_content
 
 
 if __name__ == '__main__':

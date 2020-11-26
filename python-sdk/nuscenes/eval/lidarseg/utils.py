@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List
 
 import numpy as np
@@ -329,3 +330,16 @@ def get_samples_in_eval_set(nusc: NuScenes, eval_set: str) -> List[str]:
                                        'but only {} keyframes were processed'.format(total_num_samples, i)
 
     return samples
+
+
+def load_bin_file(bin_path: str) -> np.ndarray:
+    """
+    Loads a .bin file containing the labels.
+    :param bin_path: Path to the .bin file.
+    :return: An array containing the labels.
+    """
+    assert os.path.exists(bin_path), 'Error: Unable to find {}.'.format(bin_path)
+    bin_content = np.fromfile(bin_path, dtype=np.uint8)
+    assert len(bin_content) > 0, 'Error: {} is empty.'.format(bin_path)
+
+    return bin_content
