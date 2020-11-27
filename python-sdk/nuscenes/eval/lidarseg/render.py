@@ -2,6 +2,7 @@ import os
 from typing import Dict, List, Tuple, Union
 
 from matplotlib import pyplot as plt
+from matplotlib import gridspec
 import numpy as np
 from tqdm import tqdm
 
@@ -13,32 +14,40 @@ from nuscenes.utils.data_classes import LidarPointCloud
 
 class LidarSegEvalStratified(LidarSegEval):
     """
-    This class extends the LidarSegEval class to provide... TODO
-    Stratify by radial distance
+    Extends the LidarSegEval class to provide an evaluation which is stratified by radial distance from the ego lidar.
     """
     def __init__(self, nusc: NuScenes,
                  results_folder: str,
+                 output_dir: str,
                  eval_set: str,
                  # sample_size: int,
-                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, 60)),
+                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, 60), (60, 80)),
                  # is_render_bad_samples: bool = True,
                  verbose: bool = True):
-
+        """
+        :param nusc: A NuScenes object.
+        :param results_folder: Path to the folder where the results are stored.
+        :param output_dir: Folder to save plots and results to.
+        :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
+        :param strata_list: The strata to evaluate by, in meters.
+        :param verbose: Whether to print messages during the evaluation.
+        """
         super().__init__(nusc, results_folder, eval_set, verbose)
 
+        self.output_dir = output_dir
         self.strata_list = strata_list
+
+        self.ignore_name = self.mapper.ignore_class['name']
 
         # Create a list of confusion matrices, one for each strata.
         self.global_cm = [ConfusionMatrix(self.num_classes, self.ignore_idx) for i in range(len(strata_list))]
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         """
-
-        Overwrites the `evaluate` method in the LidarSegEval class.
+        Performs the actual evaluation. Overwrites the `evaluate` method in the LidarSegEval class.
         """
         for i, strata in enumerate(self.strata_list):
             print('Evaluating for strata {}m to {}m...'.format(strata[0], strata[1]))
-
             for sample_token in tqdm(self.sample_tokens, disable=not self.verbose):
                 sample = self.nusc.get('sample', sample_token)
 
@@ -69,36 +78,54 @@ class LidarSegEvalStratified(LidarSegEval):
                 self.global_cm[i].update(lidarseg_label, lidarseg_pred)
 
         stratified_per_class_metrics = self.get_stratified_per_class_metrics()
-        self.render_stratified_per_class_metrics(stratified_per_class_metrics, '/home/whye/Desktop/logs/hi.png')
+        self.render_stratified_per_class_metrics(stratified_per_class_metrics,
+                                                 os.path.join(self.output_dir, 'stratified_iou_per_class.png'))
 
-    def render_stratified_per_class_metrics(self, stratified_per_class_metrics, filename: str) -> None:
+    def render_stratified_per_class_metrics(self, stratified_per_class_metrics: List[Dict], filename: str) -> None:
         """
-
+        Renders the stratified per class metrics.
+        :param stratified_per_class_metrics: A list of dictionaries where each entry corresponds to each strata; each
+                                             dictionary contains the iou_per_class, miou, and freq_weighted_iou.
+        :param filename: Filename to save the render as.
         """
         stratified_classes = {cls_name: [] for cls_name in self.id2name.values()}
-
         for strata_metrics in stratified_per_class_metrics:
             for cls, cls_iou in strata_metrics['iou_per_class'].items():
                 stratified_classes[cls].append(cls_iou)
 
-        print(stratified_classes)
-        _, axes = plt.subplots(self.num_classes, 1, figsize=(5 * len(self.strata_list), 100))
-        for i, (cls, cls_strata) in enumerate(stratified_classes.items()):
-            if cls == 'ignore':
-                continue   # TODO find better way to ignore class.
-            axes[i].bar([' to '.join(map(str, rng)) for rng in self.strata_list], cls_strata, color='green')
-            axes[i].set_xlabel('Interval', fontsize=15)
-            axes[i].set_ylabel('IOU', fontsize=15)
-            axes[i].set_title('Stratified results for {}'.format(cls), fontsize=20)
-            axes[i].tick_params(axis='both', which='major', labelsize=15)
+        # Delete the ignored class from the dictionary.
+        stratified_classes.pop(self.ignore_name, None)
+
+        plot_num_cols = 4
+        plot_num_rows = int(np.ceil(len(stratified_classes) / plot_num_cols))
+        _, axes = plt.subplots(plot_num_rows, plot_num_cols, figsize=(15 * len(self.strata_list), 300))
+
+        gs = gridspec.GridSpec(plot_num_rows, plot_num_cols)
+        fig = plt.figure()
+        for n, (cls, cls_strata) in enumerate(stratified_classes.items()):
+            ax = fig.add_subplot(gs[n])
+            ax.bar([' to '.join(map(str, rng)) for rng in self.strata_list], cls_strata, color='green')
+            ax.set_xlabel('Interval', fontsize=3)
+            ax.set_ylabel('IOU', fontsize=3)
+            ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
+            ax.set_title('Stratified results for {}'.format(cls), fontsize=4)
+            ax.tick_params(axis='both', which='major', labelsize=3)
+
+            # Loop to add a tag to each bar.
+            for j, rect in enumerate(ax.patches):
+                ax.text(rect.get_x() + rect.get_width() / 2., rect.get_y() + rect.get_height() + 0.01,
+                        '{:.4f}'.format(cls_strata[j]),
+                        ha='center', va='bottom', fontsize=3)
 
         plt.tight_layout()
-        plt.savefig(filename)
+        plt.savefig(filename, dpi=250)
         plt.close()
 
     def get_stratified_per_class_metrics(self) -> List[Dict]:
         """
-
+        Gets the metrics per class for each strata:
+        :return: A list of dictionaries where each entry corresponds to each strata; each dictionary contains the
+                 iou_per_class, miou, and freq_weighted_iou.
         """
         stratified_per_class_iou = []
         for strata_cm in self.global_cm:
@@ -120,62 +147,84 @@ class LidarSegEvalStratified(LidarSegEval):
                                    min_depth: float = 0,
                                    max_depth: float = None) -> Union[LidarPointCloud, List[int]]:
         """
-        Radial distance  # TODO
+        Filters the point cloud such that only points which are within a certain radial range from the ego lidar are
+        selected.
+        :param points: The point cloud to be filtered.
+        :param min_depth: Points to be further than this distance from the ego lidar, in meters.
+        :param max_depth: Points to be at most this far from the ego lidar, in meters. If None, then max_depth is
+                          effectively the distance of the furthest point from the ego lidar.
         """
-        points = points.T  # Transpose the matrix to make manipulation for convenient ([4, N] to [N, 4]).
+        points = points.T  # Transpose the matrix to make manipulation more convenient ([4, N] to [N, 4]).
 
         depth = np.linalg.norm(points[:, :2], axis=1)
 
         assert min_depth >= 0, 'Error: min_depth cannot be negative.'
         min_depth_idxs = np.where(depth > min_depth)[0]
-        # print('min: ', len(min_depth_idxs))  # TODO
-        # print(min_depth_idxs)  # TODO
 
         if max_depth is not None:
             assert max_depth >= 0, 'Error: max_depth cannot be negative.'
             max_depth_idxs = np.where(depth <= max_depth)[0]
-            # print('max: ', len(max_depth_idxs))  # TODO
-            # print(max_depth_idxs)  # TODO
 
             filtered_idxs = np.intersect1d(min_depth_idxs, max_depth_idxs)
         else:
             filtered_idxs = min_depth_idxs
 
-        # print(len(filtered_idxs))  # TODO
         points = points[filtered_idxs]
         points = points.T  # Transpose the matrix back ([N, 4] to [4, N]).
 
         return points, filtered_idxs
 
-    def viz_need_or_not(self):
-        """
-               import matplotlib.pyplot as plt
-               fig, ax = plt.subplots(1, 1, figsize=(9, 16))
-               ax.scatter(points[0, :], points[1, :], s=0.2)
-               plt.gca().set_aspect('equal', adjustable='box')
-               plt.show()
-               """
-        """
-        mask = np.ones(depths.shape[0], dtype=bool)
-        mask = np.logical_and(mask, depths > min_dist)
-        mask = np.logical_and(mask, points[0, :] > 1)
-        mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
-        mask = np.logical_and(mask, points[1, :] > 1)
-        mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
-        points = points[:, mask]
-        """
+
+def viz_need_or_not():
+    """
+       import matplotlib.pyplot as plt
+       fig, ax = plt.subplots(1, 1, figsize=(9, 16))
+       ax.scatter(points[0, :], points[1, :], s=0.2)
+       plt.gca().set_aspect('equal', adjustable='box')
+       plt.show()
+    """
+    """
+    mask = np.ones(depths.shape[0], dtype=bool)
+    mask = np.logical_and(mask, depths > min_dist)
+    mask = np.logical_and(mask, points[0, :] > 1)
+    mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
+    mask = np.logical_and(mask, points[1, :] > 1)
+    mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
+    points = points[:, mask]
+    """
 
 
-def visualize_semantic_differences_bev(sample_token: str, lidarseg_preds_bin_path: str): #  -> axes.Axes:
+def visualize_semantic_differences_bev(nusc, sample_token: str, lidarseg_preds_bin_path: str = None):  # -> axes.Axes:
     """
     Visualize semantic difference of lidar segmentation results in bird's eye view.
     :param sample_token: Unique identifier.
     :param lidarseg_preds_bin_path: LidarSegmentationResults class.
-    :param
     """
-    pc = seg_res.data[token].point_cloud
-    gt = seg_res.data[token].gt
-    est = seg_res.data[token].est
+    """
+    # pc = seg_res.data[token].point_cloud
+    pointsensor = self.nusc.get('sample_data', sd_token)
+    pcl_path = os.path.join(self.nusc.dataroot, pointsensor['filename'])
+    pc = LidarPointCloud.from_file(pcl_path)
+    points = pc.points.T  # [N, 4]
+    """
+    sample = nusc.get('sample', sample_token)
+
+    # Get the sample data token of the point cloud.
+    sd_token = sample['data']['LIDAR_TOP']
+
+    # Init axes.
+    fig, ax = plt.subplots(1, 3, figsize=(10 * 3, 10))
+    nusc.render_sample_data(sd_token, ax=ax[0], with_anns=True, show_lidarseg=True, show_lidarseg_legend=False)
+    nusc.render_sample_data(sd_token, ax=ax[1], with_anns=True, show_lidarseg=True, show_lidarseg_legend=False,)
+                            # lidarseg_preds_bin_path=)
+
+    filename = '/home/whye/Desktop/logs/hi2.png'  # TODO
+    plt.savefig(filename)
+
+
+def haha():
+    # gt = seg_res.data[token].gt
+    # est = seg_res.data[token].est
 
     # red: wrong label, green: correct label
     id2color_for_diff_bev = {0: (191, 41, 0, 255), 1: (50, 168, 82, 255)}
@@ -208,6 +257,7 @@ def visualize_semantic_differences_bev(sample_token: str, lidarseg_preds_bin_pat
 
 if __name__ == '__main__':
     result_path_ = '/home/whye/Desktop/logs/lidarseg_nips20/venice/maplsn_rangeview'
+    out_path = '/home/whye/Desktop/logs'
     eval_set_ = 'test'
     dataroot_ = '/data/sets/nuscenes'
     version_ = 'v1.0-test'
@@ -215,5 +265,6 @@ if __name__ == '__main__':
 
     nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
 
-    evaluator = LidarSegEvalStratified(nusc_, result_path_, eval_set=eval_set_, verbose=verbose_)
+    evaluator = LidarSegEvalStratified(nusc_, result_path_, out_path, eval_set=eval_set_, verbose=verbose_)
     evaluator.evaluate()
+    # visualize_semantic_differences_bev(nusc_, nusc_.sample[0]['token'])
