@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.lidarseg.evaluate import LidarSegEval
-from nuscenes.eval.lidarseg.utils import ConfusionMatrix, load_bin_file
+from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file, colormap_to_colors, \
+    create_lidarseg_legend, get_labels_in_coloring
 from nuscenes.utils.data_classes import LidarPointCloud
 
 
@@ -175,51 +176,101 @@ class LidarSegEvalStratified(LidarSegEval):
         return points, filtered_idxs
 
 
-def viz_need_or_not():
-    """
-       import matplotlib.pyplot as plt
-       fig, ax = plt.subplots(1, 1, figsize=(9, 16))
-       ax.scatter(points[0, :], points[1, :], s=0.2)
-       plt.gca().set_aspect('equal', adjustable='box')
-       plt.show()
-    """
-    """
-    mask = np.ones(depths.shape[0], dtype=bool)
-    mask = np.logical_and(mask, depths > min_dist)
-    mask = np.logical_and(mask, points[0, :] > 1)
-    mask = np.logical_and(mask, points[0, :] < im.size[0] - 1)
-    mask = np.logical_and(mask, points[1, :] > 1)
-    mask = np.logical_and(mask, points[1, :] < im.size[1] - 1)
-    points = points[:, mask]
-    """
-
-
 def visualize_semantic_differences_bev(nusc, sample_token: str, lidarseg_preds_bin_path: str = None):  # -> axes.Axes:
     """
     Visualize semantic difference of lidar segmentation results in bird's eye view.
+    :param nusc: A NuScenes object.
     :param sample_token: Unique identifier.
     :param lidarseg_preds_bin_path: LidarSegmentationResults class.
     """
-    """
-    # pc = seg_res.data[token].point_cloud
-    pointsensor = self.nusc.get('sample_data', sd_token)
-    pcl_path = os.path.join(self.nusc.dataroot, pointsensor['filename'])
-    pc = LidarPointCloud.from_file(pcl_path)
-    points = pc.points.T  # [N, 4]
-    """
+    mapper = LidarsegClassMapper(nusc)
+
     sample = nusc.get('sample', sample_token)
 
     # Get the sample data token of the point cloud.
     sd_token = sample['data']['LIDAR_TOP']
 
-    # Init axes.
-    fig, ax = plt.subplots(1, 3, figsize=(10 * 3, 10))
-    nusc.render_sample_data(sd_token, ax=ax[0], with_anns=True, show_lidarseg=True, show_lidarseg_legend=False)
-    nusc.render_sample_data(sd_token, ax=ax[1], with_anns=True, show_lidarseg=True, show_lidarseg_legend=False,)
-                            # lidarseg_preds_bin_path=)
+    # pc = seg_res.data[token].point_cloud
+    pointsensor = nusc.get('sample_data', sd_token)
+    pcl_path = os.path.join(nusc.dataroot, pointsensor['filename'])
+    pc = LidarPointCloud.from_file(pcl_path)
+    points = pc.points.T  # [N, 4]
 
-    filename = '/home/whye/Desktop/logs/hi2.png'  # TODO
-    plt.savefig(filename)
+    # 3. Load the ground truth labels for the point cloud.
+    lidarseg_label_filename = os.path.join(nusc.dataroot,
+                                           nusc.get('lidarseg', sd_token)['filename'])
+    lidarseg_label = load_bin_file(lidarseg_label_filename)
+    lidarseg_label = mapper.convert_label(lidarseg_label)  # Map the labels as necessary.
+
+    # 4. Load the predictions for the point cloud.
+    lidarseg_pred_filename = os.path.join(lidarseg_preds_bin_path, sd_token + '_lidarseg.bin')
+    lidarseg_pred = load_bin_file(lidarseg_pred_filename)
+
+    # Init axes.
+    fig, axes = plt.subplots(1, 3, figsize=(10 * 3, 10), sharex='all', sharey='all')
+    axes_limit: float = 40  # TODO make as params
+    dot_size = 5
+
+    colormap = {  # RGB.
+        'ignore': (0, 0, 0),  # Black.
+        'barrier': (112, 128, 144),
+        'bicycle': (220, 20, 60),
+        'bus': (255, 127, 80),
+        'car': (255, 158, 0),
+        'construction_vehicle': (233, 150, 70),
+        'motorcycle': (255, 61, 99),
+        'pedestrian': (0, 0, 230),
+        'traffic_cone': (47, 79, 79),
+        'trailer': (255, 140, 0),
+        'truck': (255, 99, 71),
+        'driveable_surface': (0, 207, 191),
+        'other_flat': (175, 0, 75),
+        'sidewalk': (75, 0, 75),
+        'terrain': (112, 180, 60),
+        'manmade': (222, 184, 135),
+        'vegetation': (0, 175, 0)}
+
+    colors = colormap_to_colors(colormap, mapper.coarse_name_2_coarse_idx_mapping)
+
+    id2color_for_diff_bev = {0: (191, 41, 0, 255),  # red: wrong label
+                             1: (50, 168, 82, 255)}  # green: correct label
+    colors_for_diff_bev = colormap_to_colors(id2color_for_diff_bev, {0: 0, 1: 1})
+    # colors_for_diff_bev = colors_for_diff_bev[:, 3]
+
+    # TODO do not plot points which are ignored
+    # TODO better way to get ignore_idx? mapper.ignore_idx
+    ignored_points_idxs = np.where(lidarseg_label != 0)[0]
+
+    points = points[ignored_points_idxs]
+
+    lidarseg_label = lidarseg_label[ignored_points_idxs]
+    axes[0].scatter(points[:, 0], points[:, 1], c=colors[lidarseg_label], s=dot_size)
+
+    # TODO legend for plot
+    plt.gcf()
+    filter_lidarseg_labels = get_labels_in_coloring(colors, colors[lidarseg_label])
+    id2name = {idx: name for name, idx in mapper.coarse_name_2_coarse_idx_mapping.items()}
+    create_lidarseg_legend(filter_lidarseg_labels, id2name, colormap)
+
+    lidarseg_pred = lidarseg_pred[ignored_points_idxs]
+    axes[1].scatter(points[:, 0], points[:, 1], c=colors[lidarseg_pred], s=dot_size)
+
+    mask = lidarseg_label == lidarseg_pred
+    mask = mask.astype(int)  # need to convert array rom bool to int
+    axes[2].scatter(points[:, 0], points[:, 1], c=colors_for_diff_bev[mask], s=dot_size)
+
+    axes[0].set_title('Ground truth')
+    axes[1].set_title('Predictions')
+    axes[2].set_title('Errors (Correct: Green, Mislabeled: Red)')
+
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # Limit visible range for all subplots.
+    plt.xlim(-axes_limit, axes_limit)
+    plt.ylim(-axes_limit, axes_limit)
+    plt.show()
+
+    # filename = '/home/whye/Desktop/logs/hi2.png'  # TODO
+    # plt.savefig(filename)
 
 
 def haha():
@@ -247,10 +298,6 @@ def haha():
     pointcloud_est.render_label(axes[1], id2color=id2color, x_lim=xrange, y_lim=yrange)
     pointcloud_diff = LidarPointCloud(np.concatenate((pc.T, np.atleast_2d((gt == est).astype(np.int))), axis=0))
     pointcloud_diff.render_label(axes[2], id2color=id2color_for_diff_bev, x_lim=xrange, y_lim=yrange)
-
-    axes[0].set_title('Raw Point Cloud with GT Labels')
-    axes[1].set_title('Raw Point Cloud with EST Labels')
-    axes[2].set_title('Errors (Correct: Green, Mislabeled: Red)')
 
     return axes
 
