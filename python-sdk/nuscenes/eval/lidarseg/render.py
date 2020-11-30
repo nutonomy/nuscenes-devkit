@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.lidarseg.evaluate import LidarSegEval
-from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file, colormap_to_colors, \
-    create_lidarseg_legend, get_labels_in_coloring
+from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file
+from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend, get_labels_in_coloring
 from nuscenes.utils.data_classes import LidarPointCloud
 
 
@@ -22,7 +22,7 @@ class LidarSegEvalStratified(LidarSegEval):
                  output_dir: str,
                  eval_set: str,
                  # sample_size: int,
-                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, 60), (60, 80)),
+                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, 60)),
                  # is_render_bad_samples: bool = True,
                  verbose: bool = True):
         """
@@ -105,7 +105,8 @@ class LidarSegEvalStratified(LidarSegEval):
         fig = plt.figure()
         for n, (cls, cls_strata) in enumerate(stratified_classes.items()):
             ax = fig.add_subplot(gs[n])
-            ax.bar([' to '.join(map(str, rng)) for rng in self.strata_list], cls_strata, color='green')
+            ax.bar([' to '.join(map(str, rng)) for rng in self.strata_list],
+                   cls_strata, color=np.array(self.mapper.coarse_colormap[cls]) / 255)
             ax.set_xlabel('Interval', fontsize=3)
             ax.set_ylabel('IOU', fontsize=3)
             ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
@@ -211,25 +212,7 @@ def visualize_semantic_differences_bev(nusc, sample_token: str, lidarseg_preds_b
     axes_limit: float = 40  # TODO make as params
     dot_size = 5
 
-    colormap = {  # RGB.
-        'ignore': (0, 0, 0),  # Black.
-        'barrier': (112, 128, 144),
-        'bicycle': (220, 20, 60),
-        'bus': (255, 127, 80),
-        'car': (255, 158, 0),
-        'construction_vehicle': (233, 150, 70),
-        'motorcycle': (255, 61, 99),
-        'pedestrian': (0, 0, 230),
-        'traffic_cone': (47, 79, 79),
-        'trailer': (255, 140, 0),
-        'truck': (255, 99, 71),
-        'driveable_surface': (0, 207, 191),
-        'other_flat': (175, 0, 75),
-        'sidewalk': (75, 0, 75),
-        'terrain': (112, 180, 60),
-        'manmade': (222, 184, 135),
-        'vegetation': (0, 175, 0)}
-
+    colormap = mapper.coarse_colormap
     colors = colormap_to_colors(colormap, mapper.coarse_name_2_coarse_idx_mapping)
 
     id2color_for_diff_bev = {0: (191, 41, 0, 255),  # red: wrong label
