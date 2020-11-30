@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -135,6 +135,7 @@ class LidarsegClassMapper:
 
         self.fine_name_2_coarse_name_mapping = self.get_fine2coarse()
         self.coarse_name_2_coarse_idx_mapping = self.get_coarse2idx()
+        self.coarse_colormap = self.get_coarse2color()
 
         self.check_mapping()
 
@@ -208,6 +209,29 @@ class LidarsegClassMapper:
                 'terrain': 14,
                 'manmade': 15,
                 'vegetation': 16}
+
+    def get_coarse2color(self) -> Dict[str, Tuple[int]]:
+        """
+        Returns the mapping from the coarse class names to the colors in RGB.
+        :return: A dictionary containing the mapping from the coarse class names to the colors in RGB.
+        """
+        return {self.ignore_class['name']: (0, 0, 0),  # Black.
+                'barrier': (112, 128, 144),  # Slategrey
+                'bicycle': (220, 20, 60),  # Crimson
+                'bus': (255, 127, 80),  # Coral
+                'car': (255, 158, 0),  # Orange
+                'construction_vehicle': (233, 150, 70),  # Darksalmon
+                'motorcycle': (255, 61, 99),  # Red
+                'pedestrian': (0, 0, 230),  # Blue
+                'traffic_cone': (47, 79, 79),  # Darkslategrey
+                'trailer': (255, 140, 0),  # Darkorange
+                'truck': (255, 99, 71),  # Tomato
+                'driveable_surface': (0, 207, 191),  # nuTonomy green
+                'other_flat': (175, 0, 75),
+                'sidewalk': (75, 0, 75),
+                'terrain': (112, 180, 60),
+                'manmade': (222, 184, 135),  # Burlywood
+                'vegetation': (0, 175, 0)}  # Green
 
     def get_fine_idx_2_coarse_idx(self) -> Dict[int, int]:
         """
