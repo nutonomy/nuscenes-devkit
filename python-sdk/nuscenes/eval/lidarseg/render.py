@@ -1,3 +1,5 @@
+import argparse
+import json
 import os
 from typing import Dict, List, Tuple, Union
 
@@ -8,7 +10,7 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.lidarseg.evaluate import LidarSegEval
-from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file
+from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file, LidarSegPointCloud
 from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend, get_labels_in_coloring
 from nuscenes.utils.data_classes import LidarPointCloud
 
@@ -22,8 +24,9 @@ class LidarSegEvalStratified(LidarSegEval):
                  output_dir: str,
                  eval_set: str,
                  # sample_size: int,
-                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, 60)),
+                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, None)),
                  # is_render_bad_samples: bool = True,
+                 render_viz: bool = True,
                  verbose: bool = True):
         """
         :param nusc: A NuScenes object.
@@ -31,24 +34,48 @@ class LidarSegEvalStratified(LidarSegEval):
         :param output_dir: Folder to save plots and results to.
         :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
         :param strata_list: The strata to evaluate by, in meters.
+        :param render_viz: Whether to render and save the visualizations to output_dir.
         :param verbose: Whether to print messages during the evaluation.
         """
         super().__init__(nusc, results_folder, eval_set, verbose)
 
         self.output_dir = output_dir
+
         self.strata_list = strata_list
+        # Get the display names for each strata (e.g. (40, 60) -> '40 to 60'; if the upper bound of a strata is
+        # None (e.g. (40, None)), then the display name will be '40+'.
+        self.strata_names = ['{}m to {}m'.format(rng[0], rng[1]) if rng[1] is not None else str(rng[0]) + 'm+'
+                             for i, rng in enumerate(self.strata_list)]
+
+        self.render_viz = render_viz
 
         self.ignore_name = self.mapper.ignore_class['name']
 
         # Create a list of confusion matrices, one for each strata.
         self.global_cm = [ConfusionMatrix(self.num_classes, self.ignore_idx) for i in range(len(strata_list))]
 
+        # After running the evaluation, a list of dictionaries where each entry corresponds to each strata and is of
+        # the following format:
+        # [
+        #     {
+        #         "iou_per_class": {
+        #             "ignore": NaN,
+        #             "class_a": 0.8042956640279008,
+        #             ...
+        #         },
+        #         "miou": 0.7626268050947295,
+        #         "freq_weighted_iou": 0.8906460292535451
+        #     },
+        #     ...  # More strata.
+        # ]
+        self.stratified_per_class_metrics = None
+
     def evaluate(self) -> None:
         """
         Performs the actual evaluation. Overwrites the `evaluate` method in the LidarSegEval class.
         """
         for i, strata in enumerate(self.strata_list):
-            print('Evaluating for strata {}m to {}m...'.format(strata[0], strata[1]))
+            print('Evaluating for strata {}...'.format(self.strata_names[i]))
             for sample_token in tqdm(self.sample_tokens, disable=not self.verbose):
                 sample = self.nusc.get('sample', sample_token)
 
@@ -78,19 +105,51 @@ class LidarSegEvalStratified(LidarSegEval):
                 # 5. Update the confusion matrix for the sample data into the confusion matrix for the eval set.
                 self.global_cm[i].update(lidarseg_label, lidarseg_pred)
 
-        stratified_per_class_metrics = self.get_stratified_per_class_metrics()
-        self.render_stratified_per_class_metrics(stratified_per_class_metrics,
-                                                 os.path.join(self.output_dir, 'stratified_iou_per_class.png'))
+        self.stratified_per_class_metrics = self.get_stratified_per_class_metrics()
+        if self.verbose:
+            print(json.dumps(self.stratified_per_class_metrics, indent=4))
 
-    def render_stratified_per_class_metrics(self, stratified_per_class_metrics: List[Dict], filename: str) -> None:
+        if self.render_viz:
+            self.render_stratified_per_class_metrics(os.path.join(self.output_dir, 'stratified_iou_per_class.png'))
+            self.render_stratified_overall_metrics(os.path.join(self.output_dir, 'stratified_iou_overall.png'))
+
+    def render_stratified_overall_metrics(self, filename: str, dpi: int = 100) -> None:
+        """
+        Renders the stratified overall metrics (i.e. the classes are aggregated for each strata).
+        :param filename: Filename to save the render as.
+        :param dpi: Resolution of the output figure.
+        """
+        stratified_iou = {strata_name: self.stratified_per_class_metrics[i]['miou'] for i, strata_name in
+                          enumerate(self.strata_names)}
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.bar(list(stratified_iou.keys()),
+               list(stratified_iou.values()), color='grey')
+        ax.set_xlabel('Interval / m', fontsize=15)
+        ax.set_ylabel('mIOU', fontsize=15)
+        ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
+        ax.set_title('Stratified results for mIOU', fontsize=20)
+        ax.tick_params(axis='both', which='major', labelsize=15)
+
+        # Loop to add a tag to each bar.
+        for j, rect in enumerate(ax.patches):
+            ax.text(rect.get_x() + rect.get_width() / 2., rect.get_y() + rect.get_height() + 0.01,
+                    '{:.4f}'.format(list(stratified_iou.values())[j]),
+                    ha='center', va='bottom', fontsize=15)
+
+        plt.tight_layout()
+        plt.savefig(filename, dpi=dpi)
+        plt.close()
+
+    def render_stratified_per_class_metrics(self, filename: str, dpi: int = 150) -> None:
         """
         Renders the stratified per class metrics.
-        :param stratified_per_class_metrics: A list of dictionaries where each entry corresponds to each strata; each
-                                             dictionary contains the iou_per_class, miou, and freq_weighted_iou.
         :param filename: Filename to save the render as.
+        :param dpi: Resolution of the output figure.
         """
         stratified_classes = {cls_name: [] for cls_name in self.id2name.values()}
-        for strata_metrics in stratified_per_class_metrics:
+        for strata_metrics in self.stratified_per_class_metrics:
             for cls, cls_iou in strata_metrics['iou_per_class'].items():
                 stratified_classes[cls].append(cls_iou)
 
@@ -105,9 +164,8 @@ class LidarSegEvalStratified(LidarSegEval):
         fig = plt.figure()
         for n, (cls, cls_strata) in enumerate(stratified_classes.items()):
             ax = fig.add_subplot(gs[n])
-            ax.bar([' to '.join(map(str, rng)) for rng in self.strata_list],
-                   cls_strata, color=np.array(self.mapper.coarse_colormap[cls]) / 255)
-            ax.set_xlabel('Interval', fontsize=3)
+            ax.bar(self.strata_names, cls_strata, color=np.array(self.mapper.coarse_colormap[cls]) / 255)
+            ax.set_xlabel('Interval / m', fontsize=3)
             ax.set_ylabel('IOU', fontsize=3)
             ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
             ax.set_title('Stratified results for {}'.format(cls), fontsize=4)
@@ -120,7 +178,7 @@ class LidarSegEvalStratified(LidarSegEval):
                         ha='center', va='bottom', fontsize=3)
 
         plt.tight_layout()
-        plt.savefig(filename, dpi=250)
+        plt.savefig(filename, dpi=dpi)
         plt.close()
 
     def get_stratified_per_class_metrics(self) -> List[Dict]:
@@ -177,12 +235,22 @@ class LidarSegEvalStratified(LidarSegEval):
         return points, filtered_idxs
 
 
-def visualize_semantic_differences_bev(nusc, sample_token: str, lidarseg_preds_bin_path: str = None):  # -> axes.Axes:
+def visualize_semantic_differences_bev(nusc,
+                                       sample_token: str,
+                                       lidarseg_preds_folder: str = None,
+                                       axes_limit: float = 40,
+                                       dot_size: int = 5,
+                                       out_path: str = None) -> None:
     """
     Visualize semantic difference of lidar segmentation results in bird's eye view.
     :param nusc: A NuScenes object.
     :param sample_token: Unique identifier.
-    :param lidarseg_preds_bin_path: LidarSegmentationResults class.
+    :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
+                                  the scene. The naming convention of each .bin file in the folder should be
+                                  named in this format: <lidar_sample_data_token>_lidarseg.bin.
+    :param axes_limit: Axes limit for plot (measured in meters).
+    :param dot_size: Scatter plot dot size.
+    :param out_path: Path to save visualization to (e.g. /save/to/here/bev_diff.png).
     """
     mapper = LidarsegClassMapper(nusc)
 
@@ -190,111 +258,100 @@ def visualize_semantic_differences_bev(nusc, sample_token: str, lidarseg_preds_b
 
     # Get the sample data token of the point cloud.
     sd_token = sample['data']['LIDAR_TOP']
-
-    # pc = seg_res.data[token].point_cloud
     pointsensor = nusc.get('sample_data', sd_token)
     pcl_path = os.path.join(nusc.dataroot, pointsensor['filename'])
-    pc = LidarPointCloud.from_file(pcl_path)
-    points = pc.points.T  # [N, 4]
 
-    # 3. Load the ground truth labels for the point cloud.
-    lidarseg_label_filename = os.path.join(nusc.dataroot,
-                                           nusc.get('lidarseg', sd_token)['filename'])
-    lidarseg_label = load_bin_file(lidarseg_label_filename)
-    lidarseg_label = mapper.convert_label(lidarseg_label)  # Map the labels as necessary.
+    # Load the ground truth labels for the point cloud.
+    gt_path = os.path.join(nusc.dataroot, nusc.get('lidarseg', sd_token)['filename'])
+    gt = LidarSegPointCloud(pcl_path, gt_path)
+    gt.labels = mapper.convert_label(gt.labels)  # Map the labels as necessary.
 
-    # 4. Load the predictions for the point cloud.
-    lidarseg_pred_filename = os.path.join(lidarseg_preds_bin_path, sd_token + '_lidarseg.bin')
-    lidarseg_pred = load_bin_file(lidarseg_pred_filename)
+    # Load the predictions for the point cloud.
+    preds_path = os.path.join(lidarseg_preds_folder, sd_token + '_lidarseg.bin')
+    preds = LidarSegPointCloud(pcl_path, preds_path)
 
-    # Init axes.
-    fig, axes = plt.subplots(1, 3, figsize=(10 * 3, 10), sharex='all', sharey='all')
-    axes_limit: float = 40  # TODO make as params
-    dot_size = 5
-
-    colormap = mapper.coarse_colormap
-    colors = colormap_to_colors(colormap, mapper.coarse_name_2_coarse_idx_mapping)
-
-    id2color_for_diff_bev = {0: (191, 41, 0, 255),  # red: wrong label
-                             1: (50, 168, 82, 255)}  # green: correct label
-    colors_for_diff_bev = colormap_to_colors(id2color_for_diff_bev, {0: 0, 1: 1})
-    # colors_for_diff_bev = colors_for_diff_bev[:, 3]
-
-    # TODO do not plot points which are ignored
-    # TODO better way to get ignore_idx? mapper.ignore_idx
-    ignored_points_idxs = np.where(lidarseg_label != 0)[0]
-
-    points = points[ignored_points_idxs]
-
-    lidarseg_label = lidarseg_label[ignored_points_idxs]
-    axes[0].scatter(points[:, 0], points[:, 1], c=colors[lidarseg_label], s=dot_size)
-
-    # TODO legend for plot
-    plt.gcf()
-    filter_lidarseg_labels = get_labels_in_coloring(colors, colors[lidarseg_label])
-    id2name = {idx: name for name, idx in mapper.coarse_name_2_coarse_idx_mapping.items()}
-    create_lidarseg_legend(filter_lidarseg_labels, id2name, colormap)
-
-    lidarseg_pred = lidarseg_pred[ignored_points_idxs]
-    axes[1].scatter(points[:, 0], points[:, 1], c=colors[lidarseg_pred], s=dot_size)
-
-    mask = lidarseg_label == lidarseg_pred
-    mask = mask.astype(int)  # need to convert array rom bool to int
-    axes[2].scatter(points[:, 0], points[:, 1], c=colors_for_diff_bev[mask], s=dot_size)
-
-    axes[0].set_title('Ground truth')
-    axes[1].set_title('Predictions')
-    axes[2].set_title('Errors (Correct: Green, Mislabeled: Red)')
-
-    # plt.gca().set_aspect('equal', adjustable='box')
-    # Limit visible range for all subplots.
-    plt.xlim(-axes_limit, axes_limit)
-    plt.ylim(-axes_limit, axes_limit)
-    plt.show()
-
-    # filename = '/home/whye/Desktop/logs/hi2.png'  # TODO
-    # plt.savefig(filename)
-
-
-def haha():
-    # gt = seg_res.data[token].gt
-    # est = seg_res.data[token].est
-
-    # red: wrong label, green: correct label
-    id2color_for_diff_bev = {0: (191, 41, 0, 255), 1: (50, 168, 82, 255)}
-    id2color = {_id: label.color for _id, label in seg_res.labelmap.items()}
-
-    # Plot birdsview gt, est and difference.
-    _, axes = plt.subplots(1, 3, figsize=(10 * 3, 10))
-
-    xrange = seg_res.meta.xrange
-    yrange = seg_res.meta.yrange
-
-    if class_list is not None:
+    # Do not compare points which are ignored.
+    """
+        if class_list is not None:
         mask = np.logical_or(np.isin(gt, class_list), np.isin(est, class_list))
         gt = gt[mask]
         pc = pc[mask]
         est = est[mask]
-    pointcloud_gt = LidarPointCloud(np.concatenate((pc.T, np.atleast_2d(gt)), axis=0))
-    pointcloud_gt.render_label(axes[0], id2color=id2color, x_lim=xrange, y_lim=yrange)
-    pointcloud_est = LidarPointCloud(np.concatenate((pc.T, np.atleast_2d(est)), axis=0))
-    pointcloud_est.render_label(axes[1], id2color=id2color, x_lim=xrange, y_lim=yrange)
-    pointcloud_diff = LidarPointCloud(np.concatenate((pc.T, np.atleast_2d((gt == est).astype(np.int))), axis=0))
-    pointcloud_diff.render_label(axes[2], id2color=id2color_for_diff_bev, x_lim=xrange, y_lim=yrange)
+    """
+    ignored_points_idxs = np.where(gt.labels != mapper.ignore_class['index'])[0]
+    gt.labels = gt.labels[ignored_points_idxs]
+    gt.points = gt.points[ignored_points_idxs]
+    preds.labels = preds.labels[ignored_points_idxs]
+    preds.points = preds.points[ignored_points_idxs]
 
-    return axes
+    # Init axes.
+    fig, axes = plt.subplots(1, 3, figsize=(10 * 3, 10), sharex='all', sharey='all')
+
+    gt.render(mapper.coarse_colormap, mapper.coarse_name_2_coarse_idx_mapping, ax=axes[0])
+    preds.render(mapper.coarse_colormap, mapper.coarse_name_2_coarse_idx_mapping, ax=axes[1])
+
+    # Render errors.
+    id2color_for_diff_bev = {0: (191, 41, 0, 255),  # red: wrong label
+                             1: (50, 168, 82, 255)}  # green: correct label
+    colors_for_diff_bev = colormap_to_colors(id2color_for_diff_bev, {0: 0, 1: 1})
+    mask = np.array(gt.labels == preds.labels).astype(int)  # need to convert array from bool to int
+    axes[2].scatter(gt.points[:, 0], gt.points[:, 1], c=colors_for_diff_bev[mask], s=dot_size)
+    axes[2].set_title('Errors (Correct: Green, Mislabeled: Red)')
+
+    # Limit visible range for all subplots.
+    plt.xlim(-axes_limit, axes_limit)
+    plt.ylim(-axes_limit, axes_limit)
+
+    if out_path:
+        plt.savefig(out_path)
+
+    plt.show()
 
 
 if __name__ == '__main__':
+    # Settings.
+    parser = argparse.ArgumentParser(description='Evaluate nuScenes-lidarseg results.')
+    parser.add_argument('--result_path', type=str,
+                        help='The path to the results folder.')
+    parser.add_argument('--out_path', type=str,
+                        help='Folder to store result metrics, graphs and example visualizations.')
+    parser.add_argument('--eval_set', type=str, default='val',
+                        help='Which dataset split to evaluate on, train, val or test.')
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
+                        help='Default nuScenes data directory.')
+    parser.add_argument('--version', type=str, default='v1.0-trainval',
+                        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
+    parser.add_argument('--verbose', type=bool, default=False,
+                        help='Whether to print to stdout.')
+    args = parser.parse_args()
+
+    result_path_ = args.result_path
+    out_path_ = args.out_path
+    eval_set_ = args.eval_set
+    dataroot_ = args.dataroot
+    version_ = args.version
+    verbose_ = args.verbose
+
+    """
     result_path_ = '/home/whye/Desktop/logs/lidarseg_nips20/venice/maplsn_rangeview'
-    out_path = '/home/whye/Desktop/logs'
+    out_path_ = '/home/whye/Desktop/logs'
     eval_set_ = 'test'
     dataroot_ = '/data/sets/nuscenes'
     version_ = 'v1.0-test'
     verbose_ = True
+    """
 
     nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
 
-    evaluator = LidarSegEvalStratified(nusc_, result_path_, out_path, eval_set=eval_set_, verbose=verbose_)
+    evaluator = LidarSegEvalStratified(nusc_,
+                                       result_path_,
+                                       out_path_,
+                                       eval_set=eval_set_,
+                                       # strata_list=???,
+                                       # render_viz=render_viz,
+                                       verbose=verbose_)
     evaluator.evaluate()
-    # visualize_semantic_differences_bev(nusc_, nusc_.sample[0]['token'])
+    # visualize_semantic_differences_bev(nusc_, nusc_.sample[0]['token'],
+    #                                    # '/home/whye/Desktop/logs/lidarseg_nips20/venice/fusion_train/lidarseg/test/')
+    #                                    '/home/whye/Desktop/logs/lidarseg_nips20/others/d625f4a4-bb7f-4ccd-9189-306b1ff5c6eb/lidarseg/test',
+    #                                    out_path='/home/whye/Desktop/logs/hi2.png')
