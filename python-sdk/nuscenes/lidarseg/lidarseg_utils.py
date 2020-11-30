@@ -4,6 +4,7 @@
 from typing import Dict, Iterable, List, Tuple
 
 import cv2
+from matplotlib import axes
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -146,13 +147,14 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
 
 def create_lidarseg_legend(labels_to_include_in_legend: List[int],
                            idx2name: Dict[int, str], name2color: Dict[str, Tuple[int, int, int]],
-                           loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
+                           ax: axes.Axes = None, loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
     """
     Given a list of class indices, the mapping from class index to class name, and the mapping from class name
     to class color, produce a legend which shows the color and the corresponding class name.
     :param labels_to_include_in_legend: Labels to show in the legend.
     :param idx2name: The mapping from class index to class name.
     :param name2color: The mapping from class name to class color.
+    :param ax: Axes onto which to render.
     :param loc: The location of the legend.
     :param ncol: The number of columns that the legend has.
     :param bbox_to_anchor: A 2-tuple (x, y) which places the top-left corner of the legend specified by loc
@@ -171,8 +173,10 @@ def create_lidarseg_legend(labels_to_include_in_legend: List[int],
 
             # Truncate class names to only first 25 chars so that legend is not excessively long.
             classes_final.append(classes[i][:25])
-
-    plt.legend(recs, classes_final, loc=loc, ncol=ncol, bbox_to_anchor=bbox_to_anchor)
+    if ax is not None:
+        ax.legend(recs, classes_final, loc=loc, ncol=ncol, bbox_to_anchor=bbox_to_anchor)
+    else:
+        plt.legend(recs, classes_final, loc=loc, ncol=ncol, bbox_to_anchor=bbox_to_anchor)
 
 
 def paint_points_label(lidarseg_labels_filename: str, filter_lidarseg_labels: List[int],
