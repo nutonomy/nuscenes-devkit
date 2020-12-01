@@ -23,31 +23,26 @@ class LidarSegEvalStratified(LidarSegEval):
                  results_folder: str,
                  output_dir: str,
                  eval_set: str,
-                 # sample_size: int,
                  strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, None)),
-                 # is_render_bad_samples: bool = True,
-                 render_viz: bool = True,
                  verbose: bool = True):
         """
         :param nusc: A NuScenes object.
         :param results_folder: Path to the folder where the results are stored.
         :param output_dir: Folder to save plots and results to.
         :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
-        :param strata_list: The strata to evaluate by, in meters.
-        :param render_viz: Whether to render and save the visualizations to output_dir.
+        :param strata_list: The stratum to evaluate by, in meters.
         :param verbose: Whether to print messages during the evaluation.
         """
         super().__init__(nusc, results_folder, eval_set, verbose)
 
         self.output_dir = output_dir
+        assert os.path.exists(self.output_dir), 'Error: {} does not exist.'.format(self.output_dir)
 
         self.strata_list = strata_list
         # Get the display names for each strata (e.g. (40, 60) -> '40 to 60'; if the upper bound of a strata is
         # None (e.g. (40, None)), then the display name will be '40+'.
         self.strata_names = ['{}m to {}m'.format(rng[0], rng[1]) if rng[1] is not None else str(rng[0]) + 'm+'
                              for i, rng in enumerate(self.strata_list)]
-
-        self.render_viz = render_viz
 
         self.ignore_name = self.mapper.ignore_class['name']
 
@@ -109,7 +104,7 @@ class LidarSegEvalStratified(LidarSegEval):
         if self.verbose:
             print(json.dumps(self.stratified_per_class_metrics, indent=4))
 
-        if self.render_viz:
+        if self.output_dir:
             self.render_stratified_per_class_metrics(os.path.join(self.output_dir, 'stratified_iou_per_class.png'))
             self.render_stratified_overall_metrics(os.path.join(self.output_dir, 'stratified_iou_overall.png'))
 
@@ -140,7 +135,9 @@ class LidarSegEvalStratified(LidarSegEval):
 
         plt.tight_layout()
         plt.savefig(filename, dpi=dpi)
-        plt.close()
+
+        if self.verbose:
+            plt.show()
 
     def render_stratified_per_class_metrics(self, filename: str, dpi: int = 150) -> None:
         """
@@ -158,7 +155,6 @@ class LidarSegEvalStratified(LidarSegEval):
 
         plot_num_cols = 4
         plot_num_rows = int(np.ceil(len(stratified_classes) / plot_num_cols))
-        _, axes = plt.subplots(plot_num_rows, plot_num_cols, figsize=(15 * len(self.strata_list), 300))
 
         gs = gridspec.GridSpec(plot_num_rows, plot_num_cols)
         fig = plt.figure()
@@ -179,7 +175,9 @@ class LidarSegEvalStratified(LidarSegEval):
 
         plt.tight_layout()
         plt.savefig(filename, dpi=dpi)
-        plt.close()
+
+        if self.verbose:
+            plt.show()
 
     def get_stratified_per_class_metrics(self) -> List[Dict]:
         """
@@ -332,23 +330,12 @@ if __name__ == '__main__':
     version_ = args.version
     verbose_ = args.verbose
 
-    """
-    result_path_ = '/home/whye/Desktop/logs/lidarseg_nips20/venice/maplsn_rangeview'
-    out_path_ = '/home/whye/Desktop/logs'
-    eval_set_ = 'test'
-    dataroot_ = '/data/sets/nuscenes'
-    version_ = 'v1.0-test'
-    verbose_ = True
-    """
-
     nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
 
     evaluator = LidarSegEvalStratified(nusc_,
                                        result_path_,
                                        out_path_,
                                        eval_set=eval_set_,
-                                       # strata_list=???,
-                                       # render_viz=render_viz,
                                        verbose=verbose_)
     evaluator.evaluate()
     # visualize_semantic_differences_bev(nusc_, nusc_.sample[0]['token'],
