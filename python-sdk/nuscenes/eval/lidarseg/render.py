@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
@@ -12,7 +12,6 @@ from nuscenes import NuScenes
 from nuscenes.eval.lidarseg.evaluate import LidarSegEval
 from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file, LidarSegPointCloud
 from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend, get_labels_in_coloring
-from nuscenes.utils.data_classes import LidarPointCloud
 
 
 class LidarSegEvalStratified(LidarSegEval):
@@ -76,29 +75,24 @@ class LidarSegEvalStratified(LidarSegEval):
 
                 # 1. Get the sample data token of the point cloud.
                 sd_token = sample['data']['LIDAR_TOP']
-
-                # 2. Get the indices of the points belonging to the strata.
                 pointsensor = self.nusc.get('sample_data', sd_token)
                 pcl_path = os.path.join(self.nusc.dataroot, pointsensor['filename'])
-                pc = LidarPointCloud.from_file(pcl_path)
-                points = pc.points  # [4, N]
-                _, filtered_idxs = self.filter_pointcloud_by_depth(points, min_depth=strata[0], max_depth=strata[1])
 
-                # 3. Load the ground truth labels for the point cloud.
-                lidarseg_label_filename = os.path.join(self.nusc.dataroot,
-                                                       self.nusc.get('lidarseg', sd_token)['filename'])
-                lidarseg_label = load_bin_file(lidarseg_label_filename)
-                lidarseg_label = self.mapper.convert_label(lidarseg_label)  # Map the labels as necessary.
-                lidarseg_label = lidarseg_label[filtered_idxs]  # Filter to get only labels belonging to the strata.
+                # 2. Load the ground truth labels for the point cloud.
+                gt_path = os.path.join(self.nusc.dataroot, self.nusc.get('lidarseg', sd_token)['filename'])
+                gt = LidarSegPointCloud(pcl_path, gt_path)
+                gt.labels = self.mapper.convert_label(gt.labels)  # Map the labels as necessary.
 
-                # 4. Load the predictions for the point cloud.
-                lidarseg_pred_filename = os.path.join(self.results_folder, 'lidarseg',
-                                                      self.eval_set, sd_token + '_lidarseg.bin')
-                lidarseg_pred = load_bin_file(lidarseg_pred_filename)
-                lidarseg_pred = lidarseg_pred[filtered_idxs]  # Filter to get only labels belonging to the strata.
+                # 3. Load the predictions for the point cloud.
+                pred_path = os.path.join(self.results_folder, 'lidarseg', self.eval_set, sd_token + '_lidarseg.bin')
+                pred = LidarSegPointCloud(pcl_path, pred_path)
+
+                # 4. Filter to get only labels belonging to the strata.
+                gt = self.filter_pointcloud_by_depth(gt, min_depth=strata[0], max_depth=strata[1])
+                pred = self.filter_pointcloud_by_depth(pred, min_depth=strata[0], max_depth=strata[1])
 
                 # 5. Update the confusion matrix for the sample data into the confusion matrix for the eval set.
-                self.global_cm[i].update(lidarseg_label, lidarseg_pred)
+                self.global_cm[i].update(gt.labels, pred.labels)
 
         self.stratified_per_class_metrics = self.get_stratified_per_class_metrics()
         if self.verbose:
@@ -201,24 +195,24 @@ class LidarSegEvalStratified(LidarSegEval):
         return stratified_per_class_iou
 
     @staticmethod
-    def filter_pointcloud_by_depth(points: LidarPointCloud,
+    def filter_pointcloud_by_depth(pc: LidarSegPointCloud,
                                    min_depth: float = 0,
-                                   max_depth: float = None) -> Union[LidarPointCloud, List[int]]:
+                                   max_depth: float = None) -> LidarSegPointCloud:
         """
         Filters the point cloud such that only points which are within a certain radial range from the ego lidar are
         selected.
-        :param points: The point cloud to be filtered.
+        :param pc: The point cloud to be filtered.
         :param min_depth: Points to be further than this distance from the ego lidar, in meters.
         :param max_depth: Points to be at most this far from the ego lidar, in meters. If None, then max_depth is
                           effectively the distance of the furthest point from the ego lidar.
+        :return: The filtered point cloud.
         """
-        points = points.T  # Transpose the matrix to make manipulation more convenient ([4, N] to [N, 4]).
-
-        depth = np.linalg.norm(points[:, :2], axis=1)
+        depth = np.linalg.norm(pc.points[:, :2], axis=1)
 
         assert min_depth >= 0, 'Error: min_depth cannot be negative.'
         min_depth_idxs = np.where(depth > min_depth)[0]
 
+        # Get the indices of the points belonging to the strata.
         if max_depth is not None:
             assert max_depth >= 0, 'Error: max_depth cannot be negative.'
             max_depth_idxs = np.where(depth <= max_depth)[0]
@@ -227,10 +221,9 @@ class LidarSegEvalStratified(LidarSegEval):
         else:
             filtered_idxs = min_depth_idxs
 
-        points = points[filtered_idxs]
-        points = points.T  # Transpose the matrix back ([N, 4] to [4, N]).
+        pc.points, pc.labels = pc.points[filtered_idxs], pc.labels[filtered_idxs]
 
-        return points, filtered_idxs
+        return pc
 
 
 def visualize_semantic_differences_bev(nusc,
@@ -269,13 +262,6 @@ def visualize_semantic_differences_bev(nusc,
     preds = LidarSegPointCloud(pcl_path, preds_path)
 
     # Do not compare points which are ignored.
-    """
-        if class_list is not None:
-        mask = np.logical_or(np.isin(gt, class_list), np.isin(est, class_list))
-        gt = gt[mask]
-        pc = pc[mask]
-        est = est[mask]
-    """
     ignored_points_idxs = np.where(gt.labels != mapper.ignore_class['index'])[0]
     gt.labels = gt.labels[ignored_points_idxs]
     gt.points = gt.points[ignored_points_idxs]
@@ -285,6 +271,7 @@ def visualize_semantic_differences_bev(nusc,
     # Init axes.
     fig, axes = plt.subplots(1, 3, figsize=(10 * 3, 10), sharex='all', sharey='all')
 
+    # Render ground truth and predictions.
     gt.render(mapper.coarse_colormap, mapper.coarse_name_2_coarse_idx_mapping, ax=axes[0])
     preds.render(mapper.coarse_colormap, mapper.coarse_name_2_coarse_idx_mapping, ax=axes[1])
 
@@ -292,7 +279,7 @@ def visualize_semantic_differences_bev(nusc,
     id2color_for_diff_bev = {0: (191, 41, 0, 255),  # red: wrong label
                              1: (50, 168, 82, 255)}  # green: correct label
     colors_for_diff_bev = colormap_to_colors(id2color_for_diff_bev, {0: 0, 1: 1})
-    mask = np.array(gt.labels == preds.labels).astype(int)  # need to convert array from bool to int
+    mask = np.array(gt.labels == preds.labels).astype(int)  # Convert array from bool to int.
     axes[2].scatter(gt.points[:, 0], gt.points[:, 1], c=colors_for_diff_bev[mask], s=dot_size)
     axes[2].set_title('Errors (Correct: Green, Mislabeled: Red)')
 
@@ -338,7 +325,3 @@ if __name__ == '__main__':
                                        eval_set=eval_set_,
                                        verbose=verbose_)
     evaluator.evaluate()
-    # visualize_semantic_differences_bev(nusc_, nusc_.sample[0]['token'],
-    #                                    # '/home/whye/Desktop/logs/lidarseg_nips20/venice/fusion_train/lidarseg/test/')
-    #                                    '/home/whye/Desktop/logs/lidarseg_nips20/others/d625f4a4-bb7f-4ccd-9189-306b1ff5c6eb/lidarseg/test',
-    #                                    out_path='/home/whye/Desktop/logs/hi2.png')
