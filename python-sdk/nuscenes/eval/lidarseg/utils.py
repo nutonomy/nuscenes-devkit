@@ -420,6 +420,7 @@ class LidarSegPointCloud:
         :param ax: Axes onto which to render.
         :param title: Title of the plot.
         :param dot_size: Scatter plot dot size.
+        :return: The axes onto which the point cloud has been rendered.
         """
         colors = colormap_to_colors(name2color, name2id)
         ax.scatter(self.points[:, 0], self.points[:, 1], c=colors[self.labels], s=dot_size)
