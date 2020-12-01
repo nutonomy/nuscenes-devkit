@@ -66,11 +66,10 @@ class LidarSegEvalStratified(LidarSegEval):
         self.stratified_per_class_metrics = None
 
     def evaluate(self) -> None:
-        """
-        Performs the actual evaluation. Overwrites the `evaluate` method in the LidarSegEval class.
-        """
+        """ Performs the actual evaluation. Overwrites the `evaluate` method in the LidarSegEval class. """
         for i, stratum in enumerate(self.strata_list):
-            print('Evaluating for stratum {}...'.format(self.strata_names[i]))
+            if self.verbose:
+                print('Evaluating for stratum {}...'.format(self.strata_names[i]))
             for sample_token in tqdm(self.sample_tokens, disable=not self.verbose):
                 sample = self.nusc.get('sample', sample_token)
 
@@ -227,7 +226,7 @@ class LidarSegEvalStratified(LidarSegEval):
         return pc
 
 
-def visualize_semantic_differences_bev(nusc,
+def visualize_semantic_differences_bev(nusc: NuScenes,
                                        sample_token: str,
                                        lidarseg_preds_folder: str = None,
                                        axes_limit: float = 40,
