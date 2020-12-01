@@ -29,7 +29,7 @@ class LidarSegEvalStratified(LidarSegEval):
         :param results_folder: Path to the folder where the results are stored.
         :param output_dir: Folder to save plots and results to.
         :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
-        :param strata_list: The stratum to evaluate by, in meters.
+        :param strata_list: The strata to evaluate on, in meters.
         :param verbose: Whether to print messages during the evaluation.
         """
         super().__init__(nusc, results_folder, eval_set, verbose)
@@ -38,18 +38,18 @@ class LidarSegEvalStratified(LidarSegEval):
         assert os.path.exists(self.output_dir), 'Error: {} does not exist.'.format(self.output_dir)
 
         self.strata_list = strata_list
-        # Get the display names for each strata (e.g. (40, 60) -> '40 to 60'; if the upper bound of a strata is
+        # Get the display names for each stratum (e.g. (40, 60) -> '40 to 60'; if the upper bound of a stratum is
         # None (e.g. (40, None)), then the display name will be '40+'.
-        self.strata_names = ['{}m to {}m'.format(strata[0], strata[1])
-                             if strata[1] is not None else str(strata[0]) + 'm+'
-                             for i, strata in enumerate(self.strata_list)]
+        self.strata_names = ['{}m to {}m'.format(stratum[0], stratum[1])
+                             if stratum[1] is not None else str(stratum[0]) + 'm+'
+                             for i, stratum in enumerate(self.strata_list)]
 
         self.ignore_name = self.mapper.ignore_class['name']
 
-        # Create a list of confusion matrices, one for each strata.
+        # Create a list of confusion matrices, one for each stratum.
         self.global_cm = [ConfusionMatrix(self.num_classes, self.ignore_idx) for i in range(len(strata_list))]
 
-        # After running the evaluation, a list of dictionaries where each entry corresponds to each strata and is of
+        # After running the evaluation, a list of dictionaries where each entry corresponds to each stratum and is of
         # the following format:
         # [
         #     {
@@ -61,7 +61,7 @@ class LidarSegEvalStratified(LidarSegEval):
         #         "miou": 0.7626268050947295,
         #         "freq_weighted_iou": 0.8906460292535451
         #     },
-        #     ...  # More strata.
+        #     ...  # More stratum.
         # ]
         self.stratified_per_class_metrics = None
 
@@ -69,8 +69,8 @@ class LidarSegEvalStratified(LidarSegEval):
         """
         Performs the actual evaluation. Overwrites the `evaluate` method in the LidarSegEval class.
         """
-        for i, strata in enumerate(self.strata_list):
-            print('Evaluating for strata {}...'.format(self.strata_names[i]))
+        for i, stratum in enumerate(self.strata_list):
+            print('Evaluating for stratum {}...'.format(self.strata_names[i]))
             for sample_token in tqdm(self.sample_tokens, disable=not self.verbose):
                 sample = self.nusc.get('sample', sample_token)
 
@@ -88,9 +88,9 @@ class LidarSegEvalStratified(LidarSegEval):
                 pred_path = os.path.join(self.results_folder, 'lidarseg', self.eval_set, sd_token + '_lidarseg.bin')
                 pred = LidarSegPointCloud(pcl_path, pred_path)
 
-                # 4. Filter to get only labels belonging to the strata.
-                gt = self.filter_pointcloud_by_depth(gt, min_depth=strata[0], max_depth=strata[1])
-                pred = self.filter_pointcloud_by_depth(pred, min_depth=strata[0], max_depth=strata[1])
+                # 4. Filter to get only labels belonging to the stratum.
+                gt = self.filter_pointcloud_by_depth(gt, min_depth=stratum[0], max_depth=stratum[1])
+                pred = self.filter_pointcloud_by_depth(pred, min_depth=stratum[0], max_depth=stratum[1])
 
                 # 5. Update the confusion matrix for the sample data into the confusion matrix for the eval set.
                 self.global_cm[i].update(gt.labels, pred.labels)
@@ -105,12 +105,12 @@ class LidarSegEvalStratified(LidarSegEval):
 
     def render_stratified_overall_metrics(self, filename: str, dpi: int = 100) -> None:
         """
-        Renders the stratified overall metrics (i.e. the classes are aggregated for each strata).
+        Renders the stratified overall metrics (i.e. the classes are aggregated for each stratum).
         :param filename: Filename to save the render as.
         :param dpi: Resolution of the output figure.
         """
-        stratified_iou = {strata_name: self.stratified_per_class_metrics[i]['miou']
-                          for i, strata_name in enumerate(self.strata_names)}
+        stratified_iou = {stratum_name: self.stratified_per_class_metrics[i]['miou']
+                          for i, stratum_name in enumerate(self.strata_names)}
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -141,8 +141,8 @@ class LidarSegEvalStratified(LidarSegEval):
         :param dpi: Resolution of the output figure.
         """
         stratified_classes = {cls_name: [] for cls_name in self.id2name.values()}
-        for strata_metrics in self.stratified_per_class_metrics:
-            for cls, cls_iou in strata_metrics['iou_per_class'].items():
+        for stratum_metrics in self.stratified_per_class_metrics:
+            for cls, cls_iou in stratum_metrics['iou_per_class'].items():
                 stratified_classes[cls].append(cls_iou)
 
         # Delete the ignored class from the dictionary.
@@ -176,15 +176,15 @@ class LidarSegEvalStratified(LidarSegEval):
 
     def get_stratified_per_class_metrics(self) -> List[Dict]:
         """
-        Gets the metrics per class for each strata:
-        :return: A list of dictionaries where each entry corresponds to each strata; each dictionary contains the
+        Gets the metrics per class for each stratum:
+        :return: A list of dictionaries where each entry corresponds to each stratum; each dictionary contains the
                  iou_per_class, miou, and freq_weighted_iou.
         """
         stratified_per_class_iou = []
-        for strata_cm in self.global_cm:
-            iou_per_class = strata_cm.get_per_class_iou()
-            miou = strata_cm.get_mean_iou()
-            freqweighted_iou = strata_cm.get_freqweighted_iou()
+        for stratum_cm in self.global_cm:
+            iou_per_class = stratum_cm.get_per_class_iou()
+            miou = stratum_cm.get_mean_iou()
+            freqweighted_iou = stratum_cm.get_freqweighted_iou()
 
             # Put everything nicely into a dict.
             results = {'iou_per_class': {self.id2name[i]: class_iou for i, class_iou in enumerate(iou_per_class)},
@@ -213,7 +213,7 @@ class LidarSegEvalStratified(LidarSegEval):
         assert min_depth >= 0, 'Error: min_depth cannot be negative.'
         min_depth_idxs = np.where(depth > min_depth)[0]
 
-        # Get the indices of the points belonging to the strata.
+        # Get the indices of the points belonging to the radial range.
         if max_depth is not None:
             assert max_depth >= 0, 'Error: max_depth cannot be negative.'
             max_depth_idxs = np.where(depth <= max_depth)[0]
