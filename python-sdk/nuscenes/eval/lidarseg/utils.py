@@ -1,9 +1,12 @@
 import os
 from typing import Dict, List, Tuple
 
+from matplotlib import axes
 import numpy as np
 
 from nuscenes import NuScenes
+from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend, get_labels_in_coloring
+from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -367,3 +370,64 @@ def load_bin_file(bin_path: str) -> np.ndarray:
     assert len(bin_content) > 0, 'Error: {} is empty.'.format(bin_path)
 
     return bin_content
+
+
+class LidarSegPointCloud:
+    """
+    Class for a point cloud.
+    """
+    def __init__(self, points_path: str = None, labels_path: str = None):
+        """
+        Initialize a LidarSegPointCloud object.
+        :param points_path: Path to the bin file containing the x, y, z and intensity of the points in the point cloud.
+        :param labels_path: Path to the bin file containing the labels of the points in the point cloud.
+        """
+        self.points, self.labels = None, None
+        if points_path:
+            self.load_points(points_path)
+        if labels_path:
+            self.load_labels(labels_path)
+
+    def load_points(self, path: str) -> None:
+        """
+        Loads the x, y, z and intensity of the points in the point cloud.
+        :param path: Path to the bin file containing the x, y, z and intensity of the points in the point cloud.
+        """
+        self.points = LidarPointCloud.from_file(path).points.T  # [N, 4], where N is the number of points.
+        if self.labels is not None:
+            assert len(self.points) == len(self.labels), 'Error: There are {} points in the point cloud, ' \
+                                                         'but {} labels'.format(len(self.points), len(self.labels))
+
+    def load_labels(self, path: str) -> None:
+        """
+        Loads the labels of the points in the point cloud.
+        :param path: Path to the bin file containing the labels of the points in the point cloud.
+        """
+        self.labels = load_bin_file(path)
+        if self.points is not None:
+            assert len(self.points) == len(self.labels), 'Error: There are {} points in the point cloud, ' \
+                                                         'but {} labels'.format(len(self.points), len(self.labels))
+
+    def render(self, name2color: Dict[str, Tuple[int]],
+               name2id: Dict[str, int],
+               ax: axes.Axes,
+               title: str = None,
+               dot_size: int = 5) -> axes.Axes:
+        """
+        Renders a point cloud onto an axes.
+        :param name2color: The mapping from class name to class color.
+        :param name2id: A dictionary containing the mapping from class names to class indices.
+        :param ax: Axes onto which to render.
+        :param title: Title of the plot.
+        :param dot_size: Scatter plot dot size.
+        """
+        colors = colormap_to_colors(name2color, name2id)
+        ax.scatter(self.points[:, 0], self.points[:, 1], c=colors[self.labels], s=dot_size)
+
+        id2name = {idx: name for name, idx in name2id.items()}
+        create_lidarseg_legend(self.labels, id2name, name2color, ax=ax)
+
+        if title:
+            ax.set_title(title)
+
+        return ax
