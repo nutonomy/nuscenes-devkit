@@ -22,7 +22,7 @@ class LidarSegEvalStratified(LidarSegEval):
                  results_folder: str,
                  output_dir: str,
                  eval_set: str,
-                 strata_list: Tuple[Tuple[float]] = ((0, 20), (20, 40), (40, None)),
+                 strata_list: Tuple[Tuple[float]] = ((0, 10), (10, 20), (20, 30), (30, 40), (40, None)),
                  verbose: bool = True):
         """
         :param nusc: A NuScenes object.
@@ -40,8 +40,9 @@ class LidarSegEvalStratified(LidarSegEval):
         self.strata_list = strata_list
         # Get the display names for each strata (e.g. (40, 60) -> '40 to 60'; if the upper bound of a strata is
         # None (e.g. (40, None)), then the display name will be '40+'.
-        self.strata_names = ['{}m to {}m'.format(rng[0], rng[1]) if rng[1] is not None else str(rng[0]) + 'm+'
-                             for i, rng in enumerate(self.strata_list)]
+        self.strata_names = ['{}m to {}m'.format(strata[0], strata[1])
+                             if strata[1] is not None else str(strata[0]) + 'm+'
+                             for i, strata in enumerate(self.strata_list)]
 
         self.ignore_name = self.mapper.ignore_class['name']
 
@@ -108,17 +109,17 @@ class LidarSegEvalStratified(LidarSegEval):
         :param filename: Filename to save the render as.
         :param dpi: Resolution of the output figure.
         """
-        stratified_iou = {strata_name: self.stratified_per_class_metrics[i]['miou'] for i, strata_name in
-                          enumerate(self.strata_names)}
+        stratified_iou = {strata_name: self.stratified_per_class_metrics[i]['miou']
+                          for i, strata_name in enumerate(self.strata_names)}
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.bar(list(stratified_iou.keys()),
                list(stratified_iou.values()), color='grey')
-        ax.set_xlabel('Interval / m', fontsize=15)
+        ax.set_xticklabels(self.strata_names, rotation=45, horizontalalignment='right')
         ax.set_ylabel('mIOU', fontsize=15)
         ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
-        ax.set_title('Stratified results for mIOU', fontsize=20)
+        ax.set_title('Distance vs. mIOU for all classes', fontsize=20)
         ax.tick_params(axis='both', which='major', labelsize=15)
 
         # Loop to add a tag to each bar.
@@ -155,10 +156,10 @@ class LidarSegEvalStratified(LidarSegEval):
         for n, (cls, cls_strata) in enumerate(stratified_classes.items()):
             ax = fig.add_subplot(gs[n])
             ax.bar(self.strata_names, cls_strata, color=np.array(self.mapper.coarse_colormap[cls]) / 255)
-            ax.set_xlabel('Interval / m', fontsize=3)
+            ax.set_xticklabels(self.strata_names, rotation=45, horizontalalignment='right')
             ax.set_ylabel('IOU', fontsize=3)
             ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
-            ax.set_title('Stratified results for {}'.format(cls), fontsize=4)
+            ax.set_title('Distance vs. IOU for {}'.format(cls), fontsize=4)
             ax.tick_params(axis='both', which='major', labelsize=3)
 
             # Loop to add a tag to each bar.
@@ -287,9 +288,9 @@ def visualize_semantic_differences_bev(nusc,
     plt.xlim(-axes_limit, axes_limit)
     plt.ylim(-axes_limit, axes_limit)
 
+    plt.tight_layout()
     if out_path:
-        plt.savefig(out_path)
-
+        plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
     plt.show()
 
 
