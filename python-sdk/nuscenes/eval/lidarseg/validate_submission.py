@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 
 import numpy as np
 from tqdm import tqdm
@@ -10,7 +11,11 @@ from nuscenes.eval.lidarseg.utils import LidarsegClassMapper, get_samples_in_eva
 from nuscenes.utils.data_classes import LidarPointCloud
 
 
-def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verbose: bool = False) -> None:
+def validate_submission(nusc: NuScenes,
+                        results_folder: str,
+                        eval_set: str,
+                        verbose: bool = False,
+                        zip_out: str = None) -> None:
     """
     Checks if a results folder is valid. The following checks are performed:
     - Check that the submission folder is according to that described in
@@ -27,6 +32,7 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
     :param results_folder: Path to the folder.
     :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
     :param verbose: Whether to print messages during the evaluation.
+    :param zip_out: If a folder # TODO
     """
     mapper = LidarsegClassMapper(nusc)
     num_classes = len(mapper.coarse_name_2_coarse_idx_mapping)
@@ -111,6 +117,13 @@ def validate_submission(nusc: NuScenes, results_folder: str, eval_set: str, verb
     if verbose:
         print('Results folder {} successfully validated!'.format(results_folder))
 
+    # Zip up results folder if desired.
+    if zip_out:
+        results_zip = os.path.join(zip_out, os.path.basename(os.path.normpath(results_folder)))
+        results_zip_name = shutil.make_archive(results_zip, 'zip', results_folder)
+        if verbose:
+            print('Results folder {} zipped to {}'.format(results_folder, results_zip_name))
+
 
 if __name__ == '__main__':
     # Settings.
@@ -125,6 +138,8 @@ if __name__ == '__main__':
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
     parser.add_argument('--verbose', type=bool, default=False,
                         help='Whether to print to stdout.')
+    parser.add_argument('--zip_out', type=str, default=None,
+                        help='Whether to print to stdout.')
     args = parser.parse_args()
 
     result_path_ = args.result_path
@@ -132,6 +147,11 @@ if __name__ == '__main__':
     dataroot_ = args.dataroot
     version_ = args.version
     verbose_ = args.verbose
+    zip_out_ = args.zip_out
 
     nusc_ = NuScenes(version=version_, dataroot=dataroot_, verbose=verbose_)
-    validate_submission(nusc=nusc_, results_folder=result_path_, eval_set=eval_set_, verbose=verbose_)
+    validate_submission(nusc=nusc_,
+                        results_folder=result_path_,
+                        eval_set=eval_set_,
+                        verbose=verbose_,
+                        zip_out=zip_out_)
