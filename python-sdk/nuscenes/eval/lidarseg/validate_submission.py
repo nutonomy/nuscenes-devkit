@@ -119,6 +119,9 @@ def validate_submission(nusc: NuScenes,
 
     # Zip up results folder if desired.
     if zip_out:
+        assert os.path.exists(zip_out), \
+            'Error: The folder {} to zip the results to does not exist.'.format(zip_out)
+
         results_zip = os.path.join(zip_out, os.path.basename(os.path.normpath(results_folder)))
         results_zip_name = shutil.make_archive(results_zip, 'zip', results_folder)
         if verbose:
