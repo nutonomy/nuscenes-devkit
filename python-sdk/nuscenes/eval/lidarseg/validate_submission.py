@@ -32,7 +32,7 @@ def validate_submission(nusc: NuScenes,
     :param results_folder: Path to the folder.
     :param eval_set: The dataset split to evaluate on, e.g. train, val or test.
     :param verbose: Whether to print messages during the evaluation.
-    :param zip_out: If a folder # TODO
+    :param zip_out: Path to zip results_folder to, if provided.
     """
     mapper = LidarsegClassMapper(nusc)
     num_classes = len(mapper.coarse_name_2_coarse_idx_mapping)
