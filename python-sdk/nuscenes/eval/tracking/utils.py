@@ -1,12 +1,17 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2019.
 
+import unittest
 import warnings
 from typing import Optional, Dict
 
-import motmetrics
 import numpy as np
-from motmetrics.metrics import MetricsHost
+
+try:
+    import motmetrics
+    from motmetrics.metrics import MetricsHost
+except ModuleNotFoundError:
+    raise unittest.SkipTest('Skipping test as motmetrics was not found!')
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
 from nuscenes.eval.tracking.metrics import motar, mota_custom, motp_custom, faf, track_initialization_duration, \
