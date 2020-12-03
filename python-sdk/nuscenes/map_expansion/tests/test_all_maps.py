@@ -68,7 +68,7 @@ class TestAllMaps(unittest.TestCase):
         whitelist = ['scene-0499', 'scene-0501', 'scene-0502', 'scene-0515', 'scene-0517']
 
         invalid_scenes = []
-        for scene in tqdm.tqdm(nusc.scene):
+        for scene in tqdm.tqdm(nusc.scene, leave=False):
             if scene['name'] in whitelist:
                 continue
 
