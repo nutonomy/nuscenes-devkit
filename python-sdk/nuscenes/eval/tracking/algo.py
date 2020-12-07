@@ -12,11 +12,16 @@ https://github.com/cheind/py-motmetrics
 """
 import os
 from typing import List, Dict, Callable, Tuple
+import unittest
 
 import numpy as np
-import pandas
 import sklearn
 import tqdm
+
+try:
+    import pandas
+except ModuleNotFoundError:
+    raise unittest.SkipTest('Skipping test as pandas was not found!')
 
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
