@@ -66,6 +66,16 @@ Submission will open October 1 and close December 9.
 The leaderboard will remain private until the end of the challenge.
 Results and winners will be announced at the [AI Driving Olympics](http://www.driving-olympics.ai/) Workshop (AIDO) at NIPS 2019.
 
+A summary of the results can be seen below. 
+For details, please refer to the [tracking leaderboard](https://www.nuscenes.org/tracking).
+
+| Rank | Team name          | AMOTA |
+|---   |---                 |---    |
+|  1   | StanfordIPRL-TRI   | 55.0% |
+|  2   | VV_team            | 37.1% |
+|  3   | CenterTrack-Open   | 10.8% |
+|  4   | CenterTrack-Vision |  4.6% |
+
 ## Submission rules
 ### Tracking-specific rules
 * We perform 3D Multi Object Tracking (MOT) as in \[2\], rather than 2D MOT as in KITTI \[4\]. 
@@ -82,8 +92,9 @@ Results and winners will be announced at the [AI Driving Olympics](http://www.dr
 * Users must limit the number of submitted boxes per sample to 500.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
-* Each user or team can have at most one account on the evaluation server.
-* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
+* Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges.
 
 ## Results format
