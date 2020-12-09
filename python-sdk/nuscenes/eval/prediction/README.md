@@ -45,6 +45,15 @@ Note that the evaluation server can still be used to benchmark your results afte
 *Update:* Due to the COVID-19 situation, participants are **not** required to attend in person
 to be eligible for the prizes.
 
+A summary of the results can be seen below. 
+For details, please refer to the [prediction leaderboard](https://www.nuscenes.org/prediction).
+
+| Rank | Team name    | minADE_5 |
+|---   |---           |---       |
+|  1   | cxx          | 1.630    |
+|  2   | MHA-JAM      | 1.813    |
+|  3   | Trajectron++ | 1.877    |
+
 ## Submission rules
 ### Prediction-specific rules
 * The user can submit up to 25 proposed future trajectories, called `modes`, for each agent along with a probability the agent follows that proposal. Our metrics (explained below) will measure how well this proposed set of trajectories matches the ground truth.
@@ -57,8 +66,9 @@ to be eligible for the prizes.
 from the training set called the `train_val` set.
 * We release sensor data for train, val and test set.
 * Top leaderboard entries and their papers will be manually reviewed to ensure no cheating was done.
-* Each user or team can have at most one one account on the evaluation server.
-* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly weights or hyperparameter values.
+* Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
+* Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to make more submissions than allowed will result in a permanent ban of the team or company from all nuScenes challenges.
 
 ## Results format

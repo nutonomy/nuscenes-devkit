@@ -41,7 +41,7 @@ Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the
 
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
-Submission will open on Nov 15, 2020 and close on 8 Dec, 2020.
+Submissions will be accepted from November 1 to December 8, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
@@ -56,8 +56,9 @@ Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/
 * Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
-* Each user or team can have at most one one account on the evaluation server.
-* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
+* Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges. 
 
 ## Results format
