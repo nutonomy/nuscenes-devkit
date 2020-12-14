@@ -115,6 +115,8 @@ class LidarSegEvalStratified(LidarSegEval):
         ax = fig.add_subplot(111)
         ax.bar(list(stratified_iou.keys()),
                list(stratified_iou.values()), color='grey')
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
         ax.set_xticklabels(self.strata_names, rotation=45, horizontalalignment='right')
         ax.set_ylabel('mIOU', fontsize=15)
         ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.
@@ -133,7 +135,7 @@ class LidarSegEvalStratified(LidarSegEval):
         if self.verbose:
             plt.show()
 
-    def render_stratified_per_class_metrics(self, filename: str, dpi: int = 150) -> None:
+    def render_stratified_per_class_metrics(self, filename: str, dpi: int = 250) -> None:
         """
         Renders the stratified per class metrics.
         :param filename: Filename to save the render as.
@@ -155,6 +157,8 @@ class LidarSegEvalStratified(LidarSegEval):
         for n, (cls, cls_strata) in enumerate(stratified_classes.items()):
             ax = fig.add_subplot(gs[n])
             ax.bar(self.strata_names, cls_strata, color=np.array(self.mapper.coarse_colormap[cls]) / 255)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
             ax.set_xticklabels(self.strata_names, rotation=45, horizontalalignment='right')
             ax.set_ylabel('IOU', fontsize=3)
             ax.set_ylim(top=1.1)  # Make y-axis slightly higher to accommodate tag.

@@ -46,6 +46,16 @@ Results and winners will be announced at the [5th AI Driving Olympics](https://d
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
 
+A summary of the results can be seen below. 
+For details, please refer to the [lidar segmentation leaderboard](https://www.nuscenes.org/lidar-segmentation).
+
+| Rank | Team name          | mIOU  |
+|---   |---                 |---    |
+|  1   | Noah_Kyber         | 0.783 |
+|  2   | Cylinder3D++       | 0.779 |
+|  3   | CPFusion           | 0.777 |
+|  4   | MIT-HAN-LAB        | 0.774 |
+
 ## Submission rules
 ### Lidar segmentation-specific rules
 * The maximum time window of past sensor data and ego poses that may be used at inference time is approximately 0.5s (at most 6 past camera images, 6 past radar sweeps and 10 past lidar sweeps). At training time there are no restrictions.

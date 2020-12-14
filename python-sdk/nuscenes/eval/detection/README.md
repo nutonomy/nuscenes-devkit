@@ -46,6 +46,16 @@ Submissions will be accepted from November 1 to December 8, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) as previous detection challenges.
 
+A summary of the results can be seen below. 
+For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
+
+| Rank | Team name          | NDS   |
+|---   |---                 |---    |
+|  1   | CenterPoint        | 71.4% |
+|  2   | PointAugmenting    | 71.1% |
+|  3   | MoCa               | 70.9% |
+|  4   | PVC ensemble       | 70.4% |
+
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The second nuScenes detection challenge will be held at [ICRA 2020](https://www.icra2020.org/).
 The submission period will open April 1 and continue until May 28th, 2020.

@@ -142,7 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', type=bool, default=False,
                         help='Whether to print to stdout.')
     parser.add_argument('--zip_out', type=str, default=None,
-                        help='Whether to print to stdout.')
+                        help='Path to zip the results folder to.')
     args = parser.parse_args()
 
     result_path_ = args.result_path
