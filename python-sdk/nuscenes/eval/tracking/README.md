@@ -69,12 +69,12 @@ Results and winners will be announced at the [AI Driving Olympics](http://www.dr
 A summary of the results can be seen below. 
 For details, please refer to the [tracking leaderboard](https://www.nuscenes.org/tracking).
 
-| Rank | Team name          | AMOTA |
-|---   |---                 |---    |
-|  1   | StanfordIPRL-TRI   | 55.0% |
-|  2   | VV_team            | 37.1% |
-|  3   | CenterTrack-Open   | 10.8% |
-|  4   | CenterTrack-Vision |  4.6% |
+| Rank | Team name          | AMOTA | Awards          |
+|---   |---                 |---    |---              |
+|  1   | StanfordIPRL-TRI   | 55.0% | Best lidar-only submission, best student submission |
+|  2   | VV_team            | 37.1% | -               |
+|  3   | CenterTrack-Open   | 10.8% | Best fusion submission |
+|  4   | CenterTrack-Vision |  4.6% | Best vision-only submission |
 
 ## Submission rules
 ### Tracking-specific rules
