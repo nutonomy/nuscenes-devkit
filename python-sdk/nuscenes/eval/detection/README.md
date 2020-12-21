@@ -49,12 +49,12 @@ Note that this challenge uses the same [evaluation server](https://eval.ai/web/c
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
 
-| Rank | Team name          | NDS   |
-|---   |---                 |---    |
-|  1   | CenterPoint        | 71.4% |
-|  2   | PointAugmenting    | 71.1% |
-|  3   | MoCa               | 70.9% |
-|  4   | PVC ensemble       | 70.4% |
+| Rank | Team name          | NDS   | Award           |
+|---   |---                 |---    |---              |
+|  1   | CenterPoint        | 71.4% | Best submission |
+|  2   | PointAugmenting    | 71.1% | Second best     |
+|  3   | MoCa               | 70.9% | Best PKL        |
+|  4   | PVC ensemble       | 70.4% | Best lidar-only submission |
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The second nuScenes detection challenge will be held at [ICRA 2020](https://www.icra2020.org/).
@@ -65,14 +65,14 @@ Note that the previous [evaluation server](https://eval.ai/web/challenges/challe
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
 
-| Rank | Team name          | NDS   |
-|---   |---                 |---    |
-|  1   | Noah CV Lab fusion | 69.7% |
-|  2   | CenterPoint        | 67.5% |
-|  3   | CVCNet ensemble    | 66.6% |
-|  4   | PanoNet3D          | 63.1% |
-|  5   | CRIPAC             | 63.2% |
-|  6   | SSN                | 61.6% |
+| Rank | Team name          | NDS   | Award           |
+|---   |---                 |---    |---              |
+|  1   | Noah CV Lab fusion | 69.7% | Best submission |
+|  2   | CenterPoint        | 67.5% | Best student submission |
+|  3   | CVCNet ensemble    | 66.6% | Honorable mention |
+|  4   | PanoNet3D          | 63.1% | -               |
+|  5   | CRIPAC             | 63.2% | -               |
+|  6   | SSN                | 61.6% | -               |
 
 ### Workshop on Autonomous Driving, CVPR 2019
 The first nuScenes detection challenge was held at CVPR 2019.
@@ -84,13 +84,13 @@ Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
 
-| Rank | Team name    | NDS   |
-|---   |---           |---    |
-|  1   | MEGVII G3D3  | 63.3% |
-|  2   | Tolist       | 54.5% |
-|  3   | SARPNET AT3D | 48.4% |
-|  4   | MAIR         | 38.4% |
-|  5   | VIPL         | 35.3% |
+| Rank | Team name    | NDS   | Award           |
+|---   |---           |---    |---              |
+|  1   | MEGVII G3D3  | 63.3% | Best submission |
+|  2   | Tolist       | 54.5% | Best student submission |
+|  3   | SARPNET AT3D | 48.4% | -               |
+|  4   | MAIR         | 38.4% | Best vision-only submission |
+|  5   | VIPL         | 35.3% | -               |
 
 ## Submission rules
 ### Detection-specific rules

@@ -49,12 +49,12 @@ Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/
 A summary of the results can be seen below. 
 For details, please refer to the [lidar segmentation leaderboard](https://www.nuscenes.org/lidar-segmentation).
 
-| Rank | Team name          | mIOU  |
-|---   |---                 |---    |
-|  1   | Noah_Kyber         | 0.783 |
-|  2   | Cylinder3D++       | 0.779 |
-|  3   | CPFusion           | 0.777 |
-|  4   | MIT-HAN-LAB        | 0.774 |
+| Rank | Team name          | mIOU  | Awards          |
+|---   |---                 |---    |---              |
+|  1   | Noah_Kyber         | 0.783 | Best submission |
+|  2   | Cylinder3D++       | 0.779 | Second best     |
+|  3   | CPFusion           | 0.777 | -               |
+|  4   | MIT-HAN-LAB        | 0.774 | -               |
 
 ## Submission rules
 ### Lidar segmentation-specific rules

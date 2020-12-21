@@ -48,11 +48,11 @@ to be eligible for the prizes.
 A summary of the results can be seen below. 
 For details, please refer to the [prediction leaderboard](https://www.nuscenes.org/prediction).
 
-| Rank | Team name    | minADE_5 |
-|---   |---           |---       |
-|  1   | cxx          | 1.630    |
-|  2   | MHA-JAM      | 1.813    |
-|  3   | Trajectron++ | 1.877    |
+| Rank | Team name    | minADE_5 | Awards          |
+|---   |---           |---       |---              |
+|  1   | cxx          | 1.630    | Best submission |
+|  2   | MHA-JAM      | 1.813    | Second best     |
+|  3   | Trajectron++ | 1.877    | Third best      |
 
 ## Submission rules
 ### Prediction-specific rules
