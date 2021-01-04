@@ -67,7 +67,7 @@ For details, please refer to the [detection leaderboard](https://www.nuscenes.or
 
 | Rank | Team name          | NDS   | Award           |
 |---   |---                 |---    |---              |
-|  1   | Noah CV Lab fusion | 69.7% | Best submission |
+|  1   | Noah CV Lab fusion | 69.0% | Best submission |
 |  2   | CenterPoint        | 67.5% | Best student submission |
 |  3   | CVCNet ensemble    | 66.6% | Honorable mention |
 |  4   | PanoNet3D          | 63.1% | -               |
