@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # Settings.
     parser = argparse.ArgumentParser(description='Export all videos of annotations.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--out_dir', type=str, help='Directory where to save videos.')
+    parser.add_argument('--out_dir', type=str, help='Directory where to save videos.', default='videos')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
