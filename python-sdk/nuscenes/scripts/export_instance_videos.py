@@ -28,6 +28,8 @@ def convert_annotation_list_to_dict(annotation_list: List[dict],
                                     categories: List[str] = None,
                                     visibilities: List[str] = None) -> defaultdict:
     """
+    Save the list of sample_annotations in a format suitable for instance videos.
+
     When saving the list of annotations to a dictionary, special attention must be paid to the
     correct keys to use.
 
@@ -86,8 +88,8 @@ def convert_annotation_list_to_dict(annotation_list: List[dict],
                 instance_token, sample_token, camera_name))
 
         bbox_2d_annotations[instance_token][sample_token][camera_name] = instance
+        assert num_dups == 0, 'Error: Number of duplicates (should be zero)!'
 
-    print("Number of duplicates (should be zero)", num_dups)
     return bbox_2d_annotations
 
 
@@ -113,7 +115,6 @@ def extract_camera_key_from_filename(filename: str) -> str:
 def calculate_bb_area(bounding_box: np.ndarray) -> float:
     """
     Calculates area of a 2D bounding box.
-
     :param bounding_box: np.array of length 4 (x min, y min, x max, y max).
     :return: The area.
     """
@@ -123,6 +124,7 @@ def calculate_bb_area(bounding_box: np.ndarray) -> float:
 
 def get_most_visible_camera_annotation(camera_data_dict: dict) -> dict:
     """
+    Get the most visibile camera's annotation.
     :param camera_data_dict: Dictionary of form:
       {
         'CAM_BACK': {'attribute_tokens': ['cb5118da1ab342aa947717dc53544259'],
@@ -174,6 +176,7 @@ def get_cropped_image_for_annotation(sample_data_annotation: dict,
                                      dataroot: str,
                                      output_size: Tuple[int, int]) -> np.ndarray:
     """
+    Crop the annotation of a given imgae.
     :param sample_data_annotation: Dict of form:
       ```
       {'attribute_tokens': ['cb5118da1ab342aa947717dc53544259'],
@@ -208,6 +211,7 @@ def get_cropped_image_for_annotation(sample_data_annotation: dict,
 
 def sort_sample_annotations_chronologically(instance_dict: dict) -> List[str]:
     """
+    Sort the sample_annotations chronologically.
     :param instance_dict: Taken by indexing bbox_2d_annotations[instance_token]
     :return: A list of chronologically sorted annotations.
 
