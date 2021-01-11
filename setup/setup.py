@@ -10,6 +10,8 @@ with open('requirements.txt') as f:
     req_paths = f.read().splitlines()
 requirements = []
 for req_path in req_paths:
+    if req_path.startswith('#'):
+        continue
     req_path = req_path.replace('-r ', '')
     with open(req_path) as f:
         requirements += f.read().splitlines()
