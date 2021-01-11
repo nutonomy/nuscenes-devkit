@@ -16,7 +16,7 @@ import os
 import pathlib
 from collections import defaultdict
 from shutil import rmtree
-from typing import List, Dict
+from typing import List, Tuple
 
 import cv2
 import numpy as np
@@ -164,7 +164,9 @@ def get_most_visible_camera_annotation(camera_data_dict: dict) -> dict:
     return best_instance_data
 
 
-def get_cropped_image_for_annotation(sample_data_annotation, data_directory, output_size):
+def get_cropped_image_for_annotation(sample_data_annotation: dict,
+                                     data_directory: str,
+                                     output_size: Tuple[int, int]) -> np.ndarray:
     """
     Parameters:
     - sample_data_annotation: of form:
@@ -196,7 +198,7 @@ def get_cropped_image_for_annotation(sample_data_annotation, data_directory, out
     return np_img
 
 
-def sort_sample_annotations_chronologically(instance_dict):
+def sort_sample_annotations_chronologically(instance_dict: dict) -> List[str]:
     """
     Parameters:
     - instance_dict: taken by indexing bbox_2d_annotations[instance_token]
@@ -234,7 +236,10 @@ def sort_sample_annotations_chronologically(instance_dict):
     return sequential_sample_tokens
 
 
-def remove_bad_samples(instance_annotation, minimum_bb_area, minimum_visibility, image_area=1600 * 900) -> List:
+def remove_bad_samples(instance_annotation: dict,
+                       minimum_bb_area: float,
+                       minimum_visibility: str,
+                       image_area=1600 * 900) -> List:
     """Removes bad samples from an instance annotation's sample sequence
 
     Args:
@@ -257,8 +262,16 @@ def remove_bad_samples(instance_annotation, minimum_bb_area, minimum_visibility,
     return cleaned
 
 
-def main(version, dataroot, output, object_categories, fps, output_size, minimum_frames, minimum_bb_area, visibility,
-         codec):
+def main(version: str,
+         dataroot: str,
+         output: str,
+         object_categories: List[str],
+         fps: int,
+         output_size: Tuple[int, int],
+         minimum_frames: int,
+         minimum_bb_area: float,
+         visibility: str,
+         codec: str):
     """Generates video sequences of nuScenes object instances over time.
 
     Expects the data to be organized as:
@@ -268,7 +281,8 @@ def main(version, dataroot, output, object_categories, fps, output_size, minimum
         samples	-	Sensor data for keyframes.
         sweeps	-	Sensor data for intermediate frames.
         maps	-	Folder for all map files: rasterized .png images and vectorized .json files.
-        v1.0-*	-	JSON tables that include all the meta data and annotations. Each split (trainval, test, mini) is provided in a separate folder.
+        v1.0-*	-	JSON tables that include all the meta data and annotations.
+                    Each split (trainval, test, mini) is provided in a separate folder.
                     Note that image_annotations.json should be inside this directory.
     ```
     
@@ -277,12 +291,12 @@ def main(version, dataroot, output, object_categories, fps, output_size, minimum
         dataroot (string): the path to the data root directory
         output (string): the path to the output video directory
         object_categories: The categories to extract videos for
-        fps: frames per second to use for the video
+        fps (int): frames per second to use for the video
         output_size (tuple): the output dimension to resize every cropped bounding box to. Defaults to (112, 112)
         minimum_frames (int): the minimum number of frames an instance must have
         minimum_bb_area (float): the minimum fraction of a frame a bounding box take up to be used (0, 1)
         visibility (string): the minimum visibility a frame is allowed to haev ('', '1', '2', '3', '4')
-        codec: Which codec to use to generate the video, e.g. MJPG or vp09.
+        codec (string): Which codec to use to generate the video, e.g. MJPG or vp09.
                Some data annotation platforms require vp09.
     """
     print('=' * 20)
@@ -386,11 +400,11 @@ if __name__ == "__main__":
                     help="Frames per second for output video (use 2 to match speed of original data)")
     ap.add_argument("-m", "--minimum_frames", type=int, default=9,
                     help="The minimum number of frames an instance must have")
-    ap.add_argument("-p", "--minimum_percentage", type=float, default=0.01,
+    ap.add_argument("-p", "--minimum_bb_area", type=float, default=0.01,
                     help="The minimum fraction of a frame a bounding box take up to be used (0, 1)")
     ap.add_argument("--visibility", type=str, default='2',
                     help="The minimum visibility a frame is allowed to have ('', '1', '2', '3', '4')")
-    ap.add_argument("-s", "--size", type=int, default=[112, 112], nargs=2,
+    ap.add_argument("-s", "--size", type=int, default=(112, 112), nargs=2,
                     help="Size of the output video")
 
     # Excludes bicycle and motorcycle by default
@@ -401,5 +415,5 @@ if __name__ == "__main__":
 
     args = vars(ap.parse_args())
     main(args['version'], args['dataroot'], args['output'], args['categories'],
-         args['fps'], tuple(args['size']), args['minimum_frames'], args['minimum_percentage'], args["visibility"],
+         args['fps'], tuple(args['size']), args['minimum_frames'], args['minimum_bb_area'], args["visibility"],
          args['codec'])
