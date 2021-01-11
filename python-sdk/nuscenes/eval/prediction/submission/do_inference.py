@@ -31,7 +31,7 @@ def do_inference_for_submission(helper: PredictHelper,
     :param helper: Instance of PredictHelper that wraps the nuScenes test set.
     :param config: Instance of PredictionConfig.
     :param dataset_tokens: Tokens of instance_sample pairs in the test set.
-    :returns: List of predictions.
+    :return: List of predictions.
     """
 
     # User: Fill in the path to the model weights here.

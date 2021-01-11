@@ -60,7 +60,7 @@ class MTP(nn.Module):
         :param image_tensor: Tensor of images shape [batch_size, n_channels, length, width].
         :param agent_state_vector: Tensor of floats representing the agent state.
             [batch_size, 3].
-        :returns: Tensor of dimension [batch_size, number_of_modes * number_of_predictions_per_mode + number_of_modes]
+        :return: Tensor of dimension [batch_size, number_of_modes * number_of_predictions_per_mode + number_of_modes]
             storing the predicted trajectory and mode probabilities. Mode probabilities are normalized to sum
             to 1 during inference.
         """
