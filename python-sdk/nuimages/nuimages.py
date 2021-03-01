@@ -640,7 +640,7 @@ class NuImages:
         # Validate inputs.
         sample_data = self.get('sample_data', sd_token)
         if not sample_data['is_key_frame']:
-            assert annotation_type != 'none', 'Error: Cannot render annotations for non keyframes!'
+            assert annotation_type == 'none', 'Error: Cannot render annotations for non keyframes!'
             assert not with_attributes, 'Error: Cannot render attributes for non keyframes!'
         if with_attributes:
             assert with_category, 'In order to set with_attributes=True, with_category must be True.'
