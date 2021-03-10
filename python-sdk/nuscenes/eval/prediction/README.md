@@ -67,7 +67,7 @@ from the training set called the `train_val` set.
 * We release sensor data for train, val and test set.
 * Top leaderboard entries and their papers will be manually reviewed to ensure no cheating was done.
 * Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
-* Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Each user or team can submit at most three results *per month*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
 * Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to make more submissions than allowed will result in a permanent ban of the team or company from all nuScenes challenges.
 
