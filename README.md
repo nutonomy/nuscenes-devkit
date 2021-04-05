@@ -20,6 +20,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
 - [Citation](#citation)
 
 ## Changelog
+- Apr. 5, 2021: Devkit v1.1.3: Bug fixes and pip requirements.
 - Nov. 23, 2020: Devkit v1.1.2: Release map-expansion v1.3 with lidar basemap.
 - Nov. 9, 2020: Devkit v1.1.1: Lidarseg evaluation code, NeurIPS challenge announcement.
 - Aug. 31, 2020: Devkit v1.1.0: nuImages v1.0 and nuScenes-lidarseg v1.0 code release.
