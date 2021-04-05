@@ -60,6 +60,13 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 Click [here](https://eval.ai/web/challenges/challenge-page/476/overview) for the **EvalAI tracking evaluation server**.
 
+### Workshop on Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks, ICRA 2021
+The second nuScenes lidar segmentation challenge will be held at [ICRA 2021](https://www.ieee-icra.org).
+Submissions will be accepted from April 1 to mid-May, 2021.
+The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
+Results and winners will be announced at the Workshop on Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks.
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/476/overview) as previous tracking challenges.
+
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
 Submission will open October 1 and close December 9.
