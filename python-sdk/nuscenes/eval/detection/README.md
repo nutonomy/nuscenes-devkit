@@ -40,9 +40,9 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 Click [here](https://eval.ai/web/challenges/challenge-page/356/overview) for the **EvalAI detection evaluation server**.
 
-### Workshop on Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks, ICRA 2021
-The fourth nuScenes detection challenge will be held at [ICRA 2021](https://www.ieee-icra.org).
-Submissions will be accepted from April 1 to mid-May, 2021.
+### 6th AI Driving Olympics, ICRA 2021
+The fourth nuScenes detection challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of the Workshop on Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks.
+Submissions will be accepted from April 1 to May 26, 2021.
 The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
 Results and winners will be announced at the Workshop on Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks.
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) as previous detection challenges.
