@@ -39,6 +39,13 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the **EvalAI lidar segmentation evaluation server**.
 
+### 6th AI Driving Olympics, ICRA 2021
+The second nuScenes lidar segmentation challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Submissions will be accepted from April 1 to May 26, 2021.
+The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
+Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) as previous lidar segmentation challenges.
+
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submissions will be accepted from November 1 to December 8, 2020.

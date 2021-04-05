@@ -60,6 +60,13 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 Click [here](https://eval.ai/web/challenges/challenge-page/476/overview) for the **EvalAI tracking evaluation server**.
 
+### 6th AI Driving Olympics, ICRA 2021
+The second nuScenes tracking challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Submissions will be accepted from April 1 to May 26, 2021.
+The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
+Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/476/overview) as previous tracking challenges.
+
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
 Submission will open October 1 and close December 9.
