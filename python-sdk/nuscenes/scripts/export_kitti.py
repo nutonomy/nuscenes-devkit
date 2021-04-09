@@ -81,8 +81,10 @@ class KittiConverter:
             os.makedirs(self.nusc_kitti_dir)
 
         # Select subset of the data to look at.
-        self.nusc = NuScenes(datastore='path_of_data',version=nusc_version) # add datastore='path of the dataset' 
-        # ( Preferred Location - /home/user_name/sets/data/nuscenes and put all the folders here.
+        self.nusc = NuScenes(version=nusc_version) 
+        """ If you get error - Database not found v1.0-mini, then add datastore='path of the dataset'
+            that is, self.nusc = NuScenes(datastore='path_of_dataset', version=nusc_version)
+            Example , datastore='/home/user_name/sets/data/nuscenes' and put all the extracted folders here ) """
 
     def nuscenes_gt_to_kitti(self) -> None:
         """
