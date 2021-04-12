@@ -73,7 +73,7 @@ class PointCloud(ABC):
         :return: (all_pc, all_times). The aggregated point cloud and timestamps.
         """
         # Init.
-        points = np.zeros((cls.nbr_dims(), 0))
+        points = np.zeros((cls.nbr_dims(), 0), dtype=np.float32)
         all_pc = cls(points)
         all_times = np.zeros((1, 0))
 
@@ -126,6 +126,9 @@ class PointCloud(ABC):
                 break
             else:
                 current_sd_rec = nusc.get('sample_data', current_sd_rec['prev'])
+
+        # Check that the multisweep pointcloud has the same dtype as individual pointclouds.
+        assert all_pc.points.dtype == np.float32, 'Error: Invalid dtype for multisweep pointcloud!'
 
         return all_pc, all_times
 
