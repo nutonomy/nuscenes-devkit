@@ -128,7 +128,7 @@ class PointCloud(ABC):
                 current_sd_rec = nusc.get('sample_data', current_sd_rec['prev'])
 
         # Check that the multisweep pointcloud has the same dtype as individual pointclouds.
-        assert all_pc.points.dtype == np.float32
+        assert all_pc.points.dtype == np.float32, 'Error: Invalid dtype for multisweep pointcloud!'
 
         return all_pc, all_times
 
