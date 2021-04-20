@@ -1,7 +1,10 @@
 import unittest
 
-import torch
-from torchvision.models.resnet import BasicBlock, Bottleneck
+try:
+    import torch
+    from torchvision.models.resnet import BasicBlock, Bottleneck
+except ModuleNotFoundError:
+    raise unittest.SkipTest('Skipping test as torch was not found!')
 
 from nuscenes.prediction.models.backbone import ResNetBackbone, MobileNetBackbone
 

@@ -19,6 +19,15 @@ To participate in the challenge, please create an account at [EvalAI](https://ev
 Then upload your zipped result file including all of the required [meta data](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/prediction) shown above.
 This is the only way to benchmark your method against the test dataset. 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+- Team name
+- Method name
+- Authors
+- Affiliations
+- Method description (5+ sentences)
+- Project URL
+- Paper URL
+- FPS in Hz (and the hardware used to measure it)
 
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we will host a single leaderboard all year round.
@@ -26,6 +35,13 @@ Additionally, we intend to organize a number of challenges at leading Computer V
 Users that submit their results during the challenge period are eligible for awards. These awards may be different for each challenge.
 
 Click [here](https://eval.ai/web/challenges/challenge-page/591/overview) for the **EvalAI prediction evaluation server**.
+
+### 6th AI Driving Olympics, ICRA 2021
+The second nuScenes prediction challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Submissions will be accepted from April 1 to May 26, 2021.
+The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
+Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/591/overview) as previous prediction challenges.
 
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
@@ -35,6 +51,15 @@ Note that the evaluation server can still be used to benchmark your results afte
 
 *Update:* Due to the COVID-19 situation, participants are **not** required to attend in person
 to be eligible for the prizes.
+
+A summary of the results can be seen below. 
+For details, please refer to the [prediction leaderboard](https://www.nuscenes.org/prediction).
+
+| Rank | Team name    | minADE_5 | Awards          |
+|---   |---           |---       |---              |
+|  1   | cxx          | 1.630    | Best submission |
+|  2   | MHA-JAM      | 1.813    | Second best     |
+|  3   | Trajectron++ | 1.877    | Third best      |
 
 ## Submission rules
 ### Prediction-specific rules
@@ -48,8 +73,9 @@ to be eligible for the prizes.
 from the training set called the `train_val` set.
 * We release sensor data for train, val and test set.
 * Top leaderboard entries and their papers will be manually reviewed to ensure no cheating was done.
-* Each user or team can have at most one one account on the evaluation server.
-* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly weights or hyperparameter values.
+* Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
+* Each user or team can submit at most three results *per month*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to make more submissions than allowed will result in a permanent ban of the team or company from all nuScenes challenges.
 
 ## Results format

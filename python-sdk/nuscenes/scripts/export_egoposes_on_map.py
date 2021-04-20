@@ -18,7 +18,7 @@ def export_ego_poses(nusc: NuScenes, out_dir: str):
     """ Script to render where ego vehicle drives on the maps """
 
     # Load NuScenes locations
-    locations = np.unique([l['location'] for l in nusc.log])
+    locations = np.unique([log['location'] for log in nusc.log])
 
     # Create output directory
     if not os.path.isdir(out_dir):

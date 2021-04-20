@@ -44,7 +44,7 @@ def main(version: str, data_root: str, submission_path: str,
     """
     Computes metrics for a submission stored in submission_path with a given submission_name with the metrics
     specified by the config_name.
-    :param version: nuScenes data set version.
+    :param version: nuScenes dataset version.
     :param data_root: Directory storing NuScenes data.
     :param submission_path: Directory storing submission.
     :param config_name: Name of config file.

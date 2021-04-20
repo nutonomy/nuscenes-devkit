@@ -16,6 +16,9 @@ Download the devkit to your home directory using:
 ```
 cd && git clone https://github.com/nutonomy/nuscenes-devkit.git
 ```
+*Note:* The pip package does not support the prediction or tracking code.
+For these, you will need to download the source code and [manually install the requirements](#install-required-packages).
+
 ## Install Python
 
 The devkit is tested for Python 3.6 onwards, but we recommend to use Python 3.7.
@@ -104,7 +107,12 @@ To install the required packages, run the following command in your favourite vi
 ```
 pip install -r setup/requirements.txt
 ```
-**Note:** The requirements file is internally divided into base requirements (`base`) and requirements specific to certain products or challenges (`nuimages`, `prediction` and `tracking`). If you only plan to use a subset of the codebase, feel free to comment out the lines that you do not need.
+**Note:** The requirements file is internally divided into base requirements (`base`) and requirements specific to certain products or challenges (`nuimages`, `prediction` and `tracking`).
+From December 2020 onwards we are excluding the `prediction` and `tracking` requirements by default to decrease the number of packages that are installed and avoid incompatibility with other pip packages.
+If you want to install these requirements nevertheless, please run the following for `prediction` (and analog for `tracking`):
+```
+pip install -r setup/requirements/requirements_prediction.txt
+``` 
 
 ## Setup environment variable
 Finally, if you want to run the unit tests you need to point the devkit to the `nuscenes` folder on your disk.

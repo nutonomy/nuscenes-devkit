@@ -21,6 +21,15 @@ To participate in the challenge, please create an account at [EvalAI](https://ev
 Then upload your zipped result folder with the required [content](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 This is the only way to benchmark your method against the test dataset. 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+- Team name
+- Method name
+- Authors
+- Affiliations
+- Method description (5+ sentences)
+- Project URL
+- Paper URL
+- FPS in Hz (and the hardware used to measure it)
 
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we host a single [leaderboard](https://www.nuscenes.org/lidar-segmentation) all-year round.
@@ -30,12 +39,29 @@ Any user that cannot attend the workshop (direct or via a representative) will b
 
 Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the **EvalAI lidar segmentation evaluation server**.
 
+### 6th AI Driving Olympics, ICRA 2021
+The second nuScenes lidar segmentation challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Submissions will be accepted from April 1 to May 26, 2021.
+The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
+Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
+Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) as previous lidar segmentation challenges.
+
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
-Submission will open on Nov 15, 2020 and close in early Dec, 2020.
+Submissions will be accepted from November 1 to December 8, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
+
+A summary of the results can be seen below. 
+For details, please refer to the [lidar segmentation leaderboard](https://www.nuscenes.org/lidar-segmentation).
+
+| Rank | Team name          | mIOU  | Awards          |
+|---   |---                 |---    |---              |
+|  1   | Noah_Kyber         | 0.783 | Best submission |
+|  2   | Cylinder3D++       | 0.779 | Second best     |
+|  3   | CPFusion           | 0.777 | -               |
+|  4   | MIT-HAN-LAB        | 0.774 | -               |
 
 ## Submission rules
 ### Lidar segmentation-specific rules
@@ -47,8 +73,9 @@ Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/
 * Users make predictions on the test set and submit the results to our evaluation server, which returns the metrics listed below.
 * Every submission provides method information. We encourage publishing code, but do not make it a requirement.
 * Top leaderboard entries and their papers will be manually reviewed.
-* Each user or team can have at most one one account on the evaluation server.
-* Each user or team can submit at most 3 results. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
+* Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
+* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges. 
 
 ## Results format
@@ -96,7 +123,7 @@ The contents of the `submision.json` file and `test` folder are defined below:
 For the train and val sets, the evaluation can be performed by the user on their local machine.
 For the test set, the user needs to zip the results folder and submit it to the official evaluation server.
 
-For convenience, a `validate_submission.py` script has been provided to check that a given results folder is of the correct format.
+For convenience, a `validate_submission.py` [script](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/eval/lidarseg/validate_submission.py) has been provided to check that a given results folder is of the correct format.
 
 Note that the lidar segmentation classes differ from the general nuScenes classes, as detailed below.
 
@@ -158,7 +185,7 @@ We use the well-known IOU metric, which is defined as TP / (TP + FP + FN).
 The IOU score is calculated separately for each class, and then the mean is computed across classes.
 Note that lidar segmentation index 0 is ignored in the calculation.
 
-### Frequency-weighted IOU (FWIOU)
+### Frequency-weighted IOU (fwIOU)
 Instead of taking the mean of the IOUs across all the classes, each IOU is weighted by the point-level frequency of its class.
 Note that lidar segmentation index 0 is ignored in the calculation.
 FWIOU is not used for the challenge.

@@ -27,7 +27,8 @@ class MockNuScenes:
         assert table_name in {'sample_annotation', 'sample'}
         return getattr(self, "_" + table_name)[token]
 
-class Test_convert_coords(unittest.TestCase):
+
+class TestConvertCoords(unittest.TestCase):
 
     def setUp(self):
         along_pos_x = np.zeros((5, 2))
@@ -373,7 +374,6 @@ class TestPredictHelper(unittest.TestCase):
                                             'prev': '4b', 'next': '6b'},
                                             {'token': '6b', 'instance_token': '2', 'sample_token': '6', 'translation': [11, 11, 11], 'prev': '5b', 'next': ''}]
 
-
     def test_get_sample_annotation(self,):
 
         mock_annotation = {'token': '1', 'instance_token': 'instance_1',
@@ -384,7 +384,6 @@ class TestPredictHelper(unittest.TestCase):
 
         helper = PredictHelper(nusc)
         self.assertDictEqual(mock_annotation, helper.get_sample_annotation('instance_1', 'sample_1'))
-
 
     def test_get_future_for_agent_exact_amount(self,):
 

@@ -1,8 +1,12 @@
-from typing import Dict, List
+import os
+from typing import Dict, List, Tuple
 
+from matplotlib import axes
 import numpy as np
 
 from nuscenes import NuScenes
+from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend, get_labels_in_coloring
+from nuscenes.utils.data_classes import LidarPointCloud
 from nuscenes.utils.splits import create_splits_scenes
 
 
@@ -134,6 +138,7 @@ class LidarsegClassMapper:
 
         self.fine_name_2_coarse_name_mapping = self.get_fine2coarse()
         self.coarse_name_2_coarse_idx_mapping = self.get_coarse2idx()
+        self.coarse_colormap = self.get_coarse2color()
 
         self.check_mapping()
 
@@ -207,6 +212,29 @@ class LidarsegClassMapper:
                 'terrain': 14,
                 'manmade': 15,
                 'vegetation': 16}
+
+    def get_coarse2color(self) -> Dict[str, Tuple[int]]:
+        """
+        Returns the mapping from the coarse class names to the colors in RGB.
+        :return: A dictionary containing the mapping from the coarse class names to the colors in RGB.
+        """
+        return {self.ignore_class['name']: (0, 0, 0),  # Black.
+                'barrier': (112, 128, 144),  # Slategrey
+                'bicycle': (220, 20, 60),  # Crimson
+                'bus': (255, 127, 80),  # Coral
+                'car': (255, 158, 0),  # Orange
+                'construction_vehicle': (233, 150, 70),  # Darksalmon
+                'motorcycle': (255, 61, 99),  # Red
+                'pedestrian': (0, 0, 230),  # Blue
+                'traffic_cone': (47, 79, 79),  # Darkslategrey
+                'trailer': (255, 140, 0),  # Darkorange
+                'truck': (255, 99, 71),  # Tomato
+                'driveable_surface': (0, 207, 191),  # nuTonomy green
+                'other_flat': (175, 0, 75),
+                'sidewalk': (75, 0, 75),
+                'terrain': (112, 180, 60),
+                'manmade': (222, 184, 135),  # Burlywood
+                'vegetation': (0, 175, 0)}  # Green
 
     def get_fine_idx_2_coarse_idx(self) -> Dict[int, int]:
         """
@@ -329,3 +357,78 @@ def get_samples_in_eval_set(nusc: NuScenes, eval_set: str) -> List[str]:
                                        'but only {} keyframes were processed'.format(total_num_samples, i)
 
     return samples
+
+
+def load_bin_file(bin_path: str) -> np.ndarray:
+    """
+    Loads a .bin file containing the labels.
+    :param bin_path: Path to the .bin file.
+    :return: An array containing the labels.
+    """
+    assert os.path.exists(bin_path), 'Error: Unable to find {}.'.format(bin_path)
+    bin_content = np.fromfile(bin_path, dtype=np.uint8)
+    assert len(bin_content) > 0, 'Error: {} is empty.'.format(bin_path)
+
+    return bin_content
+
+
+class LidarSegPointCloud:
+    """
+    Class for a point cloud.
+    """
+    def __init__(self, points_path: str = None, labels_path: str = None):
+        """
+        Initialize a LidarSegPointCloud object.
+        :param points_path: Path to the bin file containing the x, y, z and intensity of the points in the point cloud.
+        :param labels_path: Path to the bin file containing the labels of the points in the point cloud.
+        """
+        self.points, self.labels = None, None
+        if points_path:
+            self.load_points(points_path)
+        if labels_path:
+            self.load_labels(labels_path)
+
+    def load_points(self, path: str) -> None:
+        """
+        Loads the x, y, z and intensity of the points in the point cloud.
+        :param path: Path to the bin file containing the x, y, z and intensity of the points in the point cloud.
+        """
+        self.points = LidarPointCloud.from_file(path).points.T  # [N, 4], where N is the number of points.
+        if self.labels is not None:
+            assert len(self.points) == len(self.labels), 'Error: There are {} points in the point cloud, ' \
+                                                         'but {} labels'.format(len(self.points), len(self.labels))
+
+    def load_labels(self, path: str) -> None:
+        """
+        Loads the labels of the points in the point cloud.
+        :param path: Path to the bin file containing the labels of the points in the point cloud.
+        """
+        self.labels = load_bin_file(path)
+        if self.points is not None:
+            assert len(self.points) == len(self.labels), 'Error: There are {} points in the point cloud, ' \
+                                                         'but {} labels'.format(len(self.points), len(self.labels))
+
+    def render(self, name2color: Dict[str, Tuple[int]],
+               name2id: Dict[str, int],
+               ax: axes.Axes,
+               title: str = None,
+               dot_size: int = 5) -> axes.Axes:
+        """
+        Renders a point cloud onto an axes.
+        :param name2color: The mapping from class name to class color.
+        :param name2id: A dictionary containing the mapping from class names to class indices.
+        :param ax: Axes onto which to render.
+        :param title: Title of the plot.
+        :param dot_size: Scatter plot dot size.
+        :return: The axes onto which the point cloud has been rendered.
+        """
+        colors = colormap_to_colors(name2color, name2id)
+        ax.scatter(self.points[:, 0], self.points[:, 1], c=colors[self.labels], s=dot_size)
+
+        id2name = {idx: name for name, idx in name2id.items()}
+        create_lidarseg_legend(self.labels, id2name, name2color, ax=ax)
+
+        if title:
+            ax.set_title(title)
+
+        return ax

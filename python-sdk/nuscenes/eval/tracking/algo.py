@@ -12,11 +12,16 @@ https://github.com/cheind/py-motmetrics
 """
 import os
 from typing import List, Dict, Callable, Tuple
+import unittest
 
 import numpy as np
-import pandas
 import sklearn
 import tqdm
+
+try:
+    import pandas
+except ModuleNotFoundError:
+    raise unittest.SkipTest('Skipping test as pandas was not found!')
 
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
@@ -87,7 +92,7 @@ class TrackingEvaluation(object):
     def accumulate(self) -> TrackingMetricData:
         """
         Compute metrics for all recall thresholds of the current class.
-        :returns: TrackingMetricData instance which holds the metrics for each threshold.
+        :return: TrackingMetricData instance which holds the metrics for each threshold.
         """
         # Init.
         if self.verbose:
@@ -203,7 +208,7 @@ class TrackingEvaluation(object):
         Accumulate metrics for a particular recall threshold of the current class.
         The scores are only computed if threshold is set to None. This is used to infer the recall thresholds.
         :param threshold: score threshold used to determine positives and negatives.
-        :returns: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
+        :return: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
         """
         accs = []
         scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.

@@ -23,15 +23,18 @@ from shapely import affinity
 from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
 from tqdm import tqdm
 
+from nuscenes.map_expansion.arcline_path_utils import discretize_lane, ArcLinePath
+from nuscenes.map_expansion.bitmap import BitMap
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.geometry_utils import view_points
-from nuscenes.map_expansion.arcline_path_utils import discretize_lane, ArcLinePath
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-whitegrid')
 
 # Define a map geometry type for polygons and lines.
 Geometry = Union[Polygon, LineString]
+
+locations = ['singapore-onenorth', 'singapore-hollandvillage', 'singapore-queenstown', 'boston-seaport']
 
 
 class NuScenesMap:
@@ -64,12 +67,10 @@ class NuScenesMap:
         :param map_name: Which map out of `singapore-onenorth`, `singepore-hollandvillage`, `singapore-queenstown`,
         `boston-seaport` that we want to load.
         """
-        assert map_name in ['singapore-onenorth', 'singapore-hollandvillage', 'singapore-queenstown', 'boston-seaport']
+        assert map_name in locations, 'Error: Unknown map name %s!' % map_name
 
         self.dataroot = dataroot
         self.map_name = map_name
-
-        self.json_fname = os.path.join(self.dataroot, "maps", "{}.json".format(self.map_name))
 
         self.geometric_layers = ['polygon', 'line', 'node']
 
@@ -85,8 +86,19 @@ class NuScenesMap:
         self.non_geometric_layers = self.non_geometric_polygon_layers + self.non_geometric_line_layers
         self.layer_names = self.geometric_layers + self.lookup_polygon_layers + self.non_geometric_line_layers
 
+        # Load the selected map.
+        self.json_fname = os.path.join(self.dataroot, 'maps', 'expansion', '{}.json'.format(self.map_name))
         with open(self.json_fname, 'r') as fh:
             self.json_obj = json.load(fh)
+
+        # Parse the map version and print an error for deprecated maps.
+        if 'version' in self.json_obj:
+            self.version = self.json_obj['version']
+        else:
+            self.version = '1.0'
+        if self.version < '1.3':
+            raise Exception('Error: You are using an outdated map version (%s)! '
+                            'Please go to https://www.nuscenes.org/download to download the latest map!')
 
         self.canvas_edge = self.json_obj['canvas_edge']
         self._load_layers()
@@ -94,15 +106,6 @@ class NuScenesMap:
         self._make_shortcuts()
 
         self.explorer = NuScenesMapExplorer(self)
-
-        # Parse the map version and print a warning for deprecated maps.
-        if 'version' in self.json_obj:
-            self.version = self.json_obj['version']
-        else:
-            self.version = '1.0'
-        if self.version < '1.2':
-            raise Exception('Error: You are using an outdated map version! '
-                            'Please go to https://www.nuscenes.org/download to download the latest map!')
 
     def _load_layer(self, layer_name: str) -> List[dict]:
         """
@@ -112,15 +115,13 @@ class NuScenesMap:
         """
         return self.json_obj[layer_name]
 
-    def _load_arcline_path(self,) -> Dict[str, List[ArcLinePath]]:
+    def _load_layer_dict(self, layer_name: str) -> Dict[str, Union[dict, list]]:
         """
-        Returns a dictionary mapping arcline_path_3 token to arcline_path_3 record.
-        :return: Dictionary Mapping token to arcline_path_3.
+        Returns a dict of records corresponding to the layer name.
+        :param layer_name: Name of the layer that will be loaded.
+        :return: A dict of records corresponding to a layer.
         """
-        return self.json_obj['arcline_path_3']
-
-    def _load_lane_connectivity(self) -> Dict[str, Dict[str, List[str]]]:
-        return self.json_obj['connectivity']
+        return self.json_obj[layer_name]
 
     def _load_layers(self) -> None:
         """ Loads each available layer. """
@@ -140,9 +141,10 @@ class NuScenesMap:
         self.road_divider = self._load_layer('road_divider')
         self.lane_divider = self._load_layer('lane_divider')
         self.traffic_light = self._load_layer('traffic_light')
-        self.arcline_path_3 = self._load_arcline_path()
+
+        self.arcline_path_3: Dict[str, List[dict]] = self._load_layer_dict('arcline_path_3')
+        self.connectivity: Dict[str, dict] = self._load_layer_dict('connectivity')
         self.lane_connector = self._load_layer('lane_connector')
-        self.connectivity = self._load_lane_connectivity()
 
     def _make_token2ind(self) -> None:
         """ Store the mapping from token to layer index for each layer. """
@@ -221,7 +223,8 @@ class NuScenesMap:
                       token: str,
                       alpha: float = 0.5,
                       figsize: Tuple[float, float] = None,
-                      other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
+                      other_layers: List[str] = None,
+                      bitmap: Optional[BitMap] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
          Render a single map record. By default will also render 3 layers which are `drivable_area`, `lane`,
          and `walkway` unless specified by `other_layers`.
@@ -230,24 +233,29 @@ class NuScenesMap:
          :param alpha: The opacity of each layer that gets rendered.
          :param figsize: Size of the whole figure.
          :param other_layers: What other layers to render aside from the one specified in `layer_name`.
+         :param bitmap: Optional BitMap object to render below the other map layers.
          :return: The matplotlib figure and axes of the rendered layers.
          """
-        return self.explorer.render_record(layer_name, token, alpha, figsize, other_layers)
+        return self.explorer.render_record(layer_name, token, alpha,
+                                           figsize=figsize, other_layers=other_layers, bitmap=bitmap)
 
     def render_layers(self,
                       layer_names: List[str],
                       alpha: float = 0.5,
                       figsize: Union[None, float, Tuple[float, float]] = None,
-                      tokens: List[str] = None) -> Tuple[Figure, Axes]:
+                      tokens: List[str] = None,
+                      bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Render a list of layer names.
         :param layer_names: A list of layer names.
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
         :param tokens: Optional list of tokens to render. None means all tokens are rendered.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_layers(layer_names, alpha, figsize, tokens)
+        return self.explorer.render_layers(layer_names, alpha,
+                                           figsize=figsize, tokens=tokens, bitmap=bitmap)
 
     def render_map_patch(self,
                          box_coords: Tuple[float, float, float, float],
@@ -255,7 +263,8 @@ class NuScenesMap:
                          alpha: float = 0.5,
                          figsize: Tuple[int, int] = (15, 15),
                          render_egoposes_range: bool = True,
-                         render_legend: bool = True) -> Tuple[Figure, Axes]:
+                         render_legend: bool = True,
+                         bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Renders a rectangular patch specified by `box_coords`. By default renders all layers.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
@@ -264,10 +273,12 @@ class NuScenesMap:
         :param figsize: Size of the whole figure.
         :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :param render_legend: Whether to render the legend of map layers.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: The matplotlib figure and axes of the rendered layers.
         """
-        return self.explorer.render_map_patch(box_coords, layer_names, alpha, figsize,
-                                              render_egoposes_range, render_legend)
+        return self.explorer.render_map_patch(box_coords, layer_names=layer_names, alpha=alpha, figsize=figsize,
+                                              render_egoposes_range=render_egoposes_range,
+                                              render_legend=render_legend, bitmap=bitmap)
 
     def render_map_in_image(self,
                             nusc: NuScenes,
@@ -280,7 +291,7 @@ class NuScenesMap:
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
                             verbose: bool = True,
-                            out_path: str = None) -> None:
+                            out_path: str = None) -> Tuple[Figure, Axes]:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
         Note that the projections are not always accurate as the localization is in 2d.
@@ -297,10 +308,11 @@ class NuScenesMap:
         :param verbose: Whether to print to stdout.
         :param out_path: Optional path to save the rendered figure to disk.
         """
-        self.explorer.render_map_in_image(nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
-                                          patch_radius=patch_radius, min_polygon_area=min_polygon_area,
-                                          render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
-                                          layer_names=layer_names, verbose=verbose, out_path=out_path)
+        return self.explorer.render_map_in_image(
+            nusc, sample_token, camera_channel=camera_channel, alpha=alpha,
+            patch_radius=patch_radius, min_polygon_area=min_polygon_area,
+            render_behind_cam=render_behind_cam, render_outside_im=render_outside_im,
+            layer_names=layer_names, verbose=verbose, out_path=out_path)
 
     def render_egoposes_on_fancy_map(self,
                                      nusc: NuScenes,
@@ -309,7 +321,8 @@ class NuScenesMap:
                                      out_path: str = None,
                                      render_egoposes: bool = True,
                                      render_egoposes_range: bool = True,
-                                     render_legend: bool = True) -> np.ndarray:
+                                     render_legend: bool = True,
+                                     bitmap: Optional[BitMap] = None) -> Tuple[np.ndarray, Figure, Axes]:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -320,24 +333,27 @@ class NuScenesMap:
         :param render_egoposes: Whether to render ego poses.
         :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :param render_legend: Whether to render the legend of map layers.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         return self.explorer.render_egoposes_on_fancy_map(nusc, scene_tokens=scene_tokens,
                                                           verbose=verbose, out_path=out_path,
                                                           render_egoposes=render_egoposes,
                                                           render_egoposes_range=render_egoposes_range,
-                                                          render_legend=render_legend)
+                                                          render_legend=render_legend, bitmap=bitmap)
 
     def render_centerlines(self,
                            resolution_meters: float = 0.5,
-                           figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+                           figsize: Union[None, float, Tuple[float, float]] = None,
+                           bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Render the centerlines of all lanes and lane connectors.
         :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
             lanes are properly represented.
         :param figsize: Size of the figure.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         """
-        self.explorer.render_centerlines(resolution_meters=resolution_meters, figsize=figsize)
+        return self.explorer.render_centerlines(resolution_meters=resolution_meters, figsize=figsize, bitmap=bitmap)
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -356,7 +372,8 @@ class NuScenesMap:
         :param n_row: Number of rows with plots.
         :return: The matplotlib figure and a list of axes of the rendered layers.
         """
-        return self.explorer.render_map_mask(patch_box, patch_angle, layer_names, canvas_size,
+        return self.explorer.render_map_mask(patch_box, patch_angle,
+                                             layer_names=layer_names, canvas_size=canvas_size,
                                              figsize=figsize, n_row=n_row)
 
     def get_map_mask(self,
@@ -372,7 +389,7 @@ class NuScenesMap:
         :param canvas_size: Size of the output mask (h, w). If None, we use the default resolution of 10px/m.
         :return: Stacked numpy array of size [c x h x w] with c channels and the same width/height as the canvas.
         """
-        return self.explorer.get_map_mask(patch_box, patch_angle, layer_names, canvas_size)
+        return self.explorer.get_map_mask(patch_box, patch_angle, layer_names=layer_names, canvas_size=canvas_size)
 
     def get_map_geom(self,
                      patch_box: Tuple[float, float, float, float],
@@ -402,7 +419,7 @@ class NuScenesMap:
         all non geometric records that are within the patch.
         :return: Dictionary of layer_name - tokens pairs.
         """
-        return self.explorer.get_records_in_patch(box_coords, layer_names, mode)
+        return self.explorer.get_records_in_patch(box_coords, layer_names=layer_names, mode=mode)
 
     def is_record_in_patch(self,
                            layer_name: str,
@@ -418,16 +435,17 @@ class NuScenesMap:
                      return True if the geometric object is within the patch.
         :return: Boolean value on whether a particular record intersects or within a particular patch.
         """
-        return self.explorer.is_record_in_patch(layer_name, token, box_coords, mode)
+        return self.explorer.is_record_in_patch(layer_name, token, box_coords, mode=mode)
 
-    def layers_on_point(self, x: float, y: float) -> Dict[str, str]:
+    def layers_on_point(self, x: float, y: float, layer_names: List[str] = None) -> Dict[str, str]:
         """
         Returns all the polygonal layers that a particular point is on.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
+        :param layer_names: The names of the layers to search for.
         :return: All the polygonal layers that a particular point is on. {<layer name>: <list of tokens>}
         """
-        return self.explorer.layers_on_point(x, y)
+        return self.explorer.layers_on_point(x, y, layer_names=layer_names)
 
     def record_on_point(self, x: float, y: float, layer_name: str) -> str:
         """
@@ -435,7 +453,7 @@ class NuScenesMap:
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
         :param layer_name: The non geometric polygonal layer name that we are interested in.
-        :return: The record token of a layer a particular point is on.
+        :return: The first token of a layer a particular point is on or '' if no layer is found.
         """
         return self.explorer.record_on_point(x, y, layer_name)
 
@@ -479,7 +497,7 @@ class NuScenesMap:
         """
 
         patch = (x - radius, y - radius, x + radius, y + radius)
-        return self.explorer.get_records_in_patch(patch, layer_names, mode)
+        return self.explorer.get_records_in_patch(patch, layer_names, mode=mode)
 
     def discretize_centerlines(self, resolution_meters: float) -> List[np.array]:
         """
@@ -539,18 +557,20 @@ class NuScenesMap:
 
         return self._get_connected_lanes(lane_token, 'incoming')
 
-    def get_lane(self, lane_token: str) -> List[ArcLinePath]:
+    def get_arcline_path(self, lane_token: str) -> List[ArcLinePath]:
         """
-        Get the arc line path representation for a lane.
+        Get the arcline path representation for a lane.
+        Note: This function was previously called `get_lane()`, but renamed to avoid confusion between lanes and
+              arcline paths.
         :param lane_token: Token for the lane.
         :return: Arc line path representation of the lane.
         """
 
-        lane = self.arcline_path_3.get(lane_token)
-        if not lane:
-            raise ValueError(f'Lane token {lane_token} is not a valid lane.')
+        arcline_path = self.arcline_path_3.get(lane_token)
+        if not arcline_path:
+            raise ValueError(f'Error: Lane with token {lane_token} does not have a valid arcline path!')
 
-        return lane
+        return arcline_path
 
     def get_closest_lane(self, x: float, y: float, radius: float = 5) -> str:
         """
@@ -583,15 +603,17 @@ class NuScenesMap:
                           x: float,
                           y: float,
                           alpha: float = 0.5,
-                          figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+                          figsize: Union[None, float, Tuple[float, float]] = None,
+                          bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         """
-        self.explorer.render_next_roads(x, y, alpha, figsize)
+        return self.explorer.render_next_roads(x, y, alpha, figsize=figsize, bitmap=bitmap)
 
     def get_next_roads(self, x: float, y: float) -> Dict[str, List[str]]:
         """
@@ -683,21 +705,30 @@ class NuScenesMapExplorer:
 
     def render_centerlines(self,
                            resolution_meters: float,
-                           figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+                           figsize: Union[None, float, Tuple[float, float]] = None,
+                           bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Render the centerlines of all lanes and lane connectors.
         :param resolution_meters: How finely to discretize the lane. Smaller values ensure curved
             lanes are properly represented.
         :param figsize: Size of the figure.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         """
         # Discretize all lanes and lane connectors.
         pose_lists = self.map_api.discretize_centerlines(resolution_meters)
 
         # Render connectivity lines.
-        plt.figure(figsize=self._get_figsize(figsize))
+        fig = plt.figure(figsize=self._get_figsize(figsize))
+        ax = fig.add_axes([0, 0, 1, 1 / self.canvas_aspect_ratio])
+
+        if bitmap is not None:
+            bitmap.render(self.map_api.canvas_edge, ax)
+
         for pose_list in pose_lists:
             if len(pose_list) > 0:
                 plt.plot(pose_list[:, 0], pose_list[:, 1])
+
+        return fig, ax
 
     def render_map_mask(self,
                         patch_box: Tuple[float, float, float, float],
@@ -846,7 +877,8 @@ class NuScenesMapExplorer:
                       token: str,
                       alpha: float = 0.5,
                       figsize: Union[None, float, Tuple[float, float]] = None,
-                      other_layers: List[str] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
+                      other_layers: List[str] = None,
+                      bitmap: Optional[BitMap] = None) -> Tuple[Figure, Tuple[Axes, Axes]]:
         """
         Render a single map record.
         By default will also render 3 layers which are `drivable_area`, `lane`, and `walkway` unless specified by
@@ -856,6 +888,7 @@ class NuScenesMapExplorer:
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
         :param other_layers: What other layers to render aside from the one specified in `layer_name`.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: The matplotlib figure and axes of the rendered layers.
         """
         if other_layers is None:
@@ -879,6 +912,10 @@ class NuScenesMapExplorer:
 
         # To make sure the sequence of the layer overlays is always consistent after typesetting set().
         random.seed('nutonomy')
+
+        if bitmap is not None:
+            bitmap.render(self.map_api.canvas_edge, global_ax)
+            bitmap.render(self.map_api.canvas_edge, local_ax)
 
         layer_names = other_layers + [layer_name]
         layer_names = list(set(layer_names))
@@ -920,13 +957,15 @@ class NuScenesMapExplorer:
                       layer_names: List[str],
                       alpha: float,
                       figsize: Union[None, float, Tuple[float, float]],
-                      tokens: List[str] = None) -> Tuple[Figure, Axes]:
+                      tokens: List[str] = None,
+                      bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Render a list of layers.
         :param layer_names: A list of layer names.
         :param alpha: The opacity of each layer.
         :param figsize: Size of the whole figure.
         :param tokens: Optional list of tokens to render. None means all tokens are rendered.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: The matplotlib figure and axes of the rendered layers.
         """
         fig = plt.figure(figsize=self._get_figsize(figsize))
@@ -935,8 +974,10 @@ class NuScenesMapExplorer:
         ax.set_xlim(self.canvas_min_x, self.canvas_max_x)
         ax.set_ylim(self.canvas_min_y, self.canvas_max_y)
 
-        layer_names = list(set(layer_names))
+        if bitmap is not None:
+            bitmap.render(self.map_api.canvas_edge, ax)
 
+        layer_names = list(set(layer_names))
         for layer_name in layer_names:
             self._render_layer(ax, layer_name, alpha, tokens)
 
@@ -950,7 +991,8 @@ class NuScenesMapExplorer:
                          alpha: float = 0.5,
                          figsize: Tuple[float, float] = (15, 15),
                          render_egoposes_range: bool = True,
-                         render_legend: bool = True) -> Tuple[Figure, Axes]:
+                         render_legend: bool = True,
+                         bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Renders a rectangular patch specified by `box_coords`. By default renders all layers.
         :param box_coords: The rectangular patch coordinates (x_min, y_min, x_max, y_max).
@@ -959,6 +1001,7 @@ class NuScenesMapExplorer:
         :param figsize: Size of the whole figure.
         :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :param render_legend: Whether to render the legend of map layers.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: The matplotlib figure and axes of the rendered layers.
         """
         x_min, y_min, x_max, y_max = box_coords
@@ -974,6 +1017,9 @@ class NuScenesMapExplorer:
         local_aspect_ratio = local_width / local_height
 
         ax = fig.add_axes([0, 0, 1, 1 / local_aspect_ratio])
+
+        if bitmap is not None:
+            bitmap.render(self.map_api.canvas_edge, ax)
 
         for layer_name in layer_names:
             self._render_layer(ax, layer_name, alpha)
@@ -1007,7 +1053,7 @@ class NuScenesMapExplorer:
                             render_outside_im: bool = True,
                             layer_names: List[str] = None,
                             verbose: bool = True,
-                            out_path: str = None) -> None:
+                            out_path: str = None) -> Tuple[Figure, Axes]:
         """
         Render a nuScenes camera image and overlay the polygons for the specified map layers.
         Note that the projections are not always accurate as the localization is in 2d.
@@ -1151,6 +1197,8 @@ class NuScenesMapExplorer:
             plt.tight_layout()
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
+        return fig, ax
+
     def render_egoposes_on_fancy_map(self,
                                      nusc: NuScenes,
                                      scene_tokens: List = None,
@@ -1158,7 +1206,8 @@ class NuScenesMapExplorer:
                                      out_path: str = None,
                                      render_egoposes: bool = True,
                                      render_egoposes_range: bool = True,
-                                     render_legend: bool = True) -> np.ndarray:
+                                     render_legend: bool = True,
+                                     bitmap: Optional[BitMap] = None) -> Tuple[np.ndarray, Figure, Axes]:
         """
         Renders each ego pose of a list of scenes on the map (around 40 poses per scene).
         This method is heavily inspired by NuScenes.render_egoposes_on_map(), but uses the map expansion pack maps.
@@ -1171,6 +1220,7 @@ class NuScenesMapExplorer:
         :param render_egoposes: Whether to render ego poses.
         :param render_egoposes_range: Whether to render a rectangle around all ego poses.
         :param render_legend: Whether to render the legend of map layers.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         :return: <np.float32: n, 2>. Returns a matrix with n ego poses in global map coordinates.
         """
         # Settings
@@ -1182,7 +1232,7 @@ class NuScenesMapExplorer:
 
         # Get logs by location.
         log_location = self.map_api.map_name
-        log_tokens = [l['token'] for l in nusc.log if l['location'] == log_location]
+        log_tokens = [log['token'] for log in nusc.log if log['location'] == log_location]
         assert len(log_tokens) > 0, 'Error: This split has 0 scenes for location %s!' % log_location
 
         # Filter scenes.
@@ -1239,7 +1289,7 @@ class NuScenesMapExplorer:
         my_patch = (min_patch[0], min_patch[1], max_patch[0], max_patch[1])
         fig, ax = self.render_map_patch(my_patch, self.map_api.non_geometric_layers, figsize=(10, 10),
                                         render_egoposes_range=render_egoposes_range,
-                                        render_legend=render_legend)
+                                        render_legend=render_legend, bitmap=bitmap)
 
         # Plot in the same axis as the map.
         # Make sure these are plotted "on top".
@@ -1250,19 +1300,21 @@ class NuScenesMapExplorer:
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0)
 
-        return map_poses
+        return map_poses, fig, ax
 
     def render_next_roads(self,
                           x: float,
                           y: float,
                           alpha: float = 0.5,
-                          figsize: Union[None, float, Tuple[float, float]] = None) -> None:
+                          figsize: Union[None, float, Tuple[float, float]] = None,
+                          bitmap: Optional[BitMap] = None) -> Tuple[Figure, Axes]:
         """
         Renders the possible next roads from a point of interest.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
         :param alpha: The opacity of each layer that gets rendered.
         :param figsize: Size of the whole figure.
+        :param bitmap: Optional BitMap object to render below the other map layers.
         """
         # Get next roads.
         next_roads = self.map_api.get_next_roads(x, y)
@@ -1274,10 +1326,12 @@ class NuScenesMapExplorer:
                 tokens.extend(layer_tokens)
 
         # Render them.
-        fig, ax = self.render_layers(layer_names, alpha, figsize, tokens)
+        fig, ax = self.render_layers(layer_names, alpha, figsize, tokens=tokens, bitmap=bitmap)
 
         # Render current location with an x.
         ax.plot(x, y, 'x', markersize=12, color='red')
+
+        return fig, ax
 
     @staticmethod
     def _clip_points_behind_camera(points, near_plane: float):
@@ -1398,20 +1452,25 @@ class NuScenesMapExplorer:
         else:
             raise ValueError("{} is not a valid layer".format(layer_name))
 
-    def layers_on_point(self, x: float, y: float) -> Dict[str, str]:
+    def layers_on_point(self, x: float, y: float, layer_names: List[str] = None) -> Dict[str, str]:
         """
         Returns all the polygonal layers that a particular point is on.
         :param x: x coordinate of the point of interest.
         :param y: y coordinate of the point of interest.
+        :param layer_names: The names of the layers to search for.
         :return: All the polygonal layers that a particular point is on.
         """
+        # Default option.
+        if layer_names is None:
+            layer_names = self.map_api.non_geometric_polygon_layers
+
         layers_on_point = dict()
-        for layer_name in self.map_api.non_geometric_polygon_layers:
+        for layer_name in layer_names:
             layers_on_point.update({layer_name: self.record_on_point(x, y, layer_name)})
 
         return layers_on_point
 
-    def record_on_point(self, x, y, layer_name) -> str:
+    def record_on_point(self, x: float, y: float, layer_name: str) -> str:
         """
         Query what record of a layer a particular point is on.
         :param x: x coordinate of the point of interest.

@@ -4,8 +4,11 @@
 import math
 import unittest
 
-import torch
-from torch.nn.functional import cross_entropy
+try:
+    import torch
+    from torch.nn.functional import cross_entropy
+except ModuleNotFoundError:
+    raise unittest.SkipTest('Skipping test as torch was not found!')
 
 from nuscenes.prediction.models.backbone import ResNetBackbone
 from nuscenes.prediction.models.covernet import mean_pointwise_l2_distance, ConstantLatticeLoss, CoverNet

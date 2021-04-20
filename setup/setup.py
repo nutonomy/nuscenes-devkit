@@ -10,6 +10,8 @@ with open('requirements.txt') as f:
     req_paths = f.read().splitlines()
 requirements = []
 for req_path in req_paths:
+    if req_path.startswith('#'):
+        continue
     req_path = req_path.replace('-r ', '')
     with open(req_path) as f:
         requirements += f.read().splitlines()
@@ -37,7 +39,7 @@ packages = [p for p in packages if not p.endswith('__pycache__')]
 
 setuptools.setup(
     name='nuscenes-devkit',
-    version='1.1.1',
+    version='1.1.4',
     author='Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, '
            'Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit Fong, Asha Asvathaman et al.',
     author_email='nuscenes@motional.com',
