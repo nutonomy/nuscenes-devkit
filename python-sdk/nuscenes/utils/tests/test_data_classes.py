@@ -31,7 +31,7 @@ class TestDataClasses(unittest.TestCase):
         assert pc1.points.shape[0] == pc3.points.shape[0] == 4, 'Error: Invalid dimension for lidar pointcloud!'
         assert pc2.points.shape[0] == pc4.points.shape[0] == 18, 'Error: Invalid dimension for radar pointcloud!'
         assert pc1.points.dtype == pc3.points.dtype, 'Error: Invalid dtype for lidar pointcloud!'
-        assert pc2.points.dtype == pc4.points.dtype, 'Error: Invalid dtype for lidar pointcloud!'
+        assert pc2.points.dtype == pc4.points.dtype, 'Error: Invalid dtype for radar pointcloud!'
 
 
 if __name__ == '__main__':
