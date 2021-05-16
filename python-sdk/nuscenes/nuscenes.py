@@ -890,6 +890,8 @@ class NuScenesExplorer:
                                         predictions for the sample.
 
         """
+        # Dummy-printing for modification check
+        print('Currently operating using:  ',pointsensor_channel, ' ,',camera_channel)
         sample_record = self.nusc.get('sample', sample_token)
 
         # Here we just grab the front camera and the point sensor.
