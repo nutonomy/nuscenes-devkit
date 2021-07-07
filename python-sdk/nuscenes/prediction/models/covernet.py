@@ -12,6 +12,7 @@ from nuscenes.prediction.models.backbone import calculate_backbone_feature_dim
 # Number of entries in Agent State Vector（应该是指考虑了agent的三类状态：速度、加速度、朝向）
 ASV_DIM = 3
 # 尝试一下
+# 再尝试一下
 
 class CoverNet(nn.Module):
     """ Implementation of CoverNet https://arxiv.org/pdf/1911.10298.pdf """
