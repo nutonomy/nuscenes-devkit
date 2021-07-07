@@ -9,7 +9,6 @@ from torch.nn import functional as f
 
 from nuscenes.prediction.models.backbone import calculate_backbone_feature_dim
 
-#尝试再记下
 
 # Number of entries in Agent State Vector（应该是指考虑了agent的三类状态：速度、加速度、朝向）
 ASV_DIM = 3
