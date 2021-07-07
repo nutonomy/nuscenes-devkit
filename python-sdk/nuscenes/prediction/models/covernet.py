@@ -9,7 +9,7 @@ from torch.nn import functional as f
 
 from nuscenes.prediction.models.backbone import calculate_backbone_feature_dim
 
-# Number of entries in Agent State Vector
+# Number of entries in Agent State Vector（应该是指考虑了agent的三类状态：速度、加速度、朝向）
 ASV_DIM = 3
 
 
@@ -21,29 +21,30 @@ class CoverNet(nn.Module):
                  input_shape: Tuple[int, int, int] = (3, 500, 500)):
         """
         Inits Covernet.
-        :param backbone: Backbone model. Typically ResNetBackBone or MobileNetBackbone
-        :param num_modes: Number of modes in the lattice
+        :param backbone: Backbone model. Typically ResNetBackBone or MobileNetBackbone（使用的CNN主干网络）
+        :param num_modes: Number of modes in the lattice（考虑的模态数）
         :param n_hidden_layers: List of dimensions in the fully connected layers after the backbones.
-            If None, set to [4096]
+            If None, set to [4096]（隐藏层神经元个数）
         :param input_shape: Shape of image input. Used to determine the dimensionality of the feature
-            vector after the CNN backbone.
+            vector after the CNN backbone.（输入语义地图的形状）
         """
 
-        if n_hidden_layers and not isinstance(n_hidden_layers, list):
+        if n_hidden_layers and not isinstance(n_hidden_layers, list):#可以有单个或多个隐藏层，但需要保证格式是list
             raise ValueError(f"Param n_hidden_layers must be a list. Received {type(n_hidden_layers)}")
 
         super().__init__()
 
         if not n_hidden_layers:
-            n_hidden_layers = [4096]
+            n_hidden_layers = [4096]#默认值，参考论文
 
         self.backbone = backbone
 
-        backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)
-        n_hidden_layers = [backbone_feature_dim + ASV_DIM] + n_hidden_layers + [num_modes]
+        backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)#提取backbone输出的维数
+        n_hidden_layers = [backbone_feature_dim + ASV_DIM] + n_hidden_layers + [num_modes]#在隐藏层基础上加入输入层和输出层
+        #输入层注意包含语义图和agent的三个状态
 
         linear_layers = [nn.Linear(in_dim, out_dim)
-                         for in_dim, out_dim in zip(n_hidden_layers[:-1], n_hidden_layers[1:])]
+                         for in_dim, out_dim in zip(n_hidden_layers[:-1], n_hidden_layers[1:])]#建立全连接各层的列表
 
         self.head = nn.ModuleList(linear_layers)
 
@@ -55,19 +56,19 @@ class CoverNet(nn.Module):
         :return: Logits for the batch.
         """
 
-        backbone_features = self.backbone(image_tensor)
+        backbone_features = self.backbone(image_tensor)#先用CNN处理语义地图获取特征，之后再与agent特征结合
 
-        logits = torch.cat([backbone_features, agent_state_vector], dim=1)
+        logits = torch.cat([backbone_features, agent_state_vector], dim=1)#特征concat
 
         for linear in self.head:
-            logits = linear(logits)
+            logits = linear(logits)#特征再经过全连接层以获取最终轨迹集的概率
 
-        return logits
+        return logits#输出轨迹集的各项概率
 
 
 def mean_pointwise_l2_distance(lattice: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
     """
-    Computes the index of the closest trajectory in the lattice as measured by l1 distance.
+    Computes the index of the closest trajectory in the lattice as measured by l1 distance.（计算lattice中最接近轨迹的索引）
     :param lattice: Lattice of pre-generated trajectories. Shape [num_modes, n_timesteps, state_dim]
     :param ground_truth: Ground truth trajectory of agent. Shape [1, n_timesteps, state_dim].
     :return: Index of closest mode in the lattice.
@@ -78,7 +79,8 @@ def mean_pointwise_l2_distance(lattice: torch.Tensor, ground_truth: torch.Tensor
 
 class ConstantLatticeLoss:
     """
-    Computes the loss for a constant lattice CoverNet model.
+    这个函数应该就是计算loss的
+    Computes the loss for a constant lattice CoverNet model.（计算一个常数晶格CoverNet模型的损失）
     """
 
     def __init__(self, lattice: Union[np.ndarray, torch.Tensor],
@@ -113,7 +115,7 @@ class ConstantLatticeLoss:
 
             closest_lattice_trajectory = self.similarity_func(self.lattice, ground_truth)
             label = torch.LongTensor([closest_lattice_trajectory]).to(batch_logits.device)
-            classification_loss = f.cross_entropy(logit.unsqueeze(0), label)
+            classification_loss = f.cross_entropy(logit.unsqueeze(0), label)#应该是选取了与gt最近的点对应轨迹后用其概率来计算交叉熵
 
             batch_losses = torch.cat((batch_losses, classification_loss.unsqueeze(0)), 0)
 

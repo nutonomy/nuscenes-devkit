@@ -42,7 +42,7 @@ def _kinematics_from_tokens(helper: PredictHelper, instance: str, sample: str) -
     vx, vy = velocity * hx, velocity * hy
     ax, ay = acceleration * hx, acceleration * hy
 
-    return x, y, vx, vy, ax, ay, velocity, yaw_rate, acceleration, yaw
+    return x, y, vx, vy, ax, ay, velocity, yaw_rate, acceleration, yaw #根据实例和样本token提取运动学参数（位置、速度、加速度、横摆角速度等）
 
 
 def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
@@ -50,7 +50,7 @@ def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
                                                sampled_at: int) -> np.ndarray:
     """
     Computes a constant velocity baseline for given kinematics data, time window
-    and frequency.
+    and frequency.（恒速模型，基于上述运动学参数进行计算）
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
     :param sampled_at: Number of predictions to make per second.
@@ -59,7 +59,7 @@ def _constant_velocity_heading_from_kinematics(kinematics_data: KinematicsData,
     preds = []
     time_step = 1.0 / sampled_at
     for time in np.arange(time_step, sec_from_now + time_step, time_step):
-        preds.append((x + time * vx, y + time * vy))
+        preds.append((x + time * vx, y + time * vy))#基于当前时刻速度计算未来各点的位置
     return np.array(preds)
 
 
@@ -67,7 +67,7 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
                                        sec_from_now: float, sampled_at: int) -> np.ndarray:
     """
     Computes a baseline prediction for the given time window and frequency, under
-    the assumption that the acceleration and heading are constant.
+    the assumption that the acceleration and heading are constant.（恒加速和朝向模型）
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
     :param sampled_at: Number of predictions to make per second.
@@ -79,7 +79,7 @@ def _constant_acceleration_and_heading(kinematics_data: KinematicsData,
     for time in np.arange(time_step, sec_from_now + time_step, time_step):
         half_time_squared = 0.5 * time * time
         preds.append((x + time * vx + half_time_squared * ax,
-                      y + time * vy + half_time_squared * ay))
+                      y + time * vy + half_time_squared * ay))#基于恒加速度计算
     return np.array(preds)
 
 
@@ -87,7 +87,7 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
                                  sec_from_now: float, sampled_at: int) -> np.ndarray:
     """
     Computes a baseline prediction for the given time window and frequency, under
-    the assumption that the (scalar) speed and yaw rate are constant.
+    the assumption that the (scalar) speed and yaw rate are constant.（恒速度和横摆角速度模型）
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
     :param sampled_at: Number of predictions to make per second.
@@ -99,10 +99,10 @@ def _constant_speed_and_yaw_rate(kinematics_data: KinematicsData,
     distance_step = time_step * speed
     yaw_step = time_step * yaw_rate
     for _ in np.arange(time_step, sec_from_now + time_step, time_step):
-        x += distance_step * np.cos(yaw)
+        x += distance_step * np.cos(yaw)#每一步都以恒定的速度和衡摆角速度进行
         y += distance_step * np.sin(yaw)
         preds.append((x, y))
-        yaw += yaw_step
+        yaw += yaw_step#横摆角均匀变化
     return np.array(preds)
 
 
@@ -110,7 +110,7 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
                                            sec_from_now: float, sampled_at: int) -> np.ndarray:
     """
     Computes a baseline prediction for the given time window and frequency, under
-    the assumption that the rates of change of speed and yaw are constant.
+    the assumption that the rates of change of speed and yaw are constant.（恒加速度和横摆角速度模型）
     :param kinematics_data: KinematicsData for agent.
     :param sec_from_now: How many future seconds to use.
     :param sampled_at: Number of predictions to make per second.
@@ -126,8 +126,8 @@ def _constant_magnitude_accel_and_yaw_rate(kinematics_data: KinematicsData,
         x += distance_step * np.cos(yaw)
         y += distance_step * np.sin(yaw)
         preds.append((x, y))
-        speed += speed_step
-        yaw += yaw_step
+        speed += speed_step#速度均匀变化
+        yaw += yaw_step#横摆角均匀变化
     return np.array(preds)
 
 
@@ -142,7 +142,7 @@ class Baseline(abc.ABC):
         assert sec_from_now % 0.5 == 0, f"Parameter sec from now must be divisible by 0.5. Received {sec_from_now}."
         self.helper = helper
         self.sec_from_now = sec_from_now
-        self.sampled_at = 2  # 2 Hz between annotations.
+        self.sampled_at = 2  # 2 Hz between annotations.（采样频率）
 
     @abc.abstractmethod
     def __call__(self, token: str) -> Prediction:
@@ -150,7 +150,7 @@ class Baseline(abc.ABC):
 
 
 class ConstantVelocityHeading(Baseline):
-    """ Makes predictions according to constant velocity and heading model. """
+    """ Makes predictions according to constant velocity and heading model.（CV模型） """
 
     def __call__(self, token: str) -> Prediction:
         """
@@ -166,7 +166,10 @@ class ConstantVelocityHeading(Baseline):
 
 
 class PhysicsOracle(Baseline):
-    """ Makes several physics-based predictions and picks the one closest to the ground truth. """
+    """
+    Makes several physics-based predictions and picks the one closest to the ground truth.
+    做了几个基于物理学的预测（上述几个模型），然后选出最接近事实的一个。
+    """
 
     def __call__(self, token) -> Prediction:
         """
@@ -175,7 +178,7 @@ class PhysicsOracle(Baseline):
         """
         instance, sample = token.split("_")
         kinematics = _kinematics_from_tokens(self.helper, instance, sample)
-        ground_truth = self.helper.get_future_for_agent(instance, sample, self.sec_from_now, in_agent_frame=False)
+        ground_truth = self.helper.get_future_for_agent(instance, sample, self.sec_from_now, in_agent_frame=False)#提取未来轨迹作为gt
 
         assert ground_truth.shape[0] == int(self.sec_from_now * self.sampled_at), ("Ground truth does not correspond "
                                                                                    f"to {self.sec_from_now} seconds.")
@@ -187,13 +190,13 @@ class PhysicsOracle(Baseline):
             _constant_velocity_heading_from_kinematics
         ]
 
-        paths = [path_fun(kinematics, self.sec_from_now, self.sampled_at) for path_fun in path_funs]
+        paths = [path_fun(kinematics, self.sec_from_now, self.sampled_at) for path_fun in path_funs]#path是一个列表，相当于多种模态/可能性
 
         # Select the one with the least l2 error, averaged (or equivalently, summed) over all
         # points of the path.  This is (proportional to) the Frobenius norm of the difference
         # between the path (as an n x 2 matrix) and the ground truth.
         oracle = sorted(paths,
-                        key=lambda path: np.linalg.norm(np.array(path) - ground_truth, ord="fro"))[0]
+                        key=lambda path: np.linalg.norm(np.array(path) - ground_truth, ord="fro"))[0]#选取集中模型中与gt最接近的预测结果
 
         # Need the prediction to have 2d.
         return Prediction(instance, sample, np.expand_dims(oracle, 0), np.array([1]))

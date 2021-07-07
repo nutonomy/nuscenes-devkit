@@ -29,14 +29,14 @@ class MTP(nn.Module):
         :param backbone: CNN Backbone to use.
         :param num_modes: Number of predicted paths to estimate for each agent.
         :param seconds: Number of seconds into the future to predict.
-            Default for the challenge is 6.
+            Default for the challenge is 6.（这块儿CoverNet没有，因为它直接用的是轨迹集，确定了输出的轨迹长度）
         :param frequency_in_hz: Frequency between timesteps in the prediction (in Hz).
-            Highest frequency is nuScenes is 2 Hz.
+            Highest frequency is nuScenes is 2 Hz.（这块儿CoverNet也没有，同轨迹集限制）
         :param n_hidden_layers: Size of fully connected layer after the CNN
-            backbone processes the image.
+            backbone processes the image.（这里的隐藏层参数是int？意思是只能有一个隐藏层，相比CoverNet代码灵活度稍不足
         :param input_shape: Shape of the input expected by the network.
             This is needed because the size of the fully connected layer after
-            the backbone depends on the backbone and its version.
+            the backbone depends on the backbone and its version.（输入语义地图的形状）
 
         Note:
             Although seconds and frequency_in_hz are typed as floats, their
@@ -47,11 +47,11 @@ class MTP(nn.Module):
 
         self.backbone = backbone
         self.num_modes = num_modes
-        backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)
-        self.fc1 = nn.Linear(backbone_feature_dim + ASV_DIM, n_hidden_layers)
-        predictions_per_mode = int(seconds * frequency_in_hz) * 2
+        backbone_feature_dim = calculate_backbone_feature_dim(backbone, input_shape)#提取backbone输出的维数
+        self.fc1 = nn.Linear(backbone_feature_dim + ASV_DIM, n_hidden_layers)#全连接层输入层
+        predictions_per_mode = int(seconds * frequency_in_hz) * 2#每个模态预测的点数
 
-        self.fc2 = nn.Linear(n_hidden_layers, int(num_modes * predictions_per_mode + num_modes))
+        self.fc2 = nn.Linear(n_hidden_layers, int(num_modes * predictions_per_mode + num_modes))#输出层
 
     def forward(self, image_tensor: torch.Tensor,
                 agent_state_vector: torch.Tensor) -> torch.Tensor:
@@ -69,20 +69,20 @@ class MTP(nn.Module):
 
         features = torch.cat([backbone_features, agent_state_vector], dim=1)
 
-        predictions = self.fc2(self.fc1(features))
+        predictions = self.fc2(self.fc1(features))#这里的输出格式是[模式1轨迹点；模式2轨迹点；···；模式1概率；模式2概率；···]
 
         # Normalize the probabilities to sum to 1 for inference.
         mode_probabilities = predictions[:, -self.num_modes:].clone()
         if not self.training:
-            mode_probabilities = f.softmax(mode_probabilities, dim=-1)
+            mode_probabilities = f.softmax(mode_probabilities, dim=-1)#将概率处理成归一化值（加起来为1）
 
-        predictions = predictions[:, :-self.num_modes]
+        predictions = predictions[:, :-self.num_modes]#预测轨迹点值
 
         return torch.cat((predictions, mode_probabilities), 1)
 
 
 class MTPLoss:
-    """ Computes the loss for the MTP model. """
+    """ Computes the loss for the MTP model.（计算该MTP模型损失，应该是训练时候用的？） """
 
     def __init__(self,
                  num_modes: int,

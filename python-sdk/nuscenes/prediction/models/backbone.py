@@ -10,6 +10,7 @@ from torchvision.models import (mobilenet_v2, resnet18, resnet34, resnet50,
 
 def trim_network_at_index(network: nn.Module, index: int = -1) -> nn.Module:
     """
+    这步应该是要对网络进行修剪了
     Returns a new network with all layers up to index from the back.
     :param network: Module to trim.
     :param index: Where to trim the network. Counted from the last layer.
@@ -53,12 +54,12 @@ class ResNetBackbone(nn.Module):
     def forward(self, input_tensor: torch.Tensor) -> torch.Tensor:
         """
         Outputs features after last convolution.
-        :param input_tensor:  Shape [batch_size, n_channels, length, width].
+        :param input_tensor:  Shape [batch_size, n_channels, length, width].#输出参数：多个batch的语义地图
         :return: Tensor of shape [batch_size, n_convolution_filters]. For resnet50,
             the shape is [batch_size, 2048].
         """
         backbone_features = self.backbone(input_tensor)
-        return torch.flatten(backbone_features, start_dim=1)
+        return torch.flatten(backbone_features, start_dim=1)#torch.flatten将其变成2维数据（batch_size*特征数：[batch_size, 2048]）
 
 
 class MobileNetBackbone(nn.Module):
@@ -71,7 +72,7 @@ class MobileNetBackbone(nn.Module):
     def __init__(self, version: str):
         """
         Inits MobileNetBackbone.
-        :param version: mobilenet version to use.
+        :param version: mobilenet version to use.（目前只允许mobilenet_v2这种版本）
         """
         super().__init__()
 
@@ -88,4 +89,4 @@ class MobileNetBackbone(nn.Module):
             the shape is [batch_size, 1280].
         """
         backbone_features = self.backbone(input_tensor)
-        return backbone_features.mean([2, 3])
+        return backbone_features.mean([2, 3])#返回[batch_size, 1280]的数据
