@@ -67,6 +67,15 @@ The prizes will be awarded to submissions that outperform the previous state-of-
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/476/overview) as previous tracking challenges.
 
+A summary of the results can be seen below. 
+For details, please refer to the [tracking leaderboard](https://www.nuscenes.org/tracking).
+
+| Rank | Team name                    | AMOTA | Awards          |
+|---   |---                           |---    |---              |
+|  1   | MLPMOT and CBMOT+            | 68.1% | Best submission |
+|  2   | OGR3MOT                      | 65.6% | -               |
+|  3   | StanfordIPRL-TRI-Multi-Modal | 65.5% | -               |
+
 ### AI Driving Olympics (AIDO), NIPS 2019
 The first nuScenes tracking challenge will be held at NIPS 2019.
 Submission will open October 1 and close December 9.

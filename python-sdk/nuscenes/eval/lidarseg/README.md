@@ -46,6 +46,15 @@ The prizes will be awarded to submissions that outperform the previous state-of-
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) as previous lidar segmentation challenges.
 
+A summary of the results can be seen below. 
+For details, please refer to the [lidar segmentation leaderboard](https://www.nuscenes.org/lidar-segmentation).
+
+| Rank | Team name          | mIOU  | Awards          |
+|---   |---                 |---    |---              |
+|  1   | SPVCNN++           | 0.811 | Best submission |
+|  2   | GU-Net             | 0.803 | -               |
+|  3   | 2D3DNet            | 0.800 | -               |
+
 ### 5th AI Driving Olympics, NeurIPS 2020
 The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submissions will be accepted from November 1 to December 8, 2020.
