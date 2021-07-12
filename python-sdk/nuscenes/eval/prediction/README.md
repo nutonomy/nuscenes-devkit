@@ -43,6 +43,15 @@ The prizes will be awarded to submissions that outperform the previous state-of-
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/591/overview) as previous prediction challenges.
 
+A summary of the results can be seen below. 
+For details, please refer to the [prediction leaderboard](https://www.nuscenes.org/prediction).
+
+| Rank | Team name    | minADE_5 | Awards          |
+|---   |---           |---       |---              |
+|  1   | P2T          | 1.45     | Best submission |
+|  2   | STSE         | 1.56     | -               |
+|  3   | SGNet        | 1.85     | -               |
+
 ### Workshop on Benchmarking Progress in Autonomous Driving, ICRA 2020
 The first nuScenes prediction challenge will be held at [ICRA 2020](https://www.icra2020.org/).
 This challenge will be focused on predicting trajectories for vehicles. The submission period will open April 1 and continue until May 28th, 2020.

@@ -47,6 +47,15 @@ The prizes will be awarded to submissions that outperform the previous state-of-
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) as previous detection challenges.
 
+A summary of the results can be seen below. 
+For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
+
+| Rank | Team name                             | NDS   | Award           |
+|---   |---                                    |---    |---              |
+|  1   | CenterPoint-Fusion and FusionPainting | 74.9% | Best submission |
+|  2   | PointAugmenting V2                    | 70.9% | -               |
+|  3   | Multimodal Virtual Point              | 70.5% | Most innovative |
+
 ### 5th AI Driving Olympics, NeurIPS 2020 
 The third nuScenes detection challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submissions will be accepted from November 1 to December 8, 2020.
