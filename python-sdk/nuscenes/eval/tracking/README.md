@@ -67,6 +67,9 @@ The prizes will be awarded to submissions that outperform the previous state-of-
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/476/overview) as previous tracking challenges.
 
+A summary of the results can be seen below. 
+For details, please refer to the [tracking leaderboard](https://www.nuscenes.org/tracking).
+
 | Rank | Team name                    | AMOTA | Awards          |
 |---   |---                           |---    |---              |
 |  1   | MLPMOT and CBMOT+            | 68.1% | Best submission |
