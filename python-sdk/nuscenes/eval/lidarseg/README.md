@@ -104,7 +104,7 @@ The folder structure of the results should be as follows:
                                 the submission
 ```
 
-The contents of the `submision.json` file and `test` folder are defined below: 
+The contents of the `submission.json` file and `test` folder are defined below:
 * The `submission.json` file includes meta data `meta` on the type of inputs used for this method.
   ```
   "meta": {

@@ -10,6 +10,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
   - [Getting started with nuImages](#getting-started-with-nuimages)
 - [nuScenes](#nuscenes)
   - [nuScenes setup](#nuscenes-setup)
+  - [nuScenes-panoptic](#nuscenes-panoptic)
   - [nuScenes-lidarseg](#nuscenes-lidarseg)
   - [Prediction challenge](#prediction-challenge)
   - [CAN bus expansion](#can-bus-expansion)
@@ -20,6 +21,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
 - [Citation](#citation)
 
 ## Changelog
+- Jul. 29, 2020: Devkit v1.2.0: nuScenes-panoptic v1.0 code, NeurIPS challenge announcement.
 - Apr. 5, 2021: Devkit v1.1.3: Bug fixes and pip requirements.
 - Nov. 23, 2020: Devkit v1.1.2: Release map-expansion v1.3 with lidar basemap.
 - Nov. 9, 2020: Devkit v1.1.1: Lidarseg evaluation code, NeurIPS challenge announcement.
@@ -97,6 +99,15 @@ Eventually you should have the following folder structure:
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
+### nuScenes-panoptic
+In August 2021 we published [nuScenes-panoptic](https://www.nuscenes.org/nuscenes) which contains the panoptic
+labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
+To install nuScenes-panoptic, please follow these steps:
+- Download the dataset from the [Download page](https://www.nuscenes.org/download),
+- Extract the `panoptic` and `v1.0-*` folders to your nuScenes root directory (e.g. `/data/sets/nuscenes/panoptic`, `/data/sets/nuscenes/v1.0-*`).
+- Get the latest version of the nuscenes-devkit.
+- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/nuscenes_lidarseg_panoptic_tutorial.ipynb).
+
 ### nuScenes-lidarseg
 In August 2020 we published [nuScenes-lidarseg](https://www.nuscenes.org/nuscenes#lidarseg) which contains the semantic labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
 To install nuScenes-lidarseg, please follow these steps:
@@ -104,7 +115,7 @@ To install nuScenes-lidarseg, please follow these steps:
 - Extract the `lidarseg` and `v1.0-*` folders to your nuScenes root directory (e.g. `/data/sets/nuscenes/lidarseg`, `/data/sets/nuscenes/v1.0-*`).
 - Get the latest version of the nuscenes-devkit.
 - If you already have a previous version of the devkit, update the pip requirements (see [details](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md)): `pip install -r setup/requirements.txt`
-- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/nuscenes_lidarseg_tutorial.ipynb).
+- Get started with the [tutorial](https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/tutorials/nuscenes_lidarseg_panoptic_tutorial.ipynb).
 
 ### Prediction challenge
 In March 2020 we released code for the nuScenes prediction challenge.

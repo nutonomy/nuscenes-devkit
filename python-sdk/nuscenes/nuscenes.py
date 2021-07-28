@@ -22,7 +22,10 @@ from tqdm import tqdm
 
 from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, plt_to_cv2, get_stats, \
     get_labels_in_coloring, create_lidarseg_legend, paint_points_label
+from nuscenes.panoptic.panoptic_utils import paint_panop_points_label, stuff_cat_ids, get_frame_panoptic_instances,\
+    get_panoptic_instances_stats
 from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
+from nuscenes.utils.data_io import load_bin_file, panoptic_to_lidarseg
 from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
 from nuscenes.utils.map_mask import MapMask
 from nuscenes.utils.color_map import get_colormap
@@ -80,30 +83,21 @@ class NuScenes:
         # Initialize the colormap which maps from class names to RGB values.
         self.colormap = get_colormap()
 
-        # If available, also load the lidarseg annotations.
-        if osp.exists(osp.join(self.table_root, 'lidarseg.json')):
-            if self.verbose:
-                print('Loading nuScenes-lidarseg...')
-
-            self.lidarseg = self.__load_table__('lidarseg')
-            num_lidarseg_recs = len(self.lidarseg)
-            num_bin_files = len([name for name in os.listdir(os.path.join(self.dataroot, 'lidarseg', self.version))
-                                 if name.endswith('.bin')])
-            assert num_lidarseg_recs == num_bin_files, \
-                'Error: There are {} .bin files but {} lidarseg records.'.format(num_bin_files, num_lidarseg_recs)
-            self.table_names.append('lidarseg')
-
-            # Create mapping from class index to class name, and vice versa, for easy lookup later on.
+        lidar_tasks = [t for t in ['lidarseg', 'panoptic'] if osp.exists(osp.join(self.table_root, t + '.json'))]
+        if len(lidar_tasks) > 0:
             self.lidarseg_idx2name_mapping = dict()
             self.lidarseg_name2idx_mapping = dict()
-            for lidarseg_category in self.category:
-                # Check that the category records contain both the keys 'name' and 'index'.
-                assert 'index' in lidarseg_category.keys(), \
-                    'Please use the category.json that comes with nuScenes-lidarseg, and not the old category.json.'
-
-                self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
-                self.lidarseg_name2idx_mapping[lidarseg_category['name']] = lidarseg_category['index']
-
+            self.load_lidarseg_cat_name_mapping()
+        for i, lidar_task in enumerate(lidar_tasks):
+            if self.verbose:
+                print(f'Loading nuScenes-{lidar_task}...')
+            setattr(self, lidar_task, self.__load_table__(lidar_task))
+            label_files = os.listdir(os.path.join(self.dataroot, lidar_task, self.version))
+            num_label_files = len([name for name in label_files if (name.endswith('.bin') or name.endswith('.npz'))])
+            num_lidarseg_recs = len(getattr(self, lidar_task))
+            assert num_lidarseg_recs == num_label_files, \
+                f'Error: there are {num_label_files} label files but {num_lidarseg_recs} {lidar_task} records.'
+            self.table_names.append(lidar_task)
             # Sort the colormap to ensure that it is ordered according to the indices in self.category.
             self.colormap = dict({c['name']: self.colormap[c['name']]
                                   for c in sorted(self.category, key=lambda k: k['index'])})
@@ -137,6 +131,16 @@ class NuScenes:
         with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
             table = json.load(f)
         return table
+
+    def load_lidarseg_cat_name_mapping(self):
+        """ Create mapping from class index to class name, and vice versa, for easy lookup later on """
+        for lidarseg_category in self.category:
+            # Check that the category records contain both the keys 'name' and 'index'.
+            assert 'index' in lidarseg_category.keys(), \
+                'Please use the category.json that comes with nuScenes-lidarseg, and not the old category.json.'
+
+            self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
+            self.lidarseg_name2idx_mapping[lidarseg_category['name']] = lidarseg_category['index']
 
     def __make_reverse_index__(self, verbose: bool) -> None:
         """
@@ -412,8 +416,11 @@ class NuScenes:
         else:
             return pos_diff / time_diff
 
-    def get_sample_lidarseg_stats(self, sample_token: str, sort_by: str = 'count',
-                                  lidarseg_preds_bin_path: str = None) -> None:
+    def get_sample_lidarseg_stats(self,
+                                  sample_token: str,
+                                  sort_by: str = 'count',
+                                  lidarseg_preds_bin_path: str = None,
+                                  gt_from: str = 'lidarseg') -> None:
         """
         Print the number of points for each class in the lidar pointcloud of a sample. Classes with have no
         points in the pointcloud will not be printed.
@@ -424,12 +431,14 @@ class NuScenes:
                         class index.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
+        :param gt_from: 'lidarseg' or 'panoptic', ground truth source of point semantic labels.
         """
-        assert hasattr(self, 'lidarseg'), 'Error: You have no lidarseg data; unable to get ' \
-                                          'statistics for segmentation of the point cloud.'
+        assert gt_from in ['lidarseg', 'panoptic'], f'gt_from can only be lidarseg or panoptic, get {gt_from}'
+        assert hasattr(self, gt_from), f'Error: You have no {gt_from} data; unable to get ' \
+                                       'statistics for segmentation of the point cloud.'
         assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
                                                       'count / name / index.'
-
+        semantic_table = getattr(self, gt_from)
         sample_rec = self.get('sample', sample_token)
         ref_sd_token = sample_rec['data']['LIDAR_TOP']
         ref_sd_record = self.get('sample_data', ref_sd_token)
@@ -446,18 +455,20 @@ class NuScenes:
 
             header = '===== Statistics for ' + sample_token + ' (predictions) ====='
         else:
-            assert len(self.lidarseg) > 0, 'Error: There are no ground truth labels found for nuScenes-lidarseg ' \
-                                           'for {}. Are you loading the test set? \nIf you want to see the sample ' \
-                                           'statistics for your predictions, pass a path to the appropriate .bin ' \
-                                           'file using the lidarseg_preds_bin_path argument.'.format(self.version)
+            assert len(semantic_table) > 0, 'Error: There are no ground truth labels found for nuScenes-{} for {}.'\
+                                            'Are you loading the test set? \nIf you want to see the sample statistics'\
+                                            ' for your predictions, pass a path to the appropriate .bin/npz file using'\
+                                            ' the lidarseg_preds_bin_path argument.'.format(gt_from, self.version)
             lidar_sd_token = self.get('sample', sample_token)['data']['LIDAR_TOP']
             lidarseg_labels_filename = os.path.join(self.dataroot,
-                                                    self.get('lidarseg', lidar_sd_token)['filename'])
+                                                    self.get(gt_from, lidar_sd_token)['filename'])
 
             header = '===== Statistics for ' + sample_token + ' ====='
         print(header)
 
-        points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
+        points_label = load_bin_file(lidarseg_labels_filename, type=gt_from)
+        if gt_from == 'panoptic':
+            points_label = panoptic_to_lidarseg(points_label)
         lidarseg_counts = get_stats(points_label, len(self.lidarseg_idx2name_mapping))
 
         lidarseg_counts_dict = dict()
@@ -481,8 +492,11 @@ class NuScenes:
     def list_categories(self) -> None:
         self.explorer.list_categories()
 
-    def list_lidarseg_categories(self, sort_by: str = 'count') -> None:
-        self.explorer.list_lidarseg_categories(sort_by=sort_by)
+    def list_lidarseg_categories(self, sort_by: str = 'count', gt_from: str = 'lidarseg') -> None:
+        self.explorer.list_lidarseg_categories(sort_by=sort_by, gt_from=gt_from)
+
+    def list_panoptic_instances(self, sort_by: str = 'count', get_hist: bool = False) -> None:
+        self.explorer.list_panoptic_instances(sort_by=sort_by, get_hist=get_hist)
 
     def list_attributes(self) -> None:
         self.explorer.list_attributes()
@@ -500,7 +514,8 @@ class NuScenes:
                                    filter_lidarseg_labels: List = None,
                                    show_lidarseg_legend: bool = False,
                                    verbose: bool = True,
-                                   lidarseg_preds_bin_path: str = None) -> None:
+                                   lidarseg_preds_bin_path: str = None,
+                                   show_panoptic: bool = False) -> None:
         self.explorer.render_pointcloud_in_image(sample_token, dot_size, pointsensor_channel=pointsensor_channel,
                                                  camera_channel=camera_channel, out_path=out_path,
                                                  render_intensity=render_intensity,
@@ -508,16 +523,22 @@ class NuScenes:
                                                  filter_lidarseg_labels=filter_lidarseg_labels,
                                                  show_lidarseg_legend=show_lidarseg_legend,
                                                  verbose=verbose,
-                                                 lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+                                                 lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                 show_panoptic=show_panoptic)
 
-    def render_sample(self, sample_token: str, box_vis_level: BoxVisibility = BoxVisibility.ANY, nsweeps: int = 1,
-                      out_path: str = None, show_lidarseg: bool = False,
+    def render_sample(self, sample_token: str,
+                      box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                      nsweeps: int = 1,
+                      out_path: str = None,
+                      show_lidarseg: bool = False,
                       filter_lidarseg_labels: List = None,
-                      lidarseg_preds_bin_path: str = None, verbose: bool = True) -> None:
-        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps,
-                                    out_path=out_path, show_lidarseg=show_lidarseg,
-                                    filter_lidarseg_labels=filter_lidarseg_labels,
-                                    lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose)
+                      lidarseg_preds_bin_path: str = None,
+                      verbose: bool = True,
+                      show_panoptic: bool = False) -> None:
+        self.explorer.render_sample(sample_token, box_vis_level, nsweeps=nsweeps, out_path=out_path,
+                                    show_lidarseg=show_lidarseg, filter_lidarseg_labels=filter_lidarseg_labels,
+                                    lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose,
+                                    show_panoptic=show_panoptic)
 
     def render_sample_data(self, sample_data_token: str, with_anns: bool = True,
                            box_vis_level: BoxVisibility = BoxVisibility.ANY, axes_limit: float = 40, ax: Axes = None,
@@ -526,14 +547,18 @@ class NuScenes:
                            show_lidarseg: bool = False,
                            show_lidarseg_legend: bool = False,
                            filter_lidarseg_labels: List = None,
-                           lidarseg_preds_bin_path: str = None, verbose: bool = True) -> None:
+                           lidarseg_preds_bin_path: str = None, verbose: bool = True,
+                           show_panoptic: bool = False) -> None:
         self.explorer.render_sample_data(sample_data_token, with_anns, box_vis_level, axes_limit, ax, nsweeps=nsweeps,
-                                         out_path=out_path, underlay_map=underlay_map,
+                                         out_path=out_path,
+                                         underlay_map=underlay_map,
                                          use_flat_vehicle_coordinates=use_flat_vehicle_coordinates,
                                          show_lidarseg=show_lidarseg,
                                          show_lidarseg_legend=show_lidarseg_legend,
                                          filter_lidarseg_labels=filter_lidarseg_labels,
-                                         lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=verbose)
+                                         lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                         verbose=verbose,
+                                         show_panoptic=show_panoptic)
 
     def render_annotation(self, sample_annotation_token: str, margin: float = 10, view: np.ndarray = np.eye(4),
                           box_vis_level: BoxVisibility = BoxVisibility.ANY, out_path: str = None,
@@ -566,7 +591,8 @@ class NuScenes:
                                       imsize: Tuple[int, int] = (640, 360),
                                       freq: float = 2,
                                       dpi: int = 150,
-                                      lidarseg_preds_folder: str = None) -> None:
+                                      lidarseg_preds_folder: str = None,
+                                      show_panoptic: bool = False) -> None:
         self.explorer.render_scene_channel_lidarseg(scene_token,
                                                     channel,
                                                     out_folder=out_folder,
@@ -577,7 +603,8 @@ class NuScenes:
                                                     imsize=imsize,
                                                     freq=freq,
                                                     dpi=dpi,
-                                                    lidarseg_preds_folder=lidarseg_preds_folder)
+                                                    lidarseg_preds_folder=lidarseg_preds_folder,
+                                                    show_panoptic=show_panoptic)
 
     def render_scene_lidarseg(self, scene_token: str,
                               out_path: str = None,
@@ -587,7 +614,8 @@ class NuScenes:
                               freq: float = 2,
                               verbose: bool = True,
                               dpi: int = 200,
-                              lidarseg_preds_folder: str = None) -> None:
+                              lidarseg_preds_folder: str = None,
+                              show_panoptic: bool = False) -> None:
         self.explorer.render_scene_lidarseg(scene_token,
                                             out_path=out_path,
                                             filter_lidarseg_labels=filter_lidarseg_labels,
@@ -596,7 +624,8 @@ class NuScenes:
                                             freq=freq,
                                             verbose=verbose,
                                             dpi=dpi,
-                                            lidarseg_preds_folder=lidarseg_preds_folder)
+                                            lidarseg_preds_folder=lidarseg_preds_folder,
+                                            show_panoptic=show_panoptic)
 
 
 class NuScenesExplorer:
@@ -635,7 +664,7 @@ class NuScenesExplorer:
                                                          np.mean(stats[:, 2]), np.std(stats[:, 2]),
                                                          np.mean(stats[:, 3]), np.std(stats[:, 3])))
 
-    def list_lidarseg_categories(self, sort_by: str = 'count') -> None:
+    def list_lidarseg_categories(self, sort_by: str = 'count', gt_from: str = 'lidarseg') -> None:
         """
         Print categories and counts of the lidarseg data. These stats only cover
         the split specified in nusc.version.
@@ -643,21 +672,26 @@ class NuScenesExplorer:
                         ascending order of frequency; if `name`, the stats will be printed alphabetically
                         according to class name; if `index`, the stats will be printed in ascending order of
                         class index.
+        :param gt_from: 'lidarseg' or 'panoptic', ground truth source of point semantic labels.
         """
-        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+        assert gt_from in ['lidarseg', 'panoptic'], f'gt_from can only be lidarseg or panoptic, get {gt_from}'
+        assert hasattr(self.nusc, gt_from), f'Error: nuScenes-{gt_from} not installed!'
         assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
                                                       'count / name / index.'
 
-        print('Calculating stats for nuScenes-lidarseg...')
+        print(f'Calculating semantic point stats for nuScenes-{gt_from}...')
+        semantic_table = getattr(self.nusc, gt_from)
         start_time = time.time()
 
         # Initialize an array of zeroes, one for each class name.
         lidarseg_counts = [0] * len(self.nusc.lidarseg_idx2name_mapping)
 
-        for record_lidarseg in self.nusc.lidarseg:
+        for record_lidarseg in semantic_table:
             lidarseg_labels_filename = osp.join(self.nusc.dataroot, record_lidarseg['filename'])
+            points_label = load_bin_file(lidarseg_labels_filename, type=gt_from)
+            if gt_from == 'panoptic':
+                points_label = panoptic_to_lidarseg(points_label)
 
-            points_label = np.fromfile(lidarseg_labels_filename, dtype=np.uint8)
             indices = np.bincount(points_label)
             ii = np.nonzero(indices)[0]
             for class_idx, class_count in zip(ii, indices[ii]):
@@ -675,12 +709,67 @@ class NuScenesExplorer:
             out = lidarseg_counts_dict.items()
 
         # Print frequency counts of each class in the lidarseg dataset.
+        total_count = 0
         for class_name, count in out:
             idx = self.nusc.lidarseg_name2idx_mapping[class_name]
             print('{:3}  {:40} nbr_points={:12,}'.format(idx, class_name, count))
+            total_count += count
+        print('Calculated stats for {} point clouds in {:.1f} seconds, total {} points.\n====='.format(
+            len(semantic_table), time.time() - start_time, total_count))
 
-        print('Calculated stats for {} point clouds in {:.1f} seconds.\n====='.format(
-            len(self.nusc.lidarseg), time.time() - start_time))
+    def list_panoptic_instances(self, sort_by: str = 'count', get_hist: bool = False) -> None:
+        """
+        Print categories and counts of the lidarseg data. These stats only cover
+        the split specified in nusc.version.
+        :param sort_by: One of three options: count / name / index. If 'count`, the stats will be printed in
+                        ascending order of frequency; if `name`, the stats will be printed alphabetically
+                        according to class name; if `index`, the stats will be printed in ascending order of
+                        class index.
+        :param get_hist: True to return each frame' instance counts and per-category instance' number of frames, and
+            number of points.
+        """
+        assert hasattr(self.nusc, 'panoptic'), f'Error: nuScenes-panoptic not installed!'
+        assert sort_by in ['count', 'name', 'index'], 'Error: sort_by can only be one of the following: ' \
+                                                      'count / name / index.'
+        nusc_panoptic = getattr(self.nusc, 'panoptic')
+
+        print(f'Calculating instance stats for nuScenes-panoptic ...')
+        start_time = time.time()
+
+        # {scene_token: np.ndarray((n, 5), np.int32)}, each row: (scene_id, frame_id, category_id, inst_id, num_points).
+        scene_inst_stats = dict()
+        for frame_id, record_panoptic in enumerate(nusc_panoptic):
+            panoptic_label_filename = osp.join(self.nusc.dataroot, record_panoptic['filename'])
+            panoptic_label = load_bin_file(panoptic_label_filename, type='panoptic')
+            sample_token = self.nusc.get('sample_data', record_panoptic['sample_data_token'])['sample_token']
+            scene_token = self.nusc.get('sample', sample_token)['scene_token']
+            if scene_token not in scene_inst_stats:
+                scene_inst_stats[scene_token] = np.empty((0, 4), dtype=np.int32)
+            frame_cat_inst_count = get_frame_panoptic_instances(panoptic_label=panoptic_label, frame_id=frame_id)
+            scene_inst_stats[scene_token] = np.append(scene_inst_stats[scene_token], frame_cat_inst_count, axis=0)
+
+        panoptic_stats = get_panoptic_instances_stats(scene_inst_stats, self.nusc.lidarseg_idx2name_mapping, get_hist)
+        pm = u"\u00B1"
+        frame_num_insts = panoptic_stats['per_frame_panoptic_stats']['per_frame_num_instances']
+        print('Per-frame number of instances: {:.0f}{}{:.0f}'.format(frame_num_insts[0], pm, frame_num_insts[1]))
+
+        instance_counts = panoptic_stats['per_category_panoptic_stats'].copy()
+        if sort_by == 'count':
+            instance_counts = sorted(instance_counts.items(), key=lambda item: item[1]['num_instances'], reverse=True)
+        elif sort_by == 'name':
+            instance_counts = sorted(instance_counts.items())
+        else:
+            instance_counts = list(instance_counts.items())
+
+        print('Per-category instance stats:')
+        for cat_name, s in instance_counts:
+            print('{}: {} instances, each instance spans to {:.0f}{}{:.0f} frames, with {:.0f}{}{:.0f} points'.format(
+                cat_name, s['num_instances'], s['num_frames_per_instance'][0], pm, s['num_frames_per_instance'][1],
+                s['num_points_per_instance'][0], pm, s['num_points_per_instance'][1]))
+
+        num_instances, num_sample_annos = panoptic_stats['num_instances'], panoptic_stats['num_sample_annotations']
+        print('\nCalculated stats for {} point clouds in {:.1f} seconds, total {} instances, {} sample annotations.'
+              '\n====='.format(len(nusc_panoptic), time.time() - start_time, num_instances, num_sample_annos))
 
     def list_attributes(self) -> None:
         """ Prints attributes and counts. """
@@ -744,7 +833,8 @@ class NuScenesExplorer:
                                 render_intensity: bool = False,
                                 show_lidarseg: bool = False,
                                 filter_lidarseg_labels: List = None,
-                                lidarseg_preds_bin_path: str = None) -> Tuple:
+                                lidarseg_preds_bin_path: str = None,
+                                show_panoptic: bool = False) -> Tuple:
         """
         Given a point sensor (lidar/radar) token and camera sample_data token, load pointcloud and map it to the image
         plane.
@@ -757,6 +847,9 @@ class NuScenesExplorer:
             or the list is empty, all classes will be displayed.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels. When set
+            to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+            If show_lidarseg is True, show_panoptic will be set to False.
         :return (pointcloud <np.float: 2, n)>, coloring <np.float: n>, image <Image>).
         """
 
@@ -764,8 +857,9 @@ class NuScenesExplorer:
         pointsensor = self.nusc.get('sample_data', pointsensor_token)
         pcl_path = osp.join(self.nusc.dataroot, pointsensor['filename'])
         if pointsensor['sensor_modality'] == 'lidar':
-            if show_lidarseg:
-                assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+            if show_lidarseg or show_panoptic:
+                gt_from = 'lidarseg' if show_lidarseg else 'panoptic'
+                assert hasattr(self.nusc, gt_from), f'Error: nuScenes-{gt_from} not installed!'
 
                 # Ensure that lidar pointcloud is from a keyframe.
                 assert pointsensor['is_key_frame'], \
@@ -814,9 +908,12 @@ class NuScenesExplorer:
             intensities = intensities ** 0.1
             intensities = np.maximum(0, intensities - 0.5)
             coloring = intensities
-        elif show_lidarseg:
+        elif show_lidarseg or show_panoptic:
             assert pointsensor['sensor_modality'] == 'lidar', 'Error: Can only render lidarseg labels for lidar, ' \
                                                               'not %s!' % pointsensor['sensor_modality']
+
+            gt_from = 'lidarseg' if show_lidarseg else 'panoptic'
+            semantic_table = getattr(self.nusc, gt_from)
 
             if lidarseg_preds_bin_path:
                 sample_token = self.nusc.get('sample_data', pointsensor_token)['sample_token']
@@ -825,20 +922,29 @@ class NuScenesExplorer:
                     'Error: Unable to find {} to load the predictions for sample token {} (lidar ' \
                     'sample data token {}) from.'.format(lidarseg_labels_filename, sample_token, pointsensor_token)
             else:
-                if len(self.nusc.lidarseg) > 0:  # Ensure lidarseg.json is not empty (e.g. in case of v1.0-test).
+                if len(semantic_table) > 0:  # Ensure {lidarseg/panoptic}.json is not empty (e.g. in case of v1.0-test).
                     lidarseg_labels_filename = osp.join(self.nusc.dataroot,
-                                                        self.nusc.get('lidarseg', pointsensor_token)['filename'])
+                                                        self.nusc.get(gt_from, pointsensor_token)['filename'])
                 else:
                     lidarseg_labels_filename = None
 
             if lidarseg_labels_filename:
                 # Paint each label in the pointcloud with a RGBA value.
-                coloring = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
-                                              self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
+                if show_lidarseg:
+                    coloring = paint_points_label(lidarseg_labels_filename,
+                                                  filter_lidarseg_labels,
+                                                  self.nusc.lidarseg_name2idx_mapping,
+                                                  self.nusc.colormap)
+                else:
+                    coloring = paint_panop_points_label(lidarseg_labels_filename,
+                                                        filter_lidarseg_labels,
+                                                        self.nusc.lidarseg_name2idx_mapping,
+                                                        self.nusc.colormap)
+
             else:
                 coloring = depths
-                print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
-                      'from the ego vehicle instead.'.format(self.nusc.version))
+                print(f'Warning: There are no lidarseg labels in {self.nusc.version}. Points will be colored according '
+                      f'to distance from the ego vehicle instead.')
         else:
             # Retrieve the color from the depth.
             coloring = depths
@@ -872,7 +978,8 @@ class NuScenesExplorer:
                                    ax: Axes = None,
                                    show_lidarseg_legend: bool = False,
                                    verbose: bool = True,
-                                   lidarseg_preds_bin_path: str = None):
+                                   lidarseg_preds_bin_path: str = None,
+                                   show_panoptic: bool = False):
         """
         Scatter-plots a pointcloud on top of image.
         :param sample_token: Sample token.
@@ -888,8 +995,12 @@ class NuScenesExplorer:
         :param verbose: Whether to display the image in a window.
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
-
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels. When set
+            to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+            If show_lidarseg is True, show_panoptic will be set to False.
         """
+        if show_lidarseg:
+            show_panoptic = False
         sample_record = self.nusc.get('sample', sample_token)
 
         # Here we just grab the front camera and the point sensor.
@@ -900,7 +1011,8 @@ class NuScenesExplorer:
                                                             render_intensity=render_intensity,
                                                             show_lidarseg=show_lidarseg,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
-                                                            lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+                                                            lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                            show_panoptic=show_panoptic)
 
         # Init axes.
         if ax is None:
@@ -916,19 +1028,28 @@ class NuScenesExplorer:
         ax.axis('off')
 
         # Produce a legend with the unique colors from the scatter.
-        if pointsensor_channel == 'LIDAR_TOP' and show_lidarseg and show_lidarseg_legend:
-            # Since the labels are stored as class indices, we get the RGB colors from the colormap in an array where
-            # the position of the RGB color corresponds to the index of the class it represents.
-            color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
-
+        if pointsensor_channel == 'LIDAR_TOP' and (show_lidarseg or show_panoptic) and show_lidarseg_legend:
             # If user does not specify a filter, then set the filter to contain the classes present in the pointcloud
             # after it has been projected onto the image; this will allow displaying the legend only for classes which
             # are present in the image (instead of all the classes).
             if filter_lidarseg_labels is None:
-                filter_lidarseg_labels = get_labels_in_coloring(color_legend, coloring)
+                if show_lidarseg:
+                    # Since the labels are stored as class indices, we get the RGB colors from the
+                    # colormap in an array where the position of the RGB color corresponds to the index
+                    # of the class it represents.
+                    color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
+                    filter_lidarseg_labels = get_labels_in_coloring(color_legend, coloring)
+                else:
+                    # Only show legends for all stuff categories for panoptic.
+                    filter_lidarseg_labels = stuff_cat_ids(len(self.nusc.lidarseg_name2idx_mapping))
 
-            create_lidarseg_legend(filter_lidarseg_labels,
-                                   self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap)
+            if filter_lidarseg_labels and show_panoptic:
+                # Only show legends for filtered stuff categories for panoptic.
+                stuff_labels = set(stuff_cat_ids(len(self.nusc.lidarseg_name2idx_mapping)))
+                filter_lidarseg_labels = list(stuff_labels.intersection(set(filter_lidarseg_labels)))
+
+            create_lidarseg_legend(filter_lidarseg_labels, self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap,
+                                   loc='upper left', ncol=1, bbox_to_anchor=(1.05, 1.0))
 
         if out_path is not None:
             plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
@@ -943,7 +1064,8 @@ class NuScenesExplorer:
                       show_lidarseg: bool = False,
                       filter_lidarseg_labels: List = None,
                       lidarseg_preds_bin_path: str = None,
-                      verbose: bool = True) -> None:
+                      verbose: bool = True,
+                      show_panoptic: bool = False) -> None:
         """
         Render all LIDAR and camera sample_data in sample along with annotations.
         :param token: Sample token.
@@ -955,6 +1077,9 @@ class NuScenesExplorer:
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
         :param verbose: Whether to show the rendered sample in a window or not.
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels. When set
+            to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+            If show_lidarseg is True, show_panoptic will be set to False.
         """
         record = self.nusc.get('sample', token)
 
@@ -992,17 +1117,13 @@ class NuScenesExplorer:
         if len(lidar_data) > 0:
             for (_, sd_token), ax in zip(lidar_data.items(), axes.flatten()[num_radar_plots:]):
                 self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
-                                        show_lidarseg=show_lidarseg,
-                                        filter_lidarseg_labels=filter_lidarseg_labels,
-                                        lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                        verbose=False)
+                                        show_lidarseg=show_lidarseg, filter_lidarseg_labels=filter_lidarseg_labels,
+                                        lidarseg_preds_bin_path=lidarseg_preds_bin_path, verbose=False,
+                                        show_panoptic=show_panoptic)
 
         # Plot cameras in separate subplots.
         for (_, sd_token), ax in zip(camera_data.items(), axes.flatten()[num_radar_plots + num_lidar_plots:]):
-            if not show_lidarseg:
-                self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
-                                        show_lidarseg=False, verbose=False)
-            else:
+            if show_lidarseg or show_panoptic:
                 sd_record = self.nusc.get('sample_data', sd_token)
                 sensor_channel = sd_record['channel']
                 valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
@@ -1015,7 +1136,11 @@ class NuScenesExplorer:
                                                 show_lidarseg=show_lidarseg,
                                                 filter_lidarseg_labels=filter_lidarseg_labels,
                                                 ax=ax, verbose=False,
-                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path)
+                                                lidarseg_preds_bin_path=lidarseg_preds_bin_path,
+                                                show_panoptic=show_panoptic)
+            else:
+                self.render_sample_data(sd_token, box_vis_level=box_vis_level, ax=ax, nsweeps=nsweeps,
+                                        show_lidarseg=False, verbose=False)
 
         # Change plot settings and write to disk.
         axes.flatten()[-1].axis('off')
@@ -1073,8 +1198,9 @@ class NuScenesExplorer:
         rotated_cropped = np.array(Image.fromarray(cropped).rotate(yaw_deg))
 
         # Crop image.
-        ego_centric_map = crop_image(rotated_cropped, rotated_cropped.shape[1] / 2,
-                                     rotated_cropped.shape[0] / 2,
+        ego_centric_map = crop_image(rotated_cropped,
+                                     int(rotated_cropped.shape[1] / 2),
+                                     int(rotated_cropped.shape[0] / 2),
                                      scaled_limit_px)
 
         # Init axes and show image.
@@ -1100,7 +1226,8 @@ class NuScenesExplorer:
                            show_lidarseg_legend: bool = False,
                            filter_lidarseg_labels: List = None,
                            lidarseg_preds_bin_path: str = None,
-                           verbose: bool = True) -> None:
+                           verbose: bool = True,
+                           show_panoptic: bool = False) -> None:
         """
         Render sample data onto axis.
         :param sample_data_token: Sample_data token.
@@ -1123,7 +1250,12 @@ class NuScenesExplorer:
         :param lidarseg_preds_bin_path: A path to the .bin file which contains the user's lidar segmentation
                                         predictions for the sample.
         :param verbose: Whether to display the image after it is rendered.
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels. When set
+            to False, the colors of the lidar data represent the distance from the center of the ego vehicle.
+            If show_lidarseg is True, show_panoptic will be set to False.
         """
+        if show_lidarseg:
+            show_panoptic = False
         # Get sensor modality.
         sd_record = self.nusc.get('sample_data', sample_data_token)
         sensor_modality = sd_record['sensor_modality']
@@ -1136,8 +1268,9 @@ class NuScenesExplorer:
             ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
 
             if sensor_modality == 'lidar':
-                if show_lidarseg:
-                    assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+                if show_lidarseg or show_panoptic:
+                    gt_from = 'lidarseg' if show_lidarseg else 'panoptic'
+                    assert hasattr(self.nusc, gt_from), f'Error: nuScenes-{gt_from} not installed!'
 
                     # Ensure that lidar pointcloud is from a keyframe.
                     assert sd_record['is_key_frame'], \
@@ -1204,7 +1337,10 @@ class NuScenesExplorer:
             # Show point cloud.
             points = view_points(pc.points[:3, :], viewpoint, normalize=False)
             dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
-            if sensor_modality == 'lidar' and show_lidarseg:
+            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+            if sensor_modality == 'lidar' and (show_lidarseg or show_panoptic):
+                gt_from = 'lidarseg' if show_lidarseg else 'panoptic'
+                semantic_table = getattr(self.nusc, gt_from)
                 # Load labels for pointcloud.
                 if lidarseg_preds_bin_path:
                     sample_token = self.nusc.get('sample_data', sample_data_token)['sample_token']
@@ -1213,40 +1349,56 @@ class NuScenesExplorer:
                         'Error: Unable to find {} to load the predictions for sample token {} (lidar ' \
                         'sample data token {}) from.'.format(lidarseg_labels_filename, sample_token, sample_data_token)
                 else:
-                    if len(self.nusc.lidarseg) > 0:  # Ensure lidarseg.json is not empty (e.g. in case of v1.0-test).
+                    if len(semantic_table) > 0:
+                        # Ensure {lidarseg/panoptic}.json is not empty (e.g. in case of v1.0-test).
                         lidarseg_labels_filename = osp.join(self.nusc.dataroot,
-                                                            self.nusc.get('lidarseg', sample_data_token)['filename'])
+                                                            self.nusc.get(gt_from, sample_data_token)['filename'])
                     else:
                         lidarseg_labels_filename = None
 
                 if lidarseg_labels_filename:
                     # Paint each label in the pointcloud with a RGBA value.
-                    colors = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
-                                                self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
+                    if show_lidarseg or show_panoptic:
+                        if show_lidarseg:
+                            colors = paint_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
+                                                        self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
+                        else:
+                            colors = paint_panop_points_label(lidarseg_labels_filename, filter_lidarseg_labels,
+                                                              self.nusc.lidarseg_name2idx_mapping, self.nusc.colormap)
 
-                    if show_lidarseg_legend:
-                        # Since the labels are stored as class indices, we get the RGB colors from the colormap
-                        # in an array where the position of the RGB color corresponds to the index of the class
-                        # it represents.
-                        color_legend = colormap_to_colors(self.nusc.colormap, self.nusc.lidarseg_name2idx_mapping)
+                        if show_lidarseg_legend:
 
-                        # If user does not specify a filter, then set the filter to contain the classes present in
-                        # the pointcloud after it has been projected onto the image; this will allow displaying the
-                        # legend only for classes which are present in the image (instead of all the classes).
-                        if filter_lidarseg_labels is None:
-                            filter_lidarseg_labels = get_labels_in_coloring(color_legend, colors)
+                            # If user does not specify a filter, then set the filter to contain the classes present in
+                            # the pointcloud after it has been projected onto the image; this will allow displaying the
+                            # legend only for classes which are present in the image (instead of all the classes).
+                            if filter_lidarseg_labels is None:
+                                if show_lidarseg:
+                                    # Since the labels are stored as class indices, we get the RGB colors from the
+                                    # colormap in an array where the position of the RGB color corresponds to the index
+                                    # of the class it represents.
+                                    color_legend = colormap_to_colors(self.nusc.colormap,
+                                                                      self.nusc.lidarseg_name2idx_mapping)
+                                    filter_lidarseg_labels = get_labels_in_coloring(color_legend, colors)
+                                else:
+                                    # Only show legends for stuff categories for panoptic.
+                                    filter_lidarseg_labels = stuff_cat_ids(len(self.nusc.lidarseg_name2idx_mapping))
 
-                        create_lidarseg_legend(filter_lidarseg_labels,
-                                               self.nusc.lidarseg_idx2name_mapping, self.nusc.colormap,
-                                               loc='upper left', ncol=1, bbox_to_anchor=(1.05, 1.0))
+                            if filter_lidarseg_labels and show_panoptic:
+                                # Only show legends for filtered stuff categories for panoptic.
+                                stuff_labels = set(stuff_cat_ids(len(self.nusc.lidarseg_name2idx_mapping)))
+                                filter_lidarseg_labels = list(stuff_labels.intersection(set(filter_lidarseg_labels)))
+
+                            create_lidarseg_legend(filter_lidarseg_labels,
+                                                   self.nusc.lidarseg_idx2name_mapping,
+                                                   self.nusc.colormap,
+                                                   loc='upper left',
+                                                   ncol=1,
+                                                   bbox_to_anchor=(1.05, 1.0))
                 else:
-                    colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
                     print('Warning: There are no lidarseg labels in {}. Points will be colored according to distance '
                           'from the ego vehicle instead.'.format(self.nusc.version))
-            else:
-                colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
-            point_scale = 0.2 if sensor_modality == 'lidar' else 3.0
 
+            point_scale = 0.2 if sensor_modality == 'lidar' else 3.0
             scatter = ax.scatter(points[0, :], points[1, :], c=colors, s=point_scale)
 
             # Show velocities.
@@ -1724,7 +1876,8 @@ class NuScenesExplorer:
                                 with_anns: bool = False,
                                 imsize: Tuple[int, int] = (640, 360),
                                 dpi: int = 100,
-                                line_width: int = 5) -> Tuple[np.ndarray, bool]:
+                                line_width: int = 5,
+                                show_panoptic: bool = False) -> Tuple[np.ndarray, bool]:
         """
         Projects a pointcloud into a camera image along with the lidarseg labels. There is an option to plot the
         bounding boxes as well.
@@ -1738,12 +1891,14 @@ class NuScenesExplorer:
         :param imsize: Size of image to render. The larger the slower this will run.
         :param dpi: Resolution of the output figure.
         :param line_width: Line width of bounding boxes.
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels.
         :return: An image with the projected pointcloud, lidarseg labels and (if applicable) the bounding boxes. Also,
                  whether there are any lidarseg points (after the filter has been applied) in the image.
         """
         points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
                                                             render_intensity=False,
-                                                            show_lidarseg=True,
+                                                            show_lidarseg=not show_panoptic,
+                                                            show_panoptic=show_panoptic,
                                                             filter_lidarseg_labels=filter_lidarseg_labels,
                                                             lidarseg_preds_bin_path=lidarseg_preds_bin_path)
 
@@ -1796,7 +1951,8 @@ class NuScenesExplorer:
                                       with_anns: bool = False,
                                       freq: float = 2,
                                       dpi: int = 150,
-                                      lidarseg_preds_folder: str = None) -> None:
+                                      lidarseg_preds_folder: str = None,
+                                      show_panoptic: bool = False) -> None:
         """
         Renders a full scene with labelled lidar pointclouds for a particular camera channel.
         The scene can be rendered either to a video or to a set of images.
@@ -1816,11 +1972,14 @@ class NuScenesExplorer:
         :param freq: Display frequency (Hz).
         :param dpi: Resolution of the output dots.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
-                                      the scene. The naming convention of each .bin file in the folder should be
-                                      named in this format: <lidar_sample_data_token>_lidarseg.bin.
+            the scene. The naming convention of each .bin file in the folder should be named in this format:
+            <lidar_sample_data_token>_lidarseg.bin. When show_panoptic is True, the path points to panoptic predictions,
+            and the naming format <lidar_sample_data_token>_panoptic.npz.
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels.
         """
+        gt_from = 'panoptic' if show_panoptic else 'lidarseg'
 
-        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+        assert hasattr(self.nusc, gt_from), f'Error: nuScenes-{gt_from} not installed!'
 
         valid_channels = ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT',
                           'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
@@ -1880,7 +2039,10 @@ class NuScenesExplorer:
             # Determine whether to render lidarseg points from ground truth or predictions.
             pointsensor_token = sample_record['data']['LIDAR_TOP']
             if lidarseg_preds_folder:
-                lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
+                if show_panoptic:
+                    lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_panoptic.npz')
+                else:
+                    lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
             else:
                 lidarseg_preds_bin_path = None
 
@@ -1888,7 +2050,7 @@ class NuScenesExplorer:
                                                                  filter_lidarseg_labels=filter_lidarseg_labels,
                                                                  lidarseg_preds_bin_path=lidarseg_preds_bin_path,
                                                                  with_anns=with_anns, imsize=imsize,
-                                                                 dpi=dpi, line_width=2)
+                                                                 dpi=dpi, line_width=2, show_panoptic=show_panoptic)
 
             if verbose:
                 cv2.imshow(name, mat)
@@ -1936,7 +2098,8 @@ class NuScenesExplorer:
                               freq: float = 2,
                               verbose: bool = True,
                               dpi: int = 200,
-                              lidarseg_preds_folder: str = None) -> None:
+                              lidarseg_preds_folder: str = None,
+                              show_panoptic: bool = False) -> None:
         """
         Renders a full scene with all camera channels and the lidar segmentation labels for each camera.
         The scene can be rendered either to a video or to a set of images.
@@ -1951,10 +2114,13 @@ class NuScenesExplorer:
         :param verbose: Whether to show the frames as they are being rendered.
         :param dpi: Resolution of the output dots.
         :param lidarseg_preds_folder: A path to the folder which contains the user's lidar segmentation predictions for
-                                      the scene. The naming convention of each .bin file in the folder should be
-                                      named in this format: <lidar_sample_data_token>_lidarseg.bin.
+            the scene. The naming convention of each .bin file in the folder should be named in this format:
+            <lidar_sample_data_token>_lidarseg.bin. When show_panoptic is True, the path points to panoptic predictions,
+            and the naming format <lidar_sample_data_token>_panoptic.npz.
+        :param show_panoptic: When set to True, the lidar data is colored with the panoptic labels.
         """
-        assert hasattr(self.nusc, 'lidarseg'), 'Error: nuScenes-lidarseg not installed!'
+        gt_from = 'panoptic' if show_panoptic else 'lidarseg'
+        assert hasattr(self.nusc, gt_from), f'Error: nuScenes-{gt_from} not installed!'
 
         assert imsize[0] / imsize[1] == 16 / 9, "Aspect ratio should be 16/9."
 
@@ -2016,14 +2182,18 @@ class NuScenesExplorer:
 
                 # Determine whether to render lidarseg points from ground truth or predictions.
                 if lidarseg_preds_folder:
-                    lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
+                    if show_panoptic:
+                        lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_panoptic.npz')
+                    else:
+                        lidarseg_preds_bin_path = osp.join(lidarseg_preds_folder, pointsensor_token + '_lidarseg.bin')
                 else:
                     lidarseg_preds_bin_path = None
 
                 mat, _ = self._plot_points_and_bboxes(pointsensor_token, camera_token,
                                                       filter_lidarseg_labels=filter_lidarseg_labels,
                                                       lidarseg_preds_bin_path=lidarseg_preds_bin_path,
-                                                      with_anns=with_anns, imsize=imsize, dpi=dpi, line_width=3)
+                                                      with_anns=with_anns, imsize=imsize, dpi=dpi, line_width=3,
+                                                      show_panoptic=show_panoptic)
 
                 if camera_channel in horizontal_flip:
                     # Flip image horizontally.
