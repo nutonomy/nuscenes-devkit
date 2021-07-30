@@ -220,6 +220,10 @@ defined as: (∑{**1**(p,g) IoU(p,g)} - ∑(s)∈ IDS {s}) / (|TP|+ 0.5|FP|+ 0.5
 Each score is calculated separately for each class, and then the mean is computed across classes. Note that points of
 class index 0 is ignored in the calculation.
 
+### LiDAR Segmentation and Tracking Quality (LSTQ)
+We also use LSTQ metric [Mehmet et al](https://arxiv.org/pdf/2102.12472.pdf). The LSTQ metric is computed as a geometric
+mean of the classification score and association score.
+
 ## Leaderboard
 nuScenes will maintain a single panoptic leaderboard with filters to split 4 specific tracks: Segmentation-lidar,
 Segmentation-open, Tracking-lidar and Tracking-open. Submissions of the first two panoptic segmentation tracks will be

@@ -28,6 +28,7 @@ from nuscenes.eval.panoptic.panoptic_track_evaluator import PanopticTrackingEval
 from nuscenes.eval.panoptic.utils import PanopticClassMapper, get_samples_in_panoptic_eval_set
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.data_io import load_bin_file
+from nuscenes.utils.splits import create_splits_scenes
 from tqdm import tqdm
 
 
@@ -94,7 +95,9 @@ class NuScenesPanopticEval:
                                                         ignore=[self.ignore_idx],
                                                         min_points=self.min_inst_points))
         if self.task == 'tracking':
+            self.scene_name2tok = {rec['name']: rec['token'] for rec in nusc.scene}
             self.evaluator['tracking'] = PanopticTrackingEval(n_classes=self.num_classes,
+                                                              min_stuff_cls_id=len(self.things)+1, 
                                                               ignore=[self.ignore_idx],
                                                               min_points=self.min_inst_points)
 
@@ -108,11 +111,9 @@ class NuScenesPanopticEval:
         tracking task, besides the multi-object panoptic tracking metrics, single frame based panoptic segmentation
         metrics will be evaluated as well.
         """
-        seg_results = self.evaluate_segmentation()
-        eval_results = {'segmentation': seg_results}
+        eval_results = {'segmentation': self.evaluate_segmentation()}
         if self.task == 'tracking':
-            track_results = self.evaluate_tracking()
-            eval_results.update({'tracking': track_results})
+            eval_results['tracking'] = self.evaluate_tracking()
         self.save_result(eval_results)
 
     def evaluate_segmentation(self) -> Dict[str, Any]:
@@ -141,7 +142,7 @@ class NuScenesPanopticEval:
             panoptic_pred_filename = os.path.join(self.results_folder, 'panoptic', self.eval_set,
                                                   sd_token + '_panoptic.npz')
             panoptic_pred = load_bin_file(panoptic_pred_filename, type='panoptic')
-            pred_sem = self.mapper.convert_label(panoptic_pred // 1000)
+            pred_sem = panoptic_pred // 1000
             pred_inst = panoptic_pred
 
             # Get the confusion matrix between the ground truth and predictions. Update the confusion matrix for the
@@ -197,15 +198,18 @@ class NuScenesPanopticEval:
         Calculate multi-object panoptic tracking metrics.
         :return: A dict of panoptic metrics for mean of all classes and each class.
             {
-                "all": { "PTQ": float, "sPTQ": float, "IoU": float, "PTQ_dagger": float},
+                "all": { "PTQ": float, "sPTQ": float, "LSTQ": float, "IoU": float, "S_assoc": float,
+                         "PTQ_dagger": float},
                 "ignore": { "PTQ": float, "sPTQ": float, "IoU": float},
                 "car": { "PTQ": float, "sPTQ": float, "IoU": float},
                 ...
             }
         """
-        for scene in tqdm(self.nusc.scene, disable=not self.verbose):
+        eval_scenes= create_splits_scenes(verbose=False)[self.eval_set]
+        for scene in tqdm(eval_scenes, disable=not self.verbose):
+            scene = self.nusc.get('scene', self.scene_name2tok[scene])
             cur_token, last_token = scene['first_sample_token'], scene['last_sample_token']
-            pred_prev_cur_track, pred_sem, pred_inst, label_sem, label_inst = [None], [None], [None], [None], [None]
+            pred_sem, pred_inst, label_sem, label_inst = [None], [None], [None], [None]
 
             while True:
                 cur_sample = self.nusc.get('sample', cur_token)
@@ -222,24 +226,24 @@ class NuScenesPanopticEval:
                 # Load predictions for the point cloud, filter evaluation classes.
                 pred_file = os.path.join(self.results_folder, 'panoptic', self.eval_set, sd_token + '_panoptic.npz')
                 panoptic_pred = load_bin_file(pred_file, type='panoptic')
-                pred_sem.append(self.mapper.convert_label(panoptic_pred // 1000))
+                pred_sem.append(panoptic_pred // 1000)
                 pred_sem = pred_sem[-2:]
                 pred_inst.append(panoptic_pred)
                 pred_inst = pred_inst[-2:]
-                pred_prev_cur_track.append(pred_inst)
-                pred_prev_cur_track = pred_prev_cur_track[-2:]
 
                 # Get the confusion matrix between the ground truth and predictions. Update the confusion matrix for
                 # the sample data into the confusion matrix for the eval set.
-                self.evaluator['tracking'].add_batch(pred_sem, pred_inst, label_sem, label_inst)
+                self.evaluator['tracking'].add_batch(scene['name'], pred_sem, pred_inst, label_sem, label_inst)
                 if cur_token == last_token:
                     break
                 cur_token = cur_sample['next']
 
         mean_ptq, class_all_ptq, mean_sptq, class_all_sptq = self.evaluator['tracking'].get_ptq()
         mean_iou, class_all_iou = self.evaluator['tracking'].getSemIoU()
+        lstq, s_assoc = self.evaluator['tracking'].get_lstq()
 
-        results = self.wrap_result_mopt(mean_ptq, mean_sptq, mean_iou, class_all_ptq, class_all_sptq, class_all_iou)
+        results = self.wrap_result_mopt(mean_ptq, mean_sptq, mean_iou, class_all_ptq, class_all_sptq, class_all_iou,
+                                        lstq, s_assoc)
         return results
 
     def wrap_result_mopt(self,
@@ -248,7 +252,9 @@ class NuScenesPanopticEval:
                          mean_iou: np.ndarray,
                          class_all_ptq: np.ndarray,
                          class_all_sptq: np.ndarray,
-                         class_all_iou: np.ndarray) -> Dict[str, Any]:
+                         class_all_iou: np.ndarray,
+                         lstq: np.ndarray,
+                         s_assoc: np.ndarray) -> Dict[str, Any]:
         """
         Wrap up MOPT results to dictionary.
         :param mean_ptq: <float64: 1>, Mean PTQ score over all classes.
@@ -257,6 +263,8 @@ class NuScenesPanopticEval:
         :param class_all_ptq: <float64: num_classes,>, PTQ scores for each class.
         :param class_all_sptq: <float64: num_classes,>, Soft-PTQ scores for each class.
         :param class_all_iou: <float64: num_classes,>, IoU scores for each class.
+        :param lstq: <float64: 1>, LiDAR Segmentation and Tracking Quality (LSTQ) score over all classes.
+        :param s_assoc: <float64: 1>, Association Score over all classes.
         :return: A dict of multi-object panoptic tracking metrics.
         """
         mean_ptq, mean_sptq, mean_iou = mean_ptq.item(), mean_sptq.item(), mean_iou.item()
@@ -265,13 +273,12 @@ class NuScenesPanopticEval:
         class_all_iou = class_all_iou.flatten().tolist()
 
         results = dict()
-        results["all"] = dict(PTQ=mean_ptq, sPTQ=mean_sptq, IoU=mean_iou)
+        results["all"] = dict(PTQ=mean_ptq, sPTQ=mean_sptq, LSTQ=lstq, IoU=mean_iou, S_assoc=s_assoc)
         for idx, (ptq, sptq, iou) in enumerate(zip(class_all_ptq, class_all_sptq, class_all_iou)):
             results[self.id2name[idx]] = dict(PTQ=ptq, sPTQ=sptq, IoU=iou)
         thing_ptq_list = [float(results[c]["PTQ"]) for c in self.things]
-        thing_sptq_list = [float(results[c]["sPTQ"]) for c in self.things]
         stuff_iou_list = [float(results[c]["IoU"]) for c in self.stuff]
-        results["all"]["PTQ_dagger"] = np.mean(thing_ptq_list + thing_sptq_list + stuff_iou_list)
+        results["all"]["PTQ_dagger"] = np.mean(thing_ptq_list + stuff_iou_list)
 
         return results
 
