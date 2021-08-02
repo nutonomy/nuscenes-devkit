@@ -12,7 +12,8 @@ get_samples_in_panoptic_eval_set = get_samples_in_eval_set
 
 class PanopticClassMapper(LidarsegClassMapper):
     """
-    Maps the (fine) classes to the (coarse) classes in the nuScenes-panoptic challenge.
+    Maps the general (fine) classes to the challenge (coarse) classes in the nuScenes-panoptic challenge.
+
     Example usage::
         nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)
         mapper_ = PanopticClassMapper(nusc_)
@@ -29,8 +30,9 @@ class PanopticClassMapper(LidarsegClassMapper):
 
     def get_stuff(self) -> Dict[str, int]:
         """
-        Returns the mapping from the coarse class names to the coarse class indices for stuffs.
-        :return: A dictionary containing the mapping from the coarse class names to the coarse class indices for stuffs.
+        Returns the mapping from the challenge (coarse) class names to the challenge class indices for stuff.
+        :return: A dictionary containing the mapping from the challenge class names to the challenge class indices for
+            stuff.
             {
               'driveable_surface': 11,
               'other_flat': 12,
@@ -49,8 +51,9 @@ class PanopticClassMapper(LidarsegClassMapper):
 
     def get_things(self) -> Dict[str, int]:
         """
-        Returns the mapping from the coarse class names to the coarse class indices for things.
-        :return: A dictionary containing the mapping from the coarse class names to the coarse class indices for things.
+        Returns the mapping from the challenge (coarse) class names to the challenge class indices for things.
+        :return: A dictionary containing the mapping from the challenge class names to the challenge class indices for
+            things.
             {
               'barrier': 1,
               'bicycle': 2,

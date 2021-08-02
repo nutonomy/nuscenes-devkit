@@ -91,8 +91,6 @@ class PanopticTrackingEval(PanopticEval):
               counts_gt,  # <np.int64, num_instances>, point counts of each ground truth instance.
               gt_labels,  # <np.int64, num_instances>, instance ID of each ground truth instance.
               pred_labels, # <np.int64, num_instances>, instance ID of each predicted instance.
-              matched_pred, # <np.bool, num_instances>, whether each predicted instance has matched ground truth.
-              matched_gt, # <np.bool, num_instances>, whether each predicted instance has matched prediction.
               id2idx_gt, # {instance ID: array index}, instance ID to array index mapping for ground truth instances.
               id2idx_pred, # {instance ID: array index}, instance ID to array index mapping for predicted instances.
               ious, # <np.float32, num_instances>, IoU scores between prediction and ground truth instance pair.
@@ -162,7 +160,10 @@ class PanopticTrackingEval(PanopticEval):
             self.gts[scene] = [{} for _ in range(self.n_classes)]
             self.intersects[scene] = [{} for _ in range(self.n_classes)]
             self.intersects_ovr[scene] = [{} for _ in range(self.n_classes)]
-        # Make sure instances are not zeros.
+        # Make sure instance IDs are non-zeros. Otherwise, they will be ignored. Note in nuScenes-panoptic,
+        # instance IDs start from 1 already, so the following 2 lines of code are actually not necessary, but to be
+        # consistent with the PanopticEval class in panoptic_seg_evaluator.py from 3rd party. We keep these 2 lines. It
+        # means the actual instance IDs will start from 2 during metrics evaluation.
         x_inst_row[1] = x_inst_row[1] + 1
         y_inst_row[1] = y_inst_row[1] + 1
 
