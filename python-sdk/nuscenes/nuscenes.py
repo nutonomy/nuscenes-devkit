@@ -91,6 +91,11 @@ class NuScenes:
         for i, lidar_task in enumerate(lidar_tasks):
             if self.verbose:
                 print(f'Loading nuScenes-{lidar_task}...')
+            if lidar_task == 'lidarseg':
+                self.lidarseg = self.__load_table__(lidar_task)
+            else:
+                self.panoptic = self.__load_table__(lidar_task)
+
             setattr(self, lidar_task, self.__load_table__(lidar_task))
             label_files = os.listdir(os.path.join(self.dataroot, lidar_task, self.version))
             num_label_files = len([name for name in label_files if (name.endswith('.bin') or name.endswith('.npz'))])

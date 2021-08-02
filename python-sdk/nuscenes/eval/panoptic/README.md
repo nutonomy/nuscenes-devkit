@@ -1,4 +1,4 @@
-# nuScenes lidar panoptic and tracking task
+# nuScenes lidar panoptic segmentation and tracking task
 ![nuScenes lidar panoptic logo](https://www.nuscenes.org/public/images/panoptic_challenge.jpg)
 
 ## Overview
@@ -14,15 +14,15 @@
 ## Introduction
 We define the lidar panoptic segmentation and multi-object panoptic tracking tasks on nuScenes. This challenge is a
 collaboration between Motional and the Robot Learning Lab of Prof. Valada at the University of Freiburg. For panoptic
-segmentation, the goal is to predict the semantic categories of every point, and additional instance ID for
-things. While panoptic segmentation focuses on static frames, multi-object panoptic tracking allows for exploiting
-panoptic segmentation quality for static frames, as well as temporal coherence and pixel-level associations over time.
-For both tasks, there are 16 categories (10 things and 6 stuff).
+segmentation, the goal is to predict the semantic categories of every point, and additional instance IDs for
+things. While panoptic segmentation focuses on static frames, multi-object panoptic tracking additionally enforces
+temporal coherence and pixel-level associations over time. For both tasks, there are 16 categories (10 things and 6
+stuff).
 
 ## Participation
-The nuScenes panoptic evaluation server (coming soon) is open all year round for submission. Participants could choose
-to attend both panoptic segmentation and multi-object panoptic tracking tasks, or one of the them. To
-participate in the challenge, please create an account at EvalAI (coming soon). Then upload your zipped result
+The nuScenes panoptic evaluation server (coming soon) is open all year round for submission. Participants can choose
+to attend both panoptic segmentation and multi-object panoptic tracking tasks, or only the panoptic segmentation task.
+To participate in the challenge, please create an account at EvalAI (coming soon). Then upload your zipped result
 folder with the required [content](#results-format). After each challenge, the results will be exported to the nuScenes
 panoptic leaderboard (coming soon). This is the only way to benchmark your method against the test dataset. We require
 that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI:

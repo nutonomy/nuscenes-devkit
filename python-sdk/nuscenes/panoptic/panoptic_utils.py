@@ -5,15 +5,12 @@ Code written by Motional and the Robot Learning Lab, University of Freiburg.
 from typing import Any, Dict, Iterable, List, Tuple
 
 import numpy as np
-from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend
+from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors
 from nuscenes.utils.color_map import get_colormap
 from nuscenes.utils.data_io import load_bin_file
 
-create_panoptic_legend = create_lidarseg_legend
 
-
-def stuff_start_cat_id() -> int:
-    return 24
+STUFF_START_CLASS_ID = 24
 
 
 def stuff_cat_ids(num_categories: int) -> List[int]:
@@ -21,7 +18,7 @@ def stuff_cat_ids(num_categories: int) -> List[int]:
     :param num_categories: total number of classes.
     :return: List of stuff class indices.
     """
-    return list(range(stuff_start_cat_id(), num_categories, 1))
+    return list(range(STUFF_START_CLASS_ID, num_categories, 1))
 
 
 def generate_panoptic_colors(colormap: Dict[str, Iterable[int]],
@@ -40,7 +37,7 @@ def generate_panoptic_colors(colormap: Dict[str, Iterable[int]],
     # randomly generate colors for stuff and thing instances
     colors = np.random.uniform(low=0.0, high=1.0, size=(max_instances, 3))
     # Use constant colors for stuff points, category ranges in [24, 31]
-    for id_i in range(stuff_start_cat_id(), len(colors_for_categories)):
+    for id_i in range(STUFF_START_CLASS_ID, len(colors_for_categories)):
         colors[id_i * 1000] = colors_for_categories[id_i]
     colors[0] = [c / 255.0 for c in get_colormap()['noise']]
 
@@ -91,7 +88,7 @@ def paint_panop_points_label(panoptic_labels_filename: str,
     return coloring
 
 
-def get_frame_panoptic_instances(panoptic_label: np.ndarray, frame_id: int = None) -> List[int]:
+def get_frame_panoptic_instances(panoptic_label: np.ndarray, frame_id: int = None) -> np.ndarray:
     """
     Get frequency of each label in a point cloud.
     :param panoptic_label: np.array((rows, cols), np.uint16), a numPy array which contains the panoptic labels of the
@@ -150,7 +147,7 @@ def get_panoptic_instances_stats(scene_inst_stats: Dict[str, np.ndarray],
         scene_data = np.concatenate([scene_id_col, scene_data], axis=1)
         data = np.concatenate([data, scene_data], axis=0)
 
-    thing_row_mask = np.logical_and(data[:, 2] > 0, data[:, 2] < stuff_start_cat_id())  # thing instances only.
+    thing_row_mask = np.logical_and(data[:, 2] > 0, data[:, 2] < STUFF_START_CLASS_ID)  # thing instances only.
     data_thing = data[thing_row_mask]
     # 1. Per-frame instance stats.
     # Need to make unique frame index: 1000 * scene_id * frame_id, support max 1000 frames per scene. All instances
@@ -190,7 +187,7 @@ def get_panoptic_instances_stats(scene_inst_stats: Dict[str, np.ndarray],
 
     total_num_instances = np.sum([v['num_instances'] for _, v in per_category_panoptic_stats.items()])
     # for completeness of all categories, fill with empty values for categories with zero instances.
-    other_cats = [name for i, name in cat_idx2name.items() if 0 < i < stuff_start_cat_id() and i not in unique_cat_ids]
+    other_cats = [name for i, name in cat_idx2name.items() if 0 < i < STUFF_START_CLASS_ID and i not in unique_cat_ids]
     for cat_name in other_cats:
         per_category_panoptic_stats[cat_name] = {
             'num_instances': 0,

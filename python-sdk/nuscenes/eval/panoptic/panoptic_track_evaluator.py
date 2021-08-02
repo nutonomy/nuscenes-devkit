@@ -15,24 +15,29 @@ class PanopticTrackingEval(PanopticEval):
     def __init__(self,
                  n_classes: int,
                  min_stuff_cls_id: int,
-                 device: str = None,
                  ignore: List[int] = None,
                  offset: int = 2 ** 32,
-                 min_points: int = 30):
+                 min_points: int = 30,
+                 iou_thr: float = 0.5):
         """
         :param n_classes: Number of classes.
         :param min_stuff_cls_id: Minimum stuff class index, 11 for nuScenes-panoptic challenge classes.
         :param ignore: List of ignored class index.
         :param offset: Largest instance number in a frame.
         :param min_points: minimal number of points to consider instances in GT.
+        :param iou_thr: IoU threshold to consider as a true positive. Note "iou_thr > 0.5" is required for Panoptic
+            Quality metric and its variants.
         """
-        super().__init__(n_classes=n_classes, device=device, ignore=ignore, offset=offset, min_points=min_points)
+        super().__init__(n_classes=n_classes, ignore=ignore, offset=offset, min_points=min_points)
+        self.iou_thr = iou_thr
+        assert self.iou_thr >= 0.5, f'IoU threshold mush be >= 0.5, but {self.iou_thr} is given.'
+
         self.min_stuff_cls_id = min_stuff_cls_id
 
-        # iou stuff
+        # IoU stuff.
         self.px_iou_conf_matrix = np.zeros((self.n_classes, self.n_classes), dtype=np.int64)
 
-        # panoptic stuff
+        # Panoptic stuff.
         self.pan_ids = np.zeros(self.n_classes, dtype=np.int64)
         self.pan_soft_ids = np.zeros(self.n_classes, dtype=np.double)
         self.pan_tp = np.zeros(self.n_classes, dtype=np.int64)
@@ -40,25 +45,24 @@ class PanopticTrackingEval(PanopticEval):
         self.pan_fp = np.zeros(self.n_classes, dtype=np.int64)
         self.pan_fn = np.zeros(self.n_classes, dtype=np.int64)
 
-        # tracking stuff
+        # Tracking stuff.
         self.sequences = []
         self.preds = {}
         self.gts = {}
         self.intersects = {}
         self.intersects_ovr = {}
 
-        # Per-class association quality stuff
+        # Per-class association quality stuff.
         self.pan_aq = np.zeros(self.n_classes, dtype=np.double)
         self.pan_aq_ovr = 0.0
 
     @staticmethod
-    def update_dict_stat(stat_dict: Dict[int, int], unique_ids: np.ndarray, unique_cnts: np.ndarray):
+    def update_dict_stat(stat_dict: Dict[int, int], unique_ids: np.ndarray, unique_cnts: np.ndarray) -> None:
         """
         Update stats dict with new combo of ids and counts.
-        :param stat_dict: {classe_id: counts}, a dict of stats for the counts of each class.
+        :param stat_dict: {class_id: counts}, a dict of stats for the counts of each class.
         :param unique_ids: <np.int64, <k,>>, an array of class IDs.
         :param unique_cnts: <np.int64, <k,>>, an array of counts for corresponding class IDs.
-        :return:
         """
         for uniqueid, counts in zip(unique_ids, unique_cnts):
             if uniqueid in stat_dict:
@@ -94,22 +98,20 @@ class PanopticTrackingEval(PanopticEval):
               ious, # <np.float32, num_instances>, IoU scores between prediction and ground truth instance pair.
             }
         """
-        # generate the areas for each unique instance in prediction.
+        # Generate the areas for each unique instance in prediction.
         unique_pred, counts_pred = np.unique(x_inst_in_cl[x_inst_in_cl > 0], return_counts=True)
         id2idx_pred = {inst_id: idx for idx, inst_id in enumerate(unique_pred)}
-        matched_pred = np.array([False] * unique_pred.shape[0])
 
-        # generate the areas for each unique instance in ground truth.
+        # Generate the areas for each unique instance in ground truth.
         unique_gt, counts_gt = np.unique(y_inst_in_cl[y_inst_in_cl > 0], return_counts=True)
         id2idx_gt = {inst_id: idx for idx, inst_id in enumerate(unique_gt)}
-        matched_gt = np.array([False] * unique_gt.shape[0])
 
-        # generate intersection using offset
+        # Generate intersection using offset.
         valid_combos = np.logical_and(x_inst_in_cl > 0, y_inst_in_cl > 0)
         offset_combo = x_inst_in_cl[valid_combos] + self.offset * y_inst_in_cl[valid_combos]
         unique_combo, counts_combo = np.unique(offset_combo, return_counts=True)
 
-        # Per-class accumulated stats
+        # Per-class accumulated stats.
         if scene is not None and cl < self.min_stuff_cls_id:
             cl_preds = self.preds[scene]
             cl_gts = self.gts[scene][cl]
@@ -129,7 +131,7 @@ class PanopticTrackingEval(PanopticEval):
             unique_combo_, counts_combo_ = np.unique(offset_combo_, return_counts=True)
             self.update_dict_stat(cl_intersects, unique_combo_, counts_combo_)
 
-        # generate an intersection map, count the intersections with over 0.5 IoU as TP
+        # Generate an intersection map, count the intersections with over 0.5 IoU as TP.
         gt_labels = unique_combo // self.offset
         pred_labels = unique_combo % self.offset
         gt_areas = np.array([counts_gt[id2idx_gt[g_id]] for g_id in gt_labels])
@@ -138,7 +140,7 @@ class PanopticTrackingEval(PanopticEval):
         unions = gt_areas + pred_areas - intersections
         ious = intersections.astype(np.float32) / unions.astype(np.float32)
 
-        return counts_pred, counts_gt, gt_labels, pred_labels, matched_pred, matched_gt, id2idx_gt, id2idx_pred, ious
+        return counts_pred, counts_gt, gt_labels, pred_labels, id2idx_gt, id2idx_pred, ious
 
     def add_batch_panoptic(self,
                            scene: str,
@@ -160,52 +162,52 @@ class PanopticTrackingEval(PanopticEval):
             self.gts[scene] = [{} for _ in range(self.n_classes)]
             self.intersects[scene] = [{} for _ in range(self.n_classes)]
             self.intersects_ovr[scene] = [{} for _ in range(self.n_classes)]
-        # make sure instances are not zeros (it messes with my approach)
+        # Make sure instances are not zeros.
         x_inst_row[1] = x_inst_row[1] + 1
         y_inst_row[1] = y_inst_row[1] + 1
 
-        # only interested in points that are outside the void area (not in excluded classes)
+        # Only interested in points that are outside the void area (not in excluded classes).
         for cl in self.ignore:
-            # Current Frame
+            # Current Frame.
             gt_not_in_excl_mask = y_sem_row[1] != cl  # make a mask for class cl.
-            # remove all other points
+            # Remove all other points.
             x_sem_row[1] = x_sem_row[1][gt_not_in_excl_mask]
             y_sem_row[1] = y_sem_row[1][gt_not_in_excl_mask]
             x_inst_row[1] = x_inst_row[1][gt_not_in_excl_mask]
             y_inst_row[1] = y_inst_row[1][gt_not_in_excl_mask]
 
-            # Previous Frame
-            if x_sem_row[0] is not None:  # First frame
+            # Previous Frame.
+            if x_sem_row[0] is not None:  # First frame.
                 gt_not_in_excl_mask = y_sem_row[0] != cl
-                # remove all other points
+                # Remove all other points.
                 x_sem_row[0] = x_sem_row[0][gt_not_in_excl_mask]
                 y_sem_row[0] = y_sem_row[0][gt_not_in_excl_mask]
                 x_inst_row[0] = x_inst_row[0][gt_not_in_excl_mask]
                 y_inst_row[0] = y_inst_row[0][gt_not_in_excl_mask]
 
-        # first step is to count intersections > 0.5 IoU for each class (except the ignored ones)
+        # First step is to count intersections > 0.5 IoU for each class (except the ignored ones).
         for cl in self.include:
-            # Previous Frame
-            if x_sem_row[0] is not None:  # First frame
+            # Previous Frame.
+            inst_prev, gt_labels_prev, tp_indexes_prev = None, None, None
+            if x_sem_row[0] is not None:  # First frame.
                 x_inst_in_cl_mask = x_sem_row[0] == cl
                 y_inst_in_cl_mask = y_sem_row[0] == cl
 
-                # get instance points in class (makes outside stuff 0)
+                # Get instance points in class (makes outside stuff 0).
                 x_inst_in_cl = x_inst_row[0] * x_inst_in_cl_mask.astype(np.int64)
                 y_inst_in_cl = y_inst_row[0] * y_inst_in_cl_mask.astype(np.int64)
-                _, _, gt_labels_prev, inst_prev, _, _, _, _, ious = \
-                    self.get_panoptic_track_stats(x_inst_in_cl, y_inst_in_cl)
-                tp_indexes_prev = ious > 0.5
+                _, _, gt_labels_prev, inst_prev, _, _, ious = self.get_panoptic_track_stats(x_inst_in_cl, y_inst_in_cl)
+                tp_indexes_prev = ious > self.iou_thr
 
-            # Current Frame: get a class mask
+            # Current Frame: get a class mask.
             x_inst_in_cl_mask = x_sem_row[1] == cl
             y_inst_in_cl_mask = y_sem_row[1] == cl
 
-            # Get instance points in class (makes outside stuff 0)
+            # Get instance points in class (makes outside stuff 0).
             x_inst_in_cl = x_inst_row[1] * x_inst_in_cl_mask.astype(np.int64)
             y_inst_in_cl = y_inst_row[1] * y_inst_in_cl_mask.astype(np.int64)
 
-            counts_pred, counts_gt, gt_labels, pred_labels, matched_pred, matched_gt, id2idx_gt, id2idx_pred, ious = \
+            counts_pred, counts_gt, gt_labels, pred_labels, id2idx_gt, id2idx_pred, ious =\
                 self.get_panoptic_track_stats(x_inst_in_cl, y_inst_in_cl, x_inst_row[1], scene, cl)
             inst_cur = pred_labels
             tp_indexes = ious > 0.5
@@ -213,16 +215,18 @@ class PanopticTrackingEval(PanopticEval):
             self.pan_tp[cl] += np.sum(tp_indexes)
             self.pan_iou[cl] += np.sum(ious[tp_indexes])
 
+            matched_gt = np.array([False] * len(id2idx_gt))
             matched_gt[[id2idx_gt[g_id] for g_id in gt_labels[tp_indexes]]] = True
+            matched_pred = np.array([False] * len(id2idx_pred))
             matched_pred[[id2idx_pred[p_id] for p_id in pred_labels[tp_indexes]]] = True
 
-            # count the FN
+            # Count the FN.
             self.pan_fn[cl] += np.sum(np.logical_and(counts_gt >= self.min_points, np.logical_not(matched_gt)))
-            # count the FP
+            # Count the FP.
             self.pan_fp[cl] += np.sum(np.logical_and(counts_pred >= self.min_points, np.logical_not(matched_pred)))
 
-            # compute ID switches (IDS)
-            if x_sem_row[0] is not None and cl < self.min_stuff_cls_id:  # skip first frame
+            # Compute ID switches (IDS).
+            if x_sem_row[0] is not None and cl < self.min_stuff_cls_id:  # Skip first frame.
                 gt_labels_prev, gt_labels = gt_labels_prev[tp_indexes_prev], gt_labels[tp_indexes]
                 inst_prev, inst_cur = inst_prev[tp_indexes_prev], inst_cur[tp_indexes]
                 ious = ious[tp_indexes]
@@ -252,10 +256,10 @@ class PanopticTrackingEval(PanopticEval):
         tp_eps, fn = np.maximum(tp, self.eps), self.pan_fn.astype(np.double)
         tp_half_fp_half_fn_eps = np.maximum(tp + 0.5 * fp + 0.5 * fn, self.eps)
 
-        ptq_all = ((iou - ids) / tp_eps) * (tp / tp_half_fp_half_fn_eps)  # calculate PTQ of all classes.
-        soft_ptq_all = ((iou - soft_ids) / tp_eps) * (tp / tp_half_fp_half_fn_eps)  # calculate soft-PTQ of all classes.
-        mean_ptq = ptq_all[self.include].mean()  # mean PTQ over all classes except ignored classes.
-        mean_soft_ptq = soft_ptq_all[self.include].mean()  # mean soft-PTQ over all classes except ignored classes.
+        ptq_all = ((iou - ids) / tp_eps) * (tp / tp_half_fp_half_fn_eps)  # Calculate PTQ of all classes.
+        soft_ptq_all = ((iou - soft_ids) / tp_eps) * (tp / tp_half_fp_half_fn_eps)  # Calculate soft-PTQ of all classes.
+        mean_ptq = ptq_all[self.include].mean()  # Mean PTQ over all classes except ignored classes.
+        mean_soft_ptq = soft_ptq_all[self.include].mean()  # Mean soft-PTQ over all classes except ignored classes.
 
         return mean_ptq, ptq_all, mean_soft_ptq, soft_ptq_all
 
@@ -278,13 +282,12 @@ class PanopticTrackingEval(PanopticEval):
                     for pr_id, pr_size in cl_preds.items():
                         tpa_key = pr_id + self.offset * gt_id
                         if tpa_key in cl_intersects:
-                            tpa = cl_intersects[tpa_key]
-                            tpa_ovr = self.intersects[seq][cl][tpa_key]
+                            tpa_ovr = cl_intersects[tpa_key]
                             inner_sum_iou += tpa_ovr * (tpa_ovr / (gt_size + pr_size - tpa_ovr))
                     outer_sum_iou += inner_sum_iou / float(gt_size)
                 self.pan_aq[cl] += outer_sum_iou
                 self.pan_aq_ovr += outer_sum_iou
-        s_assoc = np.sum(self.pan_aq) / np.sum(num_tubes[1:self.min_stuff_cls_id])  # num_things 1:11
+        s_assoc = np.sum(self.pan_aq) / np.sum(num_tubes[1:self.min_stuff_cls_id])  # num_things 1:11.
         s_cls, iou = self.getSemIoU()
         lstq = np.sqrt(s_assoc * s_cls)
         return lstq, s_assoc
@@ -299,5 +302,5 @@ class PanopticTrackingEval(PanopticEval):
         :param y_sem: [None, <np.int64: num_points>], target semantics.
         :param y_inst: [None, <np.uint64: num_points>], target instances.
         """
-        self.addBatchSemIoU(x_sem[1], y_sem[1])  # add to IoU calculation for checking purpose.
-        self.add_batch_panoptic(scene, x_sem, x_inst, y_sem, y_inst)  # do panoptic tracking stuff.
+        self.addBatchSemIoU(x_sem[1], y_sem[1])  # Add to IoU calculation for checking purpose.
+        self.add_batch_panoptic(scene, x_sem, x_inst, y_sem, y_inst)  # Do panoptic tracking stuff.

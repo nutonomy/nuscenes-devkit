@@ -4,11 +4,13 @@ Code written by Motional and the Robot Learning Lab, University of Freiburg.
 Script to evaluate nuScenes-panoptic panoptic segmentation (PS) or multi-object panoptic tracking metrics (MOPT).
 Argument "task" could be one of ["segmentation", "tracking"], check eval/panoptic/README.md for more details of the
 tasks. Note tracking results will be evaluated with both the MOPT and PS metrics.
+
 Example usage to evaluate tracking metrics.
 ---------------------------------------------------------
 python python-sdk/nuscenes/eval/panoptic/evaluate.py --result_path /data/panoptic_pred_results --eval_set mini_val
 --task tracking --dataroot /data/sets/nuscenes --version v1.0-mini --out_dir /tmp/panoptic_eval_output
 ---------------------------------------------------------
+
 Note, the panoptic prediction result directory should be as follows:
 └── panoptic_results_dir
     └── panoptic
@@ -136,7 +138,7 @@ class NuScenesPanopticEval:
             panoptic_label_filename = os.path.join(self.nusc.dataroot, self.nusc.get('panoptic', sd_token)['filename'])
             panoptic_label = load_bin_file(panoptic_label_filename, type='panoptic')
 
-            # filter eval classes
+            # Filter eval classes.
             label_sem = self.mapper.convert_label(panoptic_label // 1000)
             label_inst = panoptic_label
             panoptic_pred_filename = os.path.join(self.results_folder, 'panoptic', self.eval_set,
@@ -205,7 +207,7 @@ class NuScenesPanopticEval:
                 ...
             }
         """
-        eval_scenes= create_splits_scenes(verbose=False)[self.eval_set]
+        eval_scenes = create_splits_scenes(verbose=False)[self.eval_set]
         for scene in tqdm(eval_scenes, disable=not self.verbose):
             scene = self.nusc.get('scene', self.scene_name2tok[scene])
             cur_token, last_token = scene['first_sample_token'], scene['last_sample_token']

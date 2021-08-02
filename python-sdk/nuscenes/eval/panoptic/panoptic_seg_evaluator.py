@@ -18,14 +18,10 @@ class PanopticEval:
 
     """
 
-    def __init__(self, n_classes, device=None, ignore=None, offset=2 ** 32, min_points=30):
+    def __init__(self, n_classes, ignore=None, offset=2 ** 32, min_points=30):
         self.n_classes = n_classes
-        assert (device is None)
         self.ignore = np.array(ignore, dtype=np.int64)
         self.include = np.array([n for n in range(self.n_classes) if n not in self.ignore], dtype=np.int64)
-
-        print("[PANOPTIC EVAL] IGNORE: ", self.ignore)
-        print("[PANOPTIC EVAL] INCLUDE: ", self.include)
 
         self.reset()
         self.offset = offset  # largest number of instances in a given scan
@@ -69,9 +65,6 @@ class PanopticEval:
 
     def getSemIoU(self):
         tp, fp, fn = self.getSemIoUStats()
-        # print(f"tp={tp}")
-        # print(f"fp={fp}")
-        # print(f"fn={fn}")
         intersection = tp
         union = tp + fp + fn
         union = np.maximum(union, self.eps)
@@ -85,9 +78,10 @@ class PanopticEval:
         total_tp = tp.sum()
         total = tp[self.include].sum() + fp[self.include].sum()
         total = np.maximum(total, self.eps)
+        # Mean accuracy over all classes.
         acc_mean = total_tp.astype(np.double) / total.astype(np.double)
 
-        return acc_mean  # returns "acc mean"
+        return acc_mean
 
     def addBatchPanoptic(self, x_sem_row, x_inst_row, y_sem_row, y_inst_row):
         # make sure instances are not zeros (it messes with my approach)
@@ -106,8 +100,6 @@ class PanopticEval:
 
         # first step is to count intersections > 0.5 IoU for each class (except the ignored ones)
         for cl in self.include:
-            # print("*"*80)
-            # print("CLASS", cl.item())
             # get a class mask
             x_inst_in_cl_mask = x_sem_row == cl
             y_inst_in_cl_mask = y_sem_row == cl
@@ -120,13 +112,11 @@ class PanopticEval:
             unique_pred, counts_pred = np.unique(x_inst_in_cl[x_inst_in_cl > 0], return_counts=True)
             id2idx_pred = {id: idx for idx, id in enumerate(unique_pred)}
             matched_pred = np.array([False] * unique_pred.shape[0])
-            # print("Unique predictions:", unique_pred)
 
             # generate the areas for each unique instance gt_np
             unique_gt, counts_gt = np.unique(y_inst_in_cl[y_inst_in_cl > 0], return_counts=True)
             id2idx_gt = {id: idx for idx, id in enumerate(unique_gt)}
             matched_gt = np.array([False] * unique_gt.shape[0])
-            # print("Unique ground truth:", unique_gt)
 
             # generate intersection using offset
             valid_combos = np.logical_and(x_inst_in_cl > 0, y_inst_in_cl > 0)
@@ -157,6 +147,7 @@ class PanopticEval:
             self.pan_fp[cl] += np.sum(np.logical_and(counts_pred >= self.min_points, matched_pred == False))
 
     def getPQ(self):
+        """ Calculate Panoptic Quality (PQ) metrics """
         # first calculate for all classes
         sq_all = self.pan_iou.astype(np.double) / np.maximum(self.pan_tp.astype(np.double), self.eps)
         rq_all = self.pan_tp.astype(np.double) / np.maximum(
@@ -172,8 +163,7 @@ class PanopticEval:
         return PQ, SQ, RQ, pq_all, sq_all, rq_all
 
     def addBatch(self, x_sem, x_inst, y_sem, y_inst):  # x=preds, y=targets
-        ''' IMPORTANT: Inputs must be batched. Either [N,H,W], or [N, P]
-        '''
+        """ IMPORTANT: Inputs must be batched. Either [N,H,W], or [N, P] """
         # add to IoU calculation (for checking purposes)
         self.addBatchSemIoU(x_sem, y_sem)
 
