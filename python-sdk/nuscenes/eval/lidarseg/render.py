@@ -10,8 +10,9 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.lidarseg.evaluate import LidarSegEval
-from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, load_bin_file, LidarSegPointCloud
-from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, create_lidarseg_legend, get_labels_in_coloring
+from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper
+from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors
+from nuscenes.utils.data_classes import LidarSegPointCloud
 
 
 class LidarSegEvalStratified(LidarSegEval):

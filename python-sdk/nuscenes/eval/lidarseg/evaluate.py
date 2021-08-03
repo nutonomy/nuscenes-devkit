@@ -3,11 +3,11 @@ import json
 import os
 from typing import Dict
 
-import numpy as np
 from tqdm import tqdm
 
 from nuscenes import NuScenes
-from nuscenes.eval.lidarseg.utils import LidarsegClassMapper, ConfusionMatrix, get_samples_in_eval_set, load_bin_file
+from nuscenes.eval.lidarseg.utils import ConfusionMatrix, LidarsegClassMapper, get_samples_in_eval_set
+from nuscenes.utils.data_io import load_bin_file
 
 
 class LidarSegEval:

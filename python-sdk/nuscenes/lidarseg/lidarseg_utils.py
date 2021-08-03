@@ -146,8 +146,12 @@ def get_labels_in_coloring(color_legend: np.ndarray, coloring: np.ndarray) -> Li
 
 
 def create_lidarseg_legend(labels_to_include_in_legend: List[int],
-                           idx2name: Dict[int, str], name2color: Dict[str, Tuple[int, int, int]],
-                           ax: axes.Axes = None, loc: str = 'upper center', ncol: int = 3, bbox_to_anchor: Tuple = None):
+                           idx2name: Dict[int, str],
+                           name2color: Dict[str, Tuple[int, int, int]],
+                           ax: axes.Axes = None,
+                           loc: str = 'upper center',
+                           ncol: int = 3,
+                           bbox_to_anchor: Tuple = None) -> None:
     """
     Given a list of class indices, the mapping from class index to class name, and the mapping from class name
     to class color, produce a legend which shows the color and the corresponding class name.
