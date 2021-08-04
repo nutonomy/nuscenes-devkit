@@ -51,7 +51,7 @@ def generate_panoptic_labels(nusc: NuScenes,
 
     # Load the predictions.
     pred_boxes_all, meta = load_prediction(track_json,
-                                           10000,  # TODO Why 100 boxes?
+                                           1000,  # TODO Why 100 boxes?
                                            TrackingBox,
                                            verbose=verbose)
     pred_boxes_all = add_center_dist(nusc, pred_boxes_all)
@@ -71,7 +71,7 @@ def generate_panoptic_labels(nusc: NuScenes,
         lidar_path = os.path.join(nusc.dataroot, sd_record['filename'])
         # Load the predictions for the point cloud.
         lidarseg_pred_filename = os.path.join(seg_folder, 'lidarseg',
-                                              nusc.version, sd_record['token'] + '_lidarseg.bin')
+                                              nusc.version.split('-')[-1], sd_record['token'] + '_lidarseg.bin')
         lidar_seg = LidarSegPointCloud(lidar_path, lidarseg_pred_filename)
 
         panop_labels = np.zeros(lidar_seg.labels.shape, dtype=np.uint16)

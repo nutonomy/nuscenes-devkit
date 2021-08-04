@@ -9,6 +9,7 @@ python python-sdk/nuscenes/panoptic/merge_seg_and_detect.py --seg_path ./nuscene
 """
 import argparse
 import os
+from typing import List, Tuple
 
 import numpy as np
 from tqdm import tqdm
@@ -32,7 +33,7 @@ def generate_panoptic_labels(nusc: NuScenes,
                              det_json: str,
                              eval_set: str,
                              out_dir: str = None,
-                             verbose: bool = False):
+                             verbose: bool = False) -> None:
     """
     Generate NuScenes lidar panoptic ground truth labels.
     :param nusc: NuScenes instance.
@@ -52,7 +53,7 @@ def generate_panoptic_labels(nusc: NuScenes,
 
     # Load the predictions.
     pred_boxes_all, meta = load_prediction(det_json,
-                                           100,  # TODO Why 100 boxes?
+                                           1000,  # TODO Why 100 boxes?
                                            DetectionBox,
                                            verbose=verbose)
     pred_boxes_all = add_center_dist(nusc, pred_boxes_all)
@@ -67,7 +68,7 @@ def generate_panoptic_labels(nusc: NuScenes,
         lidar_path = os.path.join(nusc.dataroot, sd_record['filename'])
         # Load the predictions for the point cloud.
         lidarseg_pred_filename = os.path.join(seg_folder, 'lidarseg',
-                                              nusc.version,
+                                              nusc.version.split('-')[-1],
                                               sd_record['token'] + '_lidarseg.bin')  # replace with eval_set
         lidar_seg = LidarSegPointCloud(lidar_path, lidarseg_pred_filename)
 
@@ -99,14 +100,14 @@ def generate_panoptic_labels(nusc: NuScenes,
         np.savez_compressed(os.path.join(panoptic_dir, panoptic_file), data=panop_labels.astype(np.uint16))
 
 
-def confidence_threshold(boxes):
+def confidence_threshold(boxes) -> List[DetectionBox]:
     """
     # TODO
     """
     return [box for box in boxes if box.detection_score > CONFIDENCE_THRESHOLD]
 
 
-def sort_confidence(boxes):
+def sort_confidence(boxes) -> Tuple[List[DetectionBox], List[str]]:
     """
     # TODO
     """
