@@ -1,5 +1,5 @@
 """
-Script to generate nuScenes-panoptic ground truth data from nuScenes databse and nuScene-lidarseg.
+Script to generate nuScenes-panoptic ground truth data from nuScenes database and nuScene-lidarseg.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 
 Example usage:
