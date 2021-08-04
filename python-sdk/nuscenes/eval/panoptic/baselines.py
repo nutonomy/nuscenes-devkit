@@ -1,3 +1,4 @@
+import argparse
 import os
 import itertools
 from typing import List
@@ -13,9 +14,9 @@ from nuscenes.eval.panoptic.merge_lidarseg_and_detection import generate_panopti
 
 def prepare_files(method_names: List[str], root_dir: str) -> None:
     """
-    # TODO
-    :param method_names:
-    :param root_dir:
+    Prepare the files containing the predictions of the various method names.
+    :param method_names: A list of method names.
+    :param root_dir: The directory where the predictions of the various methods are stored at.
     """
     for method_name in method_names:
         zip_path_to_predictions_by_method = os.path.join(root_dir, method_name + '.zip')
@@ -46,14 +47,27 @@ def get_prediction_json_path(prediction_dir: str) -> str:
 
 
 def main(out_dir: str,
-         lidarseg_preds_dir: str, lidarseg_method_names: List[str],
-         to_merge_preds_dir: str = None, to_merge_method_names: List[str] = None,
-         task: str = 'tracking',  # TODO or 'segmentation
-         version: str = 'v1.0-test', dataroot: str = '/data/sets/nuscenes'):
+         lidarseg_preds_dir: str,
+         lidarseg_method_names: List[str],
+         to_merge_preds_dir: str,
+         to_merge_method_names: List[str],
+         task: str = 'tracking',
+         version: str = 'v1.0-test',
+         dataroot: str = '/data/sets/nuscenes') -> None:
     """
-    # TODO
-    :param out_dir: Path to save the evaluation for each baseline to.
-
+    Create baselines for a given panoptic task by merging the predictions of lidarseg and either tracking or detection
+    methods.
+    :param out_dir: Path to save any output to.
+    :param lidarseg_preds_dir: Path to the directory where the lidarseg predictions are stored.
+    :param lidarseg_method_names: List of lidarseg method names.
+    :param to_merge_preds_dir: Path to the directory which contains the predictions from some methods to merge with
+        those of lidarseg to create panoptic predictions of a particular task.
+    :param to_merge_method_names: List of tracking (or detection) method names to merge with lidarseg to create
+        panoptic predictions.
+    :param task: The task to create the panoptic predictions for and run evaluation on (either tracking or
+        segmentation).
+    :param version: Version of nuScenes to use (e.g. "v1.0", ...).
+    :param dataroot: Path to the tables and data for the specified version of nuScenes.
     """
     # Prepare the required files.
     prepare_files(lidarseg_method_names, lidarseg_preds_dir)
@@ -113,14 +127,44 @@ def main(out_dir: str,
 
 
 if __name__ == '__main__':
-    main(out_dir='/home/whye/Desktop/logs/panoptic/',
-         lidarseg_preds_dir='/home/whye/Desktop/logs/panoptic/submissions/lidarseg',
-         lidarseg_method_names=['2D3DNet', 'mit_han_lab'],
+    """
+    Example usage:
+        python baselines.py --out_dir ~/Desktop/logs/panoptic \
+                            --lidarseg_preds_dir ~Desktop/logs/panoptic/submissions/lidarseg \
+                            --lidarseg_method_names 2D3DNet mit_han_lab,
+                            --to_merge_preds_dir ~/Desktop/logs/panoptic/submissions/detection \
+                            --to_merge_method_names crossfusion mmfusion polarstream \
+                            --task segmentation'                   
+    """
+    parser = argparse.ArgumentParser(description='Create baselines for a panoptic task (tracking or segmentation).')
+    parser.add_argument('--out_dir', type=str,
+                        help='Path to save any output to.')
+    parser.add_argument('--lidarseg_preds_dir', type=str,
+                        help='Path to the directory where the lidarseg predictions are stored.')
+    parser.add_argument('--lidarseg_method_names', nargs='+',
+                        help='List of lidarseg method names.')
+    parser.add_argument('--to_merge_preds_dir', type=str,
+                        help='Path to the directory which contains the predictions from some methods to merge with '
+                             'those of lidarseg to create panoptic predictions of a particular task.')
+    parser.add_argument('--to_merge_method_names', nargs='+',
+                        help='List of tracking (or detection) method names to merge with lidarseg to create panoptic '
+                             'predictions.')
+    parser.add_argument('--task', type=str, default='tracking',
+                        help='The task to create the panoptic predictions for and run evaluation on (either tracking '
+                             'or segmentation')
+    parser.add_argument('--version', type=str, default='v1.0-test',
+                        help='Version of nuScenes to use (e.g. "v1.0", ...).')
+    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
+                        help='Path to the tables and data for the specified version of nuScenes.')
 
-         # to_merge_preds_dir='/home/whye/Desktop/logs/panoptic/submissions/tracking',
-         # to_merge_method_names=['TuSimple'],
-         to_merge_preds_dir='/home/whye/Desktop/logs/panoptic/submissions/detection',
-         to_merge_method_names=['crossfusion', 'mmfusion', 'polarstream'],
+    args = parser.parse_args()
+    print(args)
 
-         task='segmentation'  # 'tracking'
-         )
+    main(out_dir=args.out_dir,
+         lidarseg_preds_dir=args.lidarseg_preds_dir,
+         lidarseg_method_names=args.lidarseg_method_names,
+         to_merge_preds_dir=args.to_merge_preds_dir,
+         to_merge_method_names=args.to_merge_method_names,
+         task=args.task,
+         version=args.version,
+         dataroot=args.dataroot)

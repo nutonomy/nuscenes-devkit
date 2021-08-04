@@ -1,11 +1,6 @@
 """
-Script to generate nuScenes-panoptic prediction from nuScenes-detection and nuScene-lidarseg predictions.
+Script to generate nuScenes-panoptic predictions from nuScenes-detection and nuScene-lidarseg predictions.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
-
-Script to generate nuScenes-panoptic prediction from nuScenes-detection and nuScene-lidarseg predictions.
-Example usage:
-python python-sdk/nuscenes/panoptic/merge_seg_and_detect.py --seg_path ./nuscenes-lidarseg \
- --track-path ./detect.json --eval_set val verbose True --dataroot /data/sets/nuscenes
 """
 import argparse
 import os
@@ -35,10 +30,13 @@ def generate_panoptic_labels(nusc: NuScenes,
                              out_dir: str = None,
                              verbose: bool = False) -> None:
     """
-    Generate NuScenes lidar panoptic ground truth labels.
+    Generate NuScenes lidar panoptic predictions.
     :param nusc: NuScenes instance.
-    :param out_dir: output directory.
-    :param verbose: True to print verbose.
+    :param seg_folder: Path to the directory where the lidarseg predictions are stored.
+    :param det_json: Path of the json where the detection predictions are stored.
+    :param eval_set: Which dataset split to evaluate on, train, val or test.
+    :param out_dir: Path to save any output to.
+    :param verbose: Whether to print any output.
     """
     sample_tokens = get_samples_in_eval_set(nusc, eval_set)
     num_samples = len(sample_tokens)
@@ -53,7 +51,7 @@ def generate_panoptic_labels(nusc: NuScenes,
 
     # Load the predictions.
     pred_boxes_all, meta = load_prediction(det_json,
-                                           1000,  # TODO Why 100 boxes?
+                                           1000,
                                            DetectionBox,
                                            verbose=verbose)
     pred_boxes_all = add_center_dist(nusc, pred_boxes_all)
@@ -100,16 +98,20 @@ def generate_panoptic_labels(nusc: NuScenes,
         np.savez_compressed(os.path.join(panoptic_dir, panoptic_file), data=panop_labels.astype(np.uint16))
 
 
-def confidence_threshold(boxes) -> List[DetectionBox]:
+def confidence_threshold(boxes: List[DetectionBox]) -> List[DetectionBox]:
     """
-    # TODO
+    Filter a list of boxes with a given confidence threshold.
+    :param boxes: A list of boxes.
+    :return: A list of boxes with confidences higher than the threshold.
     """
     return [box for box in boxes if box.detection_score > CONFIDENCE_THRESHOLD]
 
 
-def sort_confidence(boxes) -> Tuple[List[DetectionBox], List[str]]:
+def sort_confidence(boxes: List[DetectionBox]) -> Tuple[List[DetectionBox], List[str]]:
     """
-    # TODO
+    Sort a list of boxes by confidence.
+    :param boxes: A list of boxes.
+    :return: A list of boxes sorted by confidence and a list of classes corresponding to each box.
     """
     scores = [box.detection_score for box in boxes]
     inds = np.argsort(scores)[::-1]
@@ -121,6 +123,9 @@ def sort_confidence(boxes) -> Tuple[List[DetectionBox], List[str]]:
 
 
 def main():
+    """
+    The main method for this script.
+    """
     parser = argparse.ArgumentParser(
         description='Generate panoptic from nuScenes-lidarseg and detection results.')
     parser.add_argument('--seg_path', type=str, help='The path to the segmentation results folder.')
