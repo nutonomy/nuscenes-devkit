@@ -1,5 +1,5 @@
 """
-Script to generate nuScenes-panoptic ground truth data from nuScenes dataabse and nuScene-lidarseg.
+Script to generate nuScenes-panoptic prediction from nuScenes-detection and nuScene-lidarseg predictions.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 
 Script to generate nuScenes-panoptic prediction from nuScenes-detection and nuScene-lidarseg predictions.
@@ -39,7 +39,6 @@ def generate_panoptic_labels(nusc: NuScenes,
     :param out_dir: output directory.
     :param verbose: True to print verbose.
     """
-    cat_name_to_idx = nusc.lidarseg_name2idx_mapping
     sample_tokens = get_samples_in_eval_set(nusc, eval_set)
     num_samples = len(sample_tokens)
     mapper = PanopticClassMapper(nusc)
@@ -51,15 +50,16 @@ def generate_panoptic_labels(nusc: NuScenes,
     panoptic_dir = os.path.join(out_dir, panoptic_subdir)
     os.makedirs(panoptic_dir, exist_ok=True)
 
-    # For prediction
-    pred_boxes_all, meta = load_prediction(det_json, 100, DetectionBox,
+    # Load the predictions.
+    pred_boxes_all, meta = load_prediction(det_json,
+                                           100,  # TODO Why 100 boxes?
+                                           DetectionBox,
                                            verbose=verbose)
     pred_boxes_all = add_center_dist(nusc, pred_boxes_all)
 
     for sample_token in tqdm(sample_tokens, disable=not verbose):
         sample = nusc.get('sample', sample_token)
         # Get the sample data token of the point cloud.
-        sd_token = sample['data']['LIDAR_TOP']
         sd_record = nusc.get('sample_data', sample['data']['LIDAR_TOP'])
         cs_record = nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
         pose_record = nusc.get('ego_pose', sd_record['ego_pose_token'])
@@ -88,7 +88,7 @@ def generate_panoptic_labels(nusc: NuScenes,
             intersection = np.logical_and(overlaps, msk)
             if np.sum(intersection) / np.float32(np.sum(msk)) > OVERLAP_THRESHOLD:
                 continue
-            # add non-overlapping part to output
+            # Add non-overlapping part to output.
             msk = msk - intersection
             panop_labels[msk != 0] = (cl_id * 1000 + instance_id + 1)
             overlaps += msk
@@ -100,10 +100,16 @@ def generate_panoptic_labels(nusc: NuScenes,
 
 
 def confidence_threshold(boxes):
+    """
+    # TODO
+    """
     return [box for box in boxes if box.detection_score > CONFIDENCE_THRESHOLD]
 
 
 def sort_confidence(boxes):
+    """
+    # TODO
+    """
     scores = [box.detection_score for box in boxes]
     inds = np.argsort(scores)[::-1]
     sorted_bboxes = []
@@ -115,7 +121,7 @@ def sort_confidence(boxes):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate panoptic from nuScenes-LiDAR semgentation and detection results.')
+        description='Generate panoptic from nuScenes-lidarseg and detection results.')
     parser.add_argument('--seg_path', type=str, help='The path to the segmentation results folder.')
     parser.add_argument('--det_path', type=str, help='The path to the detection json file.')
     parser.add_argument('--eval_set', type=str, default='val',
