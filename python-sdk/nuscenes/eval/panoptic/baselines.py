@@ -130,11 +130,11 @@ if __name__ == '__main__':
     """
     Example usage:
         python baselines.py --out_dir ~/Desktop/logs/panoptic \
-                            --lidarseg_preds_dir ~Desktop/logs/panoptic/submissions/lidarseg \
-                            --lidarseg_method_names 2D3DNet mit_han_lab,
+                            --lidarseg_preds_dir ~/Desktop/logs/panoptic/submissions/lidarseg \
+                            --lidarseg_method_names 2D3DNet mit_han_lab \
                             --to_merge_preds_dir ~/Desktop/logs/panoptic/submissions/detection \
                             --to_merge_method_names crossfusion mmfusion polarstream \
-                            --task segmentation'                   
+                            --task segmentation              
     """
     parser = argparse.ArgumentParser(description='Create baselines for a panoptic task (tracking or segmentation).')
     parser.add_argument('--out_dir', type=str,
