@@ -1,5 +1,6 @@
 """
-Script to generate nuScenes-panoptic predictions from nuScenes-tracking and nuScene-lidarseg predictions.
+Script to generate nuScenes-panoptic predictions from nuScene-lidarseg predictions and nuScenes-tracking or
+nuScenes-detection predictions.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """
 import argparse
@@ -66,8 +67,8 @@ def generate_panoptic_labels(nusc: NuScenes,
     for sample_token in tqdm(sample_tokens, disable=not verbose):
         sample = nusc.get('sample', sample_token)
 
-        scene_token = sample['scene_token']  # Only used if task == 'tracking'.
-        if scene_token not in inst_tok2id:
+        scene_token = sample['scene_token'] # Only used if task == 'tracking'.
+        if task == 'tracking' and scene_token not in inst_tok2id:
             inst_tok2id[scene_token] = {}
 
         # Get the sample data token of the point cloud.
