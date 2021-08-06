@@ -4,13 +4,14 @@ Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """
 import argparse
 import os
-from typing import List
+from typing import List, Tuple, Union
 
 import numpy as np
 from tqdm import tqdm
 
 from nuscenes.eval.common.loaders import load_prediction, add_center_dist
 from nuscenes.eval.common.utils import boxes_to_sensor
+from nuscenes.eval.detection.data_classes import DetectionBox
 from nuscenes.eval.lidarseg.utils import get_samples_in_eval_set
 from nuscenes.eval.panoptic.utils import PanopticClassMapper
 from nuscenes.eval.tracking.data_classes import TrackingBox
@@ -20,23 +21,29 @@ from nuscenes.utils.geometry_utils import points_in_box
 
 OVERLAP_THRESHOLD = 0.5
 CONFIDENCE_THRESHOLD = 0.5
+STUFF_START_COARSE_CLASS_ID = 11
 
 
 def generate_panoptic_labels(nusc: NuScenes,
-                             seg_folder: str,
-                             track_json: str,
+                             lidarseg_preds_folder: str,
+                             preds_json: str,
                              eval_set: str,
+                             task: str = 'segmentation',
                              out_dir: str = None,
                              verbose: bool = False):
     """
     Generate NuScenes lidar panoptic predictions.
-    :param nusc: NuScenes instance.
-    :param seg_folder: Path to the directory where the lidarseg predictions are stored.
-    :param track_json: Path of the json where the tracking predictions are stored.
+    :param nusc: A instance of NuScenes.
+    :param lidarseg_preds_folder: Path to the directory where the lidarseg predictions are stored.
+    :param preds_json: Path of the json where the tracking / detection predictions are stored.
     :param eval_set: Which dataset split to evaluate on, train, val or test.
+    :param task: The task to create the panoptic predictions for (either tracking or segmentation).
     :param out_dir: Path to save any output to.
     :param verbose: Whether to print any output.
     """
+    assert task in ['tracking', 'segmentation'], \
+        'Error: Task can only be either `tracking` or `segmentation, not {}'.format(task)
+
     sample_tokens = get_samples_in_eval_set(nusc, eval_set)
     num_samples = len(sample_tokens)
     mapper = PanopticClassMapper(nusc)
@@ -48,17 +55,17 @@ def generate_panoptic_labels(nusc: NuScenes,
     panoptic_dir = os.path.join(out_dir, panoptic_subdir)
     os.makedirs(panoptic_dir, exist_ok=True)
 
+    box_type = TrackingBox if task == 'tracking' else DetectionBox
+
     # Load the predictions.
-    pred_boxes_all, meta = load_prediction(track_json,
-                                           1000,
-                                           TrackingBox,
-                                           verbose=verbose)
+    pred_boxes_all, meta = load_prediction(preds_json, 1000, box_type, verbose=verbose)
     pred_boxes_all = add_center_dist(nusc, pred_boxes_all)
 
-    inst_tok2id = {}
+    inst_tok2id = {}  # Only used if task == 'tracking'.
     for sample_token in tqdm(sample_tokens, disable=not verbose):
         sample = nusc.get('sample', sample_token)
-        scene_token = sample['scene_token']
+
+        scene_token = sample['scene_token']  # Only used if task == 'tracking'.
         if scene_token not in inst_tok2id:
             inst_tok2id[scene_token] = {}
 
@@ -67,26 +74,32 @@ def generate_panoptic_labels(nusc: NuScenes,
         cs_record = nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
         pose_record = nusc.get('ego_pose', sd_record['ego_pose_token'])
 
-        lidar_path = os.path.join(nusc.dataroot, sd_record['filename'])
         # Load the predictions for the point cloud.
-        lidarseg_pred_filename = os.path.join(seg_folder, 'lidarseg',
-                                              nusc.version.split('-')[-1], sd_record['token'] + '_lidarseg.bin')
+        lidar_path = os.path.join(nusc.dataroot, sd_record['filename'])
+        lidarseg_pred_filename = os.path.join(lidarseg_preds_folder, 'lidarseg', nusc.version.split('-')[-1],
+                                              sd_record['token'] + '_lidarseg.bin')
         lidar_seg = LidarSegPointCloud(lidar_path, lidarseg_pred_filename)
 
         panop_labels = np.zeros(lidar_seg.labels.shape, dtype=np.uint16)
         overlaps = np.zeros(lidar_seg.labels.shape, dtype=np.uint8)
 
         pred_boxes = pred_boxes_all[sample_token]
+        if task == 'segmentation':
+            pred_boxes = filter_low_conf_boxes(pred_boxes)
 
+        # Tracking IDs will be None if pred_boxes is of DetectionBox type.
         sorted_pred_boxes, pred_cls, tracking_ids = sort_confidence(pred_boxes)
         sorted_pred_boxes = boxes_to_sensor(sorted_pred_boxes, pose_record, cs_record)
 
         for instance_id, (pred_box, cl, tracking_id) in enumerate(zip(sorted_pred_boxes, pred_cls, tracking_ids)):
             cl_id = coarse2idx[cl]
-            if not inst_tok2id[scene_token]:
-                inst_tok2id[scene_token][tracking_id] = 1
-            elif tracking_id not in inst_tok2id[scene_token]:
-                inst_tok2id[scene_token][tracking_id] = len(inst_tok2id[scene_token]) + 1
+
+            if task == 'tracking':
+                if not inst_tok2id[scene_token]:
+                    inst_tok2id[scene_token][tracking_id] = 1
+                elif tracking_id not in inst_tok2id[scene_token]:
+                    inst_tok2id[scene_token][tracking_id] = len(inst_tok2id[scene_token]) + 1
+
             msk = np.zeros(lidar_seg.labels.shape, dtype=np.uint8)
             indices = np.where(points_in_box(pred_box, lidar_seg.points[:, :3].T))[0]
 
@@ -97,37 +110,46 @@ def generate_panoptic_labels(nusc: NuScenes,
                 continue
             # Add non-overlapping part to output.
             msk = msk - intersection
-            panop_labels[msk != 0] = (cl_id * 1000 + inst_tok2id[scene_token][tracking_id])
+            if task == 'tracking':
+                panop_labels[msk != 0] = (cl_id * 1000 + inst_tok2id[scene_token][tracking_id])
+            else:
+                panop_labels[msk != 0] = (cl_id * 1000 + instance_id + 1)
             overlaps += msk
 
-        stuff_msk = np.logical_and(panop_labels == 0, lidar_seg.labels >= 11)
+        stuff_msk = np.logical_and(panop_labels == 0, lidar_seg.labels >= STUFF_START_COARSE_CLASS_ID)
         panop_labels[stuff_msk] = lidar_seg.labels[stuff_msk] * 1000
         panoptic_file = sd_record['token'] + '_panoptic.npz'
         np.savez_compressed(os.path.join(panoptic_dir, panoptic_file), data=panop_labels.astype(np.uint16))
 
 
-def confidence_threshold(boxes: List[TrackingBox]) -> List[TrackingBox]:
+def filter_low_conf_boxes(boxes: List[Union[DetectionBox, TrackingBox]]) -> List[Union[DetectionBox, TrackingBox]]:
     """
     Filter a list of boxes with a given confidence threshold.
     :param boxes: A list of boxes.
     :return: A list of boxes with confidences higher than the threshold.
     """
-    return [box for box in boxes if box.tracking_score > CONFIDENCE_THRESHOLD]
+    return [box for box in boxes if box.detection_score > CONFIDENCE_THRESHOLD]
 
 
-def sort_confidence(boxes: List[TrackingBox]):
+def sort_confidence(boxes: List[Union[DetectionBox, TrackingBox]]) \
+        -> Tuple[List[Union[DetectionBox, TrackingBox]], List[str], List[Union[str, None]]]:
     """
     Sort a list of boxes by confidence.
     :param boxes: A list of boxes.
-    :return: A list of boxes sorted by confidence and a list of classes corresponding to each box.
+    :return: A list of boxes sorted by confidence and a list of classes and a list of tracking IDs (if available)
+        corresponding to each box.
     """
-    scores = [box.tracking_score for box in boxes]
+    scores = [box.tracking_score if isinstance(boxes, TrackingBox) else box.detection_score
+              for box in boxes]
     inds = np.argsort(scores)[::-1]
-    sorted_bboxes = []
-    for ind in inds:
-        sorted_bboxes.append(boxes[ind])
-    sorted_cls = [box.tracking_name for box in sorted_bboxes]
-    tracking_ids = [box.tracking_id for box in sorted_bboxes]
+
+    sorted_bboxes = [boxes[ind] for ind in inds]
+
+    sorted_cls = [box.tracking_name if isinstance(boxes, TrackingBox) else box.detection_name
+                  for box in sorted_bboxes]
+
+    tracking_ids = [box.tracking_id if isinstance(boxes[0], TrackingBox) else None
+                    for box in sorted_bboxes]
 
     return sorted_bboxes, sorted_cls, tracking_ids
 
@@ -142,6 +164,10 @@ def main():
     parser.add_argument('--track_path', type=str, help='The path to the track json file.')
     parser.add_argument('--eval_set', type=str, default='val',
                         help='Which dataset split to evaluate on, train, val or test.')
+    parser.add_argument('--eval_set', type=str, default='val',
+                        help='Which dataset split to evaluate on, train, val or test.')
+    parser.add_argument('--task', type=str, default='segmentation',
+                        help='The task to create the panoptic predictions for (either tracking or segmentation).')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes', help='Default nuScenes data directory.')
     parser.add_argument('--version', type=str, default='v1.0-trainval',
                         help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
@@ -158,6 +184,7 @@ def main():
                              seg_folder=args.seg_path,
                              track_json=args.track_path,
                              eval_set=args.eval_set,
+                             task=args.task,
                              out_dir=out_dir,
                              verbose=args.verbose)
     print(f'Generated results saved at {out_dir}. \nFinished.')

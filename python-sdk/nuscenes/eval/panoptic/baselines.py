@@ -6,10 +6,7 @@ import zipfile
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.eval.panoptic.evaluate import NuScenesPanopticEval
-from nuscenes.eval.panoptic.merge_lidarseg_and_tracking import generate_panoptic_labels \
-    as get_panoptic_preds_from_lidarseg_and_tracking
-from nuscenes.eval.panoptic.merge_lidarseg_and_detection import generate_panoptic_labels \
-    as get_panoptic_preds_from_lidarseg_and_detection
+from nuscenes.eval.panoptic.merge_lidarseg_and_tracking import generate_panoptic_labels
 
 
 def prepare_files(method_names: List[str], root_dir: str) -> None:
@@ -92,20 +89,14 @@ def main(out_dir: str,
         dir_of_lidarseg_method_preds = os.path.join(lidarseg_preds_dir, lidarseg_method)
 
         json_of_preds_by_to_merge_method = get_prediction_json_path(os.path.join(to_merge_preds_dir, to_merge_method))
-        if task == 'tracking':
-            get_panoptic_preds_from_lidarseg_and_tracking(nusc,
-                                                          dir_of_lidarseg_method_preds,
-                                                          json_of_preds_by_to_merge_method,
-                                                          eval_set=eval_set,
-                                                          out_dir=dir_to_save_panoptic_preds_to,
-                                                          verbose=True)
-        else:
-            get_panoptic_preds_from_lidarseg_and_detection(nusc,
-                                                           dir_of_lidarseg_method_preds,
-                                                           json_of_preds_by_to_merge_method,
-                                                           eval_set=eval_set,
-                                                           out_dir=dir_to_save_panoptic_preds_to,
-                                                           verbose=True)
+
+        generate_panoptic_labels(nusc,
+                                 dir_of_lidarseg_method_preds,
+                                 json_of_preds_by_to_merge_method,
+                                 eval_set=eval_set,
+                                 task=task,
+                                 out_dir=dir_to_save_panoptic_preds_to,
+                                 verbose=True)
         print('Panoptic {} predictions saved at {}.'.format(task, dir_to_save_panoptic_preds_to))
 
         print('{:02d}/{:02d}: Evaluation predictions for panoptic {} from {} and {}.'
