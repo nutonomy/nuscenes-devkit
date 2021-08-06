@@ -19,8 +19,9 @@ from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.data_classes import LidarSegPointCloud
 from nuscenes.utils.geometry_utils import points_in_box
 
-OVERLAP_THRESHOLD = 0.5
-CONFIDENCE_THRESHOLD = 0.5
+
+OVERLAP_THRESHOLD = 0.5  # Amount by which an instance can overlap with other instances, before it is discarded.
+CONFIDENCE_THRESHOLD = 0.5  # Confidence threshold below which to discard a box.
 STUFF_START_COARSE_CLASS_ID = 11
 
 
@@ -91,6 +92,7 @@ def generate_panoptic_labels(nusc: NuScenes,
         sorted_pred_boxes, pred_cls, tracking_ids = sort_confidence(pred_boxes)
         sorted_pred_boxes = boxes_to_sensor(sorted_pred_boxes, pose_record, cs_record)
 
+        # Go through each box (a.k.a instance) and obtain the panoptic label for each.
         for instance_id, (pred_box, cl, tracking_id) in enumerate(zip(sorted_pred_boxes, pred_cls, tracking_ids)):
             cl_id = coarse2idx[cl]
 
@@ -106,7 +108,10 @@ def generate_panoptic_labels(nusc: NuScenes,
             msk[indices] = 1
             msk[np.logical_and(lidar_seg.labels != cl_id, msk == 1)] = 0
             intersection = np.logical_and(overlaps, msk)
-            if np.sum(intersection) / np.float32(np.sum(msk)) > OVERLAP_THRESHOLD:
+
+            # If the current instance overlaps with previous instances by a certain threshold, then ignore it (note
+            # that the instances are processed in order of decreasing confidence).
+            if np.sum(intersection) / (np.float32(np.sum(msk)) + 1e-32) > OVERLAP_THRESHOLD:
                 continue
             # Add non-overlapping part to output.
             msk = msk - intersection
@@ -181,8 +186,8 @@ def main():
     nusc = NuScenes(version=args.version, dataroot=args.dataroot, verbose=args.verbose)
 
     generate_panoptic_labels(nusc=nusc,
-                             seg_folder=args.seg_path,
-                             track_json=args.track_path,
+                             lidarseg_preds_folder=args.seg_path,
+                             preds_json=args.track_path,
                              eval_set=args.eval_set,
                              task=args.task,
                              out_dir=out_dir,
