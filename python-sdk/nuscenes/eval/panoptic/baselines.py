@@ -6,7 +6,7 @@ import zipfile
 
 from nuscenes.nuscenes import NuScenes
 from nuscenes.eval.panoptic.evaluate import NuScenesPanopticEval
-from nuscenes.eval.panoptic.merge_lidarseg_and_tracking import generate_panoptic_labels
+from nuscenes.eval.panoptic.merge_for_panoptic import generate_panoptic_labels
 
 
 def prepare_files(method_names: List[str], root_dir: str) -> None:
