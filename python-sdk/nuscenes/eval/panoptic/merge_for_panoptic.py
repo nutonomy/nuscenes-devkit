@@ -144,16 +144,16 @@ def sort_confidence(boxes: List[Union[DetectionBox, TrackingBox]]) \
     :return: A list of boxes sorted by confidence and a list of classes and a list of tracking IDs (if available)
         corresponding to each box.
     """
-    scores = [box.tracking_score if isinstance(boxes, TrackingBox) else box.detection_score
+    scores = [box.tracking_score if isinstance(box, TrackingBox) else box.detection_score
               for box in boxes]
     inds = np.argsort(scores)[::-1]
 
     sorted_bboxes = [boxes[ind] for ind in inds]
 
-    sorted_cls = [box.tracking_name if isinstance(boxes, TrackingBox) else box.detection_name
+    sorted_cls = [box.tracking_name if isinstance(box, TrackingBox) else box.detection_name
                   for box in sorted_bboxes]
 
-    tracking_ids = [box.tracking_id if isinstance(boxes[0], TrackingBox) else None
+    tracking_ids = [box.tracking_id if isinstance(box, TrackingBox) else None
                     for box in sorted_bboxes]
 
     return sorted_bboxes, sorted_cls, tracking_ids
