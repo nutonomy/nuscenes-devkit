@@ -189,7 +189,7 @@ class PredictHelper:
         :param sample_token: Sample token for instance.
         :param seconds: How many seconds of data to retrieve.
         :param in_agent_frame: Whether to rotate the coordinates so the
-            heading is aligned with the y-axis.
+            heading is aligned with the y-axis. Only relevant if just_xy = True.
         :param direction: 'next' for future or 'prev' for past.
         :return: array of shape [n_timesteps, 2].
         """
@@ -220,6 +220,7 @@ class PredictHelper:
         :param sample_token: Sample token.
         :param seconds: How much future data to retrieve.
         :param in_agent_frame: If true, locations are rotated to the agent frame.
+            Only relevant if just_xy = True.
         :param just_xy: If true, returns an np.array of x,y locations as opposed to the
             entire record.
         :return: If just_xy, np.ndarray. Else, List of records.
