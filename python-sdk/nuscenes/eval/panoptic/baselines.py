@@ -104,7 +104,7 @@ def main(out_dir: str,
                                  verbose=True)
         print('Panoptic {} predictions saved at {}.'.format(task, dir_to_save_panoptic_preds_to))
 
-        print('{:02d}/{:02d}: Evaluation predictions for panoptic {} from {} and {}.'
+        print('{:02d}/{:02d}: Evaluating predictions for panoptic {} from {} and {}.'
               .format(i + 1, len(baselines), task, lidarseg_method, det_or_track_method))
         dir_to_save_evaluation_results_to = os.path.join(out_dir, task, 'panoptic_eval_results',
                                                          '{}_with_{}'.format(lidarseg_method, det_or_track_method))

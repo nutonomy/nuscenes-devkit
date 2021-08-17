@@ -22,7 +22,6 @@ from nuscenes.utils.geometry_utils import points_in_box
 
 
 OVERLAP_THRESHOLD = 0.5  # Amount by which an instance can overlap with other instances, before it is discarded.
-CONFIDENCE_THRESHOLD = 0.5  # Confidence threshold below which to discard a box.
 STUFF_START_COARSE_CLASS_ID = 11
 
 
@@ -67,7 +66,7 @@ def generate_panoptic_labels(nusc: NuScenes,
     for sample_token in tqdm(sample_tokens, disable=not verbose):
         sample = nusc.get('sample', sample_token)
 
-        scene_token = sample['scene_token'] # Only used if task == 'tracking'.
+        scene_token = sample['scene_token']  # Only used if task == 'tracking'.
         if task == 'tracking' and scene_token not in inst_tok2id:
             inst_tok2id[scene_token] = {}
 
@@ -86,8 +85,6 @@ def generate_panoptic_labels(nusc: NuScenes,
         overlaps = np.zeros(lidar_seg.labels.shape, dtype=np.uint8)
 
         pred_boxes = pred_boxes_all[sample_token]
-        if task == 'segmentation':
-            pred_boxes = filter_low_conf_boxes(pred_boxes)
 
         # Tracking IDs will be None if pred_boxes is of DetectionBox type.
         sorted_pred_boxes, pred_cls, tracking_ids = sort_confidence(pred_boxes)
@@ -126,15 +123,6 @@ def generate_panoptic_labels(nusc: NuScenes,
         panop_labels[stuff_msk] = lidar_seg.labels[stuff_msk] * 1000
         panoptic_file = sd_record['token'] + '_panoptic.npz'
         np.savez_compressed(os.path.join(panoptic_dir, panoptic_file), data=panop_labels.astype(np.uint16))
-
-
-def filter_low_conf_boxes(boxes: List[Union[DetectionBox, TrackingBox]]) -> List[Union[DetectionBox, TrackingBox]]:
-    """
-    Filter a list of boxes with a given confidence threshold.
-    :param boxes: A list of boxes.
-    :return: A list of boxes with confidences higher than the threshold.
-    """
-    return [box for box in boxes if box.detection_score > CONFIDENCE_THRESHOLD]
 
 
 def sort_confidence(boxes: List[Union[DetectionBox, TrackingBox]]) \
