@@ -147,7 +147,6 @@ def generate_and_evaluate_baseline(out_dir: str,
                              eval_set=eval_set,
                              task=task,
                              out_dir=dir_to_save_panoptic_preds_to)
-    print('Panoptic {} predictions saved at {}.'.format(task, dir_to_save_panoptic_preds_to))
 
     dir_to_save_evaluation_results_to = os.path.join(out_dir, task, 'panoptic_eval_results', '{}_with_{}'.format(
         lidarseg_method_name, det_or_track_method_name))
