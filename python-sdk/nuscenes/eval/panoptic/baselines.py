@@ -3,8 +3,10 @@ Script to generate baselines for nuScenes-panoptic tasks.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """
 import argparse
-import os
 import itertools
+import joblib
+import os
+import time
 from typing import List
 import zipfile
 
@@ -47,14 +49,16 @@ def get_prediction_json_path(prediction_dir: str) -> str:
     return prediction_json_path
 
 
-def main(out_dir: str,
-         lidarseg_preds_dir: str,
-         lidarseg_method_names: List[str],
-         det_or_track_preds_dir: str,
-         det_or_track_method_names: List[str],
-         task: str = 'tracking',
-         version: str = 'v1.0-test',
-         dataroot: str = '/data/sets/nuscenes') -> None:
+def panop_baselines_from_lidarseg_detect_track(out_dir: str,
+                                               lidarseg_preds_dir: str,
+                                               lidarseg_method_names: List[str],
+                                               det_or_track_preds_dir: str,
+                                               det_or_track_method_names: List[str],
+                                               task: str = 'tracking',
+                                               version: str = 'v1.0-test',
+                                               dataroot: str = '/data/sets/nuscenes',
+                                               n_jobs: int = -1,
+                                               verbose: bool = False) -> None:
     """
     Create baselines for a given panoptic task by merging the predictions of lidarseg and either tracking or detection
     methods.
@@ -69,57 +73,95 @@ def main(out_dir: str,
         segmentation).
     :param version: Version of nuScenes to use (e.g. "v1.0", ...).
     :param dataroot: Path to the tables and data for the specified version of nuScenes.
+    :param n_jobs: The maximum number of concurrently running jobs. If -1, all CPUs are used..
+    :param verbose: Whether to print messages to stdout.
     """
     # Prepare the required files.
     prepare_files(lidarseg_method_names, lidarseg_preds_dir)
     prepare_files(det_or_track_method_names, det_or_track_preds_dir)
 
-    nusc = NuScenes(version=version, dataroot=dataroot)
-    eval_set = nusc.version.split('-')[-1]
-
     # Get all possible pairwise permutations.
     baselines = list(itertools.product(lidarseg_method_names, det_or_track_method_names))
     print('There are {} baselines: {}'.format(len(baselines), baselines))
 
+    print("Generating and evaluating {} panoptic {} baselines...".format(len(baselines), task))
     # Get the predictions for the panoptic task at hand.
-    for i, (lidarseg_method, det_or_track_method) in enumerate(baselines):
-        print('{:02d}/{:02d}: Getting predictions for panoptic {} from {} and {}.'
-              .format(i + 1, len(baselines), task, lidarseg_method, det_or_track_method))
+    start_time = time.time()
 
-        dir_to_save_panoptic_preds_to = os.path.join(out_dir, task, 'panoptic_predictions',
-                                                     '{}_with_{}'.format(lidarseg_method, det_or_track_method))
-        os.makedirs(dir_to_save_panoptic_preds_to, exist_ok=True)
+    with joblib.Parallel(n_jobs=n_jobs) as parallel:
+        parallel([joblib.delayed(generate_and_evaluate_baseline)(out_dir,
+                                                                 lidarseg_preds_dir,
+                                                                 lidarseg_method_name,
+                                                                 det_or_track_preds_dir,
+                                                                 det_or_track_method_name,
+                                                                 task,
+                                                                 version,
+                                                                 dataroot,
+                                                                 verbose)
+                 for lidarseg_method_name, det_or_track_method_name in baselines])
 
-        dir_of_lidarseg_method_preds = os.path.join(lidarseg_preds_dir, lidarseg_method)
+    print("Generated and evaluated {} panoptic {} baselines in {} seconds.".format(
+        len(baselines), task, time.time() - start_time))
 
-        json_of_preds_by_det_or_track_method = get_prediction_json_path(
-            os.path.join(det_or_track_preds_dir, det_or_track_method))
 
-        generate_panoptic_labels(nusc,
-                                 dir_of_lidarseg_method_preds,
-                                 json_of_preds_by_det_or_track_method,
-                                 eval_set=eval_set,
-                                 task=task,
-                                 out_dir=dir_to_save_panoptic_preds_to,
-                                 verbose=True)
-        print('Panoptic {} predictions saved at {}.'.format(task, dir_to_save_panoptic_preds_to))
+def generate_and_evaluate_baseline(out_dir: str,
+                                   lidarseg_preds_dir: str,
+                                   lidarseg_method_name: str,
+                                   det_or_track_preds_dir: str,
+                                   det_or_track_method_name: str,
+                                   task: str = 'tracking',
+                                   version: str = 'v1.0-test',
+                                   dataroot: str = '/data/sets/nuscenes',
+                                   verbose: bool = False) -> None:
+    """
+    Generate panoptic predictions by merging a lidarseg method and a tracking (or detection) method, and evaluate the
+    panoptic predictions.
+    :param out_dir: Path to save any output to.
+    :param lidarseg_preds_dir: Path to the directory where the lidarseg predictions are stored.
+    :param lidarseg_method_name: A lidarseg method name.
+    :param det_or_track_preds_dir: Path to the directory which contains the predictions from some methods to merge with
+        those of lidarseg to create panoptic predictions of a particular task.
+    :param det_or_track_method_name: A tracking (or detection) method name to merge with lidarseg to create
+        panoptic predictions.
+    :param task: The task to create the panoptic predictions for and run evaluation on (either tracking or
+        segmentation).
+    :param version: Version of nuScenes to use (e.g. "v1.0", ...).
+    :param dataroot: Path to the tables and data for the specified version of nuScenes.
+    :param verbose: Whether to print messages to stdout.
+    """
+    nusc = NuScenes(version=version, dataroot=dataroot, verbose=verbose)
+    eval_set = nusc.version.split('-')[-1]
 
-        print('{:02d}/{:02d}: Evaluating predictions for panoptic {} from {} and {}.'
-              .format(i + 1, len(baselines), task, lidarseg_method, det_or_track_method))
-        dir_to_save_evaluation_results_to = os.path.join(out_dir, task, 'panoptic_eval_results',
-                                                         '{}_with_{}'.format(lidarseg_method, det_or_track_method))
-        os.makedirs(dir_to_save_evaluation_results_to, exist_ok=True)
-        dir_of_panoptic_preds = dir_to_save_panoptic_preds_to
-        evaluator = NuScenesPanopticEval(nusc=nusc,
-                                         results_folder=dir_of_panoptic_preds,
-                                         eval_set=eval_set,
-                                         task=task,
-                                         min_inst_points=15,
-                                         out_dir=dir_to_save_evaluation_results_to,
-                                         verbose=True)
-        evaluator.evaluate()
-        print('Evaluation for panoptic {} using predictions merged from {} and {} saved at {}.'
-              .format(task, lidarseg_method, det_or_track_method, dir_to_save_evaluation_results_to))
+    dir_to_save_panoptic_preds_to = os.path.join(out_dir, task, 'panoptic_predictions',
+                                                 '{}_with_{}'.format(lidarseg_method_name, det_or_track_method_name))
+    os.makedirs(dir_to_save_panoptic_preds_to, exist_ok=True)
+
+    dir_of_lidarseg_method_preds = os.path.join(lidarseg_preds_dir, lidarseg_method_name)
+
+    json_of_preds_by_det_or_track_method = get_prediction_json_path(
+        os.path.join(det_or_track_preds_dir, det_or_track_method_name))
+
+    generate_panoptic_labels(nusc,
+                             dir_of_lidarseg_method_preds,
+                             json_of_preds_by_det_or_track_method,
+                             eval_set=eval_set,
+                             task=task,
+                             out_dir=dir_to_save_panoptic_preds_to)
+
+    dir_to_save_evaluation_results_to = os.path.join(out_dir, task, 'panoptic_eval_results', '{}_with_{}'.format(
+        lidarseg_method_name, det_or_track_method_name))
+    os.makedirs(dir_to_save_evaluation_results_to, exist_ok=True)
+    dir_of_panoptic_preds = dir_to_save_panoptic_preds_to
+    evaluator = NuScenesPanopticEval(nusc=nusc,
+                                     results_folder=dir_of_panoptic_preds,
+                                     eval_set=eval_set,
+                                     task=task,
+                                     min_inst_points=15,
+                                     out_dir=dir_to_save_evaluation_results_to,
+                                     verbose=verbose)
+    evaluator.evaluate()
+    print('Evaluation for panoptic {} using predictions merged from {} and {} saved at {}.'
+          .format(task, lidarseg_method_name, det_or_track_method_name, dir_to_save_evaluation_results_to))
 
 
 if __name__ == '__main__':
@@ -150,15 +192,21 @@ if __name__ == '__main__':
                         help='Version of nuScenes to use (e.g. "v1.0", ...).')
     parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
                         help='Path to the tables and data for the specified version of nuScenes.')
+    parser.add_argument('--n_jobs', type=int, default=-1,
+                        help='The maximum number of concurrently running jobs. If -1, all CPUs are used.')
+    parser.add_argument('--verbose', type=bool, default=False,
+                        help='Whether to print messages to stdout.')
 
     args = parser.parse_args()
     print(args)
 
-    main(out_dir=args.out_dir,
-         lidarseg_preds_dir=args.lidarseg_preds_dir,
-         lidarseg_method_names=args.lidarseg_method_names,
-         det_or_track_preds_dir=args.det_or_track_preds_dir,
-         det_or_track_method_names=args.det_or_track_method_names,
-         task=args.task,
-         version=args.version,
-         dataroot=args.dataroot)
+    panop_baselines_from_lidarseg_detect_track(out_dir=args.out_dir,
+                                               lidarseg_preds_dir=args.lidarseg_preds_dir,
+                                               lidarseg_method_names=args.lidarseg_method_names,
+                                               det_or_track_preds_dir=args.det_or_track_preds_dir,
+                                               det_or_track_method_names=args.det_or_track_method_names,
+                                               task=args.task,
+                                               version=args.version,
+                                               dataroot=args.dataroot,
+                                               n_jobs=args.n_jobs,
+                                               verbose=args.verbose)
