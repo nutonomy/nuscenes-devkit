@@ -99,7 +99,7 @@ class NuScenesPanopticEval:
         if self.task == 'tracking':
             self.scene_name2tok = {rec['name']: rec['token'] for rec in nusc.scene}
             self.evaluator['tracking'] = PanopticTrackingEval(n_classes=self.num_classes,
-                                                              min_stuff_cls_id=len(self.things)+1, 
+                                                              min_stuff_cls_id=len(self.things) + 1,
                                                               ignore=[self.ignore_idx],
                                                               min_points=self.min_inst_points)
 
@@ -123,7 +123,7 @@ class NuScenesPanopticEval:
         Calculate panoptic segmentation metrics.
         :return: A dict of panoptic metrics for mean of all classes and each class.
             {
-                "all": { "PQ": float, "SQ": float, "RQ": float, "IoU": float, "PQ_dagger": float},
+                "all": { "PQ": float, "SQ": float, "RQ": float, "mIoU": float, "PQ_dagger": float},
                 "ignore": { "PQ": float, "SQ": float, "RQ": float, "IoU": float},
                 "car": { "PQ": float, "SQ": float, "RQ": float, "IoU": float},
                 ...
@@ -186,7 +186,7 @@ class NuScenesPanopticEval:
         class_all_iou = class_all_iou.flatten().tolist()
 
         results = dict()
-        results["all"] = dict(PQ=mean_pq, SQ=mean_sq, RQ=mean_rq, IoU=mean_iou)
+        results["all"] = dict(PQ=mean_pq, SQ=mean_sq, RQ=mean_rq, mIoU=mean_iou)
         for idx, (pq, rq, sq, iou) in enumerate(zip(class_all_pq, class_all_rq, class_all_sq, class_all_iou)):
             results[self.id2name[idx]] = dict(PQ=pq, SQ=sq, RQ=rq, IoU=iou)
         thing_pq_list = [float(results[c]["PQ"]) for c in self.things]
@@ -200,8 +200,8 @@ class NuScenesPanopticEval:
         Calculate multi-object panoptic tracking metrics.
         :return: A dict of panoptic metrics for mean of all classes and each class.
             {
-                "all": { "PTQ": float, "sPTQ": float, "LSTQ": float, "IoU": float, "S_assoc": float,
-                         "PTQ_dagger": float},
+                "all": { "PTQ": float, "sPTQ": float, "LSTQ": float, "mIoU": float, "S_assoc": float,
+                         "PTQ_dagger": float, "MOTSA": float, sMOTSA: float, MOTSP: float},
                 "ignore": { "PTQ": float, "sPTQ": float, "IoU": float},
                 "car": { "PTQ": float, "sPTQ": float, "IoU": float},
                 ...
@@ -243,20 +243,34 @@ class NuScenesPanopticEval:
         mean_ptq, class_all_ptq, mean_sptq, class_all_sptq = self.evaluator['tracking'].get_ptq()
         mean_iou, class_all_iou = self.evaluator['tracking'].getSemIoU()
         lstq, s_assoc = self.evaluator['tracking'].get_lstq()
+        mean_motsa, mean_s_motsa, mean_motsp = self.evaluator['tracking'].get_motsa()
 
-        results = self.wrap_result_mopt(mean_ptq, mean_sptq, mean_iou, class_all_ptq, class_all_sptq, class_all_iou,
-                                        lstq, s_assoc)
+        results = self.wrap_result_mopt(mean_ptq=mean_ptq,
+                                        class_all_ptq=class_all_ptq,
+                                        mean_sptq=mean_sptq,
+                                        class_all_sptq=class_all_sptq,
+                                        mean_iou=mean_iou,
+                                        class_all_iou=class_all_iou,
+                                        lstq=lstq,
+                                        s_assoc=s_assoc,
+                                        mean_motsa=mean_motsa,
+                                        mean_s_motsa=mean_s_motsa,
+                                        mean_motsp=mean_motsp)
+
         return results
 
     def wrap_result_mopt(self,
                          mean_ptq: np.ndarray,
-                         mean_sptq: np.ndarray,
-                         mean_iou: np.ndarray,
                          class_all_ptq: np.ndarray,
+                         mean_sptq: np.ndarray,
                          class_all_sptq: np.ndarray,
+                         mean_iou: np.ndarray,
                          class_all_iou: np.ndarray,
                          lstq: np.ndarray,
-                         s_assoc: np.ndarray) -> Dict[str, Any]:
+                         s_assoc: np.ndarray,
+                         mean_motsa: np.ndarray,
+                         mean_s_motsa: np.ndarray,
+                         mean_motsp: np.ndarray) -> Dict[str, Any]:
         """
         Wrap up MOPT results to dictionary.
         :param mean_ptq: <float64: 1>, Mean PTQ score over all classes.
@@ -267,6 +281,9 @@ class NuScenesPanopticEval:
         :param class_all_iou: <float64: num_classes,>, IoU scores for each class.
         :param lstq: <float64: 1>, LiDAR Segmentation and Tracking Quality (LSTQ) score over all classes.
         :param s_assoc: <float64: 1>, Association Score over all classes.
+        :param mean_motsa: <float64: 1>, Mean MOTSA score over all thing classes.
+        :param mean_s_motsa: <float64: 1>, Mean sMOTSA score over all thing classes.
+        :param mean_motsp: <float64: 1>, Mean MOTSP score over all thing classes.
         :return: A dict of multi-object panoptic tracking metrics.
         """
         mean_ptq, mean_sptq, mean_iou = mean_ptq.item(), mean_sptq.item(), mean_iou.item()
@@ -275,7 +292,8 @@ class NuScenesPanopticEval:
         class_all_iou = class_all_iou.flatten().tolist()
 
         results = dict()
-        results["all"] = dict(PTQ=mean_ptq, sPTQ=mean_sptq, LSTQ=lstq, IoU=mean_iou, S_assoc=s_assoc)
+        results["all"] = dict(PTQ=mean_ptq, sPTQ=mean_sptq, LSTQ=lstq, mIoU=mean_iou, S_assoc=s_assoc,
+                              MOTSA=mean_motsa, sMOTSA=mean_s_motsa, MOTSP=mean_motsp)
         for idx, (ptq, sptq, iou) in enumerate(zip(class_all_ptq, class_all_sptq, class_all_iou)):
             results[self.id2name[idx]] = dict(PTQ=ptq, sPTQ=sptq, IoU=iou)
         thing_ptq_list = [float(results[c]["PTQ"]) for c in self.things]

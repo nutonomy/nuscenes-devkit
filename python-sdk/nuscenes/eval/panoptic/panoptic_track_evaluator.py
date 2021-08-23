@@ -259,10 +259,53 @@ class PanopticTrackingEval(PanopticEval):
 
         ptq_all = ((iou - ids) / tp_eps) * (tp / tp_half_fp_half_fn_eps)  # Calculate PTQ of all classes.
         soft_ptq_all = ((iou - soft_ids) / tp_eps) * (tp / tp_half_fp_half_fn_eps)  # Calculate soft-PTQ of all classes.
-        mean_ptq = ptq_all[self.include].mean()  # Mean PTQ over all classes except ignored classes.
-        mean_soft_ptq = soft_ptq_all[self.include].mean()  # Mean soft-PTQ over all classes except ignored classes.
+
+        ground_truths = tp + fn
+        # Get classes that at least has 1 ground truth instance (use threshold 0.5), and is included in self.include.
+        valid_classes = ground_truths > 0.5
+        for i in range(valid_classes.shape[0]):
+            if i not in self.include:
+                valid_classes[i] = False
+
+        # Mean PTQ and sPTQ over all classes except invalid (ignored or classes has zero ground truth) classes.
+        mean_ptq = ptq_all[valid_classes].mean()
+        mean_soft_ptq = soft_ptq_all[valid_classes].mean()
 
         return mean_ptq, ptq_all, mean_soft_ptq, soft_ptq_all
+
+    def get_motsa(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Calculate MOTSA metrics.
+        :return: (mean_MOTSA, mean_sMOTSA, mean_MOTSP).
+            mean_MOTSA: <float64, 1>, mean MOTSA score over all thing classes.
+            mean_sMOTSA: <float64, 1>, mean soft-MOTSA score over all thing classes.
+            mean_sMOTSP: <float64, 1>, mean soft-MOTSP score over all thing classes.
+        """
+        iou = self.pan_iou[1:self.min_stuff_cls_id].astype(np.double)
+        ids = self.pan_ids[1:self.min_stuff_cls_id].astype(np.double)
+
+        # Get tp, fp, and fn for all things: class 1:min_stuff_cls_id.
+        tp = self.pan_tp[1:self.min_stuff_cls_id].astype(np.double)
+        fp = self.pan_fp[1:self.min_stuff_cls_id].astype(np.double)
+        tp_eps, fn = np.maximum(tp, self.eps), self.pan_fn[1:self.min_stuff_cls_id].astype(np.double)
+
+        ground_truths = tp + fn
+        # Get classes that at least has 1 ground truth instance (use threshold 0.5), and is included in self.include.
+        valid_classes = ground_truths > 0.5
+        for i in range(valid_classes.shape[0]):
+            if i + 1 not in self.include:  # i + 1 as valid_clssses covers class IDs of 1:self.min_stuff_cls_id.
+                valid_classes[i] = False
+
+        # Calculate MOTSA of all valid thing classes.
+        motsa = (tp - fp - ids)[valid_classes] / (tp_eps + fn)[valid_classes]
+        # Calculate sMOTSA of all valid thing classes.
+        s_motsa = (iou - fp - ids)[valid_classes] / (tp_eps + fn)[valid_classes]
+        motsp = iou[valid_classes] / tp_eps[valid_classes]
+        mean_motsa = motsa.mean()  # Mean MOTSA over all thing classes.
+        mean_s_motsa = s_motsa.mean()  # Mean sMOTSA over all thing classes.
+        mean_motsp = motsp.mean()
+
+        return mean_motsa, mean_s_motsa, mean_motsp
 
     def get_lstq(self) -> Tuple[np.ndarray, np.ndarray]:
         """
