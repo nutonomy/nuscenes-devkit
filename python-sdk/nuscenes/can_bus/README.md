@@ -116,9 +116,9 @@ Frequency: 794-973Hz
 
 Format: `scene_0001_zoesensors.json`
 
-- brake_sensor: \[1\] Vehicle break sensor in range \[0.375,0.411\]. High values indicate breaking.
-- steering_sensor: \[1\] Vehicle steering sensor. Same as vehicle_monitor.steering.
-- throttle_sensor: \[1\] Vehicle throttle sensor. Same as vehicle_monitor.throttle.
+- brake_sensor: \[1\] Vehicle brake sensor in range \[0.166, 0.631\]. High values indicate braking.
+- steering_sensor: \[1\] Vehicle steering sensor in range \[0.176, 0.252\].
+- throttle_sensor: \[1\] Vehicle throttle sensor in range \[0.105, 0.411]\.
 
 ### Zoe Vehicle Info
 Frequency: 100Hz
