@@ -74,6 +74,8 @@ def generate_panoptic_labels(nusc: NuScenes, out_dir: str, verbose: bool = False
         panop_labels[overlap_box_count > 1] = 0  # Set pixels overlapped by > 1 boxes to 0.
 
         # Thing pixels that are not inside any box have instance id == 0, reset them to 0.
+        # For these pixels that have thing semantic classes, but do not fall inside any annotation box, set their
+        # panoptic label to 0.
         semantic_labels = panop_labels // 1000
         thing_mask = np.logical_and(semantic_labels > 0, semantic_labels < STUFF_START_CLASS_ID)
         pixels_wo_box = np.logical_and(thing_mask, panop_labels % 1000 == 0)
