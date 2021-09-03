@@ -207,7 +207,7 @@ different segments.
 
 ### Multi-Object Panoptic Tracking
 #### Panoptic Tracking Quality (PTQ)
-We use PTQ [Juana et al.](https://arxiv.org/pdf/2004.08189.pdf) that extends PQ with the IoU of matched segments with
+We use PTQ [Hurtado et al.](https://arxiv.org/pdf/2004.08189.pdf) that extends PQ with the IoU of matched segments with
 track ID discrepancy, penalizing the incorrect track predictions. PTQ is defined as
 (∑{**1**(p,g) IoU(p,g)} - |IDS|) / (|TP|+ 0.5|FP|+ 0.5|FN|), where IDS stands for ID switches, and it is computed as
 the number of true positives (TP) that differ between tracking prediction and ground truth.

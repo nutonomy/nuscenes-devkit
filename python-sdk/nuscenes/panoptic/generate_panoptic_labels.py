@@ -15,6 +15,7 @@ import numpy as np
 from tqdm import tqdm
 
 from nuscenes.nuscenes import NuScenes
+from nuscenes.panoptic.panoptic_utils import STUFF_START_CLASS_ID
 from nuscenes.utils.data_classes import LidarSegPointCloud
 from nuscenes.utils.geometry_utils import points_in_box
 
@@ -70,7 +71,13 @@ def generate_panoptic_labels(nusc: NuScenes, out_dir: str, verbose: bool = False
                     panop_labels[indices[index]] += instance_id
                     overlap_box_count[indices[index]] += 1
 
-        panop_labels[overlap_box_count > 1] = 0
+        panop_labels[overlap_box_count > 1] = 0  # Set pixels overlapped by > 1 boxes to 0.
+
+        # Thing pixels that are not inside any box have instance id == 0, reset them to 0.
+        semantic_labels = panop_labels // 1000
+        thing_mask = np.logical_and(semantic_labels > 0, semantic_labels < STUFF_START_CLASS_ID)
+        pixels_wo_box = np.logical_and(thing_mask, panop_labels % 1000 == 0)
+        panop_labels[pixels_wo_box] = 0
 
         panoptic_file = nusc.get('lidarseg', lidar_token)['filename'].split('/')[-1]
         panoptic_file = panoptic_file.replace('lidarseg', 'panoptic')
