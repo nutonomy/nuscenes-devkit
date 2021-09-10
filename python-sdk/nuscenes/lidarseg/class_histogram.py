@@ -63,16 +63,18 @@ def render_histogram(nusc: NuScenes,
                      font_size: int = 20,
                      save_as_img_name: str = None) -> None:
     """
-    Render a histogram for the given nuScenes split.
+    Render two histograms for the given nuScenes split. The top histogram depicts the number of scan-wise instances
+    for each class, while the bottom histogram depicts the number of points for each class.
     :param nusc: A nuScenes object.
-    :param sort_by: How to sort the classes:
+    :param sort_by: How to sort the classes to display in the plot (note that the x-axis, where the class names will be
+        displayed on, is shared by the two histograms):
         - count_desc: Sort the classes by the number of points belonging to each class, in descending order.
         - count_asc: Sort the classes by the number of points belonging to each class, in ascending order.
         - name: Sort the classes by alphabetical order.
         - index: Sort the classes by their indices.
-    :param verbose: Whether to display plot in a window after rendering.
-    :param font_size: Size of the font to use for the histogram.
-    :param save_as_img_name: Path (including image name and extension) to save the histogram as.
+    :param verbose: Whether to display the plot in a window after rendering.
+    :param font_size: Size of the font to use for the plot.
+    :param save_as_img_name: Path (including image name and extension) to save the plot as.
     """
 
     # Get the statistics for the given nuScenes split.
@@ -91,12 +93,12 @@ def render_histogram(nusc: NuScenes,
     histograms_config = dict({
         'panoptic': {
             'y_values': list(panoptic_num_instances_per_class.values()),
-            'y_label': 'No. of instances (log)',
+            'y_label': 'No. of instances',
             'y_scale': 'log'
         },
         'lidarseg': {
             'y_values': list(lidarseg_num_points_per_class.values()),
-            'y_label': 'No. of lidar points (log)',
+            'y_label': 'No. of lidar points',
             'y_scale': 'log'
         }
     })
@@ -158,32 +160,6 @@ def render_histogram(nusc: NuScenes,
         plt.show()
 
 
-class MathTextSciFormatter(mticker.Formatter):
-    """
-    # TODO
-    https://newbedev.com/show-decimal-places-and-scientific-notation-on-the-axis-of-a-matplotlib-plot
-    https://stackoverflow.com/questions/27694221/using-python-libraries-to-plot-two-horizontal-bar-charts-sharing-same-y-axis
-    """
-    def __init__(self, fmt="%1.2e"):
-        self.fmt = fmt
-
-    def __call__(self, x, pos=None):
-        s = self.fmt % x
-        decimal_point = '.'
-        positive_sign = '+'
-        tup = s.split('e')
-        significand = tup[0].rstrip(decimal_point)
-        sign = tup[1][0].replace(positive_sign, '')
-        exponent = tup[1][1:].lstrip('0')
-        if exponent:
-            exponent = '10^{%s%s}' % (sign, exponent)
-        if significand and exponent:
-            s = r'%s{\times}%s' % (significand, exponent)
-        else:
-            s = r'%s%s' % (significand, exponent)
-        return "${}$".format(s)
-
-
 def get_lidarseg_num_points_per_class(nusc: NuScenes, sort_by: str = 'count_desc') -> Dict[str, int]:
     """
     Get the number of points belonging to each class for the given nuScenes split.
@@ -230,47 +206,35 @@ def get_lidarseg_num_points_per_class(nusc: NuScenes, sort_by: str = 'count_desc
 
 def get_panoptic_num_instances_per_class(nusc: NuScenes, sort_by: str = 'count_desc') -> Dict[str, int]:
     """
-    Get the number of instances belonging to each class for the given nuScenes split.
+    Get the number of scan-wise instances belonging to each class for the given nuScenes split.
     :param nusc: A NuScenes object.
     :param sort_by: How to sort the classes:
-        - count_desc: Sort the classes by the number of points belonging to each class, in descending order.
-        - count_asc: Sort the classes by the number of points belonging to each class, in ascending order.
+        - count_desc: Sort the classes by the number of instances belonging to each class, in descending order.
+        - count_asc: Sort the classes by the number of instances belonging to each class, in ascending order.
         - name: Sort the classes by alphabetical order.
         - index: Sort the classes by their indices.
-    :return: A dictionary whose keys are the class names and values are the corresponding number of points for each
-        class.
+    :return: A dictionary whose keys are the class names and values are the corresponding number of scan-wise instances
+        for each class.
     """
-    nusc_panoptic = getattr(nusc, 'panoptic')
-
-    scene_inst_stats = dict()
-    for frame_id, record_panoptic in enumerate(nusc_panoptic):
-        panoptic_label_filename = os.path.join(nusc.dataroot, record_panoptic['filename'])
-        panoptic_label = load_bin_file(panoptic_label_filename, type='panoptic')
-        sample_token = nusc.get('sample_data', record_panoptic['sample_data_token'])['sample_token']
-        scene_token = nusc.get('sample', sample_token)['scene_token']
-        if scene_token not in scene_inst_stats:
-            scene_inst_stats[scene_token] = np.empty((0, 4), dtype=np.int32)
-        frame_cat_inst_count = get_frame_panoptic_instances(panoptic_label=panoptic_label, frame_id=frame_id)
-        scene_inst_stats[scene_token] = np.append(scene_inst_stats[scene_token], frame_cat_inst_count, axis=0)
-
-    panoptic_instances_stats = get_panoptic_instances_stats(scene_inst_stats,
-                                                            nusc.lidarseg_idx2name_mapping,
-                                                            get_hist=True)
-
-    num_instances_per_class = dict()
-    for class_name, class_instance_stats in panoptic_instances_stats['per_category_panoptic_stats'].items():
-        num_instances_per_class[class_name] = class_instance_stats['num_instances']
+    sequence_wise_instances_per_class = dict()
+    for instance in nusc.instance:
+        instance_class = nusc.get('category', instance['category_token'])['name']
+        if instance_class not in sequence_wise_instances_per_class.keys():
+            sequence_wise_instances_per_class[instance_class] = 0
+        sequence_wise_instances_per_class[instance_class] += instance['nbr_annotations']
 
     if sort_by == 'count_desc':
-        num_instances_per_class = dict(sorted(num_instances_per_class.items(), key=lambda item: item[1], reverse=True))
+        sequence_wise_instances_per_class = dict(
+            sorted(sequence_wise_instances_per_class.items(), key=lambda item: item[1], reverse=True))
     elif sort_by == 'count_asc':
-        num_instances_per_class = dict(sorted(num_instances_per_class.items(), key=lambda item: item[1]))
+        sequence_wise_instances_per_class = dict(
+            sorted(sequence_wise_instances_per_class.items(), key=lambda item: item[1]))
     elif sort_by == 'name':
-        num_instances_per_class = dict(sorted(num_instances_per_class.items()))
+        sequence_wise_instances_per_class = dict(sorted(sequence_wise_instances_per_class.items()))
     elif sort_by == 'index':
-        num_instances_per_class = dict(num_instances_per_class.items())
+        sequence_wise_instances_per_class = dict(sequence_wise_instances_per_class.items())
     else:
         raise Exception('Error: Invalid sorting mode {}. '
                         'Only `count_desc`, `count_asc`, `name` or `index` are valid.'.format(sort_by))
 
-    return num_instances_per_class
+    return sequence_wise_instances_per_class
