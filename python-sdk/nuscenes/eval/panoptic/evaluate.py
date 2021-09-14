@@ -40,8 +40,10 @@ class NuScenesPanopticEval:
     nuScenes-panoptic uses the following metrics:
     - Panoptic Segmentation: we use the PQ (Panoptic Quality) metric: which is defined as:
       PQ = IOU/(TP + 0.5*FP + 0.5*FN).
-    - Multi-object Panoptic Tracking: we use the PTQ (Panoptic Tracking Quality) metric, which is defined as:
-      PTQ = (IOU - IDSs) / (TP + 0.5*FP + 0.5*FN).
+    - Multi-object Panoptic Tracking: we use the PAT (Panoptic Tracking) metric, which is defined as:
+      PAT = 2*PQ*TQ / (PQ + TQ) where TQ is as defined in the paper: 
+      Panoptic nuScenes: A Large-Scale Benchmark for LiDAR Panoptic Segmentation and Tracking 
+      (https://arxiv.org/pdf/2109.03805.pdf)
     """
 
     def __init__(self,
@@ -240,12 +242,16 @@ class NuScenesPanopticEval:
                     break
                 cur_token = cur_sample['next']
 
+        pat, mean_pq, mean_tq = self.evaluator['tracking'].get_pat()
         mean_ptq, class_all_ptq, mean_sptq, class_all_sptq = self.evaluator['tracking'].get_ptq()
         mean_iou, class_all_iou = self.evaluator['tracking'].getSemIoU()
         lstq, s_assoc = self.evaluator['tracking'].get_lstq()
         mean_motsa, mean_s_motsa, mean_motsp = self.evaluator['tracking'].get_motsa()
 
-        results = self.wrap_result_mopt(mean_ptq=mean_ptq,
+        results = self.wrap_result_mopt(pat=pat,
+                                        mean_pq=mean_pq,
+                                        mean_tq=mean_ptq,
+                                        mean_ptq=mean_ptq,
                                         class_all_ptq=class_all_ptq,
                                         mean_sptq=mean_sptq,
                                         class_all_sptq=class_all_sptq,
@@ -260,6 +266,9 @@ class NuScenesPanopticEval:
         return results
 
     def wrap_result_mopt(self,
+                         pat: np.ndarray,
+                         mean_pq: np.ndarray,
+                         mean_tq: np.ndarray,
                          mean_ptq: np.ndarray,
                          class_all_ptq: np.ndarray,
                          mean_sptq: np.ndarray,
@@ -273,6 +282,9 @@ class NuScenesPanopticEval:
                          mean_motsp: np.ndarray) -> Dict[str, Any]:
         """
         Wrap up MOPT results to dictionary.
+        :param pat: <float64: 1>, Panoptic Tracking (PAT) score over all classes.
+        :param mean_pq: <float64: 1>, Mean Panoptic Quality over all classes.
+        :param mean_tq: <float64: 1>, Mean Tracking Quality over all temporally unique instances.
         :param mean_ptq: <float64: 1>, Mean PTQ score over all classes.
         :param mean_sptq: <float64: 1>, Mean soft-PTQ score over all classes.
         :param mean_iou: <float64: 1>, Mean IoU score over all classes.
@@ -286,14 +298,16 @@ class NuScenesPanopticEval:
         :param mean_motsp: <float64: 1>, Mean MOTSP score over all thing classes.
         :return: A dict of multi-object panoptic tracking metrics.
         """
+        pat, mean_pq, mean_tq = pat.item(), mean_pq.item(), mean_tq.item()
         mean_ptq, mean_sptq, mean_iou = mean_ptq.item(), mean_sptq.item(), mean_iou.item()
         class_all_ptq = class_all_ptq.flatten().tolist()
         class_all_sptq = class_all_sptq.flatten().tolist()
         class_all_iou = class_all_iou.flatten().tolist()
 
         results = dict()
-        results["all"] = dict(PTQ=mean_ptq, sPTQ=mean_sptq, LSTQ=lstq, mIoU=mean_iou, S_assoc=s_assoc,
-                              MOTSA=mean_motsa, sMOTSA=mean_s_motsa, MOTSP=mean_motsp)
+        results["all"] = dict(PAT=pat, PQ=mean_pq, TQ=mean_tq, PTQ=mean_ptq, sPTQ=mean_sptq,
+                              LSTQ=lstq, mIoU=mean_iou, S_assoc=s_assoc, MOTSA=mean_motsa,
+                              sMOTSA=mean_s_motsa, MOTSP=mean_motsp)
         for idx, (ptq, sptq, iou) in enumerate(zip(class_all_ptq, class_all_sptq, class_all_iou)):
             results[self.id2name[idx]] = dict(PTQ=ptq, sPTQ=sptq, IoU=iou)
         thing_ptq_list = [float(results[c]["PTQ"]) for c in self.things]
