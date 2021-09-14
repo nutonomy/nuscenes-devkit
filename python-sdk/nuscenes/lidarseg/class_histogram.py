@@ -150,7 +150,6 @@ def render_histogram(nusc: NuScenes,
 
         if config['y_scale'] == 'linear':
             axes[i].yaxis.set_major_formatter(mticker.FormatStrFormatter('%.1e'))
-            # axes[i].yaxis.set_major_formatter(MathTextSciFormatter('%1.0e'))
 
     if save_as_img_name:
         plt.tight_layout()
