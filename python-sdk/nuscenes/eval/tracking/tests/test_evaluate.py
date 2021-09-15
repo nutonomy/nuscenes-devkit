@@ -14,7 +14,6 @@ from tqdm import tqdm
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.tracking.constants import TRACKING_NAMES
 from nuscenes.eval.tracking.evaluate import TrackingEval
 from nuscenes.eval.tracking.utils import category_to_tracking_name
 from nuscenes.utils.splits import create_splits_scenes
@@ -41,10 +40,12 @@ class TestMain(unittest.TestCase):
         :param split: Dataset split to use.
         :param add_errors: Whether to use GT or add errors to it.
         """
+        # Get config.
+        cfg = config_factory('tracking_nips_2019')
 
         def random_class(category_name: str, _add_errors: bool = False) -> Optional[str]:
             # Alter 10% of the valid labels.
-            class_names = sorted(TRACKING_NAMES)
+            class_names = sorted(cfg.tracking_names)
             tmp = category_to_tracking_name(category_name)
 
             if tmp is None:

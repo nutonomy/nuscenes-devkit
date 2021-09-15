@@ -1,19 +1,22 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, Caglayan Dicle and Oscar Beijbom, 2019.
 
-from typing import Dict, Tuple, Any
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
 from nuscenes.eval.common.utils import center_distance
-from nuscenes.eval.tracking.constants import TRACKING_NAMES, TRACKING_METRICS, AMOT_METRICS
+from nuscenes.eval.tracking.constants import TRACKING_METRICS, AMOT_METRICS
 
 
 class TrackingConfig:
     """ Data class that specifies the tracking evaluation settings. """
 
     def __init__(self,
+                 tracking_names: List[str],
+                 pretty_tracking_names: Dict[str, str],
+                 tracking_colors: Dict[str, str],
                  class_range: Dict[str, int],
                  dist_fcn: str,
                  dist_th_tp: float,
@@ -22,8 +25,12 @@ class TrackingConfig:
                  metric_worst: Dict[str, float],
                  num_thresholds: int):
 
-        assert set(class_range.keys()) == set(TRACKING_NAMES), "Class count mismatch."
-
+        assert set(class_range.keys()) == set(tracking_names), "Class count mismatch."
+        global TRACKING_NAMES
+        TRACKING_NAMES = tracking_names
+        self.tracking_names = tracking_names
+        self.pretty_tracking_names = pretty_tracking_names
+        self.tracking_colors = tracking_colors
         self.class_range = class_range
         self.dist_fcn = dist_fcn
         self.dist_th_tp = dist_th_tp
@@ -45,6 +52,9 @@ class TrackingConfig:
     def serialize(self) -> dict:
         """ Serialize instance into json-friendly format. """
         return {
+            'tracking_names': self.tracking_names,
+            'pretty_tracking_names': self.pretty_tracking_names,
+            'tracking_colors': self.tracking_colors,
             'class_range': self.class_range,
             'dist_fcn': self.dist_fcn,
             'dist_th_tp': self.dist_th_tp,
@@ -57,7 +67,10 @@ class TrackingConfig:
     @classmethod
     def deserialize(cls, content: dict):
         """ Initialize from serialized dictionary. """
-        return cls(content['class_range'],
+        return cls(content['tracking_names'],
+                   content['pretty_tracking_names'],
+                   content['tracking_colors'],
+                   content['class_range'],
                    content['dist_fcn'],
                    content['dist_th_tp'],
                    content['min_recall'],

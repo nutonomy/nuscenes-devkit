@@ -188,12 +188,11 @@ class TrackingEval:
             return os.path.join(self.plot_dir, name + '.pdf')
 
         # Plot a summary.
-        summary_plot(md_list, min_recall=self.cfg.min_recall, savepath=savepath('summary'))
+        summary_plot(self.cfg, md_list, savepath=savepath('summary'))
 
         # For each metric, plot all the classes in one diagram.
         for metric_name in LEGACY_METRICS:
-            recall_metric_curve(md_list, metric_name,
-                                self.cfg.min_recall, savepath=savepath('%s' % metric_name))
+            recall_metric_curve(self.cfg, md_list, metric_name, savepath=savepath('%s' % metric_name))
 
     def main(self, render_curves: bool = True) -> Dict[str, Any]:
         """
@@ -230,7 +229,7 @@ if __name__ == "__main__":
     # Settings.
     parser = argparse.ArgumentParser(description='Evaluate nuScenes tracking results.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('result_path', type=str, help='The submission as a JSON file.')
+    parser.add_argument('--result_path', type=str, help='The submission as a JSON file.')
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='val',

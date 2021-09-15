@@ -10,21 +10,21 @@ from pandas import DataFrame
 from pyquaternion import Quaternion
 
 from nuscenes.eval.common.render import setup_axis
-from nuscenes.eval.tracking.constants import TRACKING_COLORS, PRETTY_TRACKING_NAMES
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricDataList
 from nuscenes.utils.data_classes import Box
+from nuscenes.eval.tracking.data_classes import TrackingConfig
 
 Axis = Any
 
 
-def summary_plot(md_list: TrackingMetricDataList,
-                 min_recall: float,
+def summary_plot(cfg: TrackingConfig,
+                 md_list: TrackingMetricDataList,
                  ncols: int = 2,
                  savepath: str = None) -> None:
     """
     Creates a summary plot with which includes all traditional metrics for each class.
+    :param cfg: A TrackingConfig object.
     :param md_list: TrackingMetricDataList instance.
-    :param min_recall: Minimum recall value.
     :param ncols: How many columns the resulting plot should have.
     :param savepath: If given, saves the the rendering here instead of displaying.
     """
@@ -38,7 +38,7 @@ def summary_plot(md_list: TrackingMetricDataList,
     for ind, metric_name in enumerate(rel_metrics):
         row = ind // ncols
         col = np.mod(ind, ncols)
-        recall_metric_curve(md_list, metric_name, min_recall, ax=axes[row, col])
+        recall_metric_curve(cfg, md_list, metric_name, ax=axes[row, col])
 
     # Set layout with little white space and save to disk.
     plt.tight_layout()
@@ -47,19 +47,20 @@ def summary_plot(md_list: TrackingMetricDataList,
         plt.close()
 
 
-def recall_metric_curve(md_list: TrackingMetricDataList,
+def recall_metric_curve(cfg: TrackingConfig,
+                        md_list: TrackingMetricDataList,
                         metric_name: str,
-                        min_recall: float,
                         savepath: str = None,
                         ax: Axis = None) -> None:
     """
     Plot the recall versus metric curve for the given metric.
+    :param cfg: A TrackingConfig object.
     :param md_list: TrackingMetricDataList instance.
     :param metric_name: The name of the metric to plot.
-    :param min_recall: Minimum recall value.
     :param savepath: If given, saves the the rendering here instead of displaying.
     :param ax: Axes onto which to render or None to create a new axis.
     """
+    min_recall = cfg.min_recall  # Minimum recall value from config.
     # Setup plot.
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=(7.5, 5))
@@ -84,8 +85,8 @@ def recall_metric_curve(md_list: TrackingMetricDataList,
 
         ax.plot(recalls,
                 values,
-                label='%s' % PRETTY_TRACKING_NAMES[tracking_name],
-                color=TRACKING_COLORS[tracking_name])
+                label='%s' % cfg.pretty_tracking_names[tracking_name],
+                color=cfg.tracking_colors[tracking_name])
 
     # Scale count statistics and FAF logarithmically.
     if metric_name in ['mt', 'ml', 'faf', 'tp', 'fp', 'fn', 'ids', 'frag']:
