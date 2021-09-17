@@ -202,8 +202,9 @@ class NuScenesPanopticEval:
         Calculate multi-object panoptic tracking metrics.
         :return: A dict of panoptic metrics for mean of all classes and each class.
             {
-                "all": { "PTQ": float, "sPTQ": float, "LSTQ": float, "mIoU": float, "S_assoc": float,
-                         "PTQ_dagger": float, "MOTSA": float, sMOTSA: float, MOTSP: float},
+                "all": { "PAT": float, "PQ": float, "TQ": float, PTQ": float, "sPTQ": float, "LSTQ": float,
+                         "mIoU": float, "S_assoc": float, "PTQ_dagger": float, "MOTSA": float, "sMOTSA": float,
+                         "MOTSP": float},
                 "ignore": { "PTQ": float, "sPTQ": float, "IoU": float},
                 "car": { "PTQ": float, "sPTQ": float, "IoU": float},
                 ...

@@ -80,8 +80,7 @@ class PanopticTrackingEval(PanopticEval):
                                  x_inst_row: np.ndarray = None,
                                  scene: str = None,
                                  cl: int = None)\
-            -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Dict[int, int],
-                     Dict[int, int], np.ndarray]:
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, Dict[int, int], Dict[int, int], np.ndarray]:
         """
         Calculate class-specific panoptic tracking stats given predicted instances and target instances.
         :param x_inst_in_cl: <np.int64: num_points>, instance IDs of each point for predicted instances.
@@ -411,7 +410,7 @@ class PanopticTrackingEval(PanopticEval):
         pq = pq_all[self.include].mean()
 
         accumulate_tq = 0.0
-        accumlate_norm = 0
+        accumulate_norm = 0
 
         for seq in self.sequences:
             preds = self.instance_preds[seq]
@@ -426,12 +425,12 @@ class PanopticTrackingEval(PanopticEval):
                     unique_pr_id, counts_pr_id = unique_pr_id[unique_pr_id != 1], counts_pr_id[unique_pr_id != 1] 
                     fp_pr_id = []
 
-                    # Computes the total false positve for each prediction id:
+                    # Computes the total false positive for each prediction id:
                     #     preds[uid]: TPA + FPA (class-agnostic)
                     #     counts_pr_id[idx]: TPA (class-agnostic)
                     # If prediction id is not in preds it means it has number of points < self.min_points.
-                    # Similar to PQ computation we consider pred with number of points < self.min_points with IoU overlap greater than 0.5
-                    # with gt as TPA but not for FPA (the else part).
+                    # Similar to PQ computation we consider pred with number of points < self.min_points 
+                    # with IoU overlap greater than 0.5 over gt as TPA but not for FPA (the else part).
                     for idx, uid in enumerate(unique_pr_id):
                         if uid in preds:
                             fp_pr_id.append(preds[uid] - counts_pr_id[idx])
@@ -451,8 +450,8 @@ class PanopticTrackingEval(PanopticEval):
                         # Total possible id switches
                         total_ids = track_length - 1
                         # Gt tracks with no corresponding prediction match are assigned 1.
-                        # We consider an id switch occurs if previous predicted id and the current one don't match for the given gt track
-                        # or if there is no matching prediction for the given gt track 
+                        # We consider an id switch occurs if previous predicted id and the current one doesn't match
+                        # for the given gt tracker or if there is no matching prediction for the given gt track
                         for pr_id in pr_ids:
                             if s_id != -1:
                                 if pr_id != s_id or s_id == 1: 
@@ -462,9 +461,9 @@ class PanopticTrackingEval(PanopticEval):
                     # Accumulate TQ over all the possible unique gt instances
                     accumulate_tq += np.sqrt(gt_id_aq * gt_id_is)
                     # Count the total number of unique gt instances
-                    accumlate_norm +=1 
+                    accumulate_norm += 1 
         # Normalization
-        tq = np.array(accumulate_tq/accumlate_norm)
+        tq = np.array(accumulate_tq/accumulate_norm)
         pat = (2 * pq * tq) / (pq + tq)
         return pat, pq, tq
 
