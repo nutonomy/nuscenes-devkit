@@ -229,7 +229,7 @@ if __name__ == "__main__":
     # Settings.
     parser = argparse.ArgumentParser(description='Evaluate nuScenes tracking results.',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--result_path', type=str, help='The submission as a JSON file.')
+    parser.add_argument('result_path', type=str, help='The submission as a JSON file.')
     parser.add_argument('--output_dir', type=str, default='~/nuscenes-metrics',
                         help='Folder to store result metrics, graphs and example visualizations.')
     parser.add_argument('--eval_set', type=str, default='val',
