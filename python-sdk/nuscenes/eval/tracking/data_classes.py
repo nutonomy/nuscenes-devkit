@@ -10,6 +10,9 @@ from nuscenes.eval.common.utils import center_distance
 from nuscenes.eval.tracking.constants import TRACKING_METRICS, AMOT_METRICS
 
 
+TRACKING_NAMES = []
+
+
 class TrackingConfig:
     """ Data class that specifies the tracking evaluation settings. """
 
