@@ -21,6 +21,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
 - [Citation](#citation)
 
 ## Changelog
+- Sep. 17, 2021: Devkit v1.1.8: Add PAT metric to Panoptic nuScenes.
 - Aug. 23, 2021: Devkit v1.1.7: Add more panoptic tracking metrics to nuScenes-panoptic code.
 - Jul. 29, 2021: Devkit v1.1.6: nuScenes-panoptic v1.0 code, NeurIPS challenge announcement.
 - Apr. 5, 2021: Devkit v1.1.3: Bug fixes and pip requirements.
