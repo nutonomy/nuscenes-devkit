@@ -1,4 +1,31 @@
 {
+  "tracking_names": [
+    "bicycle",
+    "bus",
+    "car",
+    "motorcycle",
+    "pedestrian",
+    "trailer",
+    "truck"
+  ],
+  "pretty_tracking_names": {
+    "bicycle": "Bicycle",
+    "bus": "Bus",
+    "car": "Car",
+    "motorcycle": "Motorcycle",
+    "pedestrian": "Pedestrian",
+    "trailer": "Trailer",
+    "truck": "Truck"
+  },
+  "tracking_colors": {
+    "bicycle": "C9",
+    "bus": "C2",
+    "car": "C0",
+    "motorcycle": "C6",
+    "pedestrian": "C5",
+    "trailer": "C3",
+    "truck": "C1"
+  },
   "class_range": {
     "car": 50,
     "truck": 50,
