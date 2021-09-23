@@ -10,7 +10,7 @@ from nuscenes.eval.panoptic.panoptic_seg_evaluator import PanopticEval
 
 
 class PanopticTrackingEval(PanopticEval):
-    """ Multi-object panoptic tracking evaluator"""
+    """ Panoptic tracking evaluator"""
 
     def __init__(self,
                  n_classes: int,
@@ -21,7 +21,7 @@ class PanopticTrackingEval(PanopticEval):
                  iou_thr: float = 0.5):
         """
         :param n_classes: Number of classes.
-        :param min_stuff_cls_id: Minimum stuff class index, 11 for nuScenes-panoptic challenge classes.
+        :param min_stuff_cls_id: Minimum stuff class index, 11 for Panoptic nuScenes challenge classes.
         :param ignore: List of ignored class index.
         :param offset: Largest instance number in a frame.
         :param min_points: minimal number of points to consider instances in GT.

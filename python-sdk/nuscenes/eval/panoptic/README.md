@@ -44,7 +44,7 @@ their results during the challenge period are eligible for awards. Any user that
 via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
 ### 7th AI Driving Olympics, NeurIPS 2021
-The first nuScenes-panoptic challenge will be held at [NeurIPS 2021](https://nips.cc/Conferences/2021/).
+The first Panoptic nuScenes challenge will be held at [NeurIPS 2021](https://nips.cc/Conferences/2021/).
 Submissions will be accepted from September, 2021. Results and winners will be announced at the
 [7th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2021. For more information see the
 [leaderboard](https://www.nuscenes.org/panoptic). Note that the
@@ -68,7 +68,7 @@ than submitting results from the same model at different training epochs or with
 challenges.
 
 ## Ground truth format
-A ground truth label file named `{token}_panoptic.npz` is provided for each sample in the nuScenes-panoptic dataset.
+A ground truth label file named `{token}_panoptic.npz` is provided for each sample in the Panoptic nuScenes dataset.
 A `.npz` file contains the panoptic label array (uint16 format) of the corresponding points in a pointcloud. The
 panoptic label of each point is: **([general class index](#classes) * 1000 + instance index)**. Note here general class
 index (32 classes in total) rather than the challenge class index (16 classes in total) is used. For example, a ground
@@ -140,11 +140,11 @@ For the test set, the user needs to zip the results folder and submit it to the 
 Note that the lidar panoptic challenge classes differ from the general nuScenes classes, as detailed below.
 
 ## Classes
-The nuScenes-panoptic dataset comes with annotations for 32 classes
+The Panoptic nuScenes dataset comes with annotations for 32 classes
 ([details](https://www.nuscenes.org/data-annotation)).
 Some of these only have a handful of samples. Just as for the nuScenes-lidarseg dataset, we merge similar classes and
 remove rare classes. This results in 10 thing classes and 6 stuff classes for the lidar panoptic challenge.
-Below we show the table of panoptic challenge classes and their counterparts in the nuScenes-panoptic dataset.
+Below we show the table of panoptic challenge classes and their counterparts in the Panoptic nuScenes dataset.
 For more information on the classes and their frequencies, see
 [this page](https://www.nuscenes.org/nuscenes#data-annotation).
 
@@ -217,13 +217,13 @@ TQ is comprised of association score and track fragmentation components. Interes
 [Panoptic nuScenes paper](https://arxiv.org/pdf/2109.03805.pdf) for more details of PAT metric.
 
 ### LiDAR Segmentation and Tracking Quality (LSTQ)
-We also use LSTQ metric [Mehmet et al](https://arxiv.org/pdf/2102.12472.pdf). The LSTQ metric is computed as a geometric
-mean of the classification score and association score.
+We also use the LSTQ metric [Mehmet et al](https://arxiv.org/pdf/2102.12472.pdf). The LSTQ metric is computed as a
+geometric mean of the classification score and association score.
 
 ### Panoptic Tracking Quality (PTQ)
 
-We also use PTQ [Hurtado et al.](https://arxiv.org/pdf/2004.08189.pdf) that extends PQ with the IoU of matched segments
-with track ID discrepancy, penalizing the incorrect track predictions. PTQ is defined as
+We also use the PTQ [Hurtado et al.](https://arxiv.org/pdf/2004.08189.pdf) that extends PQ with the IoU of matched
+segments with track ID discrepancy, penalizing the incorrect track predictions. PTQ is defined as
 (∑{**1**(p,g) IoU(p,g)} - |IDS|) / (|TP|+ 0.5|FP|+ 0.5|FN|), where IDS stands for ID switches, and it is computed as
 the number of true positives (TP) that differ between tracking prediction and ground truth.
 
@@ -237,7 +237,7 @@ class index 0 is ignored in the calculation.
 ## Leaderboard
 nuScenes will maintain a single panoptic leaderboard with filters to split 4 specific tracks: Segmentation-lidar,
 Segmentation-open, Tracking-lidar and Tracking-open. Submissions of the first two panoptic segmentation tracks will be
-evaluated with segmentation metrics, while the two tracking submissions will be evaluated with both panopic tracking
+evaluated with segmentation metrics, while the two tracking submissions will be evaluated with both panoptic tracking
 metrics as well as frame based panoptic segmentation metrics. For each submission the leaderboard will
 list method aspects and evaluation metrics. Method aspects include input modalities (lidar, radar, vision), use of map
 data and use of external data. To enable a fair comparison between methods, the user will be able to filter the methods
@@ -250,28 +250,28 @@ there will also be an award for novel ideas, as well as the best student submiss
 **Segmentation-lidar track**:
 * Only lidar input allowed.
 * Only current frame and preceding frames within 0.5s are allowed, maximally 10 frames (inclusive of current frame).
-* Only lidar panoptic annotations from nuScenes-panoptic are allowed.
+* Only lidar panoptic annotations from Panoptic nuScenes are allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
 
 **Segmentation-open track**:
 * Any sensor input allowed.
 * All past data allowed, no future data allowed.
-* All nuScenes, nuScenes-panoptic, nuScenes-lidarseg and nuImages annotations are allowed.
+* All nuScenes, Panoptic nuScenes, nuScenes-lidarseg and nuImages annotations are allowed.
 * External data and map data allowed.
 * May use pre-training.
 
 **Tracking-lidar track**:
 * Only lidar input allowed.
 * All past data allowed, no future data allowed.
-* Only lidar panoptic annotations from nuScenes-panoptic are allowed.
+* Only lidar panoptic annotations from Panoptic nuScenes are allowed.
 * External data or map data <u>not allowed</u>.
 * May use pre-training.
 
 **Tracking-open track**:
 * Any sensor input allowed.
 * All past data allowed, no future data allowed.
-* All nuScenes, nuScenes-panoptic, nuScenes-lidarseg and nuImages annotations are allowed.
+* All nuScenes, Panoptic nuScenes, nuScenes-lidarseg and nuImages annotations are allowed.
 * External data and map data allowed.
 * May use pre-training.
 

@@ -1,5 +1,5 @@
 """
-nuScenes-panoptic utils.
+Panoptic nuScenes utils.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """
 from typing import Dict
@@ -12,7 +12,7 @@ get_samples_in_panoptic_eval_set = get_samples_in_eval_set
 
 class PanopticClassMapper(LidarsegClassMapper):
     """
-    Maps the general (fine) classes to the challenge (coarse) classes in the nuScenes-panoptic challenge.
+    Maps the general (fine) classes to the challenge (coarse) classes in the Panoptic nuScenes challenge.
 
     Example usage::
         nusc_ = NuScenes(version='v1.0-mini', dataroot='/data/sets/nuscenes', verbose=True)

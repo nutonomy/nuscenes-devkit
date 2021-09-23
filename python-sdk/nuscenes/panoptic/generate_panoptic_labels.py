@@ -1,5 +1,5 @@
 """
-Script to generate nuScenes-panoptic ground truth data from nuScenes database and nuScene-lidarseg.
+Script to generate Panoptic nuScenes ground truth data from nuScenes database and nuScene-lidarseg.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 
 Example usage:
@@ -22,7 +22,7 @@ from nuscenes.utils.geometry_utils import points_in_box
 
 def generate_panoptic_labels(nusc: NuScenes, out_dir: str, verbose: bool = False) -> None:
     """
-    Generate nuScenes lidar panoptic ground truth labels.
+    Generate Panoptic nuScenes ground truth labels.
     :param nusc: NuScenes instance.
     :param out_dir: output directory.
     :param verbose: True to print verbose.
@@ -113,7 +113,7 @@ def main():
     parser.add_argument('--verbose', type=bool, default=True, help='Whether to print to stdout.')
     parser.add_argument('--out_dir', type=str, default=None, help='Folder to write the panoptic labels to.')
     args = parser.parse_args()
-    out_dir = args.out_dir if args.out_dir is not None else f'nuScenes-panoptic-{args.version}'
+    out_dir = args.out_dir if args.out_dir is not None else f'Panoptic-nuScenes-{args.version}'
     print(f'Start panoptic ground truths generation... \nArguments: {args}')
     nusc = NuScenes(version=args.version, dataroot=args.dataroot, verbose=args.verbose)
     generate_panoptic_labels(nusc=nusc, out_dir=out_dir, verbose=args.verbose)
