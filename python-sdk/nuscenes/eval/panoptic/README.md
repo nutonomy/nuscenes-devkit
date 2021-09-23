@@ -12,20 +12,21 @@
 - [Leaderboard](#leaderboard)
 
 ## Introduction
-We define the lidar panoptic segmentation and multi-object panoptic tracking tasks on nuScenes. This challenge is a
+We define the lidar panoptic segmentation and panoptic tracking tasks on Panoptic nuScenes. This challenge is a
 collaboration between Motional and the Robot Learning Lab of Prof. Valada at the University of Freiburg. For panoptic
-segmentation, the goal is to predict the semantic categories of every point, and additional instance IDs for
-things. While panoptic segmentation focuses on static frames, multi-object panoptic tracking additionally enforces
-temporal coherence and pixel-level associations over time. For both tasks, there are 16 categories (10 things and 6
-stuff).
+segmentation, the goal is to predict the semantic categories of every point, and additional instance IDs for things.
+While panoptic segmentation focuses on static frames, panoptic tracking additionally enforces temporal coherence and
+pixel-level associations over time. For both tasks, there are 16 categories (10 thing and 6 stuff classes). Refer to
+the [Panoptic nuScenes paper](https://arxiv.org/pdf/2109.03805.pdf) for more details.
 
 ## Participation
-The nuScenes panoptic evaluation server (coming soon) is open all year round for submission. Participants can choose
-to attend both panoptic segmentation and multi-object panoptic tracking tasks, or only the panoptic segmentation task.
-To participate in the challenge, please create an account at EvalAI (coming soon). Then upload your zipped result
-folder with the required [content](#results-format). After each challenge, the results will be exported to the nuScenes
-panoptic leaderboard (coming soon). This is the only way to benchmark your method against the test dataset. We require
-that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI:
+The nuScenes panoptic [evaluation server](https://eval.ai/web/challenges/challenge-page/1243/overview) is open all year
+round for submission. Participants can choose to attend both panoptic segmentation and panoptic tracking tasks, or only
+the panoptic segmentation task. To participate in the challenge, please create an account at [EvalAI](https://eval.ai).
+Then upload your zipped result folder with the required [content](#results-format). After each challenge, the results
+will be exported to the nuScenes [panoptic leaderboard](https://www.nuscenes.org/panoptic). This is the only way to
+benchmark your method against the test dataset. We require that all participants send the following information to
+nuScenes@motional.com after submitting their results on EvalAI:
 - Team name
 - Method name
 - Authors
@@ -36,21 +37,19 @@ that all participants send the following information to nuScenes@motional.com af
 - FPS in Hz (and the hardware used to measure it)
 
 ## Challenges
-To allow users to benchmark the performance of their method against the community, we host a single panoptic
-leaderboard (coming soon) with filters for different task tracks all year round. Additionally we organize a number of
-challenges at leading Computer Vision conference workshops. Users that submit their results during the challenge period
-are eligible for awards. Any user that cannot attend the workshop (direct or via a representative) will be excluded
-from the challenge, but will still be listed on the leaderboard.
+To allow users to benchmark the performance of their method against the community, we host a single
+[panoptic leaderboard](https://www.nuscenes.org/panoptic) with filters for different task tracks all year round.
+Additionally we organize a number of challenges at leading Computer Vision conference workshops. Users that submit
+their results during the challenge period are eligible for awards. Any user that cannot attend the workshop (direct or
+via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
 ### 7th AI Driving Olympics, NeurIPS 2021
 The first nuScenes-panoptic challenge will be held at [NeurIPS 2021](https://nips.cc/Conferences/2021/).
 Submissions will be accepted from September, 2021. Results and winners will be announced at the
 [7th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2021. For more information see the
-[leaderboard](coming soon). Note that the evaluation server (coming soon) can still be used to benchmark your
+[leaderboard](https://www.nuscenes.org/panoptic). Note that the
+[evaluation server](https://eval.ai/web/challenges/challenge-page/1243/overview) can still be used to benchmark your
 results after the challenge.
-
-The nuScenes-panoptic challenge will be announced soon. Users can check [nuScenes website](https://www.nuscenes.org/)
-for details in coming 1-2 months.
 
 
 ## Submission rules
@@ -86,9 +85,9 @@ panoptic_label_arr = load_bin_file(label_file_path, 'panoptic')
 ```
 
 ## Results format
-We define a standardized panoptic segmentation and multi-object panoptic tracking result format that serves as an input
-to the evaluation code. Results are evaluated for each 2Hz keyframe, also known as a `sample`. The results for a
-particular evaluation set (train/val/test) are stored in a folder.
+We define a standardized panoptic segmentation and panoptic tracking result format that serves as an input to the
+evaluation code. Results are evaluated for each 2Hz keyframe, also known as a `sample`. The results for a particular
+evaluation set (train/val/test) are stored in a folder.
 
 The folder structure of the results should be as follows:
 ```
@@ -103,7 +102,7 @@ The folder structure of the results should be as follows:
 The contents of the `submission.json` file and `test` folder are defined below:
 * The `submission.json` file includes meta data `meta` on the task to attend and type of inputs used for this method.
   The `task` field format is `[segmentation|tracking]-[lidar|open]`, where `segmentation` and `tracking` correspond to
-  panoptic segmentation and multi-object panoptic tracking tasks. The other fields are used to decide whether the
+  panoptic segmentation and panoptic tracking tasks. The other fields are used to decide whether the
   submission belongs to lidar track or open track.
   ```
   "meta": {
@@ -186,9 +185,12 @@ For more information on the classes and their frequencies, see
 
 
 ## Evaluation metrics
-Below we define the metrics for the Panoptic Segmentation and Multi-Object Panoptic Tracking tasks.
+Below we introduce the key metrics for panoptic segmentation and panoptic tracking tasks. We use Panoptic Quality (PQ)
+as the primary ranking metric for panoptic segmentation tasks, and Panoptic Tracking (PAT) metric as the primary
+ranking metric for panoptic tracking tasks.
 
 ### Panoptic Segmentation
+
 #### Panoptic Quality (PQ)
 We use the standard PQ [Kirillov et al.](https://arxiv.org/pdf/1801.00868.pdf), which is defined as
 ∑{**1(p,g)** IoU(p,g)} / (|TP|+ 0.5|FP|+ 0.5|FN|). The set of true positives (TP), false positives (FP), and false
@@ -205,37 +207,45 @@ We also use PQ† [Porzi et al.](https://arxiv.org/pdf/1905.01220.pdf), which ma
 but modifies the metric for stuff classes.  PQ† only uses the IoU for stuff classes without differentiating between
 different segments.
 
-### Multi-Object Panoptic Tracking
-#### Panoptic Tracking Quality (PTQ)
-We use PTQ [Hurtado et al.](https://arxiv.org/pdf/2004.08189.pdf) that extends PQ with the IoU of matched segments with
-track ID discrepancy, penalizing the incorrect track predictions. PTQ is defined as
-(∑{**1**(p,g) IoU(p,g)} - |IDS|) / (|TP|+ 0.5|FP|+ 0.5|FN|), where IDS stands for ID switches, and it is computed as
-the number of true positives (TP) that differ between tracking prediction and ground truth.
+### Panoptic Tracking
 
-#### Soft Panoptic Tracking Quality (sPTQ)
-Based on the same paper as PTQ, we also use a less strict version that penalizes the track ID discrepancy by
-subtracting the IoU scores at frames with ID switches instead of the total number of ID switches. The sPTQ metric is
-defined as: (∑{**1**(p,g) IoU(p,g)} - ∑(s)∈ IDS {s}) / (|TP|+ 0.5|FP|+ 0.5|FN|).
-
-Each score is calculated separately for each class, and then the mean is computed across classes. Note that points of
-class index 0 is ignored in the calculation.
+### Panoptic Tracking (PAT)
+We define the Panoptic Tracking (PAT) metric, which is based on two separable components that are explicitly related to
+the task and allow straightforward interpretation. PAT is computed as the harmonic mean of the Panoptic Quality (PQ)
+and Tracking Quality (TQ): (2 x PQ x TQ) / (PQ + TQ), with range [0, 1]. To better represent the tracking quality,
+TQ is comprised of association score and track fragmentation components. Interested readers can refer to the
+[Panoptic nuScenes paper](https://arxiv.org/pdf/2109.03805.pdf) for more details of PAT metric.
 
 ### LiDAR Segmentation and Tracking Quality (LSTQ)
 We also use LSTQ metric [Mehmet et al](https://arxiv.org/pdf/2102.12472.pdf). The LSTQ metric is computed as a geometric
 mean of the classification score and association score.
 
+### Panoptic Tracking Quality (PTQ)
+
+We also use PTQ [Hurtado et al.](https://arxiv.org/pdf/2004.08189.pdf) that extends PQ with the IoU of matched segments
+with track ID discrepancy, penalizing the incorrect track predictions. PTQ is defined as
+(∑{**1**(p,g) IoU(p,g)} - |IDS|) / (|TP|+ 0.5|FP|+ 0.5|FN|), where IDS stands for ID switches, and it is computed as
+the number of true positives (TP) that differ between tracking prediction and ground truth.
+
+From the same paper as PTQ, sPTQ (soft PTQ) penalizes the track ID discrepancy by subtracting the IoU scores at frames
+with ID switches instead of the total number of ID switches. The sPTQ metric is defined as:
+(∑{**1**(p,g) IoU(p,g)} - ∑(s)∈ IDS {s}) / (|TP|+ 0.5|FP|+ 0.5|FN|).
+
+Each score is calculated separately for each class, and then the mean is computed across classes. Note that points of
+class index 0 is ignored in the calculation.
+
 ## Leaderboard
 nuScenes will maintain a single panoptic leaderboard with filters to split 4 specific tracks: Segmentation-lidar,
 Segmentation-open, Tracking-lidar and Tracking-open. Submissions of the first two panoptic segmentation tracks will be
-evaluated with segmentation metrics, while the two tracking submissions will be evaluated with both multi-object
-panopic tracking metrics as well as frame based panoptic segmentation metrics. For each submission the leaderboard will
+evaluated with segmentation metrics, while the two tracking submissions will be evaluated with both panopic tracking
+metrics as well as frame based panoptic segmentation metrics. For each submission the leaderboard will
 list method aspects and evaluation metrics. Method aspects include input modalities (lidar, radar, vision), use of map
 data and use of external data. To enable a fair comparison between methods, the user will be able to filter the methods
 by method aspects.
 
-Both panoptic segmentation and multi-object panoptic tracking tasks will have an `Lidar track` and `Open Track`
-respectively. Methods will be compared within these tracks and the winners will be decided for each track separately.
-Furthermore, there will also be an award for novel ideas, as well as the best student submission.
+Both panoptic segmentation and panoptic tracking tasks will have an `Lidar track` and `Open Track` respectively.
+Methods will be compared within these tracks and the winners will be decided for each track separately. Furthermore,
+there will also be an award for novel ideas, as well as the best student submission.
 
 **Segmentation-lidar track**:
 * Only lidar input allowed.
