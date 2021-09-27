@@ -1,5 +1,5 @@
 """
-Script to generate baselines for nuScenes-panoptic tasks.
+Script to generate baselines for Panoptic nuScenes tasks.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """
 import argparse

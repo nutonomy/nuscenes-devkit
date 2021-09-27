@@ -1,5 +1,5 @@
 """
-Script to generate nuScenes-panoptic predictions from nuScene-lidarseg predictions and nuScenes-tracking or
+Script to generate Panoptic nuScenes predictions from nuScene-lidarseg predictions and nuScenes-tracking or
 nuScenes-detection predictions.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """

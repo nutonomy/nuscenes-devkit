@@ -1,5 +1,5 @@
 """
-nuScenes-panoptic utils.
+Panoptic nuScenes utils.
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 """
 from typing import Any, Dict, Iterable, List, Tuple

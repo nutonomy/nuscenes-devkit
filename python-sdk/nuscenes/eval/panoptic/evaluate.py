@@ -1,9 +1,9 @@
 """
 Code written by Motional and the Robot Learning Lab, University of Freiburg.
 
-Script to evaluate nuScenes-panoptic panoptic segmentation (PS) or multi-object panoptic tracking metrics (MOPT).
+Script to evaluate Panoptic nuScenes panoptic segmentation (PS) or panoptic tracking (PT) metrics.
 Argument "task" could be one of ["segmentation", "tracking"], check eval/panoptic/README.md for more details of the
-tasks. Note tracking results will be evaluated with both the MOPT and PS metrics.
+tasks. Note tracking results will be evaluated with both the PT and PS metrics.
 
 Example usage to evaluate tracking metrics.
 ---------------------------------------------------------
@@ -36,8 +36,8 @@ from tqdm import tqdm
 
 class NuScenesPanopticEval:
     """
-    This is the official nuScenes-panoptic evaluation code. Results are written to the provided output_dir.
-    nuScenes-panoptic uses the following metrics:
+    This is the official Panoptic nuScenes evaluation code. Results are written to the provided output_dir.
+    Panoptic nuScenes uses the following metrics:
     - Panoptic Segmentation: we use the PQ (Panoptic Quality) metric: which is defined as:
       PQ = IOU/(TP + 0.5*FP + 0.5*FN).
     - Multi-object Panoptic Tracking: we use the PAT (Panoptic Tracking) metric, which is defined as:
@@ -330,13 +330,13 @@ class NuScenesPanopticEval:
             raise ValueError(f'Invalid output dir: {self.out_dir}')
 
         if self.verbose:
-            print(f"======\nnuScenes-panoptic {self.task} evaluation for {self.eval_set}")
+            print(f"======\nPanoptic nuScenes {self.task} evaluation for {self.eval_set}")
             print(json.dumps(results, indent=4, sort_keys=False))
             print("======")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Evaluate nuScenes-panoptic results.')
+    parser = argparse.ArgumentParser(description='Evaluate Panoptic nuScenes results.')
     parser.add_argument('--result_path', type=str, help='The path to the results folder.')
     parser.add_argument('--eval_set', type=str, default='val',
                         help='Which dataset split to evaluate on, train, val or test.')
@@ -351,7 +351,7 @@ def main():
     parser.add_argument('--out_dir', type=str, default=None, help='Folder to write the panoptic labels to.')
     args = parser.parse_args()
 
-    out_dir = args.out_dir if args.out_dir is not None else f'nuScenes-panoptic-{args.version}'
+    out_dir = args.out_dir if args.out_dir is not None else f'Panoptic-nuScenes-{args.version}'
     task = args.task
     # Overwrite with task from submission.json if the file exists.
     submission_file = os.path.join(args.result_path, args.eval_set, 'submission.json')
