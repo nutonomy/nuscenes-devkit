@@ -243,9 +243,8 @@ list method aspects and evaluation metrics. Method aspects include input modalit
 data and use of external data. To enable a fair comparison between methods, the user will be able to filter the methods
 by method aspects.
 
-Both panoptic segmentation and panoptic tracking tasks will have an `Lidar track` and `Open Track` respectively.
-Methods will be compared within these tracks and the winners will be decided for each track separately. Furthermore,
-there will also be an award for novel ideas, as well as the best student submission.
+Both panoptic segmentation and panoptic tracking tasks will have a `Lidar track` and `Open Track` respectively.
+Methods will be compared within these tracks and the winners will be decided for each track separately.
 
 **Segmentation-lidar track**:
 * Only lidar input allowed.
