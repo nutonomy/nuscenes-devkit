@@ -251,7 +251,7 @@ class NuScenesPanopticEval:
 
         results = self.wrap_result_mopt(pat=pat,
                                         mean_pq=mean_pq,
-                                        mean_tq=mean_ptq,
+                                        mean_tq=mean_tq,
                                         mean_ptq=mean_ptq,
                                         class_all_ptq=class_all_ptq,
                                         mean_sptq=mean_sptq,
