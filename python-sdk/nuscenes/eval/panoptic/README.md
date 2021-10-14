@@ -3,6 +3,7 @@
 
 ## Overview
 - [Introduction](#introduction)
+- [Citation](#citation)
 - [Participation](#participation)
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
@@ -19,14 +20,26 @@ While panoptic segmentation focuses on static frames, panoptic tracking addition
 pixel-level associations over time. For both tasks, there are 16 categories (10 thing and 6 stuff classes). Refer to
 the [Panoptic nuScenes paper](https://arxiv.org/pdf/2109.03805.pdf) for more details.
 
+## Citation
+When using the dataset in your research, please cite [Panoptic nuScenes](https://arxiv.org/abs/2109.03805):
+```
+@article{fong2021panoptic,
+  title={Panoptic nuScenes: A Large-Scale Benchmark for LiDAR Panoptic Segmentation and Tracking},
+  author={Fong, Whye Kit and Mohan, Rohit and Hurtado, Juana Valeria and Zhou, Lubing and Caesar, Holger and
+          Beijbom, Oscar and Valada, Abhinav},
+  journal={arXiv preprint arXiv:2109.03805},
+  year={2021}
+}
+```
+
 ## Participation
-The nuScenes panoptic [evaluation server](https://eval.ai/web/challenges/challenge-page/1243/overview) is open all year
-round for submission. Participants can choose to attend both panoptic segmentation and panoptic tracking tasks, or only
-the panoptic segmentation task. To participate in the challenge, please create an account at [EvalAI](https://eval.ai).
-Then upload your zipped result folder with the required [content](#results-format). After each challenge, the results
-will be exported to the nuScenes [panoptic leaderboard](https://www.nuscenes.org/panoptic). This is the only way to
-benchmark your method against the test dataset. We require that all participants send the following information to
-nuScenes@motional.com after submitting their results on EvalAI:
+The Panoptic nuScenes challenge [evaluation server](https://eval.ai/web/challenges/challenge-page/1243/overview) is
+open all year round for submission. Participants can choose to attend both panoptic segmentation and panoptic tracking
+tasks, or only the panoptic segmentation task. To participate in the challenge, please create an account at
+[EvalAI](https://eval.ai). Then upload your zipped result folder with the required [content](#results-format). After
+each challenge, the results will be exported to the [Panoptic nuScenes leaderboard](https://www.nuscenes.org/panoptic).
+This is the only way to benchmark your method against the test dataset. We require that all participants send the
+following information to nuScenes@motional.com after submitting their results on EvalAI:
 - Team name
 - Method name
 - Authors
@@ -38,16 +51,16 @@ nuScenes@motional.com after submitting their results on EvalAI:
 
 ## Challenges
 To allow users to benchmark the performance of their method against the community, we host a single
-[panoptic leaderboard](https://www.nuscenes.org/panoptic) with filters for different task tracks all year round.
-Additionally we organize a number of challenges at leading Computer Vision conference workshops. Users that submit
-their results during the challenge period are eligible for awards. Any user that cannot attend the workshop (direct or
-via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
+[Panoptic nuScenes leaderboard](https://www.nuscenes.org/panoptic) with filters for different task tracks all year
+round. Additionally we organize a number of challenges at leading Computer Vision conference workshops. Users that
+submit their results during the challenge period are eligible for awards. Any user that cannot attend the workshop
+(direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
 ### 7th AI Driving Olympics, NeurIPS 2021
 The first Panoptic nuScenes challenge will be held at [NeurIPS 2021](https://nips.cc/Conferences/2021/).
-Submissions will be accepted from September, 2021. Results and winners will be announced at the
-[7th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2021. For more information see the
-[leaderboard](https://www.nuscenes.org/panoptic). Note that the
+Submissions will be accepted from 1 September 2021. **The submission deadline is 1 December 2021, 12:00pm, noon, UTC.**
+Results and winners will be announced at the [7th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2021.
+For more information see the [leaderboard](https://www.nuscenes.org/panoptic). Note that the
 [evaluation server](https://eval.ai/web/challenges/challenge-page/1243/overview) can still be used to benchmark your
 results after the challenge.
 

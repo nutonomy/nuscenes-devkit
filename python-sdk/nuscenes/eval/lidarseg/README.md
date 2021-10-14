@@ -3,6 +3,7 @@
 
 ## Overview
 - [Introduction](#introduction)
+- [Citation](#citation)
 - [Participation](#participation)
 - [Challenges](#challenges)
 - [Submission rules](#submission-rules)
@@ -14,6 +15,18 @@
 ## Introduction
 Here we define the lidar segmentation task on nuScenes.
 The goal of this task is to predict the category of every point in a set of point clouds. There are 16 categories (10 foreground classes and 6 background classes).
+
+## Citation
+When using the dataset in your research, please cite [Panoptic nuScenes](https://arxiv.org/abs/2109.03805):
+```
+@article{fong2021panoptic,
+  title={Panoptic nuScenes: A Large-Scale Benchmark for LiDAR Panoptic Segmentation and Tracking},
+  author={Fong, Whye Kit and Mohan, Rohit and Hurtado, Juana Valeria and Zhou, Lubing and Caesar, Holger and
+          Beijbom, Oscar and Valada, Abhinav},
+  journal={arXiv preprint arXiv:2109.03805},
+  year={2021}
+}
+```
 
 ## Participation
 The nuScenes lidarseg segmentation [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) is open all year round for submission.
