@@ -10,7 +10,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
   - [Getting started with nuImages](#getting-started-with-nuimages)
 - [nuScenes](#nuscenes)
   - [nuScenes setup](#nuscenes-setup)
-  - [nuScenes-panoptic](#nuscenes-panoptic)
+  - [Panoptic nuScenes](#panoptic-nuscenes)
   - [nuScenes-lidarseg](#nuscenes-lidarseg)
   - [Prediction challenge](#prediction-challenge)
   - [CAN bus expansion](#can-bus-expansion)
@@ -23,8 +23,8 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
 ## Changelog
 - Sep. 20, 2021: Devkit v1.1.9: Refactor tracking eval code for custom datasets with different classes.
 - Sep. 17, 2021: Devkit v1.1.8: Add PAT metric to Panoptic nuScenes.
-- Aug. 23, 2021: Devkit v1.1.7: Add more panoptic tracking metrics to nuScenes-panoptic code.
-- Jul. 29, 2021: Devkit v1.1.6: nuScenes-panoptic v1.0 code, NeurIPS challenge announcement.
+- Aug. 23, 2021: Devkit v1.1.7: Add more panoptic tracking metrics to Panoptic nuScenes code.
+- Jul. 29, 2021: Devkit v1.1.6: Panoptic nuScenes v1.0 code, NeurIPS challenge announcement.
 - Apr. 5, 2021: Devkit v1.1.3: Bug fixes and pip requirements.
 - Nov. 23, 2020: Devkit v1.1.2: Release map-expansion v1.3 with lidar basemap.
 - Nov. 9, 2020: Devkit v1.1.1: Lidarseg evaluation code, NeurIPS challenge announcement.
@@ -102,10 +102,10 @@ Eventually you should have the following folder structure:
 ```
 If you want to use another folder, specify the `dataroot` parameter of the NuScenes class (see tutorial).
 
-### nuScenes-panoptic
-In August 2021 we published [nuScenes-panoptic](https://www.nuscenes.org/nuscenes) which contains the panoptic
-labels of the point clouds for the approximately 40,000 keyframes in nuScenes.
-To install nuScenes-panoptic, please follow these steps:
+### Panoptic nuScenes
+In August 2021 we published [Panoptic nuScenes](https://www.nuscenes.org/panoptic) which contains the panoptic labels
+of the point clouds for the approximately 40,000 keyframes in nuScenes.
+To install Panoptic nuScenes, please follow these steps:
 - Download the dataset from the [Download page](https://www.nuscenes.org/download),
 - Extract the `panoptic` and `v1.0-*` folders to your nuScenes root directory (e.g. `/data/sets/nuscenes/panoptic`, `/data/sets/nuscenes/v1.0-*`).
 - Get the latest version of the nuscenes-devkit.
@@ -196,6 +196,18 @@ Please use the following citation when referencing [nuScenes or nuImages](https:
           Giancarlo Baldan and Oscar Beijbom},
   journal={arXiv preprint arXiv:1903.11027},
   year={2019}
+}
+```
+
+Please use the following citation when referencing
+[Panoptic nuScenes or nuScenes-lidarseg](https://arxiv.org/abs/2109.03805):
+```
+@article{fong2021panoptic,
+  title={Panoptic nuScenes: A Large-Scale Benchmark for LiDAR Panoptic Segmentation and Tracking},
+  author={Fong, Whye Kit and Mohan, Rohit and Hurtado, Juana Valeria and Zhou, Lubing and Caesar, Holger and
+          Beijbom, Oscar and Valada, Abhinav},
+  journal={arXiv preprint arXiv:2109.03805},
+  year={2021}
 }
 ```
 
