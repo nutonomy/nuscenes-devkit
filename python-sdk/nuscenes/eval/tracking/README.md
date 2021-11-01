@@ -23,7 +23,7 @@ The nuScenes tracking challenge is a natural progression to the detection challe
 Here we describe the challenge, the rules, the classes, evaluation metrics and general infrastructure.
 
 ## Authors
-The tracking task and challenge are a joint work between **Aptiv** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
+The tracking task and challenge are a joint work between **Motional** (Holger Caesar, Caglayan Dicle, Oscar Beijbom) and **Carnegie Mellon University** (Xinshuo Weng, Kris Kitani).
 They are based upon the [nuScenes dataset](http://www.nuScenes.org) \[1\] and the [3D MOT baseline and benchmark](https://github.com/xinshuoweng/AB3DMOT) defined in \[2\].
 
 # Getting started
@@ -286,7 +286,7 @@ The default evaluation metrics configurations can be found in `nuscenes/eval/tra
 
 ### Baselines
 To allow the user focus on the tracking problem, we release object detections from state-of-the-art methods as listed on the [detection leaderboard](https://www.nuscenes.org/object-detection).
-We thank Alex Lang (Aptiv), Benjin Zhu (Megvii) and Andrea Simonelli (Mapillary) for providing these.
+We thank Alex Lang (Motional), Benjin Zhu (Megvii) and Andrea Simonelli (Mapillary) for providing these.
 The use of these detections is entirely optional.
 The detections on the train, val and test splits can be downloaded from the table below.
 Our tracking baseline is taken from *"A Baseline for 3D Multi-Object Tracking"* \[2\] and uses each of the provided detections.
