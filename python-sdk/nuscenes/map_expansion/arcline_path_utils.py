@@ -235,7 +235,7 @@ def project_pose_to_lane(pose: Pose, lane: List[ArcLinePath], resolution_meters:
     closest_pose_index = np.linalg.norm(xy_points - pose[:2], axis=1).argmin()
 
     closest_pose = discretized_lane[closest_pose_index]
-    distance_along_lane = closest_pose_index * 0.5
+    distance_along_lane = closest_pose_index * resolution_meters
     return closest_pose, distance_along_lane
 
 
