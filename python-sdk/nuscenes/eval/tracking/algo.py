@@ -190,7 +190,7 @@ class TrackingEvaluation(object):
                     else:
                         raise NotImplementedError
 
-                all_values = list([worst] * TrackingMetricData.nelem)
+                all_values = [worst] * TrackingMetricData.nelem
             else:
                 values = summary.get(mot_name).values
                 assert np.all(values[np.logical_not(np.isnan(values))] >= 0)
@@ -200,8 +200,8 @@ class TrackingEvaluation(object):
                 values = np.concatenate([([v] * r) for (v, r) in zip(values, rep_counts)])
 
                 # Pad values with nans for unachieved recall thresholds.
-                all_values = list([np.nan] * unachieved_thresholds)
-                all_values.extend(values)
+                all_values = [np.nan] * unachieved_thresholds
+                all_values.append(values)
 
             assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
