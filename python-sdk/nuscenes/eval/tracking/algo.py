@@ -201,7 +201,7 @@ class TrackingEvaluation(object):
 
                 # Pad values with nans for unachieved recall thresholds.
                 all_values = [np.nan] * unachieved_thresholds
-                all_values.append(values)
+                np.append(all_values, values)
 
             assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
