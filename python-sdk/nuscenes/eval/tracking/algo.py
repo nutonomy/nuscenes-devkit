@@ -155,22 +155,19 @@ class TrackingEvaluation(object):
         else:
             summary = pandas.concat(thresh_metrics)
 
-        thresholds = np.array(thresholds)
-
         # Get the number of thresholds which were not achieved (i.e. nan).
-        unachieved_thresholds = thresholds[np.isnan(thresholds)]
+        unachieved_thresholds = [t for t in thresholds if np.isnan(t)]
         num_unachieved_thresholds = len(unachieved_thresholds)
 
         # Get the number of thresholds which were achieved (i.e. not nan).
-        achieved_thresholds = thresholds[~np.isnan(thresholds)]
-        num_duplicate_thresholds = len(achieved_thresholds) - len(np.unique(achieved_thresholds))
+        valid_thresholds = [t for t in thresholds if not np.isnan(t)]
+        assert valid_thresholds == sorted(valid_thresholds)
+        num_duplicate_thresholds = len(valid_thresholds) - len(np.unique(valid_thresholds))
 
         # Sanity check.
         assert num_unachieved_thresholds + num_duplicate_thresholds + len(thresh_metrics) == self.num_thresholds
 
         # Figure out how many times each threshold should be repeated.
-        valid_thresholds = [t for t in thresholds if not np.isnan(t)]
-        assert valid_thresholds == sorted(valid_thresholds)
         rep_counts = [np.sum(thresholds == t) for t in np.unique(valid_thresholds)]
 
         # Store all traditional metrics.
