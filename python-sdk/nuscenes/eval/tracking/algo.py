@@ -155,14 +155,19 @@ class TrackingEvaluation(object):
         else:
             summary = pandas.concat(thresh_metrics)
 
-        # Sanity checks.
-        unachieved_thresholds = np.sum(np.isnan(thresholds))
-        duplicate_thresholds = len(thresholds) - len(np.unique(thresholds))
-        assert unachieved_thresholds + duplicate_thresholds + len(thresh_metrics) == self.num_thresholds
+        # Get the number of thresholds which were not achieved (i.e. nan).
+        unachieved_thresholds = np.array([t for t in thresholds if np.isnan(t)])
+        num_unachieved_thresholds = len(unachieved_thresholds)
 
-        # Figure out how many times each threshold should be repeated.
+        # Get the number of thresholds which were achieved (i.e. not nan).
         valid_thresholds = [t for t in thresholds if not np.isnan(t)]
         assert valid_thresholds == sorted(valid_thresholds)
+        num_duplicate_thresholds = len(valid_thresholds) - len(np.unique(valid_thresholds))
+
+        # Sanity check.
+        assert num_unachieved_thresholds + num_duplicate_thresholds + len(thresh_metrics) == self.num_thresholds
+
+        # Figure out how many times each threshold should be repeated.
         rep_counts = [np.sum(thresholds == t) for t in np.unique(valid_thresholds)]
 
         # Store all traditional metrics.
@@ -196,7 +201,7 @@ class TrackingEvaluation(object):
 
                 # Pad values with nans for unachieved recall thresholds.
                 all_values = [np.nan] * unachieved_thresholds
-                all_values.extend(values)
+                all_values = np.append(all_values, values)
 
             assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
