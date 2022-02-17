@@ -200,8 +200,8 @@ class TrackingEvaluation(object):
                 values = np.concatenate([([v] * r) for (v, r) in zip(values, rep_counts)])
 
                 # Pad values with nans for unachieved recall thresholds.
-                all_values = [np.nan] * unachieved_thresholds
-                all_values = np.append(all_values, values)
+                all_values = [np.nan] * num_unachieved_thresholds
+                all_values.extend(values)
 
             assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
