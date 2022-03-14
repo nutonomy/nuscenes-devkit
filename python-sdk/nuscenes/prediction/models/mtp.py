@@ -69,7 +69,8 @@ class MTP(nn.Module):
 
         features = torch.cat([backbone_features, agent_state_vector], dim=1)
 
-        predictions = self.fc2(self.fc1(features))
+        x = f.relu(self.fc1(features))
+        predictions = self.fc2(x)
 
         # Normalize the probabilities to sum to 1 for inference.
         mode_probabilities = predictions[:, -self.num_modes:].clone()
