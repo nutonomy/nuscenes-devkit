@@ -1817,13 +1817,31 @@ class NuScenesMapExplorer:
         if not polygons:
             return mask
 
+        # Create a temporary canvas for the current polygon
+        canvas_size = mask.shape
+        tmp_mask = np.zeros(canvas_size, np.uint8)
+
         def int_coords(x):
             # function to round and convert to int
             return np.array(x).round().astype(np.int32)
         exteriors = [int_coords(poly.exterior.coords) for poly in polygons]
         interiors = [int_coords(pi.coords) for poly in polygons for pi in poly.interiors]
-        cv2.fillPoly(mask, exteriors, 1)
-        cv2.fillPoly(mask, interiors, 0)
+
+        # Fill in the canvas with the current polygon
+        cv2.fillPoly(tmp_mask, exteriors, 1)
+        cv2.fillPoly(tmp_mask, interiors, 0)
+
+        # Convert the masks from a binary (uint8) to a boolean one.
+        tmp_mask = np.ma.make_mask(tmp_mask)
+        mask = np.ma.make_mask(mask)
+
+        # Merge the two masks using an OR operation, to prevent previous polygons from being blanked out if the current
+        # polygon has holes and they fall within those holes.
+        mask = np.ma.mask_or(mask, tmp_mask)
+
+        # Convert the boolean mask back to a binary (uint8) one.
+        mask = mask.astype(np.uint8)
+
         return mask
 
     @staticmethod
