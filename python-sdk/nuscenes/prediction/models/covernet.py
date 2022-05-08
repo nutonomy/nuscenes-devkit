@@ -46,6 +46,7 @@ class CoverNet(nn.Module):
                          for in_dim, out_dim in zip(n_hidden_layers[:-1], n_hidden_layers[1:])]
 
         self.head = nn.ModuleList(linear_layers)
+        self.relu = nn.ReLU()
 
     def forward(self, image_tensor: torch.Tensor,
                 agent_state_vector: torch.Tensor) -> torch.Tensor:
@@ -60,7 +61,7 @@ class CoverNet(nn.Module):
         logits = torch.cat([backbone_features, agent_state_vector], dim=1)
 
         for linear in self.head:
-            logits = linear(logits)
+            logits = self.relu(linear(logits))
 
         return logits
 
