@@ -27,7 +27,7 @@ def main(version: str, data_root: str,
 
     nusc = NuScenes(version=version, dataroot=data_root)
     helper = PredictHelper(nusc)
-    dataset = get_prediction_challenge_split(split_name)
+    dataset = get_prediction_challenge_split(split_name, dataroot=data_root)
     config = load_prediction_config(helper, config_name)
     oracle = PhysicsOracle(config.seconds, helper)
     cv_heading = ConstantVelocityHeading(config.seconds, helper)
