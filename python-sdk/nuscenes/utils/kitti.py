@@ -11,7 +11,7 @@ from PIL import Image
 from matplotlib.axes import Axes
 from pyquaternion import Quaternion
 
-from nuscenes.nuscenes import NuScenesExplorer
+from nuscenes.utils.color_map import get_colormap
 from nuscenes.utils.data_classes import Box, LidarPointCloud
 from nuscenes.utils.geometry_utils import box_in_image, BoxVisibility, view_points
 
@@ -471,7 +471,7 @@ class KittiDB:
         """
         # Default settings.
         if color_func is None:
-            color_func = NuScenesExplorer.get_color
+            color_func = lambda category_name: get_colormap()[category_name]
 
         boxes = self.get_boxes(token, filter_classes=filter_classes, max_dist=max_dist)  # In nuScenes lidar frame.
 
