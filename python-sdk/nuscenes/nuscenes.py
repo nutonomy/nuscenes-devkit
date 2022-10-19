@@ -7,6 +7,7 @@ import os
 import os.path as osp
 import sys
 import time
+import pickle
 from datetime import datetime
 from typing import Tuple, List, Iterable
 
@@ -80,6 +81,9 @@ class NuScenes:
         self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
 
+        # create colors for each instance
+        self.instance_to_color = {x['token']: list(np.random.choice(range(256), size=3)/ 255.0) for x in self.instance }
+
         # Initialize the colormap which maps from class names to RGB values.
         self.colormap = get_colormap()
 
@@ -133,8 +137,19 @@ class NuScenes:
 
     def __load_table__(self, table_name) -> dict:
         """ Loads a table. """
-        with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
-            table = json.load(f)
+        
+
+        if table_name in ['ego_pose','sample_data','sample_annotation'] and self.version == 'v1.0-trainval':
+            if self.verbose:
+                print('Loading table: {}.pkl'.format(table_name))
+            with open(osp.join(self.table_root, '{}.pkl'.format(table_name)),'rb') as f:
+                table = pickle.load(f)
+        else:
+            if self.verbose:
+                print('Loading table: {}.json'.format(table_name))
+            with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
+                table = json.load(f)
+
         return table
 
     def load_lidarseg_cat_name_mapping(self):
@@ -631,6 +646,243 @@ class NuScenes:
                                             dpi=dpi,
                                             lidarseg_preds_folder=lidarseg_preds_folder,
                                             show_panoptic=show_panoptic)
+
+
+
+    def get_sample_data_tracking_preds(self, 
+                                   tracking_results, 
+                                   sample_data_token: str,
+                                   box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                                   selected_anntokens: List[str] = None,
+                                   use_flat_vehicle_coordinates: bool = False) -> Tuple[str, List[Box], np.array]:
+        """
+        Returns the data path as well as all annotations related to that sample_data.
+        Note that the boxes are transformed into the current sensor's coordinate frame.
+        :param sample_data_token: Sample_data token.
+        :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
+        :param selected_anntokens: If provided only return the selected annotation.
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+                                             aligned to z-plane in the world.
+        :return: (data_path, boxes, camera_intrinsic <np.array: 3, 3>)
+        """
+
+        # Retrieve sensor & pose records
+        sd_record = self.get('sample_data', sample_data_token)
+        cs_record = self.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
+        sensor_record = self.get('sensor', cs_record['sensor_token'])
+        pose_record = self.get('ego_pose', sd_record['ego_pose_token'])
+
+        data_path = self.get_sample_data_path(sample_data_token)
+
+        if sensor_record['modality'] == 'camera':
+            cam_intrinsic = np.array(cs_record['camera_intrinsic'])
+            imsize = (sd_record['width'], sd_record['height'])
+        else:
+            cam_intrinsic = None
+            imsize = None
+
+
+        def get_box_results(result):
+            return Box(result['translation'], result['size'], Quaternion(result['rotation']),
+                   name=result['attribute_name'], token=result['tracking_id'])
+            
+        boxes = list(map(get_box_results, tracking_results.results[sd_record['sample_token']]))
+        
+        sample_rec = self.get('sample',sd_record['sample_token'])
+        # get previous and future tracking points
+        tracked_boxes = dict()
+        for box in boxes:
+            temp_list = []
+            count = 0
+            saved_count = 0
+            for temp in tracking_results.scene_tracks[sample_rec['scene_token']][box.token]:
+                if temp['sample_token'] != sd_record['sample_token']:
+                    temp_list.append(get_box_results(temp))
+                    count += 1
+                else:
+                    temp_list.append(get_box_results(temp))
+                    saved_count = count
+                    
+            tracked_boxes[box.token] = {'tracks':temp_list,'split':saved_count}
+                
+        # Make list of Box objects including coord system transforms.
+        box_list = []
+        for box in boxes:
+            if use_flat_vehicle_coordinates:
+                # Move box to ego vehicle coord system parallel to world z plane.
+                yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+                box.translate(-np.array(pose_record['translation']))
+                box.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
+            else:
+                # Move box to ego vehicle coord system.
+                box.translate(-np.array(pose_record['translation']))
+                box.rotate(Quaternion(pose_record['rotation']).inverse)
+
+                #  Move box to sensor coord system.
+                box.translate(-np.array(cs_record['translation']))
+                box.rotate(Quaternion(cs_record['rotation']).inverse)
+
+            if sensor_record['modality'] == 'camera' and not \
+                    box_in_image(box, cam_intrinsic, imsize, vis_level=box_vis_level):
+                continue
+            box_list.append(box)
+            temp = []
+            for box_inner in tracked_boxes[box.token]['tracks']:
+                if use_flat_vehicle_coordinates:
+                    # Move box to ego vehicle coord system parallel to world z plane.
+                    yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+                    box_inner.translate(-np.array(pose_record['translation']))
+                    box_inner.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
+                else:
+                    # Move box to ego vehicle coord system.
+                    box_inner.translate(-np.array(pose_record['translation']))
+                    box_inner.rotate(Quaternion(pose_record['rotation']).inverse)
+
+                    #  Move box to sensor coord system.
+                    box_inner.translate(-np.array(cs_record['translation']))
+                    box_inner.rotate(Quaternion(cs_record['rotation']).inverse)
+
+                if sensor_record['modality'] == 'camera' and not \
+                        box_in_image(box_inner, cam_intrinsic, imsize, vis_level=box_vis_level):
+                    continue
+                temp.append(box_inner)
+            tracked_boxes[box.token]['tracks'] = temp
+                
+
+        return data_path, box_list, tracked_boxes, cam_intrinsic
+
+
+
+    def get_sample_data_tracking(self, sample_data_token: str,
+                        box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                        selected_anntokens: List[str] = None,
+                        use_flat_vehicle_coordinates: bool = False) -> \
+            Tuple[str, List[Box], np.array]:
+        """
+        Returns the data path as well as all annotations related to that sample_data.
+        Note that the boxes are transformed into the current sensor's coordinate frame.
+        :param sample_data_token: Sample_data token.
+        :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
+        :param selected_anntokens: If provided only return the selected annotation.
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+                                             aligned to z-plane in the world.
+        :return: (data_path, boxes, camera_intrinsic <np.array: 3, 3>)
+        """
+
+        # Retrieve sensor & pose records
+        sd_record = self.get('sample_data', sample_data_token)
+        cs_record = self.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
+        sensor_record = self.get('sensor', cs_record['sensor_token'])
+        pose_record = self.get('ego_pose', sd_record['ego_pose_token'])
+
+        data_path = self.get_sample_data_path(sample_data_token)
+
+        if sensor_record['modality'] == 'camera':
+            cam_intrinsic = np.array(cs_record['camera_intrinsic'])
+            imsize = (sd_record['width'], sd_record['height'])
+        else:
+            cam_intrinsic = None
+            imsize = None
+
+        # Retrieve all sample annotations and map to sensor coordinate system.
+        if selected_anntokens is not None:
+            boxes = list(map(self.get_box, selected_anntokens))
+        else:
+            boxes = self.get_boxes(sample_data_token)
+            
+        # get previous and future tracking points
+        tracked_boxes = dict()
+        for box in boxes:
+            tracked_boxes[box.token] = []
+            prev = []
+            next = []
+            ann_rec = self.get('sample_annotation',box.token)
+            curr_ann = ann_rec
+            while curr_ann['prev'] != '':
+                curr_ann = self.get('sample_annotation',curr_ann['prev'])
+                prev.insert(0,self.get_box(curr_ann['token']))
+                
+            curr_ann = ann_rec
+            while curr_ann['next'] != '':
+                curr_ann = self.get('sample_annotation',curr_ann['next'])
+                next.append(self.get_box(curr_ann['token']))
+            tracked_boxes[box.token] = {'tracks':prev + [self.get_box(box.token)] + next,
+                                        'split':len(prev)}
+
+        # Make list of Box objects including coord system transforms.
+        box_list = []
+        for box in boxes:
+            if use_flat_vehicle_coordinates:
+                # Move box to ego vehicle coord system parallel to world z plane.
+                yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+                box.translate(-np.array(pose_record['translation']))
+                box.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
+            else:
+                # Move box to ego vehicle coord system.
+                box.translate(-np.array(pose_record['translation']))
+                box.rotate(Quaternion(pose_record['rotation']).inverse)
+
+                #  Move box to sensor coord system.
+                box.translate(-np.array(cs_record['translation']))
+                box.rotate(Quaternion(cs_record['rotation']).inverse)
+
+            if sensor_record['modality'] == 'camera' and not \
+                    box_in_image(box, cam_intrinsic, imsize, vis_level=box_vis_level):
+                continue
+            box_list.append(box)
+            temp = []
+            for box_inner in tracked_boxes[box.token]['tracks']:
+                if use_flat_vehicle_coordinates:
+                    # Move box to ego vehicle coord system parallel to world z plane.
+                    yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+                    box_inner.translate(-np.array(pose_record['translation']))
+                    box_inner.rotate(Quaternion(scalar=np.cos(yaw / 2), vector=[0, 0, np.sin(yaw / 2)]).inverse)
+                else:
+                    # Move box to ego vehicle coord system.
+                    box_inner.translate(-np.array(pose_record['translation']))
+                    box_inner.rotate(Quaternion(pose_record['rotation']).inverse)
+
+                    #  Move box to sensor coord system.
+                    box_inner.translate(-np.array(cs_record['translation']))
+                    box_inner.rotate(Quaternion(cs_record['rotation']).inverse)
+
+                if sensor_record['modality'] == 'camera' and not \
+                        box_in_image(box_inner, cam_intrinsic, imsize, vis_level=box_vis_level):
+                    continue
+                temp.append(box_inner)
+            tracked_boxes[box.token]['tracks'] = temp
+                
+
+        return data_path, box_list, tracked_boxes, cam_intrinsic
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class NuScenesExplorer:
@@ -2244,3 +2496,214 @@ class NuScenesExplorer:
             assert total_num_samples == i, 'Error: There were supposed to be {} keyframes, ' \
                                            'but only {} keyframes were processed'.format(total_num_samples, i)
             out.release()
+
+    def render_sample_data_tracking_results(self,
+                                       tracking_results,
+                                       sample_data_token: str,
+                                       figsize=(16,12),
+                                       gt_filter: str = '.',
+                                       linewidth:int = 1,
+                                       track_render_style:str = 'line',
+                                       with_anns: bool = True,
+                                       box_vis_level: BoxVisibility = BoxVisibility.ANY,
+                                       axes_limit: float = 40,
+                                       ax: Axes = None,
+                                       num_keyframe: int = 1,
+                                       out_path: str = None,
+                                       underlay_map: bool = True,
+                                       use_flat_vehicle_coordinates: bool = True,
+                                       verbose: bool = True) -> None:
+        """
+        Render sample data onto axis.
+        :param sample_data_token: Sample_data token.
+        :param with_anns: Whether to draw box annotations.
+        :param box_vis_level: If sample_data is an image, this sets required visibility for boxes.
+        :param axes_limit: Axes limit for lidar and radar (measured in meters).
+        :param ax: Axes onto which to render.
+        :param nsweeps: Number of sweeps for lidar and radar.
+        :param out_path: Optional path to save the rendered figure to disk.
+        :param underlay_map: When set to true, lidar data is plotted onto the map. This can be slow.
+        :param use_flat_vehicle_coordinates: Instead of the current sensor's coordinate frame, use ego frame which is
+            aligned to z-plane in the world. Note: Previously this method did not use flat vehicle coordinates, which
+            can lead to small errors when the vertical axis of the global frame and lidar are not aligned. The new
+            setting is more correct and rotates the plot by ~90 degrees.
+        :param verbose: Whether to display the image after it is rendered.
+        """
+        # Get sensor modality.
+        sd_record = self.nusc.get('sample_data', sample_data_token)
+        sensor_modality = sd_record['sensor_modality']
+
+        if sensor_modality in ['lidar', 'radar']:
+            sample_rec = self.nusc.get('sample', sd_record['sample_token'])
+            chan = sd_record['channel']
+            ref_chan = 'LIDAR_TOP'
+            ref_sd_token = sample_rec['data'][ref_chan]
+            ref_sd_record = self.nusc.get('sample_data', ref_sd_token)
+
+            if sensor_modality == 'lidar':
+                    # Get aggregated lidar point cloud in lidar frame.
+                pc, times = LidarPointCloud.from_file_future_keyframe(self.nusc, 
+                                                                 sample_rec, 
+                                                                 chan, 
+                                                                 ref_chan,
+                                                                 num_keyframe=num_keyframe)
+                velocities = None
+            else:
+                # Get aggregated radar point cloud in reference frame.
+                # The point cloud is transformed to the reference frame for visualization purposes.
+                pc, times = RadarPointCloud.from_file_future_keyframe(self.nusc, 
+                                                                 sample_rec, 
+                                                                 chan, 
+                                                                 ref_chan, 
+                                                                 num_keyframe=num_keyframe)
+
+                # Transform radar velocities (x is front, y is left), as these are not transformed when loading the
+                # point cloud.
+                radar_cs_record = self.nusc.get('calibrated_sensor', sd_record['calibrated_sensor_token'])
+                ref_cs_record = self.nusc.get('calibrated_sensor', ref_sd_record['calibrated_sensor_token'])
+                velocities = pc.points[8:10, :]  # Compensated velocity
+                velocities = np.vstack((velocities, np.zeros(pc.points.shape[1])))
+                velocities = np.dot(Quaternion(radar_cs_record['rotation']).rotation_matrix, velocities)
+                velocities = np.dot(Quaternion(ref_cs_record['rotation']).rotation_matrix.T, velocities)
+                velocities[2, :] = np.zeros(pc.points.shape[1])
+
+            # By default we render the sample_data top down in the sensor frame.
+            # This is slightly inaccurate when rendering the map as the sensor frame may not be perfectly upright.
+            # Using use_flat_vehicle_coordinates we can render the map in the ego frame instead.
+            if use_flat_vehicle_coordinates:
+                # Retrieve transformation matrices for reference point cloud.
+                cs_record = self.nusc.get('calibrated_sensor', ref_sd_record['calibrated_sensor_token'])
+                pose_record = self.nusc.get('ego_pose', ref_sd_record['ego_pose_token'])
+                ref_to_ego = transform_matrix(translation=cs_record['translation'],
+                                              rotation=Quaternion(cs_record["rotation"]))
+
+                # Compute rotation between 3D vehicle pose and "flat" vehicle pose (parallel to global z plane).
+                ego_yaw = Quaternion(pose_record['rotation']).yaw_pitch_roll[0]
+                rotation_vehicle_flat_from_vehicle = np.dot(
+                    Quaternion(scalar=np.cos(ego_yaw / 2), vector=[0, 0, np.sin(ego_yaw / 2)]).rotation_matrix,
+                    Quaternion(pose_record['rotation']).inverse.rotation_matrix)
+                vehicle_flat_from_vehicle = np.eye(4)
+                vehicle_flat_from_vehicle[:3, :3] = rotation_vehicle_flat_from_vehicle
+                viewpoint = np.dot(vehicle_flat_from_vehicle, ref_to_ego)
+            else:
+                viewpoint = np.eye(4)
+                
+                
+            # Init axes.
+            if ax is None:
+                _, ax = plt.subplots(1, 2, figsize=figsize)
+
+            # Render map if requested.
+            if underlay_map:
+                assert use_flat_vehicle_coordinates, 'Error: underlay_map requires use_flat_vehicle_coordinates, as ' \
+                                                     'otherwise the location does not correspond to the map!'
+                self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit, ax=ax[0])
+                self.render_ego_centric_map(sample_data_token=sample_data_token, axes_limit=axes_limit, ax=ax[1])
+            
+
+            # Show point cloud.
+            points = view_points(pc.points[:3, :], viewpoint, normalize=False)
+            dists = np.sqrt(np.sum(pc.points[:2, :] ** 2, axis=0))
+            colors = np.minimum(1, dists / axes_limit / np.sqrt(2))
+
+
+            point_scale = 0.01# if sensor_modality == 'lidar' else 3.0
+            scatter = ax[0].scatter(points[0, :], points[1, :], c=colors, s=point_scale, marker=',')
+            scatter = ax[1].scatter(points[0, :], points[1, :], c=colors, s=point_scale, marker=',')
+            
+            
+            
+            
+            def render_tracks_line(box,box_list,ax,color,linewidth=0.1,markersize=0.2):
+                xy = np.vstack([box.center for box in box_list['tracks']])[:,:2]
+                ax.plot(xy[:,0],xy[:,1],'-,',color=color,linewidth=linewidth, markersize=markersize)
+                s = box_list['split']
+                ax.plot(xy[:s,0],xy[:s,1],',',color='red',linewidth=linewidth, markersize=markersize)
+                ax.plot(xy[s,0],xy[s,1],',',color='black',linewidth=linewidth, markersize=markersize)
+
+            # Get GT boxes in lidar frame.
+            _, gt_boxes, gt_tracked_boxes, _ = self.nusc.get_sample_data_tracking(
+                                                ref_sd_token, 
+                                                box_vis_level=box_vis_level,
+                                                use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
+            # Get predicted boxes in lidar frame.
+            _, pred_boxes, pred_tracked_boxes, _ = self.nusc.get_sample_data_tracking_preds(
+                                                        tracking_results,
+                                                        ref_sd_token, 
+                                                        box_vis_level=box_vis_level,
+                                                        use_flat_vehicle_coordinates=use_flat_vehicle_coordinates)
+            
+            distances = sklearn.metrics.pairwise.euclidean_distances(
+                            np.vstack([box.center for box in gt_boxes])[:,:2], 
+                            np.vstack([box.center for box in pred_boxes])[:,:2]
+                        )
+            
+            # Plot GT boxes
+            for idx,box in enumerate(gt_boxes):
+                if gt_filter not in box.name:
+                    continue
+                    
+                c = self.nusc.instance_to_color[self.nusc.get('sample_annotation',box.token)['instance_token']]
+                box.render(ax[0], view=np.eye(4), colors=(c, c, c),linewidth=linewidth)
+                
+                if track_render_style == 'box':
+                    for box_inner in gt_tracked_boxes[box.token]['tracks']:
+                        box_inner.render(ax[0], view=np.eye(4), colors=(c, c, c),linewidth=linewidth)
+                else:
+                    render_tracks_line(box,gt_tracked_boxes[box.token],ax[0],color=c)
+                        
+                        
+            #plot Predicted boxes
+            for idx,box in  enumerate(pred_boxes):
+                #make same color as GT tracks
+                tempdist = distances[:,idx]
+                indices = np.argsort(tempdist, kind='mergesort')
+                matched = False
+                assert tempdist[indices[0]] <= tempdist[indices[-1]]
+                for x in indices:
+                    if tempdist[x] < 2 and box.name.split('.')[0] in gt_boxes[x].name:
+                        c = self.nusc.instance_to_color[self.nusc.get('sample_annotation',gt_boxes[x].token)['instance_token']]
+                        matched = True
+                        break
+    
+                if not matched:
+                    c = tracking_results.track_id_to_color[box.token]
+                
+                box.render(ax[1], view=np.eye(4), colors=(c, c, c),linewidth=linewidth)
+                if track_render_style == 'box':
+                    for box_inner in pred_tracked_boxes[box.token]['tracks']:
+                        box_inner.render(ax[1], view=np.eye(4), colors=(c, c, c),linewidth=linewidth)
+                else:
+                    render_tracks_line(box,pred_tracked_boxes[box.token],ax[1],color=c)
+                        
+
+            # Limit visible range.
+            ax[0].set_xlim(-axes_limit, axes_limit)
+            ax[0].set_ylim(-axes_limit, axes_limit)
+            
+            ax[1].set_xlim(-axes_limit, axes_limit)
+            ax[1].set_ylim(-axes_limit, axes_limit)
+        elif sensor_modality == 'camera':
+            raise ValueError("Error: Camera  Not Implemented!")
+        else:
+            raise ValueError("Error: Unknown sensor modality!")
+            
+            
+            
+        # Show ego vehicle.
+        ax[0].plot(0, 0, 'x', color='red')
+        ax[1].plot(0, 0, 'x', color='red')
+            
+        ax[0].axis('off')
+        ax[0].set_title('GT Tracks')
+        ax[0].set_aspect('equal')
+        
+        ax[1].axis('off')
+        ax[1].set_title('Predicted Tracks')
+        ax[1].set_aspect('equal')
+
+        if out_path is not None:
+            plt.savefig(out_path, bbox_inches='tight', pad_inches=0, dpi=200)
+
+        if verbose:
+            plt.show()
