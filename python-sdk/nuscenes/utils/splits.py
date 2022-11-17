@@ -148,6 +148,42 @@ mini_val = \
     ['scene-0103', 'scene-0916']
 
 
+medium_train = \
+    ['scene-0003', 'scene-0005', 'scene-0006', 'scene-0007', 'scene-0008', 'scene-0009', 'scene-0011', 'scene-0018',
+       'scene-0029', 'scene-0032', 'scene-0036', 'scene-0043', 'scene-0049', 'scene-0050', 'scene-0052', 'scene-0058',
+       'scene-0064', 'scene-0065', 'scene-0068', 'scene-0070', 'scene-0121', 'scene-0123', 'scene-0128', 'scene-0133',
+       'scene-0135', 'scene-0161', 'scene-0172', 'scene-0176', 'scene-0177', 'scene-0178', 'scene-0180', 'scene-0181',
+       'scene-0185', 'scene-0187', 'scene-0193', 'scene-0195', 'scene-0208', 'scene-0211', 'scene-0230', 'scene-0232',
+       'scene-0238', 'scene-0241', 'scene-0251', 'scene-0268', 'scene-0270', 'scene-0271', 'scene-0272', 'scene-0275',
+       'scene-0315', 'scene-0318', 'scene-0330', 'scene-0331', 'scene-0344', 'scene-0355', 'scene-0356', 'scene-0357',
+       'scene-0359', 'scene-0360', 'scene-0363', 'scene-0365', 'scene-0367', 'scene-0369', 'scene-0374', 'scene-0375',
+       'scene-0377', 'scene-0379', 'scene-0401', 'scene-0402', 'scene-0403', 'scene-0411', 'scene-0416', 'scene-0421',
+       'scene-0423', 'scene-0424', 'scene-0431', 'scene-0432', 'scene-0433', 'scene-0434', 'scene-0436', 'scene-0439',
+       'scene-0443', 'scene-0452', 'scene-0456', 'scene-0480', 'scene-0507', 'scene-0513', 'scene-0529', 'scene-0531',
+       'scene-0542', 'scene-0546', 'scene-0560', 'scene-0568', 'scene-0577', 'scene-0588', 'scene-0589', 'scene-0592',
+       'scene-0599', 'scene-0629', 'scene-0635', 'scene-0641', 'scene-0644', 'scene-0646', 'scene-0647', 'scene-0697',
+       'scene-0706', 'scene-0715', 'scene-0734', 'scene-0751', 'scene-0759', 'scene-0786', 'scene-0790', 'scene-0792',
+       'scene-0794', 'scene-0797', 'scene-0799', 'scene-0800', 'scene-0819', 'scene-0849', 'scene-0853', 'scene-0854',
+       'scene-0856', 'scene-0858', 'scene-0861', 'scene-0862', 'scene-0863', 'scene-0864', 'scene-0868', 'scene-0870',
+       'scene-0887', 'scene-0897', 'scene-0916', 'scene-0919', 'scene-0923', 'scene-0928', 'scene-0929', 'scene-0956',
+       'scene-0958', 'scene-0962', 'scene-0966', 'scene-0972', 'scene-0976', 'scene-0980', 'scene-0990', 'scene-0997',
+       'scene-0998', 'scene-0999', 'scene-1003', 'scene-1004', 'scene-1005', 'scene-1007', 'scene-1008', 'scene-1010',
+       'scene-1014', 'scene-1023', 'scene-1024', 'scene-1044', 'scene-1046', 'scene-1048', 'scene-1051', 'scene-1052',
+       'scene-1055', 'scene-1056', 'scene-1057', 'scene-1058', 'scene-1059', 'scene-1060', 'scene-1061', 'scene-1063',
+       'scene-1064', 'scene-1065', 'scene-1068', 'scene-1069', 'scene-1070', 'scene-1071', 'scene-1073', 'scene-1074',
+       'scene-1077', 'scene-1078', 'scene-1079', 'scene-1080', 'scene-1081', 'scene-1083', 'scene-1084', 'scene-1085',
+       'scene-1086', 'scene-1087', 'scene-1088', 'scene-1090', 'scene-1091', 'scene-1092', 'scene-1093', 'scene-1094',
+       'scene-1095', 'scene-1098', 'scene-1099', 'scene-1102', 'scene-1105', 'scene-1106', 'scene-1109', 'scene-1110']
+
+medium_val = \
+    ['scene-0012', 'scene-0019', 'scene-0094', 'scene-0126', 'scene-0138', 'scene-0152', 'scene-0157', 'scene-0276',
+       'scene-0287', 'scene-0292', 'scene-0347', 'scene-0354', 'scene-0372', 'scene-0378', 'scene-0396', 'scene-0399',
+       'scene-0407', 'scene-0408', 'scene-0418', 'scene-0430', 'scene-0438', 'scene-0440', 'scene-0458', 'scene-0530',
+       'scene-0553', 'scene-0578', 'scene-0677', 'scene-0701', 'scene-0791', 'scene-0847', 'scene-0848', 'scene-0851',
+       'scene-0906', 'scene-0930', 'scene-0952', 'scene-0995', 'scene-1001', 'scene-1011', 'scene-1017', 'scene-1018',
+       'scene-1047', 'scene-1049', 'scene-1067', 'scene-1072', 'scene-1076', 'scene-1082', 'scene-1101', 'scene-1104']
+
+
 def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:
     """
     Returns the logs in each dataset split of nuScenes.
@@ -169,6 +205,9 @@ def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:
             'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
     elif split in {'mini_train', 'mini_val'}:
         assert version.endswith('mini'), \
+            'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
+    elif split in {'medium_train', 'medium_val'}:
+        assert version.endswith('medium'), \
             'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
     elif split == 'test':
         assert version.endswith('test'), \
@@ -202,7 +241,8 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     assert len(all_scenes) == 1000 and len(set(all_scenes)) == 1000, 'Error: Splits incomplete!'
     scene_splits = {'train': train, 'val': val, 'test': test,
                     'mini_train': mini_train, 'mini_val': mini_val,
-                    'train_detect': train_detect, 'train_track': train_track}
+                    'train_detect': train_detect, 'train_track': train_track,
+                    'medium_train': medium_train, 'medium_val': medium_val}
 
     # Optional: Print scene-level stats.
     if verbose:

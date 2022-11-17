@@ -1,6 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Oscar Beijbom, Holger Caesar & Fong Whye Kit, 2020.
-
+import gzip
 import json
 import math
 import os
@@ -10,6 +10,7 @@ import time
 import pickle
 from datetime import datetime
 from typing import Tuple, List, Iterable
+from pickle import UnpicklingError
 
 import cv2
 import matplotlib.pyplot as plt
@@ -67,18 +68,19 @@ class NuScenes:
             print("======\nLoading NuScenes tables for version {}...".format(self.version))
 
         # Explicitly assign tables to help the IDE determine valid class members.
+
+        self.sample_annotation = self.__load_table__('sample_annotation')
+        self.ego_pose = self.__load_table__('ego_pose')
+        self.sample_data = self.__load_table__('sample_data')
         self.category = self.__load_table__('category')
         self.attribute = self.__load_table__('attribute')
         self.visibility = self.__load_table__('visibility')
         self.instance = self.__load_table__('instance')
         self.sensor = self.__load_table__('sensor')
         self.calibrated_sensor = self.__load_table__('calibrated_sensor')
-        self.ego_pose = self.__load_table__('ego_pose')
         self.log = self.__load_table__('log')
         self.scene = self.__load_table__('scene')
         self.sample = self.__load_table__('sample')
-        self.sample_data = self.__load_table__('sample_data')
-        self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
 
         # create colors for each instance
@@ -142,8 +144,13 @@ class NuScenes:
         if table_name in ['ego_pose','sample_data','sample_annotation'] and self.version == 'v1.0-trainval':
             if self.verbose:
                 print('Loading table: {}.pkl'.format(table_name))
-            with open(osp.join(self.table_root, '{}.pkl'.format(table_name)),'rb') as f:
-                table = pickle.load(f)
+            
+            try:
+                with open(osp.join(self.table_root, '{}.pkl'.format(table_name)),'rb') as f:
+                    table = pickle.load(f)
+            except UnpicklingError:
+                with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
+                    table = json.load(f)
         else:
             if self.verbose:
                 print('Loading table: {}.json'.format(table_name))
@@ -683,8 +690,16 @@ class NuScenes:
 
 
         def get_box_results(result):
-            return Box(result['translation'], result['size'], Quaternion(result['rotation']),
-                   name=result['attribute_name'], token=result['tracking_id'])
+            try:
+                return Box(result['translation'], result['size'], Quaternion(result['rotation']),
+                           name=result['attribute_name'], token=result['tracking_id'])
+            except:
+                #TODO handle more cases here 4
+                return Box(result['translation'], 
+                           result['size'], 
+                            Quaternion(result['rotation']),
+                           name='vehicle.moving' if result['tracking_name'] == 'car' else result['tracking_name'], 
+                           token=result['tracking_id'])
             
         boxes = list(map(get_box_results, tracking_results.results[sd_record['sample_token']]))
         
@@ -2655,6 +2670,9 @@ class NuScenesExplorer:
                         
             #plot Predicted boxes
             for idx,box in  enumerate(pred_boxes):
+                if gt_filter not in box.name:
+                    continue
+
                 #make same color as GT tracks
                 tempdist = distances[:,idx]
                 indices = np.argsort(tempdist, kind='mergesort')
