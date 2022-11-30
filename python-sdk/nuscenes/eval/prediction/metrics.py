@@ -86,8 +86,8 @@ def rank_metric_over_top_k_modes(metric_results: np.ndarray,
                                  ranking_func: str) -> np.ndarray:
     """
     Compute a metric over all trajectories ranked by probability of each trajectory.
-    :param metric_results: 1-dimensional array of shape [batch_size, num_modes].
-    :param mode_probabilities: 1-dimensional array of shape [batch_size, num_modes].
+    :param metric_results: 2-dimensional array of shape [batch_size, num_modes].
+    :param mode_probabilities: 2-dimensional array of shape [batch_size, num_modes].
     :param ranking_func: Either 'min' or 'max'. How you want to metrics ranked over the top
             k modes.
     :return: Array of shape [num_modes].
