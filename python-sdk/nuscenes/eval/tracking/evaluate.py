@@ -169,6 +169,9 @@ class TrackingEval:
                     np.all(values[np.logical_not(np.isnan(values))] >= 0)
                     values[np.isnan(values)] = self.cfg.metric_worst[metric_name]
                     value = float(np.nanmean(values))
+                print(" metrics.add_label_metric()")
+                print("class_name",class_name)
+                print("value",value)
                 metrics.add_label_metric(metric_name, class_name, value)
 
         # Compute evaluation time.

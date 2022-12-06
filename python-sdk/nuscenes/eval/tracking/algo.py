@@ -120,7 +120,10 @@ class TrackingEvaluation(object):
         # Get thresholds.
         # Note: The recall values are the hypothetical recall (10%, 20%, ..).
         # The actual recall may vary as there is no way to compute it without trying all thresholds.
+
         thresholds, recalls = self.compute_thresholds(gt_box_count)
+        print('\nthresholds:',thresholds, '\nrecalls:',recalls)
+
         md.confidence = thresholds
         md.recall_hypo = recalls
         if self.verbose:
@@ -172,6 +175,9 @@ class TrackingEvaluation(object):
 
         # Store all traditional metrics.
         for (mot_name, metric_name) in MOT_METRIC_MAP.items():
+            print('\nmot_name',mot_name)
+            print('metric_name',metric_name)
+
             # Skip metrics which we don't output.
             if metric_name == '':
                 continue
@@ -203,6 +209,8 @@ class TrackingEvaluation(object):
                 all_values = [np.nan] * num_unachieved_thresholds
                 all_values.extend(values)
 
+
+            print('\nall_values',all_values)
             assert len(all_values) == TrackingMetricData.nelem
             md.set_metric(metric_name, all_values)
 
@@ -215,6 +223,8 @@ class TrackingEvaluation(object):
         :param threshold: score threshold used to determine positives and negatives.
         :return: (The MOTAccumulator that stores all the hits/misses/etc, Scores for each TP).
         """
+        bens_frameid_to_timestamp = {}
+
         accs = []
         scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.
 
@@ -239,6 +249,8 @@ class TrackingEvaluation(object):
                 renderer = None
 
             for timestamp in scene_tracks_gt.keys():
+                bens_frameid_to_timestamp[len(bens_frameid_to_timestamp)] = timestamp
+
                 # Select only the current class.
                 frame_gt = scene_tracks_gt[timestamp]
                 frame_pred = scene_tracks_pred[timestamp]
@@ -294,6 +306,8 @@ class TrackingEvaluation(object):
 
         # Merge accumulators
         acc_merged = MOTAccumulatorCustom.merge_event_dataframes(accs)
+        # acc_merged, ben_mappings = MOTAccumulatorCustom.merge_event_dataframes(accs, return_mappings=True)
+
 
         return acc_merged, scores
 

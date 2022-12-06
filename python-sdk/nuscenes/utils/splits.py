@@ -181,7 +181,8 @@ medium_val = \
        'scene-0407', 'scene-0408', 'scene-0418', 'scene-0430', 'scene-0438', 'scene-0440', 'scene-0458', 'scene-0530',
        'scene-0553', 'scene-0578', 'scene-0677', 'scene-0701', 'scene-0791', 'scene-0847', 'scene-0848', 'scene-0851',
        'scene-0906', 'scene-0930', 'scene-0952', 'scene-0995', 'scene-1001', 'scene-1011', 'scene-1017', 'scene-1018',
-       'scene-1047', 'scene-1049', 'scene-1067', 'scene-1072', 'scene-1076', 'scene-1082', 'scene-1101', 'scene-1104']
+       'scene-1047', 'scene-1049', 'scene-1067', 'scene-1072', 'scene-1076', 'scene-1082', 'scene-1101', 'scene-1104'
+       ]
 
 
 def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:

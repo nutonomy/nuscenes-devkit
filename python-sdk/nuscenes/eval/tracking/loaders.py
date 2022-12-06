@@ -89,6 +89,7 @@ def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]])
                 tracking_box = interpolate_tracking_boxes(left_tracking_box, right_tracking_box, right_ratio)
                 interpolate_count += 1
                 tracks_by_timestamp[timestamp].append(tracking_box)
+    print(interpolate_count)
 
     return tracks_by_timestamp
 
