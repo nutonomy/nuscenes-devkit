@@ -154,7 +154,6 @@ class NuScenes:
             except FileNotFoundError:
                 with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
                     table = json.load(f)
-
         else:
             if self.verbose:
                 print('Loading table: {}.json'.format(table_name))
