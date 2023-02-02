@@ -163,25 +163,4 @@ pipeline {
       } //steps
     } // stage('Deploy')
   } // stages
-
-  post {
-    // only clean up if the build was successful; this allows us to debug failed builds
-    success {
-        // sh """git clean -fdx"""
-        slackSend channel: "#nuscenes-ci", token: "bWyF0sJAVlMPOTs2lUTt5c2N", color: "#00cc00", message: """Success ${env.JOB_NAME} #${env.BUILD_NUMBER} [${env.CHANGE_AUTHOR}] (<${env.BUILD_URL}|Open>)
-${env.CHANGE_BRANCH}: ${env.CHANGE_TITLE}"""
-    }
-    aborted {
-        slackSend channel: "#nuscenes-ci", token: "bWyF0sJAVlMPOTs2lUTt5c2N", color: "#edb612", message: """Aborted ${env.JOB_NAME} #${env.BUILD_NUMBER} [${env.CHANGE_AUTHOR}] (<${env.BUILD_URL}|Open>)
-${env.CHANGE_BRANCH}: ${env.CHANGE_TITLE}"""
-    }
-    failure {
-        slackSend channel: "#nuscenes-ci", token: "bWyF0sJAVlMPOTs2lUTt5c2N", color: "#c61515", message: """Failed ${env.JOB_NAME} #${env.BUILD_NUMBER} [${env.CHANGE_AUTHOR}] (<${env.BUILD_URL}|Open>)
-${env.CHANGE_BRANCH}: ${env.CHANGE_TITLE}"""
-    }
-    //changed {
-        // only run if the current Pipeline run has a different status from previously completed Pipeline
-    //}
-  } // post
-
 } // Pipeline
