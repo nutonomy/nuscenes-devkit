@@ -185,6 +185,44 @@ medium_val = \
        ]
 
 
+balanced_medium_train = \
+    ['scene-0002', 'scene-0004', 'scene-0007', 'scene-0008', 'scene-0011', 'scene-0019', 'scene-0020', 'scene-0025',    
+       'scene-0028', 'scene-0032', 'scene-0043', 'scene-0050', 'scene-0051', 'scene-0052', 'scene-0056', 'scene-0057',
+       'scene-0062', 'scene-0070', 'scene-0073', 'scene-0075', 'scene-0120', 'scene-0125', 'scene-0129', 'scene-0131',
+       'scene-0134', 'scene-0135', 'scene-0139', 'scene-0149', 'scene-0151', 'scene-0152', 'scene-0158', 'scene-0161',
+       'scene-0163', 'scene-0166', 'scene-0170', 'scene-0172', 'scene-0173', 'scene-0182', 'scene-0187', 'scene-0194',
+       'scene-0204', 'scene-0206', 'scene-0212', 'scene-0218', 'scene-0220', 'scene-0222', 'scene-0224', 'scene-0236',
+       'scene-0237', 'scene-0244', 'scene-0250', 'scene-0257', 'scene-0260', 'scene-0283', 'scene-0287', 'scene-0288',
+       'scene-0293', 'scene-0294', 'scene-0297', 'scene-0300', 'scene-0303', 'scene-0316', 'scene-0359', 'scene-0369',
+       'scene-0375', 'scene-0376', 'scene-0377', 'scene-0385', 'scene-0388', 'scene-0395', 'scene-0402', 'scene-0403',
+       'scene-0405', 'scene-0408', 'scene-0414', 'scene-0417', 'scene-0424', 'scene-0427', 'scene-0428', 'scene-0430',
+       'scene-0433', 'scene-0434', 'scene-0440', 'scene-0441', 'scene-0442', 'scene-0451', 'scene-0456', 'scene-0457',
+       'scene-0459', 'scene-0461', 'scene-0464', 'scene-0469', 'scene-0480', 'scene-0499', 'scene-0502', 'scene-0513',
+       'scene-0517', 'scene-0518', 'scene-0525', 'scene-0526', 'scene-0530', 'scene-0535', 'scene-0537', 'scene-0538',
+       'scene-0539', 'scene-0570', 'scene-0574', 'scene-0577', 'scene-0580', 'scene-0584', 'scene-0585', 'scene-0587',
+       'scene-0592', 'scene-0600', 'scene-0639', 'scene-0647', 'scene-0649', 'scene-0650', 'scene-0652', 'scene-0654',
+       'scene-0655', 'scene-0659', 'scene-0660', 'scene-0662', 'scene-0668', 'scene-0669', 'scene-0675', 'scene-0678',
+       'scene-0683', 'scene-0695', 'scene-0697', 'scene-0704', 'scene-0707', 'scene-0708', 'scene-0710', 'scene-0711',
+       'scene-0713', 'scene-0715', 'scene-0716', 'scene-0719', 'scene-0733', 'scene-0735', 'scene-0739', 'scene-0741',
+       'scene-0752', 'scene-0757', 'scene-0759', 'scene-0760', 'scene-0768', 'scene-0769', 'scene-0790', 'scene-0792',
+       'scene-0806', 'scene-0812', 'scene-0820', 'scene-0821', 'scene-0850', 'scene-0854', 'scene-0860', 'scene-0864',
+       'scene-0865', 'scene-0866', 'scene-0870', 'scene-0873', 'scene-0875', 'scene-0882', 'scene-0893', 'scene-0899',
+       'scene-0903', 'scene-0945', 'scene-0949', 'scene-0955', 'scene-0960', 'scene-0976', 'scene-0979', 'scene-0982',
+       'scene-0983', 'scene-0984', 'scene-0995', 'scene-0998', 'scene-1002', 'scene-1003', 'scene-1005', 'scene-1009',
+       'scene-1011', 'scene-1014', 'scene-1022', 'scene-1023', 'scene-1048', 'scene-1050', 'scene-1054', 'scene-1055',
+       'scene-1077', 'scene-1082', 'scene-1083', 'scene-1084', 'scene-1085', 'scene-1091', 'scene-1096', 'scene-1097',
+       'scene-1101', 'scene-1107']
+
+balanced_medium_val = \
+    ['scene-0014', 'scene-0097', 'scene-0098', 'scene-0103', 'scene-0106', 'scene-0109', 'scene-0269', 'scene-0272',
+       'scene-0274', 'scene-0277', 'scene-0330', 'scene-0344', 'scene-0346', 'scene-0554', 'scene-0556', 'scene-0558',
+       'scene-0561', 'scene-0562', 'scene-0565', 'scene-0626', 'scene-0629', 'scene-0634', 'scene-0637', 'scene-0771',
+       'scene-0778', 'scene-0781', 'scene-0782', 'scene-0797', 'scene-0799', 'scene-0800', 'scene-0904', 'scene-0906',
+       'scene-0908', 'scene-0910', 'scene-0912', 'scene-0914', 'scene-0916', 'scene-0919', 'scene-0923', 'scene-0924',
+       'scene-0929', 'scene-0962', 'scene-0963', 'scene-0966', 'scene-0969', 'scene-0971', 'scene-1059', 'scene-1064',
+       'scene-1065', 'scene-1066', 'scene-1069']
+
+
 def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:
     """
     Returns the logs in each dataset split of nuScenes.
@@ -209,6 +247,9 @@ def create_splits_logs(split: str, nusc: 'NuScenes') -> List[str]:
             'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
     elif split in {'medium_train', 'medium_val'}:
         assert version.endswith('medium'), \
+            'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
+    elif split in {'balanced_medium_train', 'balanced_medium_val'}:
+        assert version.endswith('balanced-medium'), \
             'Requested split {} which is not compatible with NuScenes version {}'.format(split, version)
     elif split == 'test':
         assert version.endswith('test'), \
@@ -243,7 +284,8 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     scene_splits = {'train': train, 'val': val, 'test': test,
                     'mini_train': mini_train, 'mini_val': mini_val,
                     'train_detect': train_detect, 'train_track': train_track,
-                    'medium_train': medium_train, 'medium_val': medium_val}
+                    'medium_train': medium_train, 'medium_val': medium_val,
+                    'balanced_medium_train': balanced_medium_train, 'balanced_medium_val': balanced_medium_val}
 
     # Optional: Print scene-level stats.
     if verbose:

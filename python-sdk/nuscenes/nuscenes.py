@@ -148,7 +148,7 @@ class NuScenes:
             try:
                 with open(osp.join(self.table_root, '{}.pkl'.format(table_name)),'rb') as f:
                     table = pickle.load(f)
-            except UnpicklingError:
+            except Exception: #UnpicklingError, FileNotFoundError
                 with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
                     table = json.load(f)
             except FileNotFoundError:
