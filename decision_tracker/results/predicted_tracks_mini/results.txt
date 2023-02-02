@@ -1,0 +1,857 @@
+======
+Loading NuScenes tables for version v1.0-mini...
+Loading table: sample_annotation.json
+Loading table: ego_pose.json
+Loading table: sample_data.json
+Loading table: category.json
+Loading table: attribute.json
+Loading table: visibility.json
+Loading table: instance.json
+Loading table: sensor.json
+Loading table: calibrated_sensor.json
+Loading table: log.json
+Loading table: scene.json
+Loading table: sample.json
+Loading table: map.json
+23 category,
+8 attribute,
+4 visibility,
+911 instance,
+12 sensor,
+120 calibrated_sensor,
+31206 ego_pose,
+8 log,
+10 scene,
+404 sample,
+31206 sample_data,
+18538 sample_annotation,
+4 map,
+Done loading in 0.485 seconds.
+======
+Reverse indexing ...
+Done reverse indexing in 0.1 seconds.
+======
+Initializing nuScenes tracking evaluation
+Loaded results from tracks/predicted_tracks_mini.json. Found detections for 323 samples.
+Loading annotations for mini_train split from nuScenes version: v1.0-mini
+Loaded ground truth annotations for 323 samples.
+Filtering tracks
+=> Original number of boxes: 4935
+=> After distance based filtering: 4935
+=> After LIDAR and RADAR points based filtering: 4935
+=> After bike rack filtering: 4935
+Filtering ground truth tracks
+=> Original number of boxes: 10065
+=> After distance based filtering: 7347
+=> After LIDAR and RADAR points based filtering: 6553
+=> After bike rack filtering: 6553
+39
+165
+110
+183
+7
+22
+26
+22
+1
+3
+0
+1
+0
+1
+2
+0
+Accumulating metric data...
+Computing metrics for class bicycle...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan] 
+recalls: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+Computed thresholds
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motar
+metric_name motar
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+mot_name faf
+metric_name faf
+
+all_values [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_misses
+metric_name fn
+
+all_values [149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149, 149]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name recall
+metric_name recall
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name tid
+metric_name tid
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+
+mot_name lgd
+metric_name lgd
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+Computing metrics for class bus...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan] 
+recalls: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+Computed thresholds
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motar
+metric_name motar
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+mot_name faf
+metric_name faf
+
+all_values [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_misses
+metric_name fn
+
+all_values [193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193, 193]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name recall
+metric_name recall
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name tid
+metric_name tid
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+
+mot_name lgd
+metric_name lgd
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+Computing metrics for class car...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, 0.16969530954957007, 0.30770313621321815, 0.37778955160512256, 0.43503384093443553, 0.45656883007004145, 0.48132912814617157, 0.5030083915120677, 0.5231399770293917, 0.5360518544912338, 0.5564071923494339, 0.577574299926903, 0.587881109544209, 0.5981501996517181, 0.6113905401960495, 0.6185999863287982, 0.6281418263912201, 0.6323922627395199, 0.6420956466879163, 0.6492704588633317, 0.6537019421414632, 0.6595490412278608, 0.667738638818264, 0.671236315369606, 0.6836553755992901, 0.6905606422159407, 0.7002222563630546, 0.7045099563896656, 0.7182203888893127, 0.7254019578297933, 0.7338881770769755, 0.7419102236628532, 0.7543785125017166, 0.7694598853588104] 
+recalls: [1.0, 0.976923076923, 0.953846153846, 0.930769230769, 0.907692307692, 0.884615384615, 0.861538461538, 0.838461538462, 0.815384615385, 0.792307692308, 0.769230769231, 0.746153846154, 0.723076923077, 0.7, 0.676923076923, 0.653846153846, 0.630769230769, 0.607692307692, 0.584615384615, 0.561538461538, 0.538461538462, 0.515384615385, 0.492307692308, 0.469230769231, 0.446153846154, 0.423076923077, 0.4, 0.376923076923, 0.353846153846, 0.330769230769, 0.307692307692, 0.284615384615, 0.261538461538, 0.238461538462, 0.215384615385, 0.192307692308, 0.169230769231, 0.146153846154, 0.123076923077, 0.1]
+Computed thresholds
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.1697	0.594	0.257	0.911	323	3451	2898	306	247	4323	2898	1178	247
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.3077	0.790	0.249	0.879	323	3451	2831	416	204	3630	2831	595	204
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.3778	0.845	0.243	0.853	323	3451	2768	509	174	3372	2768	430	174
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.4350	0.884	0.237	0.822	323	3451	2697	613	141	3152	2697	314	141
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.4566	0.897	0.233	0.799	323	3451	2632	694	125	3029	2632	272	125
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.4813	0.919	0.229	0.769	323	3451	2544	798	109	2859	2544	206	109
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5030	0.927	0.227	0.746	323	3451	2476	878	97	2754	2476	181	97
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5231	0.936	0.222	0.717	323	3451	2389	976	86	2627	2389	152	86
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5361	0.943	0.219	0.692	323	3451	2307	1064	80	2519	2307	132	80
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5564	0.947	0.211	0.667	323	3451	2229	1149	73	2420	2229	118	73
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5776	0.950	0.209	0.640	323	3451	2143	1243	65	2315	2143	107	65
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5879	0.953	0.207	0.619	323	3451	2078	1315	58	2234	2078	98	58
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.5982	0.956	0.206	0.592	323	3451	1985	1408	58	2131	1985	88	58
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6114	0.963	0.199	0.566	323	3451	1900	1497	54	2024	1900	70	54
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6186	0.967	0.197	0.542	323	3451	1824	1581	46	1931	1824	61	46
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6281	0.974	0.194	0.515	323	3451	1740	1674	37	1823	1740	46	37
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6324	0.975	0.192	0.498	323	3451	1682	1732	37	1761	1682	42	37
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6421	0.977	0.191	0.466	323	3451	1576	1842	33	1646	1576	37	33
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6493	0.977	0.188	0.442	323	3451	1496	1925	30	1561	1496	35	30
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6537	0.977	0.187	0.418	323	3451	1416	2008	27	1476	1416	33	27
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6595	0.977	0.184	0.394	323	3451	1334	2091	26	1391	1334	31	26
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6677	0.979	0.180	0.369	323	3451	1253	2178	20	1299	1253	26	20
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6712	0.983	0.178	0.353	323	3451	1199	2234	18	1237	1199	20	18
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6837	0.983	0.175	0.320	323	3451	1087	2348	16	1121	1087	18	16
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.6906	0.982	0.170	0.297	323	3451	1014	2426	11	1043	1014	18	11
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7002	0.981	0.160	0.271	323	3451	928	2517	6	952	928	18	6
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7045	0.982	0.161	0.249	323	3451	854	2591	6	875	854	15	6
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7182	0.982	0.156	0.221	323	3451	761	2688	2	777	761	14	2
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7254	0.987	0.152	0.200	323	3451	688	2761	2	699	688	9	2
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7339	0.988	0.144	0.176	323	3451	606	2843	2	615	606	7	2
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7419	0.994	0.139	0.152	323	3451	524	2925	2	529	524	3	2
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7544	0.995	0.131	0.128	323	3451	441	3010	0	443	441	2	0
+
+		MOTAR	MOTP	Recall	Frames	GT	GT-Mtch	GT-Miss	GT-IDS	Pred	Pred-TP	Pred-FP	Pred-IDS
+thr_0.7695	0.995	0.130	0.107	323	3451	369	3082	0	371	369	2	0
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451, 3451]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 2898, 2831, 2768, 2697, 2632, 2544, 2476, 2389, 2307, 2229, 2143, 2078, 1985, 1900, 1824, 1740, 1682, 1576, 1496, 1416, 1334, 1253, 1199, 1087, 1014, 928, 854, 761, 688, 606, 524, 441, 369]
+
+mot_name motar
+metric_name motar
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 0.5935127674258109, 0.7898269162839986, 0.8446531791907513, 0.8835743418613274, 0.8966565349544073, 0.9190251572327043, 0.9268982229402263, 0.9363750523231479, 0.942782834850455, 0.9470614625392552, 0.9500699953336443, 0.9528392685274301, 0.9556675062972292, 0.9631578947368421, 0.9665570175438596, 0.9735632183908046, 0.9750297265160521, 0.9765228426395939, 0.9766042780748663, 0.9766949152542371, 0.9767616191904048, 0.9792498004788508, 0.9833194328607177, 0.9834406623735055, 0.9822485207100596, 0.9806034482758625, 0.9824355971896955, 0.9816031537450722, 0.9869186046511628, 0.9884488448844885, 0.9942748091603053, 0.9954648526077098, 0.994579945799458]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 0.4984062590553463, 0.6479281367719502, 0.6774847870182557, 0.6905244856563315, 0.6838597507968704, 0.6774847870182557, 0.6650246305418719, 0.6482179078527963, 0.6302521008403361, 0.6117067516661837, 0.5899739206027239, 0.5737467400753404, 0.5496957403651115, 0.5302810779484207, 0.51086641553173, 0.4908722109533469, 0.4752245725876557, 0.4459576934221965, 0.4233555491161982, 0.40075340481019994, 0.37757171834250947, 0.3555491161982034, 0.34164010431758907, 0.30976528542451465, 0.28861199652274705, 0.26369168356997974, 0.24311793682990435, 0.21645899739206031, 0.19675456389452328, 0.1735728774268328, 0.15097073312083453, 0.12720950449145174, 0.1063459866705303]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 0.2565214742054741, 0.24870102188554224, 0.2427183847927269, 0.23682060442227323, 0.23284709078389232, 0.2287582088529046, 0.22700959079920283, 0.22192452266504498, 0.21940604165312455, 0.21093917445014024, 0.20888968478947476, 0.20672193334195768, 0.2062266777133663, 0.1991924621815201, 0.19658556029227994, 0.19365247599009297, 0.19241409334844156, 0.19132862678571277, 0.18847028903188384, 0.1866887888980892, 0.18390684766530477, 0.18005209569966846, 0.17840054710439082, 0.17479984701878315, 0.16999083010150914, 0.15970150903058578, 0.1611603312523967, 0.15559358478898644, 0.152466942996222, 0.1436558036279273, 0.13864725861000896, 0.13095146335118663, 0.13025522301384848]
+
+mot_name faf
+metric_name faf
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 364.70588235294116, 184.21052631578948, 133.12693498452012, 97.21362229102168, 84.21052631578947, 63.77708978328174, 56.03715170278638, 47.05882352941176, 40.86687306501548, 36.53250773993808, 33.126934984520126, 30.340557275541798, 27.24458204334365, 21.671826625387, 18.885448916408667, 14.241486068111456, 13.003095975232199, 11.455108359133128, 10.8359133126935, 10.21671826625387, 9.597523219814242, 8.04953560371517, 6.191950464396285, 5.572755417956656, 5.572755417956656, 5.572755417956656, 4.643962848297214, 4.3343653250774, 2.786377708978328, 2.1671826625387, 0.9287925696594427, 0.6191950464396285, 0.6191950464396285]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 208, 197, 181, 173, 167, 162, 151, 142, 136, 128, 119, 113, 109, 102, 97, 93, 88, 84, 80, 76, 73, 64, 60, 56, 53, 45, 40, 34, 29, 23, 18, 14, 10]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 10, 15, 20, 27, 35, 41, 49, 62, 68, 73, 83, 87, 95, 104, 110, 121, 128, 136, 142, 147, 151, 158, 164, 175, 182, 189, 194, 205, 210, 217, 223, 229, 234]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 1178, 595, 430, 314, 272, 206, 181, 152, 132, 118, 107, 98, 88, 70, 61, 46, 42, 37, 35, 33, 31, 26, 20, 18, 18, 18, 15, 14, 9, 7, 3, 2, 2]
+
+mot_name num_misses
+metric_name fn
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 306, 416, 509, 613, 694, 798, 878, 976, 1064, 1149, 1243, 1315, 1408, 1497, 1581, 1674, 1732, 1842, 1925, 2008, 2091, 2178, 2234, 2348, 2426, 2517, 2591, 2688, 2761, 2843, 2925, 3010, 3082]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 247, 204, 174, 141, 125, 109, 97, 86, 80, 73, 65, 58, 58, 54, 46, 37, 37, 33, 30, 27, 26, 20, 18, 16, 11, 6, 6, 2, 2, 2, 2, 0, 0]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 56, 51, 43, 39, 34, 25, 24, 18, 16, 12, 8, 6, 6, 6, 4, 3, 3, 3, 2, 2, 2, 3, 4, 4, 5, 4, 2, 1, 1, 1, 1, 1, 1]
+
+mot_name recall
+metric_name recall
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 0.9113300492610837, 0.8794552303680093, 0.852506519849319, 0.8223703274413213, 0.7988988698927847, 0.768762677484787, 0.7455809910170965, 0.7171834250941757, 0.691683569979716, 0.6670530281077949, 0.6398145465082585, 0.618951028687337, 0.5920023181686468, 0.566212691973341, 0.541871921182266, 0.5149232106635758, 0.49811648797450014, 0.46624166908142567, 0.4421906693711968, 0.4181396696609678, 0.39408866995073893, 0.36887858591712547, 0.3526514053897421, 0.3196175021732831, 0.29701535786728483, 0.27064618951028685, 0.24920312952767315, 0.2210953346855984, 0.19994204578383076, 0.176180817154448, 0.1524195885250652, 0.12778904665314403, 0.10692552883222255]
+
+mot_name tid
+metric_name tid
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 0.10714285714285714, 0.22103004291845493, 0.3384279475982533, 0.38513513513513514, 0.47706422018348627, 0.533175355450237, 0.5541871921182266, 0.6113989637305699, 0.6096256684491979, 0.6333333333333333, 0.6970588235294117, 0.6946107784431138, 0.6918238993710691, 0.7128378378378378, 0.7972027972027972, 0.8712121212121212, 0.8467741935483871, 0.8826086956521739, 0.963302752293578, 1.0476190476190477, 1.0445544554455446, 1.105263157894737, 1.1797752808988764, 1.018987341772152, 1.0, 1.121212121212121, 1.1666666666666667, 1.2, 1.3333333333333333, 1.3333333333333333, 1.3620689655172413, 1.2954545454545454, 1.4705882352941178]
+
+mot_name lgd
+metric_name lgd
+
+all_values [nan, nan, nan, nan, nan, nan, nan, 0.3949579831932773, 0.51931330472103, 0.6768558951965066, 0.7815315315315315, 0.8830275229357798, 0.9289099526066351, 0.9901477832512315, 1.0595854922279793, 1.1443850267379678, 1.2222222222222223, 1.3411764705882352, 1.3862275449101797, 1.3647798742138364, 1.4391891891891893, 1.5454545454545454, 1.4924242424242424, 1.467741935483871, 1.3565217391304347, 1.4036697247706422, 1.5047619047619047, 1.5247524752475248, 1.736842105263158, 1.8370786516853932, 1.7025316455696202, 1.726027397260274, 1.9318181818181819, 1.975, 2.1, 2.3333333333333335, 2.263888888888889, 2.206896551724138, 1.75, 1.9705882352941178]
+Computing metrics for class motorcycle...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan] 
+recalls: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+Computed thresholds
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motar
+metric_name motar
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+mot_name faf
+metric_name faf
+
+all_values [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_misses
+metric_name fn
+
+all_values [135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135, 135]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name recall
+metric_name recall
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name tid
+metric_name tid
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+
+mot_name lgd
+metric_name lgd
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+Computing metrics for class pedestrian...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan] 
+recalls: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+Computed thresholds
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motar
+metric_name motar
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+mot_name faf
+metric_name faf
+
+all_values [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145, 145]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_misses
+metric_name fn
+
+all_values [2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763, 2763]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name recall
+metric_name recall
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name tid
+metric_name tid
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+
+mot_name lgd
+metric_name lgd
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+Computing metrics for class trailer...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan] 
+recalls: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+Computed thresholds
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motar
+metric_name motar
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+mot_name faf
+metric_name faf
+
+all_values [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_misses
+metric_name fn
+
+all_values [51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name recall
+metric_name recall
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name tid
+metric_name tid
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+
+mot_name lgd
+metric_name lgd
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+Computing metrics for class truck...
+
+
+thresholds: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan] 
+recalls: [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+Computed thresholds
+
+
+mot_name num_frames
+metric_name 
+
+mot_name num_objects
+metric_name gt
+
+all_values [385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385]
+
+mot_name num_predictions
+metric_name 
+
+mot_name num_matches
+metric_name tp
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motar
+metric_name motar
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mota_custom
+metric_name mota
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name motp_custom
+metric_name motp
+
+all_values [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+
+mot_name faf
+metric_name faf
+
+all_values [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+mot_name mostly_tracked
+metric_name mt
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name mostly_lost
+metric_name ml
+
+all_values [22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22]
+
+mot_name num_false_positives
+metric_name fp
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_misses
+metric_name fn
+
+all_values [385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385, 385]
+
+mot_name num_switches
+metric_name ids
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name num_fragmentations_custom
+metric_name frag
+
+all_values [nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]
+
+mot_name recall
+metric_name recall
+
+all_values [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+mot_name tid
+metric_name tid
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+
+mot_name lgd
+metric_name lgd
+
+all_values [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
+Calculating metrics...
+ metrics.add_label_metric()
+class_name bicycle
+value 0.0
+ metrics.add_label_metric()
+class_name bicycle
+value 2.0
+ metrics.add_label_metric()
+class_name bus
+value 0.0
+ metrics.add_label_metric()
+class_name bus
+value 2.0
+ metrics.add_label_metric()
+class_name car
+value 0.7789105606210984
+ metrics.add_label_metric()
+class_name car
+value 0.5088849747785991
+ metrics.add_label_metric()
+class_name motorcycle
+value 0.0
+ metrics.add_label_metric()
+class_name motorcycle
+value 2.0
+ metrics.add_label_metric()
+class_name pedestrian
+value 0.0
+ metrics.add_label_metric()
+class_name pedestrian
+value 2.0
+ metrics.add_label_metric()
+class_name trailer
+value 0.0
+ metrics.add_label_metric()
+class_name trailer
+value 2.0
+ metrics.add_label_metric()
+class_name truck
+value 0.0
+ metrics.add_label_metric()
+class_name truck
+value 2.0
+Saving metrics to: results/predicted_tracks_mini
+
+### Final results ###
+
+Per-class results:
+		AMOTA	AMOTP	RECALL	MOTAR	GT	MOTA	MOTP	MT	ML	FAF	TP	FP	FN	IDS	FRAG	TID	LGD
+bicycle 	0.000	2.000	0.000	0.000	149	0.000	2.000	0	8	500.0	0	nan	149	nan	nan	20.00	20.00
+bus     	0.000	2.000	0.000	0.000	193	0.000	2.000	0	11	500.0	0	nan	193	nan	nan	20.00	20.00
+car     	0.779	0.509	0.822	0.884	3451	0.691	0.237	173	27	97.2	2697	314	613	141	39	0.39	0.78
+motorcy 	0.000	2.000	0.000	0.000	135	0.000	2.000	0	8	500.0	0	nan	135	nan	nan	20.00	20.00
+pedestr 	0.000	2.000	0.000	0.000	2763	0.000	2.000	0	145	500.0	0	nan	2763	nan	nan	20.00	20.00
+trailer 	0.000	2.000	0.000	0.000	51	0.000	2.000	0	2	500.0	0	nan	51	nan	nan	20.00	20.00
+truck   	0.000	2.000	0.000	0.000	385	0.000	2.000	0	22	500.0	0	nan	385	nan	nan	20.00	20.00
+
+Aggregated results:
+AMOTA	0.111
+AMOTP	1.787
+RECALL	0.117
+MOTAR	0.126
+GT	1018
+MOTA	0.099
+MOTP	1.748
+MT	173
+ML	223
+FAF	442.5
+TP	2697
+FP	314
+FN	4289
+IDS	141
+FRAG	39
+TID	17.20
+LGD	17.25
+Eval time: 38.9s
+
+Rendering curves
