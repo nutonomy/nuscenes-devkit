@@ -77,6 +77,13 @@ class TrackingEvaluation(object):
         self.verbose = verbose
         self.output_dir = output_dir
         self.render_classes = [] if render_classes is None else render_classes
+        self.error_events = {}
+        self.errors_of_interest = ["SWITCH", "MISS", "FP"]
+        self.error_type_to_count = {
+            "SWITCH": "num_switch", 
+            "MISS": "num_miss", 
+            "FP": "num_fp",
+        }
 
         self.n_scenes = len(self.tracks_gt)
 
@@ -128,7 +135,6 @@ class TrackingEvaluation(object):
         md.recall_hypo = recalls
         if self.verbose:
             print('Computed thresholds\n')
-
         for t, threshold in enumerate(thresholds):
             # If recall threshold is not achieved, we assign the worst possible value in AMOTA and AMOTP.
             if np.isnan(threshold):
@@ -227,7 +233,9 @@ class TrackingEvaluation(object):
 
         accs = []
         scores = []  # The scores of the TPs. These are used to determine the recall thresholds initially.
-
+        thresh_name = None
+        if threshold is not None:
+            thresh_name = self.name_gen(threshold)
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in tqdm.tqdm(self.tracks_gt.keys(), disable=not self.verbose, leave=False):
@@ -235,6 +243,15 @@ class TrackingEvaluation(object):
             # Initialize accumulator and frame_id for this scene
             acc = MOTAccumulatorCustom()
             frame_id = 0  # Frame ids must be unique across all scenes
+
+            # Setting up error monitoring
+            if threshold is not None:
+                self.error_events[thresh_name] = {}
+                self.error_events[thresh_name][scene_id] = {}
+                self.error_events[thresh_name][scene_id]["frame_errors"] = []
+                for error_type in self.errors_of_interest:
+                    total_metric = self.error_type_to_count[error_type]
+                    self.error_events[thresh_name][scene_id][total_metric] = 0
 
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
@@ -294,6 +311,33 @@ class TrackingEvaluation(object):
                     scores.extend(match_scores)
                 else:
                     events = None
+
+                # Record errors of interest for analysis
+                if threshold is not None:
+                    frame_errors = {}
+                    for error_type in self.errors_of_interest:
+                        events = acc.events.loc[frame_id]
+                        errors = events[events.Type == error_type]
+                        frame_errors[error_type] = []
+                        total_metric = self.error_type_to_count[error_type]
+                        if not errors.empty:
+                            """
+                            - `Type` one of `('MATCH', 'SWITCH', 'MISS', 'FP', 'RAW')`
+                            - `OId` object id or np.nan when `'FP'` or `'RAW'` and object is not present
+                            - `HId` hypothesis id or np.nan when `'MISS'` or `'RAW'` and hypothesis is not present
+                            - 'D` distance or np.nan when `'FP'` or `'MISS'` or `'RAW'` and either object/hypothesis is absent
+                            """
+                            for _, error in errors.iterrows():
+                                error_entry = {'frame_id': frame_id,
+                                            'type': error.Type,
+                                            'object_id': error.OId,
+                                            'hypothesis_id': error.HId, 
+                                            'distance': error.D, 
+                                            }
+                                frame_errors[error_type].append(error_entry)
+                                self.error_events[thresh_name][scene_id][total_metric] += 1
+                            
+                    self.error_events[thresh_name][scene_id]["frame_errors"].append(frame_errors)
 
                 # Render the boxes in this frame.
                 if self.class_name in self.render_classes and threshold is None:

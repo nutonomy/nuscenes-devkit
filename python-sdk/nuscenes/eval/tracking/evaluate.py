@@ -112,6 +112,8 @@ class TrackingEval:
         """
         start_time = time.time()
         metrics = TrackingMetrics(self.cfg)
+        error_tracker = {}
+        error_tracker_coi = ['car'] # classes of interest
 
         # -----------------------------------
         # Step 1: Accumulate metric data for all classes and distance thresholds.
@@ -130,9 +132,18 @@ class TrackingEval:
                                          render_classes=self.render_classes)
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
+            # Only track errors for classes of interest
+            if curr_class_name in error_tracker_coi:
+                error_tracker[curr_class_name] = curr_ev.error_events
+                
 
         for class_name in self.cfg.class_names:
             accumulate_class(class_name)
+
+        # Save Errors in JSON
+        error_save_dir = os.path.join(self.output_dir, "errors.json")
+        with open(error_save_dir, "w") as file:
+            json.dump(error_tracker, file)
 
         # -----------------------------------
         # Step 2: Aggregate metrics from the metric data.
