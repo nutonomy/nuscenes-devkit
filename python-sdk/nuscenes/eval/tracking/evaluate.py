@@ -76,7 +76,7 @@ class TrackingEval:
         # Initialize NuScenes object.
         # We do not store it in self to let garbage collection take care of it and save memory.
         nusc = NuScenes(version=nusc_version, verbose=verbose, dataroot=nusc_dataroot)
-
+        self.nusc = nusc
         # Load data.
         if verbose:
             print('Initializing nuScenes tracking evaluation')
@@ -129,7 +129,8 @@ class TrackingEval:
                                          metric_worst=self.cfg.metric_worst,
                                          verbose=self.verbose,
                                          output_dir=self.output_dir,
-                                         render_classes=self.render_classes)
+                                         render_classes=self.render_classes,
+                                         nuscenes_info=self.nusc)
             curr_md = curr_ev.accumulate()
             metric_data_list.set(curr_class_name, curr_md)
             # Only track errors for classes of interest

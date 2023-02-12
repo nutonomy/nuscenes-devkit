@@ -1,8 +1,10 @@
 #! /bin/bash
 
+# uninstall nuscenes-devkit if necessary.
 export PYTHONPATH=
-export PYTHONPATH="${PYTHONPATH}:/home/ahtchow/github/nuscenes-devkit/python-sdk"
+export PYTHONPATH="${PYTHONPATH}:/ahtchow/github/nuscenes-devkit/python-sdk"
 python3 -m pip install motmetrics==1.1.3
+python3 -m pip install numpy==1.19.2
 python3 -m pip install pandas==1.1.0
 
 # Sim link data

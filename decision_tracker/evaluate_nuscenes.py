@@ -42,7 +42,7 @@ if __name__ == "__main__":
     stdout_file = output_dir_ + '/results.txt'
     if not os.path.isdir(output_dir_):
         os.makedirs(output_dir_)
-    sys.stdout = open(stdout_file, "w+")
+    # sys.stdout = open(stdout_file, "w+")
 
     result_path_ = os.path.expanduser(args.result_path)
     eval_set_ = args.eval_set
@@ -61,5 +61,5 @@ if __name__ == "__main__":
     nusc_eval = TrackingEval(config=cfg_, result_path=result_path_, eval_set=eval_set_, output_dir=output_dir_,
                              nusc_version=version_, nusc_dataroot=dataroot_, verbose=verbose_)
     nusc_eval.main(render_curves=render_curves_)
-    sys.stdout.close()
+    # sys.stdout.close()
     

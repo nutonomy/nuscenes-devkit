@@ -29,6 +29,8 @@ from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
 from nuscenes.eval.tracking.render import TrackingRenderer
 from nuscenes.eval.tracking.utils import print_threshold_metrics, create_motmetrics
 
+# Using to get frame tokens
+from nuscenes.nuscenes import NuScenes
 
 class TrackingEvaluation(object):
     def __init__(self,
@@ -42,7 +44,8 @@ class TrackingEvaluation(object):
                  metric_worst: Dict[str, float],
                  verbose: bool = True,
                  output_dir: str = None,
-                 render_classes: List[str] = None):
+                 render_classes: List[str] = None,
+                 nuscenes_info: NuScenes = None):
         """
         Create a TrackingEvaluation object which computes all metrics for a given class.
         :param tracks_gt: The ground-truth tracks.
@@ -86,6 +89,7 @@ class TrackingEvaluation(object):
         }
 
         self.n_scenes = len(self.tracks_gt)
+        self.nusc = nuscenes_info
 
         # Specify threshold naming pattern. Note that no two thresholds may have the same name.
         def name_gen(_threshold):
@@ -236,6 +240,14 @@ class TrackingEvaluation(object):
         thresh_name = None
         if threshold is not None:
             thresh_name = self.name_gen(threshold)
+
+        # Get mapping from scene_id to NuScenes Info index
+        scene_id_to_nusc_idx = {}
+        i = 0
+        for scene in self.nusc.scene:
+            scene_id_to_nusc_idx[scene['token']] = i
+            i += 1
+
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
         for scene_id in tqdm.tqdm(self.tracks_gt.keys(), disable=not self.verbose, leave=False):
@@ -243,10 +255,13 @@ class TrackingEvaluation(object):
             # Initialize accumulator and frame_id for this scene
             acc = MOTAccumulatorCustom()
             frame_id = 0  # Frame ids must be unique across all scenes
+            nusc_idx = scene_id_to_nusc_idx[scene_id]
+            sample_token = self.nusc.scene[nusc_idx]['first_sample_token']
 
             # Setting up error monitoring
             if threshold is not None:
-                self.error_events[thresh_name] = {}
+                if thresh_name not in self.error_events.keys():
+                    self.error_events[thresh_name] = {}
                 self.error_events[thresh_name][scene_id] = {}
                 self.error_events[thresh_name][scene_id]["frame_errors"] = []
                 for error_type in self.errors_of_interest:
@@ -327,13 +342,32 @@ class TrackingEvaluation(object):
                             - `HId` hypothesis id or np.nan when `'MISS'` or `'RAW'` and hypothesis is not present
                             - 'D` distance or np.nan when `'FP'` or `'MISS'` or `'RAW'` and either object/hypothesis is absent
                             """
+                            frame_errors['frame_id'] = frame_id
+                            frame_errors['sample_token'] = sample_token
                             for _, error in errors.iterrows():
-                                error_entry = {'frame_id': frame_id,
-                                            'type': error.Type,
-                                            'object_id': error.OId,
-                                            'hypothesis_id': error.HId, 
-                                            'distance': error.D, 
+                                
+                                error_entry = {'type': error.Type,
+                                                'object_id': error.OId,
+                                                'hypothesis_id': error.HId, 
+                                                'distance': error.D, 
+                                                }
+                                
+                                # If the type has a ground truth match, include details of GT
+                                if error_type in ['SWITCH', 'MISS']:
+                                    for gt in frame_gt:
+                                        if gt.tracking_id == error.OId:
+                                            error_entry["gt"] = {
+                                                "num_pts" : int(gt.num_pts),
+                                                "size" : list(gt.size),
+                                                "rotation" : list(gt.rotation),
+                                                "velocity" : list(gt.velocity),
+                                                "translation" : list(gt.translation),
+                                                "ego_translation" : list(gt.ego_translation),
+                                                "ego_dist" : float(gt.ego_dist),
+                                                "tracking_name" : gt.tracking_name,
+                                                "tracking_score" : float(gt.tracking_score),
                                             }
+
                                 frame_errors[error_type].append(error_entry)
                                 self.error_events[thresh_name][scene_id][total_metric] += 1
                             
@@ -345,6 +379,7 @@ class TrackingEvaluation(object):
 
                 # Increment the frame_id, unless there are no boxes (equivalent to what motmetrics does).
                 frame_id += 1
+                sample_token = self.nusc.get('sample', sample_token)['next']
 
             accs.append(acc)
 
