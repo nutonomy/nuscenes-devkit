@@ -21,6 +21,7 @@ Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [
 - [Citation](#citation)
 
 ## Changelog
+- Feb. 13, 2023: Devkit v1.1.10: Specify version for various pip requirements.
 - Sep. 20, 2021: Devkit v1.1.9: Refactor tracking eval code for custom datasets with different classes.
 - Sep. 17, 2021: Devkit v1.1.8: Add PAT metric to Panoptic nuScenes.
 - Aug. 23, 2021: Devkit v1.1.7: Add more panoptic tracking metrics to Panoptic nuScenes code.
