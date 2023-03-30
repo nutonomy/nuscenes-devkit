@@ -234,17 +234,17 @@ class DetectionEval:
         # Print per-class metrics.
         print()
         print('Per-class results:')
-        print('Object Class\tAP\tATE\tASE\tAOE\tAVE\tAAE')
+        print('%-20s\t%-6s\t%-6s\t%-6s\t%-6s\t%-6s\t%-6s' % ('Object Class', 'AP', 'ATE', 'ASE', 'AOE', 'AVE', 'AAE'))
         class_aps = metrics_summary['mean_dist_aps']
         class_tps = metrics_summary['label_tp_errors']
         for class_name in class_aps.keys():
-            print('%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f'
-                  % (class_name, class_aps[class_name],
-                     class_tps[class_name]['trans_err'],
-                     class_tps[class_name]['scale_err'],
-                     class_tps[class_name]['orient_err'],
-                     class_tps[class_name]['vel_err'],
-                     class_tps[class_name]['attr_err']))
+            print('%-20s\t%-6.3f\t%-6.3f\t%-6.3f\t%-6.3f\t%-6.3f\t%-6.3f'
+                % (class_name, class_aps[class_name],
+                    class_tps[class_name]['trans_err'],
+                    class_tps[class_name]['scale_err'],
+                    class_tps[class_name]['orient_err'],
+                    class_tps[class_name]['vel_err'],
+                    class_tps[class_name]['attr_err']))
 
         return metrics_summary
 
