@@ -1,5 +1,5 @@
 # nuScenes devkit
-Welcome to the nuTonomy download page. Click on the green box above labeled "Code" to download a copy of the software described below..
+Welcome to the nuTonomy download page. Click on the green box above labeled "Code" to download a copy of the software described below.
 ![](https://www.nuscenes.org/public/images/road.jpg)
 
 ## Overview
