@@ -1,4 +1,4 @@
-# <img src="docs/nuTonomyLogo-RGB.svg" width="152px" height="40px" style="vertical-align: middle" /> nuScenes devkit
+# <img src="docs/nuTonomyLogo-RGB.svg" width="182px" height="46px" style="vertical-align: middle" /> nuScenes devkit
 Welcome to the nuTonomy download page. Click on the green box above labeled "Code" to download a copy of the software described below.
 ![](https://www.nuscenes.org/public/images/road.jpg)
 
