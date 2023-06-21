@@ -59,5 +59,5 @@ setuptools.setup(
         'Operating System :: OS Independent',
         'License :: Free for non-commercial use'
     ],
-    license='cc-by-nc-sa-4.0'
+    license='Apache-2.0'
 )
