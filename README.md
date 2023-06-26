@@ -1,5 +1,7 @@
-# nuScenes devkit
-Welcome to the devkit of the [nuScenes](https://www.nuscenes.org/nuscenes) and [nuImages](https://www.nuscenes.org/nuimages) datasets.
+# <img src="docs/nuTonomyLogo-RGB.svg" width="182px" height="46px" style="vertical-align: middle" /> nuScenes devkit
+Welcome to the nuTonomy® downloadable software page. Click on the green box above labeled "Code" to download a copy of the software described below.
+
+
 ![](https://www.nuscenes.org/public/images/road.jpg)
 
 ## Overview
