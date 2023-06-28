@@ -665,7 +665,7 @@ class NuImages:
         assert annotation_type in annotations_types, \
             'Error: {} is not a valid option for annotation_type. ' \
             'Only {} are allowed.'.format(annotation_type, annotations_types)
-        if annotation_type is not 'none':
+        if annotation_type != 'none':
             if annotation_type == 'all' or annotation_type == 'surfaces':
                 # Load stuff / surface regions.
                 surface_anns = [o for o in self.surface_ann if o['sample_data_token'] == sd_token]
