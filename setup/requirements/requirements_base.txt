@@ -3,8 +3,8 @@ descartes
 fire
 jupyter
 matplotlib<=3.5.2
-numpy
-opencv-python
+numpy>=1.22.0
+opencv-python>=4.5.4.58
 Pillow>6.2.1
 pyquaternion>=0.9.5
 scikit-learn
