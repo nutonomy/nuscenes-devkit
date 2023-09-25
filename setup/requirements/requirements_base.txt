@@ -1,13 +1,12 @@
 cachetools
 descartes
 fire
-jupyter
-matplotlib<=3.5.2
+matplotlib<3.6.0
 numpy>=1.22.0
 opencv-python>=4.5.4.58
 Pillow>6.2.1
 pyquaternion>=0.9.5
 scikit-learn
 scipy
-Shapely<=1.8.5
+Shapely<2.0.0
 tqdm
