@@ -56,7 +56,8 @@ class NuScenesMap:
     The rasterized semantic maps (e.g. singapore-onenorth.png) published with nuScenes v1.0 have a scale of 10px/m,
     hence the above numbers are the image dimensions divided by 10.
 
-    We use the same WGS 84 Web Mercator (EPSG:3857) projection as Google Maps/Earth.
+    For the Singapore maps, we use the same WGS 84 Web Mercator (EPSG:3857) projection as Google Maps/Earth.
+    For the Boston map, we use the EPSG:4326 projection.
     """
     def __init__(self,
                  dataroot: str = '/data/sets/nuscenes',
