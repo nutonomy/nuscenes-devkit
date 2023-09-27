@@ -23,6 +23,7 @@ Welcome to the nuTonomy® downloadable driverless vehicle software page. Click o
 - [Citation](#citation)
 
 ## Changelog
+- Sep. 25, 2023: Devkit v1.1.11: Specify version for various pip requirements.
 - Feb. 13, 2023: Devkit v1.1.10: Specify version for various pip requirements.
 - Sep. 20, 2021: Devkit v1.1.9: Refactor tracking eval code for custom datasets with different classes.
 - Sep. 17, 2021: Devkit v1.1.8: Add PAT metric to Panoptic nuScenes.
