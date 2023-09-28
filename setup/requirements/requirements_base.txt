@@ -2,7 +2,7 @@ cachetools
 descartes
 fire
 matplotlib<3.6.0
-numpy
+numpy<1.25.0
 opencv-python<4.8.0.76
 Pillow>6.2.1
 pyquaternion>=0.9.5
