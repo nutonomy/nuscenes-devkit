@@ -1,4 +1,4 @@
 -r requirements/requirements_base.txt
 -r requirements/requirements_nuimages.txt
 # -r requirements/requirements_prediction.txt  # Uncomment this for the prediction code
-# -r requirements/requirements_tracking.txt  # Uncomment this for the tracking code
+-r requirements/requirements_tracking.txt  # Uncomment this for the tracking code
