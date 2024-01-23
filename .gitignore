@@ -19,3 +19,6 @@ doc
 .project
 .pydevproject
 _ext
+
+# Bazel
+bazel-*
