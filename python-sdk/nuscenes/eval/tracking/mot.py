@@ -6,6 +6,16 @@ This code is based on:
 
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
+
+Notes by Michael Hoss:
+This code is mainly copy-pasted from the original motmetrics repo, likely from version 1.1.3.
+TODO: upgrade this code to version 1.4.0, or even better, see if I can just use the origial code.
+-> looks like I can pretty much use the original code, as the changes here were mostly done for speed.
+But: the motmetrics 1.4.0 code seems to use floats as object ids, but nuscenes-devkit has strings.
+-> TODO overwrite the motmetrics code to use strings (or `object`) as object ids again, but otherwise,
+use the newer code.
+
+It looks
 """
 from collections import OrderedDict
 from itertools import count
@@ -15,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 
-class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
+class MOTAccumulatorCustom(motmetrics.MOTAccumulator):
     def __init__(self):
         super().__init__()
 
@@ -57,6 +67,7 @@ class MOTAccumulatorCustom(motmetrics.mot.MOTAccumulator):
 
     @property
     def events(self):
+        """This is needed to call the custom new_event_dataframe_with_data with the speedup."""
         if self.dirty_events:
             self.cached_events_df = MOTAccumulatorCustom.new_event_dataframe_with_data(self._indices, self._events)
             self.dirty_events = False
