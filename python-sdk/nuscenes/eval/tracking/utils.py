@@ -118,7 +118,6 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
     recall = metrics['recall'][threshold_str]
     num_frames = metrics['num_frames'][threshold_str]
     num_objects = metrics['num_objects'][threshold_str]
-    pred_frequencies = metrics['pred_frequencies'][threshold_str]
     num_predictions = metrics['num_predictions'][threshold_str]
     num_false_positives = metrics['num_false_positives'][threshold_str]
     num_misses = metrics['num_misses'][threshold_str]
@@ -132,7 +131,7 @@ def print_threshold_metrics(metrics: Dict[str, Dict[str, float]]) -> None:
              'Pred', 'Pred-TP', 'Pred-FP', 'Pred-IDS',))
     print('%s\t%.3f\t%.3f\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d'
           % (threshold_str, motar_val, motp, recall, num_frames,
-             num_objects, num_matches, num_misses, num_switches, pred_frequencies,
+             num_objects, num_matches, num_misses, num_switches,
              num_predictions, num_matches, num_false_positives, num_switches))
     print()
 
