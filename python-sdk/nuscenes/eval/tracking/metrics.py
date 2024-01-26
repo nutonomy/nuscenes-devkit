@@ -7,7 +7,7 @@ This code is based on:
 py-motmetrics at:
 https://github.com/cheind/py-motmetrics
 """
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -109,7 +109,7 @@ def longest_gap_duration(df: DataFrame, obj_frequencies: DataFrame) -> float:
 
 
 def motar(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, num_false_positives: int,
-          num_objects: int, alpha: float = 1.0) -> float:
+          num_objects: int, alpha: float = 1.0, ana: Optional[dict] = None) -> float:
     """
     Initializes a MOTAR class which refers to the modified MOTA metric at https://www.nuscenes.org/tracking.
     Note that we use the measured recall, which is not identical to the hypothetical recall of the
@@ -121,6 +121,7 @@ def motar(df: DataFrame, num_matches: int, num_misses: int, num_switches: int, n
     :param num_false_positives: The number of false positives.
     :param num_objects: The total number of objects of this class in the GT.
     :param alpha: MOTAR weighting factor (previously 0.2).
+    :param ana: something for caching, introduced by motmetrics 1.4.0
     :return: The MOTAR or nan if there are no GT objects.
     """
     recall = num_matches / num_objects
