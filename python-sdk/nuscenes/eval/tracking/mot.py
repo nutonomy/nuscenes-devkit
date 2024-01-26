@@ -57,6 +57,7 @@ class MOTAccumulatorCustom(MOTAccumulator):
         ]
 
         idx = pd.MultiIndex.from_arrays(
+            # TODO What types are the indices FrameId and Event? string or int?
             [indices[field] for field in _INDEX_FIELDS],
             names=_INDEX_FIELDS)
         df = pd.concat(series, axis=1)
@@ -128,6 +129,42 @@ class MOTAccumulatorCustom(MOTAccumulator):
             # Update index
             if update_frame_indices:
                 # pylint: disable=cell-var-from-loop
+                # TODO TypeError: can only concatenate tuple (not "int") to tuple
+                # This is likely because we have a multi-index dataframe r here (see new_event_dataframe())
+                # See also https://stackoverflow.com/questions/39080555/pandas-get-level-values-for-multiple-columns
+                # Playground code: https://onecompiler.com/python/422kn8tev
+                """
+
+                import pandas as pd
+
+                a={"gk":[15,12,13,22,32,12],"mk":[12,21,23,22,56,12], "sf": [1,2,3,4,5,5]}
+                df=pd.DataFrame(a)
+
+                # B=df[df["mk"]>=21]
+
+                # print(df)
+                # print(B)
+
+                df = df.set_index(["gk", "sf"])
+
+                print(df)
+
+                print("Experiment")
+                print(df.index.get_level_values(1))
+                print("First argument of max")
+                print(df.index.get_level_values(0).max())
+                print(df.index.get_level_values(0).max() +1) # the maximum value of the 0th index column incremented by 1
+                print(df.index.get_level_values(1).max())
+                print(df.index.get_level_values(1).max() +1)
+                print("Second argument of max")
+                print(df.index.get_level_values(0))
+                print(df.index.get_level_values(0).unique())
+                print(df.index.get_level_values(0).unique().shape)
+                print(df.index.get_level_values(0).unique().shape[0])  # number of unique values in the 0th index column
+                print("Final max evaluation")
+                print(max(df.index.get_level_values(0).max() +1,df.index.get_level_values(0).unique().shape[0]))
+                """
+
                 next_frame_id = max(r.index.get_level_values(0).max() + 1, r.index.get_level_values(0).unique().shape[0])
                 if np.isnan(next_frame_id):
                     next_frame_id = 0
