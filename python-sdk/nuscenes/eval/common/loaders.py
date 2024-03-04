@@ -2,12 +2,10 @@
 # Code written by Oscar Beijbom, 2019.
 
 import json
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import tqdm
-from pyquaternion import Quaternion
-
 from nuscenes import NuScenes
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.detection.data_classes import DetectionBox
@@ -15,7 +13,8 @@ from nuscenes.eval.detection.utils import category_to_detection_name
 from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.utils.data_classes import Box
 from nuscenes.utils.geometry_utils import points_in_box
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
+from pyquaternion import Quaternion
 
 
 def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbose: bool = False) \
@@ -69,9 +68,6 @@ def load_gt(nusc: NuScenes, eval_split: str, box_cls, verbose: bool = False) -> 
     sample_tokens_all = [s['token'] for s in nusc.sample]
     assert len(sample_tokens_all) > 0, "Error: Database has no samples!"
 
-    # Only keep samples from this split.
-    splits = create_splits_scenes()
-
     # Check compatibility of split with nusc_version.
     version = nusc.version
     if eval_split in {'train', 'val', 'train_detect', 'train_track'}:
@@ -83,20 +79,19 @@ def load_gt(nusc: NuScenes, eval_split: str, box_cls, verbose: bool = False) -> 
     elif eval_split == 'test':
         assert version.endswith('test'), \
             'Error: Requested split {} which is not compatible with NuScenes version {}'.format(eval_split, version)
-    else:
-        raise ValueError('Error: Requested split {} which this function cannot map to the correct NuScenes version.'
-                         .format(eval_split))
-
     if eval_split == 'test':
         # Check that you aren't trying to cheat :).
         assert len(nusc.sample_annotation) > 0, \
             'Error: You are trying to evaluate on the test set but you do not have the annotations!'
 
+
+    # Only keep samples from this split.
+    scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=eval_split, nuscenes=nusc)
     sample_tokens = []
     for sample_token in sample_tokens_all:
         scene_token = nusc.get('sample', sample_token)['scene_token']
         scene_record = nusc.get('scene', scene_token)
-        if scene_record['name'] in splits[eval_split]:
+        if scene_record['name'] in scenes_of_eval_split:
             sample_tokens.append(sample_token)
 
     all_annotations = EvalBoxes()

@@ -1,6 +1,8 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
 
+import json
+import os
 from typing import Dict, List
 
 from nuscenes import NuScenes
@@ -212,6 +214,32 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
 
     return scene_splits
 
+
+def get_scenes_of_split(split_name: str, nuscenes : NuScenes, verbose: bool = False) -> List[str]:
+    """
+    Returns the scenes in a given split.
+    :param split_name: The name of the split.
+    :param nuscenes: The NuScenes instance to know where to look up potential custom splits.
+    :param verbose: Whether to print out statistics on a scene level.
+    :return: A list of scenes in that split.
+    """
+
+    # Handle default nuScenes split names
+    scene_splits = create_splits_scenes(verbose=verbose)
+    if split_name in scene_splits.keys():
+        return scene_splits[split_name]
+
+    # Handle custom split names
+    splits_file_path = os.path.join(nuscenes.dataroot, nuscenes.version, "splits.json")
+    with open(splits_file_path, 'r') as file:
+        splits_data : dict = json.load(file)
+        if split_name not in splits_data.keys():
+            raise ValueError(f'Custom split {split_name} not found in {splits_file_path}')
+        else:
+            scene_names_of_split : List[str] = splits_data[split_name]
+            assert isinstance(scene_names_of_split, list), \
+                f'Custom split {split_name} must be a list of scene names in splits.json.'
+            return scene_names_of_split
 
 if __name__ == '__main__':
     # Print the scene-level stats.
