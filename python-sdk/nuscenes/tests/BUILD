@@ -40,7 +40,7 @@ py_test(
     visibility = ["//visibility:public"],
     deps = [
         "//python-sdk/nuscenes",
-        # TODO add nuscenes.prediction
+        "//python-sdk/nuscenes/prediction",
     ],
     imports = ["../.."], # add this to PYTHONPATH, relative to this BUILD file
     env = {
