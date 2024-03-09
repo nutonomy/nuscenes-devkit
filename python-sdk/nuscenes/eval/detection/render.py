@@ -87,6 +87,9 @@ def visualize_sample(nusc: NuScenes,
         if box.score >= conf_th:
             box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'), linewidth=1)
 
+    # Add legend
+    ax.legend(['GT Box', 'EST Box'], loc='upper right')
+
     # Limit visible range.
     axes_limit = eval_range + 3  # Slightly bigger to include boxes that extend beyond the range.
     ax.set_xlim(-axes_limit, axes_limit)
