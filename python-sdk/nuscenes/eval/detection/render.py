@@ -28,6 +28,7 @@ def visualize_sample(nusc: NuScenes,
                      conf_th: float = 0.15,
                      eval_range: float = 50,
                      verbose: bool = True,
+                     display_legend: bool = True,
                      savepath: str = None) -> None:
     """
     Visualizes a sample from BEV with annotations and detection results.
@@ -39,6 +40,7 @@ def visualize_sample(nusc: NuScenes,
     :param conf_th: The confidence threshold used to filter negatives.
     :param eval_range: Range in meters beyond which boxes are ignored.
     :param verbose: Whether to print to stdout.
+    :param display_legend: Whether to display GT and EST boxes legend on plot.
     :param savepath: If given, saves the the rendering here instead of displaying.
     """
     # Retrieve sensor & pose records.
@@ -87,8 +89,9 @@ def visualize_sample(nusc: NuScenes,
         if box.score >= conf_th:
             box.render(ax, view=np.eye(4), colors=('b', 'b', 'b'), linewidth=1)
 
-    # Add legend
-    ax.legend(['GT Box', 'EST Box'], loc='upper right')
+    # Add legend.
+    if display_legend:
+        ax.legend(['GT', 'EST'], loc='upper right')
 
     # Limit visible range.
     axes_limit = eval_range + 3  # Slightly bigger to include boxes that extend beyond the range.
@@ -98,7 +101,7 @@ def visualize_sample(nusc: NuScenes,
     # Show / save plot.
     if verbose:
         print('Rendering sample token %s' % sample_token)
-    plt.title(sample_token)
+        plt.title(sample_token)
     if savepath is not None:
         plt.savefig(savepath)
         plt.close()
