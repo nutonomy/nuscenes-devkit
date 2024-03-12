@@ -91,7 +91,8 @@ def visualize_sample(nusc: NuScenes,
 
     # Add legend.
     if display_legend:
-        ax.legend(['GT', 'EST'], loc='upper right')
+        ax.legend(['GT', 'EST'], loc='upper right', labels=['GT', 'EST'],
+                handles=[mpatches.Patch(color='g'), mpatches.Patch(color='b')])
 
     # Limit visible range.
     axes_limit = eval_range + 3  # Slightly bigger to include boxes that extend beyond the range.
