@@ -17,7 +17,8 @@ from nuscenes.utils.splits import get_scenes_of_split
 from pyquaternion import Quaternion
 
 
-def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbose: bool = False) \
+def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbose: bool = False,
+                    limit_to_split: str = None, nusc: NuScenes = None) \
         -> Tuple[EvalBoxes, Dict]:
     """
     Loads object predictions from file.
@@ -25,6 +26,8 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbos
     :param max_boxes_per_sample: Maximim number of boxes allowed per sample.
     :param box_cls: Type of box to load, e.g. DetectionBox or TrackingBox.
     :param verbose: Whether to print messages to stdout.
+    :param limit_to_split: Optional split name to filter the predictions by.
+    :param nusc: Optional NuScenes instance needed for filtering by split.
     :return: The deserialized results and meta data.
     """
 
@@ -33,6 +36,17 @@ def load_prediction(result_path: str, max_boxes_per_sample: int, box_cls, verbos
         data = json.load(f)
     assert 'results' in data, 'Error: No field `results` in result file. Please note that the result format changed.' \
                               'See https://www.nuscenes.org/object-detection for more information.'
+    assert isinstance(data['results'], dict), 'Error: results must be a dict.'
+
+    if limit_to_split:
+        # Only load the results that belong to a specified split
+        assert isinstance(limit_to_split, str), 'Error: limit_to_split must specify the (custom) split name.'
+        assert isinstance(nusc, NuScenes), 'Error: If you want to limit to a split, provide a NuScenes instance.'
+
+        scenes_of_split : List[str] = get_scenes_of_split(split_name=limit_to_split, nuscenes=nusc)
+        sample_tokens_of_split : List[str] = _filter_samples_by_scene_names(all_sample_tokens=data['results'].keys(),
+                                                                scene_names=scenes_of_split, nusc=nusc)
+        data['results'] = {sample_token: data['results'][sample_token] for sample_token in sample_tokens_of_split}
 
     # Deserialize results and get meta data.
     all_results = EvalBoxes.deserialize(data['results'], box_cls)
@@ -87,12 +101,8 @@ def load_gt(nusc: NuScenes, eval_split: str, box_cls, verbose: bool = False) -> 
 
     # Only keep samples from this split.
     scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=eval_split, nuscenes=nusc)
-    sample_tokens = []
-    for sample_token in sample_tokens_all:
-        scene_token = nusc.get('sample', sample_token)['scene_token']
-        scene_record = nusc.get('scene', scene_token)
-        if scene_record['name'] in scenes_of_eval_split:
-            sample_tokens.append(sample_token)
+    sample_tokens : List[str] = _filter_samples_by_scene_names(all_sample_tokens=sample_tokens_all,
+                                                              scene_names=scenes_of_eval_split, nusc=nusc)
 
     all_annotations = EvalBoxes()
 
@@ -278,3 +288,13 @@ def _get_box_class_field(eval_boxes: EvalBoxes) -> str:
         raise Exception('Error: Invalid box type: %s' % box)
 
     return class_field
+
+def _filter_samples_by_scene_names(all_sample_tokens: List[str], scene_names: List[str], nusc: NuScenes) -> List[str]:
+    filtered_sample_tokens : List[str] = []
+
+    for sample_token in all_sample_tokens:
+        scene_token = nusc.get('sample', sample_token)['scene_token']
+        scene_record = nusc.get('scene', scene_token)
+        if scene_record['name'] in scene_names:
+            filtered_sample_tokens.append(sample_token)
+    return filtered_sample_tokens

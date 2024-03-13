@@ -81,7 +81,7 @@ class TrackingEval:
         if verbose:
             print('Initializing nuScenes tracking evaluation')
         pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, TrackingBox,
-                                                verbose=verbose)
+                                                verbose=verbose, limit_to_split=self.eval_set, nusc=nusc)
         gt_boxes = load_gt(nusc, self.eval_set, TrackingBox, verbose=verbose)
 
         assert set(pred_boxes.sample_tokens) == set(gt_boxes.sample_tokens), \

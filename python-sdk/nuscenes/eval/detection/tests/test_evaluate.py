@@ -141,15 +141,15 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_submission(nusc, 'mini_custom_detection_val'), f, indent=2)
+            json.dump(self._mock_submission(nusc, 'mini_custom_val'), f, indent=2)
 
         cfg = config_factory('detection_cvpr_2019')
-        nusc_eval = DetectionEval(nusc, cfg, self.res_mockup, eval_set='mini_custom_detection_val', output_dir=self.res_eval_folder,
+        nusc_eval = DetectionEval(nusc, cfg, self.res_mockup, eval_set='mini_custom_val', output_dir=self.res_eval_folder,
                                   verbose=False)
         metrics, md_list = nusc_eval.evaluate()
 
         # Scores 1 to 9 are the same as in the test_delta test.
-        # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_custom_detection_val split, which is equal to mini_val.
+        # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_custom_val split, which is equal to mini_val.
         self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
 if __name__ == '__main__':

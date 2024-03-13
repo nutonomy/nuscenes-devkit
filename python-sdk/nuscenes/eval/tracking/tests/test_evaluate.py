@@ -231,7 +231,7 @@ class TestMain(unittest.TestCase):
 
     @unittest.skip
     def test_delta_gt_custom_split(self,
-                      eval_set: str = 'mini_custom_tracking_val',
+                      eval_set: str = 'mini_custom_train',
                       render_curves: bool = False):
         """
         This tests runs the evaluation with the ground truth used as predictions.
@@ -247,7 +247,7 @@ class TestMain(unittest.TestCase):
         # Compare metrics to known solution. Do not check:
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
-        if eval_set == 'mini_custom_tracking_val':
+        if eval_set == 'mini_custom_train':
             self.assertAlmostEqual(metrics['amota'], 1.0)
             self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
             self.assertAlmostEqual(metrics['motar'], 1.0)
