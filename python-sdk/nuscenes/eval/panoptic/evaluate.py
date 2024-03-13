@@ -30,7 +30,7 @@ from nuscenes.eval.panoptic.panoptic_track_evaluator import PanopticTrackingEval
 from nuscenes.eval.panoptic.utils import PanopticClassMapper, get_samples_in_panoptic_eval_set
 from nuscenes.nuscenes import NuScenes
 from nuscenes.utils.data_io import load_bin_file
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
 from tqdm import tqdm
 
 
@@ -41,8 +41,8 @@ class NuScenesPanopticEval:
     - Panoptic Segmentation: we use the PQ (Panoptic Quality) metric: which is defined as:
       PQ = IOU/(TP + 0.5*FP + 0.5*FN).
     - Multi-object Panoptic Tracking: we use the PAT (Panoptic Tracking) metric, which is defined as:
-      PAT = 2*PQ*TQ / (PQ + TQ) where TQ is as defined in the paper: 
-      Panoptic nuScenes: A Large-Scale Benchmark for LiDAR Panoptic Segmentation and Tracking 
+      PAT = 2*PQ*TQ / (PQ + TQ) where TQ is as defined in the paper:
+      Panoptic nuScenes: A Large-Scale Benchmark for LiDAR Panoptic Segmentation and Tracking
       (https://arxiv.org/pdf/2109.03805.pdf)
     """
 
@@ -210,7 +210,7 @@ class NuScenesPanopticEval:
                 ...
             }
         """
-        eval_scenes = create_splits_scenes(verbose=False)[self.eval_set]
+        eval_scenes = get_scenes_of_split(split_name=self.eval_set,nuscenes=self.nusc, verbose=False)
         for scene in tqdm(eval_scenes, disable=not self.verbose):
             scene = self.nusc.get('scene', self.scene_name2tok[scene])
             cur_token, last_token = scene['first_sample_token'], scene['last_sample_token']

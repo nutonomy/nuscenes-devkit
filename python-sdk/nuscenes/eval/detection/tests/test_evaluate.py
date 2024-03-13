@@ -6,17 +6,16 @@ import os
 import random
 import shutil
 import unittest
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
-from tqdm import tqdm
-
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.detection.constants import DETECTION_NAMES
 from nuscenes.eval.detection.evaluate import DetectionEval
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
+from tqdm import tqdm
 
 
 class TestMain(unittest.TestCase):
@@ -68,10 +67,10 @@ class TestMain(unittest.TestCase):
             'use_external': False,
         }
         mock_results = {}
-        splits = create_splits_scenes()
+        scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nuscenes=nusc)
         val_samples = []
         for sample in nusc.sample:
-            if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
+            if nusc.get('scene', sample['scene_token'])['name'] in scenes_of_eval_split:
                 val_samples.append(sample)
 
         for sample in tqdm(val_samples, leave=False):
@@ -129,6 +128,29 @@ class TestMain(unittest.TestCase):
         # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split.
         self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
+    def test_delta_custom_split(self):
+        """
+        This tests runs the evaluation for an arbitrary random set of predictions.
+        This score is then captured in this very test such that if we change the eval code,
+        this test will trigger if the results changed.
+        """
+        random.seed(42)
+        np.random.seed(42)
+        assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
+
+        nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
+
+        with open(self.res_mockup, 'w') as f:
+            json.dump(self._mock_submission(nusc, 'mini_custom_detection_val'), f, indent=2)
+
+        cfg = config_factory('detection_cvpr_2019')
+        nusc_eval = DetectionEval(nusc, cfg, self.res_mockup, eval_set='mini_custom_detection_val', output_dir=self.res_eval_folder,
+                                  verbose=False)
+        metrics, md_list = nusc_eval.evaluate()
+
+        # Scores 1 to 9 are the same as in the test_delta test.
+        # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_custom_detection_val split, which is equal to mini_val.
+        self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
 if __name__ == '__main__':
     unittest.main()

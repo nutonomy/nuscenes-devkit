@@ -7,16 +7,15 @@ import random
 import shutil
 import sys
 import unittest
-from typing import Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-from tqdm import tqdm
-
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.evaluate import TrackingEval
 from nuscenes.eval.tracking.utils import category_to_tracking_name
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
+from tqdm import tqdm
 
 
 class TestMain(unittest.TestCase):
@@ -75,10 +74,10 @@ class TestMain(unittest.TestCase):
         mock_results = {}
 
         # Get all samples in the current evaluation split.
-        splits = create_splits_scenes()
+        scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nuscenes=nusc)
         val_samples = []
         for sample in nusc.sample:
-            if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
+            if nusc.get('scene', sample['scene_token'])['name'] in scenes_of_eval_split:
                 val_samples.append(sample)
 
         # Prepare results.
@@ -230,6 +229,41 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
+    @unittest.skip
+    def test_delta_gt_custom_split(self,
+                      eval_set: str = 'mini_custom_tracking_val',
+                      render_curves: bool = False):
+        """
+        This tests runs the evaluation with the ground truth used as predictions.
+        This should result in a perfect score for every metric.
+        This score is then captured in this very test such that if we change the eval code,
+        this test will trigger if the results changed.
+        :param eval_set: Which set to evaluate on.
+        :param render_curves: Whether to render stats curves to disk.
+        """
+        # Run the evaluation without errors.
+        metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
+
+        # Compare metrics to known solution. Do not check:
+        # - MT/TP (hard to figure out here).
+        # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
+        if eval_set == 'mini_custom_tracking_val':
+            self.assertAlmostEqual(metrics['amota'], 1.0)
+            self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics['motar'], 1.0)
+            self.assertAlmostEqual(metrics['recall'], 1.0)
+            self.assertAlmostEqual(metrics['mota'], 1.0)
+            self.assertAlmostEqual(metrics['motp'], 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics['faf'], 0.0)
+            self.assertAlmostEqual(metrics['ml'], 0.0)
+            self.assertAlmostEqual(metrics['fp'], 0.0)
+            self.assertAlmostEqual(metrics['fn'], 0.0)
+            self.assertAlmostEqual(metrics['ids'], 0.0)
+            self.assertAlmostEqual(metrics['frag'], 0.0)
+            self.assertAlmostEqual(metrics['tid'], 0.0)
+            self.assertAlmostEqual(metrics['lgd'], 0.0)
+        else:
+            print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
 if __name__ == '__main__':
     unittest.main()
