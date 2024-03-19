@@ -215,31 +215,45 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
     return scene_splits
 
 
-def get_scenes_of_split(split_name: str, nuscenes : NuScenes, verbose: bool = False) -> List[str]:
+def get_scenes_of_split(split_name: str, nusc : NuScenes, verbose: bool = False) -> List[str]:
     """
     Returns the scenes in a given split.
     :param split_name: The name of the split.
-    :param nuscenes: The NuScenes instance to know where to look up potential custom splits.
+    :param nusc: The NuScenes instance to know where to look up potential custom splits.
     :param verbose: Whether to print out statistics on a scene level.
     :return: A list of scenes in that split.
     """
 
-    # Handle default nuScenes split names
-    scene_splits = create_splits_scenes(verbose=verbose)
-    if split_name in scene_splits.keys():
-        return scene_splits[split_name]
+    if is_predefined_split(split_name=split_name):
+        return create_splits_scenes(verbose=verbose)[split_name]
+    else:
+        return get_scenes_of_custom_split(split_name=split_name, nusc=nusc)
 
-    # Handle custom split names
-    splits_file_path = os.path.join(nuscenes.dataroot, nuscenes.version, "splits.json")
+def is_predefined_split(split_name: str) -> bool:
+    """
+    Returns whether the split name is one of the predefined splits in the nuScenes dataset.
+    :param split_name: The name of the split.
+    :return: Whether the split is predefined.
+    """
+    return split_name in create_splits_scenes().keys()
+
+
+def get_scenes_of_custom_split(split_name: str, nusc : NuScenes) -> List[str]:
+    """Returns the scene names from a custom splits.json file, or None if the custom split does not exist."""
+
+    splits_file_path = os.path.join(nusc.dataroot, nusc.version, "splits.json")
+    if (not os.path.exists(splits_file_path)) or (not os.path.isfile(splits_file_path)):
+        raise ValueError(f"Custom split {split_name} requested, but no valid file found at {splits_file_path}.")
+
     with open(splits_file_path, 'r') as file:
         splits_data : dict = json.load(file)
         if split_name not in splits_data.keys():
-            raise ValueError(f'Custom split {split_name} not found in {splits_file_path}')
-        else:
-            scene_names_of_split : List[str] = splits_data[split_name]
-            assert isinstance(scene_names_of_split, list), \
-                f'Custom split {split_name} must be a list of scene names in splits.json.'
-            return scene_names_of_split
+            raise ValueError(f"Custom split {split_name} requested, but not found in {splits_file_path}.")
+
+        scene_names_of_split : List[str] = splits_data[split_name]
+        assert isinstance(scene_names_of_split, list), \
+            f'Custom split {split_name} must be a list of scene names in {splits_file_path}.'
+        return scene_names_of_split
 
 if __name__ == '__main__':
     # Print the scene-level stats.

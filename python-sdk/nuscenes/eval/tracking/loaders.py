@@ -104,7 +104,7 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
     :return: The tracks.
     """
     # Only keep samples from this split.
-    scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=eval_split, nuscenes=nusc)
+    scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=eval_split, nusc=nusc)
 
     scene_tokens = set()
     for sample_token in all_boxes.sample_tokens:

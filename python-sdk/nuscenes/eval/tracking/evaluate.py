@@ -11,7 +11,15 @@ import numpy as np
 
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
-from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.common.loaders import (
+    add_center_dist,
+    filter_eval_boxes,
+    get_samples_of_custom_split,
+    load_gt,
+    load_gt_of_sample_tokens,
+    load_prediction,
+    load_prediction_of_sample_tokens,
+)
 from nuscenes.eval.tracking.algo import TrackingEvaluation
 from nuscenes.eval.tracking.constants import AVG_METRIC_MAP, MOT_METRIC_MAP, LEGACY_METRICS
 from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricDataList, TrackingConfig, TrackingBox, \
@@ -19,6 +27,7 @@ from nuscenes.eval.tracking.data_classes import TrackingMetrics, TrackingMetricD
 from nuscenes.eval.tracking.loaders import create_tracks
 from nuscenes.eval.tracking.render import recall_metric_curve, summary_plot
 from nuscenes.eval.tracking.utils import print_final_metrics
+from nuscenes.utils.splits import is_predefined_split
 
 
 class TrackingEval:
@@ -80,9 +89,17 @@ class TrackingEval:
         # Load data.
         if verbose:
             print('Initializing nuScenes tracking evaluation')
-        pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, TrackingBox,
-                                                verbose=verbose, limit_to_split=self.eval_set, nusc=nusc)
-        gt_boxes = load_gt(nusc, self.eval_set, TrackingBox, verbose=verbose)
+
+        if is_predefined_split(split_name=eval_set):
+            pred_boxes, self.meta = load_prediction(
+                self.result_path, self.cfg.max_boxes_per_sample, TrackingBox, verbose=verbose
+            )
+            gt_boxes = load_gt(nusc, self.eval_set, TrackingBox, verbose=verbose)
+        else:
+            sample_tokens_of_custom_split : List[str] = get_samples_of_custom_split(split_name=eval_set, nusc=nusc)
+            pred_boxes, self.meta = load_prediction_of_sample_tokens(self.result_path, self.cfg.max_boxes_per_sample,
+                TrackingBox, sample_tokens=sample_tokens_of_custom_split, verbose=verbose)
+            gt_boxes = load_gt_of_sample_tokens(nusc, sample_tokens_of_custom_split, TrackingBox, verbose=verbose)
 
         assert set(pred_boxes.sample_tokens) == set(gt_boxes.sample_tokens), \
             "Samples in split don't match samples in predicted tracks."

@@ -326,7 +326,7 @@ def get_samples_in_eval_set(nusc: NuScenes, eval_set: str) -> List[str]:
         scene_name2tok[rec['name']] = rec['token']
 
     # Get scenes splits from nuScenes.
-    scenes_splits = get_scenes_of_split(split_name=eval_set, nuscenes=nusc, verbose=False)
+    scenes_splits = get_scenes_of_split(split_name=eval_set, nusc=nusc, verbose=False)
 
     # Collect sample tokens for each scene.
     samples = []

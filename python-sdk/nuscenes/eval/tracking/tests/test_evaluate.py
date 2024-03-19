@@ -74,7 +74,7 @@ class TestMain(unittest.TestCase):
         mock_results = {}
 
         # Get all samples in the current evaluation split.
-        scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nuscenes=nusc)
+        scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nusc=nusc)
         val_samples = []
         for sample in nusc.sample:
             if nusc.get('scene', sample['scene_token'])['name'] in scenes_of_eval_split:
