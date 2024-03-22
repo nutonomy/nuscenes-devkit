@@ -241,7 +241,7 @@ def is_predefined_split(split_name: str) -> bool:
 def get_scenes_of_custom_split(split_name: str, nusc : NuScenes) -> List[str]:
     """Returns the scene names from a custom splits.json file, or None if the custom split does not exist."""
 
-    splits_file_path = os.path.join(nusc.dataroot, nusc.version, "splits.json")
+    splits_file_path: str = _get_splits_file_path(nusc)
     if (not os.path.exists(splits_file_path)) or (not os.path.isfile(splits_file_path)):
         raise ValueError(f"Custom split {split_name} requested, but no valid file found at {splits_file_path}.")
 
@@ -254,6 +254,12 @@ def get_scenes_of_custom_split(split_name: str, nusc : NuScenes) -> List[str]:
         assert isinstance(scene_names_of_split, list), \
             f'Custom split {split_name} must be a list of scene names in {splits_file_path}.'
         return scene_names_of_split
+
+
+def _get_splits_file_path(nusc : NuScenes) -> str:
+    """Use a separate function for this so we can mock it well in unit tests."""
+    return os.path.join(nusc.dataroot, nusc.version, "splits.json")
+
 
 if __name__ == '__main__':
     # Print the scene-level stats.

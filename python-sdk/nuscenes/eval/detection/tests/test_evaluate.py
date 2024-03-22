@@ -7,6 +7,7 @@ import random
 import shutil
 import unittest
 from typing import Dict, List
+from unittest.mock import patch
 
 import numpy as np
 from nuscenes import NuScenes
@@ -21,12 +22,22 @@ from tqdm import tqdm
 class TestMain(unittest.TestCase):
     res_mockup = 'nusc_eval.json'
     res_eval_folder = 'tmp'
+    splits_file_mockup = 'mocked_splits.json'
+
+    def setUp(self):
+        with open(self.splits_file_mockup, 'w') as f:
+            json.dump({
+                "mini_custom_train": ["scene-0061", "scene-0553"],
+                "mini_custom_val": ["scene-0103", "scene-0916"]
+            }, f, indent=2)
 
     def tearDown(self):
         if os.path.exists(self.res_mockup):
             os.remove(self.res_mockup)
         if os.path.exists(self.res_eval_folder):
             shutil.rmtree(self.res_eval_folder)
+        if os.path.exists(self.splits_file_mockup):
+            os.remove(self.splits_file_mockup)
 
     @staticmethod
     def _mock_submission(nusc: NuScenes, split: str) -> Dict[str, dict]:
@@ -128,12 +139,15 @@ class TestMain(unittest.TestCase):
         # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split.
         self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
-    def test_delta_custom_split(self):
+    @patch('nuscenes.utils.splits._get_splits_file_path')
+    def test_delta_custom_split(self, mock__get_splits_file_path):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         """
+        mock__get_splits_file_path.return_value = self.splits_file_mockup
+
         random.seed(42)
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'

@@ -8,6 +8,7 @@ import shutil
 import sys
 import unittest
 from typing import Any, Dict, List, Optional
+from unittest.mock import patch
 
 import numpy as np
 from nuscenes import NuScenes
@@ -21,12 +22,22 @@ from tqdm import tqdm
 class TestMain(unittest.TestCase):
     res_mockup = 'nusc_eval.json'
     res_eval_folder = 'tmp'
+    splits_file_mockup = 'mocked_splits.json'
+
+    def setUp(self):
+        with open(self.splits_file_mockup, 'w') as f:
+            json.dump({
+                "mini_custom_train": ["scene-0061", "scene-0553"],
+                "mini_custom_val": ["scene-0103", "scene-0916"]
+            }, f, indent=2)
 
     def tearDown(self):
         if os.path.exists(self.res_mockup):
             os.remove(self.res_mockup)
         if os.path.exists(self.res_eval_folder):
             shutil.rmtree(self.res_eval_folder)
+        if os.path.exists(self.splits_file_mockup):
+            os.remove(self.splits_file_mockup)
 
     @staticmethod
     def _mock_submission(nusc: NuScenes,
@@ -133,7 +144,6 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
-    @unittest.skip
     def basic_test(self,
                    eval_set: str = 'mini_val',
                    add_errors: bool = False,
@@ -229,8 +239,9 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-    @unittest.skip
+    @patch('nuscenes.utils.splits._get_splits_file_path')
     def test_delta_gt_custom_split(self,
+                      mock__get_splits_file_path,
                       eval_set: str = 'mini_custom_train',
                       render_curves: bool = False):
         """
@@ -241,6 +252,8 @@ class TestMain(unittest.TestCase):
         :param eval_set: Which set to evaluate on.
         :param render_curves: Whether to render stats curves to disk.
         """
+        mock__get_splits_file_path.return_value = self.splits_file_mockup
+
         # Run the evaluation without errors.
         metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
 
