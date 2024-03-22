@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from nuscenes import NuScenes
-from nuscenes.utils.splits import get_scenes_of_split
+from nuscenes.utils.splits import create_splits_scenes
 
 
 class ConfusionMatrix:
@@ -326,11 +326,11 @@ def get_samples_in_eval_set(nusc: NuScenes, eval_set: str) -> List[str]:
         scene_name2tok[rec['name']] = rec['token']
 
     # Get scenes splits from nuScenes.
-    scenes_splits = get_scenes_of_split(split_name=eval_set, nusc=nusc, verbose=False)
+    scenes_splits = create_splits_scenes(verbose=False)
 
     # Collect sample tokens for each scene.
     samples = []
-    for scene in scenes_splits:
+    for scene in scenes_splits[eval_set]:
         scene_record = nusc.get('scene', scene_name2tok[scene])
         total_num_samples = scene_record['nbr_samples']
         first_sample_token = scene_record['first_sample_token']
