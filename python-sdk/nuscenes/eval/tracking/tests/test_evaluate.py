@@ -16,6 +16,7 @@ from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.evaluate import TrackingEval
 from nuscenes.eval.tracking.utils import category_to_tracking_name
 from nuscenes.utils.splits import get_scenes_of_split
+from parameterized import parameterized
 from tqdm import tqdm
 
 
@@ -203,9 +204,14 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-    @unittest.skip
+    @parameterized.expand([
+        ('mini_val',),
+        ('mini_custom_train',)
+    ])
+    @patch('nuscenes.utils.splits._get_custom_splits_file_path')
     def test_delta_gt(self,
-                      eval_set: str = 'mini_val',
+                      eval_set: str,
+                      mock__get_custom_splits_file_path: str,
                       render_curves: bool = False):
         """
         This tests runs the evaluation with the ground truth used as predictions.
@@ -215,13 +221,15 @@ class TestMain(unittest.TestCase):
         :param eval_set: Which set to evaluate on.
         :param render_curves: Whether to render stats curves to disk.
         """
+        mock__get_custom_splits_file_path.return_value = self.splits_file_mockup
+
         # Run the evaluation without errors.
         metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
 
         # Compare metrics to known solution. Do not check:
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
-        if eval_set == 'mini_val':
+        if eval_set in ['mini_val', 'mini_custom_train']:
             self.assertAlmostEqual(metrics['amota'], 1.0)
             self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
             self.assertAlmostEqual(metrics['motar'], 1.0)
@@ -239,44 +247,6 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-    @patch('nuscenes.utils.splits._get_splits_file_path')
-    def test_delta_gt_custom_split(self,
-                      mock__get_splits_file_path,
-                      eval_set: str = 'mini_custom_train',
-                      render_curves: bool = False):
-        """
-        This tests runs the evaluation with the ground truth used as predictions.
-        This should result in a perfect score for every metric.
-        This score is then captured in this very test such that if we change the eval code,
-        this test will trigger if the results changed.
-        :param eval_set: Which set to evaluate on.
-        :param render_curves: Whether to render stats curves to disk.
-        """
-        mock__get_splits_file_path.return_value = self.splits_file_mockup
-
-        # Run the evaluation without errors.
-        metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
-
-        # Compare metrics to known solution. Do not check:
-        # - MT/TP (hard to figure out here).
-        # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
-        if eval_set == 'mini_custom_train':
-            self.assertAlmostEqual(metrics['amota'], 1.0)
-            self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
-            self.assertAlmostEqual(metrics['motar'], 1.0)
-            self.assertAlmostEqual(metrics['recall'], 1.0)
-            self.assertAlmostEqual(metrics['mota'], 1.0)
-            self.assertAlmostEqual(metrics['motp'], 0.0, delta=1e-5)
-            self.assertAlmostEqual(metrics['faf'], 0.0)
-            self.assertAlmostEqual(metrics['ml'], 0.0)
-            self.assertAlmostEqual(metrics['fp'], 0.0)
-            self.assertAlmostEqual(metrics['fn'], 0.0)
-            self.assertAlmostEqual(metrics['ids'], 0.0)
-            self.assertAlmostEqual(metrics['frag'], 0.0)
-            self.assertAlmostEqual(metrics['tid'], 0.0)
-            self.assertAlmostEqual(metrics['lgd'], 0.0)
-        else:
-            print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
 if __name__ == '__main__':
     unittest.main()
