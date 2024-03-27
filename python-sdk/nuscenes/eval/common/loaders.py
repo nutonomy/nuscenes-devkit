@@ -414,11 +414,20 @@ def load_gt_of_sample_tokens(nusc: NuScenes, sample_tokens: List[str], box_cls,
     return all_annotations
 
 def get_samples_of_custom_split(split_name: str, nusc : NuScenes) -> List[str]:
+    """
+    Returns the sample tokens of a custom/user-defined split.
+    :param split_name: The name of the custom split.
+    :param nusc: The NuScenes instance.
+    :return: The sample tokens of the custom split.
+    """
+
     scenes_of_split : List[str] = get_scenes_of_custom_split(split_name=split_name, nusc=nusc)
     sample_tokens_of_split : List[str] = get_samples_of_scenes(scene_names=scenes_of_split, nusc=nusc)
     return sample_tokens_of_split
 
 def get_samples_of_scenes(scene_names: List[str], nusc: NuScenes) -> List[str]:
+    """Given a list of scene names, returns the sample tokens of these scenes."""
+
     all_sample_tokens = [s['token'] for s in nusc.sample]
     assert len(all_sample_tokens) > 0, "Error: Database has no samples!"
 
