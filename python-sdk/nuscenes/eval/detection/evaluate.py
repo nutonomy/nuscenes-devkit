@@ -6,19 +6,31 @@ import json
 import os
 import random
 import time
-from typing import Tuple, Dict, Any
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
-
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.common.data_classes import EvalBoxes
-from nuscenes.eval.common.loaders import load_prediction, load_gt, add_center_dist, filter_eval_boxes
+from nuscenes.eval.common.loaders import (
+    add_center_dist,
+    filter_eval_boxes,
+    get_samples_of_custom_split,
+    load_gt,
+    load_gt_of_sample_tokens,
+    load_prediction,
+    load_prediction_of_sample_tokens,
+)
 from nuscenes.eval.detection.algo import accumulate, calc_ap, calc_tp
 from nuscenes.eval.detection.constants import TP_METRICS
-from nuscenes.eval.detection.data_classes import DetectionConfig, DetectionMetrics, DetectionBox, \
-    DetectionMetricDataList
-from nuscenes.eval.detection.render import summary_plot, class_pr_curve, class_tp_curve, dist_pr_curve, visualize_sample
+from nuscenes.eval.detection.data_classes import (
+    DetectionBox,
+    DetectionConfig,
+    DetectionMetricDataList,
+    DetectionMetrics,
+)
+from nuscenes.eval.detection.render import class_pr_curve, class_tp_curve, dist_pr_curve, summary_plot, visualize_sample
+from nuscenes.utils.splits import is_predefined_split
 
 
 class DetectionEval:
@@ -77,9 +89,16 @@ class DetectionEval:
         # Load data.
         if verbose:
             print('Initializing nuScenes detection evaluation')
-        self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, DetectionBox,
-                                                     verbose=verbose)
-        self.gt_boxes = load_gt(self.nusc, self.eval_set, DetectionBox, verbose=verbose)
+
+        if is_predefined_split(split_name=eval_set):
+            self.pred_boxes, self.meta = load_prediction(self.result_path, self.cfg.max_boxes_per_sample, DetectionBox,
+                                                        verbose=verbose)
+            self.gt_boxes = load_gt(self.nusc, self.eval_set, DetectionBox, verbose=verbose)
+        else:
+            sample_tokens_of_custom_split : List[str] = get_samples_of_custom_split(split_name=eval_set, nusc=nusc)
+            self.pred_boxes, self.meta = load_prediction_of_sample_tokens(self.result_path, self.cfg.max_boxes_per_sample,
+                DetectionBox, sample_tokens=sample_tokens_of_custom_split, verbose=verbose)
+            self.gt_boxes = load_gt_of_sample_tokens(nusc, sample_tokens_of_custom_split, DetectionBox, verbose=verbose)
 
         assert set(self.pred_boxes.sample_tokens) == set(self.gt_boxes.sample_tokens), \
             "Samples in split doesn't match samples in predictions."

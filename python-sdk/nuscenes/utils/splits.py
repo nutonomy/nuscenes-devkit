@@ -1,6 +1,8 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
 
+import json
+import os
 from typing import Dict, List
 
 from nuscenes import NuScenes
@@ -211,6 +213,57 @@ def create_splits_scenes(verbose: bool = False) -> Dict[str, List[str]]:
             print('%s' % scenes)
 
     return scene_splits
+
+
+def get_scenes_of_split(split_name: str, nusc : NuScenes, verbose: bool = False) -> List[str]:
+    """
+    Returns the scenes in a given split.
+    :param split_name: The name of the split.
+    :param nusc: The NuScenes instance to know where to look up potential custom splits.
+    :param verbose: Whether to print out statistics on a scene level.
+    :return: A list of scenes in that split.
+    """
+
+    if is_predefined_split(split_name=split_name):
+        return create_splits_scenes(verbose=verbose)[split_name]
+    else:
+        return get_scenes_of_custom_split(split_name=split_name, nusc=nusc)
+
+def is_predefined_split(split_name: str) -> bool:
+    """
+    Returns whether the split name is one of the predefined splits in the nuScenes dataset.
+    :param split_name: The name of the split.
+    :return: Whether the split is predefined.
+    """
+    return split_name in create_splits_scenes().keys()
+
+
+def get_scenes_of_custom_split(split_name: str, nusc : NuScenes) -> List[str]:
+    """Returns the scene names from a custom `splits.json` file."""
+
+    splits_file_path: str = _get_custom_splits_file_path(nusc)
+
+    splits_data: dict = {}
+    with open(splits_file_path, 'r') as file:
+        splits_data = json.load(file)
+
+    if split_name not in splits_data.keys():
+        raise ValueError(f"Custom split {split_name} requested, but not found in {splits_file_path}.")
+
+    scene_names_of_split : List[str] = splits_data[split_name]
+    assert isinstance(scene_names_of_split, list), \
+        f'Custom split {split_name} must be a list of scene names in {splits_file_path}.'
+    return scene_names_of_split
+
+
+def _get_custom_splits_file_path(nusc : NuScenes) -> str:
+    """Use a separate function for this so we can mock it well in unit tests."""
+
+    splits_file_path: str = os.path.join(nusc.dataroot, nusc.version, "splits.json")
+    if (not os.path.exists(splits_file_path)) or (not os.path.isfile(splits_file_path)):
+        raise ValueError(f"Custom split requested, but no valid file found at {splits_file_path}.")
+
+    return splits_file_path
 
 
 if __name__ == '__main__':

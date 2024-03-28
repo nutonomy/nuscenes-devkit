@@ -6,28 +6,39 @@ import os
 import random
 import shutil
 import unittest
-from typing import Dict
+from typing import Dict, List
+from unittest.mock import patch
 
 import numpy as np
-from tqdm import tqdm
-
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.detection.constants import DETECTION_NAMES
 from nuscenes.eval.detection.evaluate import DetectionEval
 from nuscenes.eval.detection.utils import category_to_detection_name, detection_name_to_rel_attributes
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
+from parameterized import parameterized
+from tqdm import tqdm
 
 
 class TestMain(unittest.TestCase):
     res_mockup = 'nusc_eval.json'
     res_eval_folder = 'tmp'
+    splits_file_mockup = 'mocked_splits.json'
+
+    def setUp(self):
+        with open(self.splits_file_mockup, 'w') as f:
+            json.dump({
+                "mini_custom_train": ["scene-0061", "scene-0553"],
+                "mini_custom_val": ["scene-0103", "scene-0916"]
+            }, f, indent=2)
 
     def tearDown(self):
         if os.path.exists(self.res_mockup):
             os.remove(self.res_mockup)
         if os.path.exists(self.res_eval_folder):
             shutil.rmtree(self.res_eval_folder)
+        if os.path.exists(self.splits_file_mockup):
+            os.remove(self.splits_file_mockup)
 
     @staticmethod
     def _mock_submission(nusc: NuScenes, split: str) -> Dict[str, dict]:
@@ -68,10 +79,10 @@ class TestMain(unittest.TestCase):
             'use_external': False,
         }
         mock_results = {}
-        splits = create_splits_scenes()
+        scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nusc=nusc)
         val_samples = []
         for sample in nusc.sample:
-            if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
+            if nusc.get('scene', sample['scene_token'])['name'] in scenes_of_eval_split:
                 val_samples.append(sample)
 
         for sample in tqdm(val_samples, leave=False):
@@ -97,12 +108,21 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
-    def test_delta(self):
+
+
+    @parameterized.expand([
+        ('mini_val',),
+        ('mini_custom_val',)
+    ])
+    @patch('nuscenes.utils.splits._get_custom_splits_file_path')
+    def test_delta(self, eval_split, mock__get_custom_splits_file_path):
         """
         This tests runs the evaluation for an arbitrary random set of predictions.
         This score is then captured in this very test such that if we change the eval code,
         this test will trigger if the results changed.
         """
+        mock__get_custom_splits_file_path.return_value = self.splits_file_mockup
+
         random.seed(42)
         np.random.seed(42)
         assert 'NUSCENES' in os.environ, 'Set NUSCENES env. variable to enable tests.'
@@ -110,10 +130,10 @@ class TestMain(unittest.TestCase):
         nusc = NuScenes(version='v1.0-mini', dataroot=os.environ['NUSCENES'], verbose=False)
 
         with open(self.res_mockup, 'w') as f:
-            json.dump(self._mock_submission(nusc, 'mini_val'), f, indent=2)
+            json.dump(self._mock_submission(nusc, eval_split), f, indent=2)
 
         cfg = config_factory('detection_cvpr_2019')
-        nusc_eval = DetectionEval(nusc, cfg, self.res_mockup, eval_set='mini_val', output_dir=self.res_eval_folder,
+        nusc_eval = DetectionEval(nusc, cfg, self.res_mockup, eval_set=eval_split, output_dir=self.res_eval_folder,
                                   verbose=False)
         metrics, md_list = nusc_eval.evaluate()
 
@@ -126,9 +146,8 @@ class TestMain(unittest.TestCase):
         # 7. Score = 0.20237925145690996. After TP reversion bug.
         # 8. Score = 0.24047129251302665. After bike racks bug.
         # 9. Score = 0.24104572227466886. After bug fix in calc_tp. Include the max recall and exclude the min recall.
-        # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split.
+        # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split, and the equal mini_custom_val split.
         self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
-
 
 if __name__ == '__main__':
     unittest.main()

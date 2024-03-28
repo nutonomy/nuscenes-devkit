@@ -7,27 +7,38 @@ import random
 import shutil
 import sys
 import unittest
-from typing import Dict, Optional, Any
+from typing import Any, Dict, List, Optional
+from unittest.mock import patch
 
 import numpy as np
-from tqdm import tqdm
-
 from nuscenes import NuScenes
 from nuscenes.eval.common.config import config_factory
 from nuscenes.eval.tracking.evaluate import TrackingEval
 from nuscenes.eval.tracking.utils import category_to_tracking_name
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
+from parameterized import parameterized
+from tqdm import tqdm
 
 
 class TestMain(unittest.TestCase):
     res_mockup = 'nusc_eval.json'
     res_eval_folder = 'tmp'
+    splits_file_mockup = 'mocked_splits.json'
+
+    def setUp(self):
+        with open(self.splits_file_mockup, 'w') as f:
+            json.dump({
+                "mini_custom_train": ["scene-0061", "scene-0553"],
+                "mini_custom_val": ["scene-0103", "scene-0916"]
+            }, f, indent=2)
 
     def tearDown(self):
         if os.path.exists(self.res_mockup):
             os.remove(self.res_mockup)
         if os.path.exists(self.res_eval_folder):
             shutil.rmtree(self.res_eval_folder)
+        if os.path.exists(self.splits_file_mockup):
+            os.remove(self.splits_file_mockup)
 
     @staticmethod
     def _mock_submission(nusc: NuScenes,
@@ -75,10 +86,10 @@ class TestMain(unittest.TestCase):
         mock_results = {}
 
         # Get all samples in the current evaluation split.
-        splits = create_splits_scenes()
+        scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nusc=nusc)
         val_samples = []
         for sample in nusc.sample:
-            if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
+            if nusc.get('scene', sample['scene_token'])['name'] in scenes_of_eval_split:
                 val_samples.append(sample)
 
         # Prepare results.
@@ -134,7 +145,6 @@ class TestMain(unittest.TestCase):
         }
         return mock_submission
 
-    @unittest.skip
     def basic_test(self,
                    eval_set: str = 'mini_val',
                    add_errors: bool = False,
@@ -194,9 +204,14 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-    @unittest.skip
+    @parameterized.expand([
+        ('mini_val',),
+        ('mini_custom_train',)
+    ])
+    @patch('nuscenes.utils.splits._get_custom_splits_file_path')
     def test_delta_gt(self,
-                      eval_set: str = 'mini_val',
+                      eval_set: str,
+                      mock__get_custom_splits_file_path: str,
                       render_curves: bool = False):
         """
         This tests runs the evaluation with the ground truth used as predictions.
@@ -206,13 +221,15 @@ class TestMain(unittest.TestCase):
         :param eval_set: Which set to evaluate on.
         :param render_curves: Whether to render stats curves to disk.
         """
+        mock__get_custom_splits_file_path.return_value = self.splits_file_mockup
+
         # Run the evaluation without errors.
         metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
 
         # Compare metrics to known solution. Do not check:
         # - MT/TP (hard to figure out here).
         # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
-        if eval_set == 'mini_val':
+        if eval_set in ['mini_val', 'mini_custom_train']:
             self.assertAlmostEqual(metrics['amota'], 1.0)
             self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
             self.assertAlmostEqual(metrics['motar'], 1.0)
