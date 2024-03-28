@@ -1023,9 +1023,9 @@ class NuScenesExplorer:
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=(9, 16))
             if lidarseg_preds_bin_path:
-                fig.canvas.set_window_title(sample_token + '(predictions)')
+                fig.canvas.manager.set_window_title(sample_token + '(predictions)')
             else:
-                fig.canvas.set_window_title(sample_token)
+                fig.canvas.manager.set_window_title(sample_token)
         else:  # Set title on if rendering as part of render_sample.
             ax.set_title(camera_channel)
         ax.imshow(im)
