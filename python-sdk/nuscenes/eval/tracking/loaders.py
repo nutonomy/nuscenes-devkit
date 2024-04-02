@@ -3,15 +3,14 @@
 
 from bisect import bisect
 from collections import defaultdict
-from typing import List, Dict, DefaultDict
+from typing import DefaultDict, Dict, List
 
 import numpy as np
-from pyquaternion import Quaternion
-
 from nuscenes.eval.common.data_classes import EvalBoxes
 from nuscenes.eval.tracking.data_classes import TrackingBox
 from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.splits import create_splits_scenes
+from nuscenes.utils.splits import get_scenes_of_split
+from pyquaternion import Quaternion
 
 
 def interpolate_tracking_boxes(left_box: TrackingBox, right_box: TrackingBox, right_ratio: float) -> TrackingBox:
@@ -105,12 +104,13 @@ def create_tracks(all_boxes: EvalBoxes, nusc: NuScenes, eval_split: str, gt: boo
     :return: The tracks.
     """
     # Only keep samples from this split.
-    splits = create_splits_scenes()
+    scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=eval_split, nusc=nusc)
+
     scene_tokens = set()
     for sample_token in all_boxes.sample_tokens:
         scene_token = nusc.get('sample', sample_token)['scene_token']
         scene = nusc.get('scene', scene_token)
-        if scene['name'] in splits[eval_split]:
+        if scene['name'] in scenes_of_eval_split:
             scene_tokens.add(scene_token)
 
     # Tracks are stored as dict {scene_token: {timestamp: List[TrackingBox]}}.
