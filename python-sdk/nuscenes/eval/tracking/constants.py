@@ -17,6 +17,7 @@ AVG_METRIC_MAP = {  # Mapping from average metric name to individual per-thresho
 MOT_METRIC_MAP = {  # Mapping from motmetrics names to metric names used here.
     'num_frames': '',  # Used in FAF.
     'num_objects': 'gt',  # Used in MOTAR computation.
+    'pred_frequencies': '', # Only needed in background.
     'num_predictions': '',  # Only printed out.
     'num_matches': 'tp',  # Used in MOTAR computation and printed out.
     'motar': 'motar',  # Only used in AMOTA.
