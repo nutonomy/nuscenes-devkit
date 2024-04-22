@@ -31,6 +31,7 @@ class TestMain(unittest.TestCase):
                 "mini_custom_train": ["scene-0061", "scene-0553"],
                 "mini_custom_val": ["scene-0103", "scene-0916"]
             }, f, indent=2)
+
     def tearDown(self):
         if os.path.exists(self.res_mockup):
             os.remove(self.res_mockup)
@@ -88,7 +89,7 @@ class TestMain(unittest.TestCase):
         scenes_of_eval_split : List[str] = get_scenes_of_split(split_name=split, nusc=nusc)
         val_samples = []
         for sample in nusc.sample:
-            if nusc.get('scene', sample['scene_token'])['name'] in splits[split]:
+            if nusc.get('scene', sample['scene_token'])['name'] in scenes_of_eval_split:
                 val_samples.append(sample)
 
         # Prepare results.
@@ -242,6 +243,8 @@ class TestMain(unittest.TestCase):
         :param eval_set: Which set to evaluate on.
         :param render_curves: Whether to render stats curves to disk.
         """
+        mock__get_custom_splits_file_path.return_value = self.splits_file_mockup
+
         # Run the evaluation without errors.
         metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves,
                                   dist_fcn='center_distance', dist_th_tp=2.0)
