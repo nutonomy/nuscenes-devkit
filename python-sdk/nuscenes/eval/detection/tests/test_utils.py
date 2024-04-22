@@ -7,8 +7,8 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from pyquaternion import Quaternion
 
-from nuscenes.eval.common.utils import attr_acc, scale_iou, yaw_diff, angle_diff, center_distance, velocity_l2, \
-    cummean
+from nuscenes.eval.common.utils import attr_acc, scale_iou, yaw_diff, angle_diff, iou_complement, center_distance, \
+    velocity_l2, cummean
 from nuscenes.eval.detection.data_classes import DetectionBox
 
 
@@ -127,6 +127,19 @@ class TestEval(unittest.TestCase):
         b = 180.0 + 360*200
         period = 360
         self.assertAlmostEqual(rad(180), abs(angle_diff(rad(a), rad(b), rad(period))))
+
+    def test_iou_complement_no_overlap(self):
+        # Two boxes specified, no overlap
+        sa = DetectionBox(translation=(1.0, 0.0, 1.0), size=(2,1,1))
+        sr = DetectionBox(translation=(3.5, 0.0, 1.0), size=(3,1,2))
+        self.assertAlmostEqual(iou_complement(sa, sr), 1.0)
+
+    def test_iou_complement_overlap(self):
+        # Two boxes specified, one rotated by 90 degrees in z axis, should attain 25% overlap
+        sa = DetectionBox(rotation=(0,0,0,0), translation=(1.0, 0.5, 2.0), size=(2,1,1))
+        sr = DetectionBox(rotation=(0.70710678118,0,0,0.70710678118),
+                          translation=(0.5, 1.5, 1), size=(3,1,2))
+        self.assertAlmostEqual(iou_complement(sa, sr), 0.75)
 
     def test_center_distance(self):
         """Test for center_distance()."""

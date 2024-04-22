@@ -5,12 +5,42 @@ from typing import List, Dict, Any
 
 import numpy as np
 from pyquaternion import Quaternion
-
+from shapely import affinity
+from shapely.geometry import Polygon
 from nuscenes.eval.common.data_classes import EvalBox
 from nuscenes.utils.data_classes import Box
 
 DetectionBox = Any  # Workaround as direct imports lead to cyclic dependencies.
 
+def create_polygon_from_box(bbox: EvalBox):
+    l = bbox.size[0]
+    w = bbox.size[1]
+    poly_veh = Polygon(((0.5*l,0.5*w),(-0.5*l,0.5*w),(-0.5*l,-0.5*w),(0.5*l,-0.5*w),(0.5*l,0.5*w)))
+    poly_rot = affinity.rotate(poly_veh,quaternion_yaw(Quaternion(bbox.rotation)),use_radians=True)
+    poly_glob = affinity.translate(poly_rot,bbox.translation[0],bbox.translation[1])
+    return poly_glob
+
+def intersection_over_union(gt_poly: Polygon, pred_poly: Polygon):
+    intersection = gt_poly.intersection(pred_poly).area
+    iou = intersection/(gt_poly.area + pred_poly.area - intersection)
+    return iou
+
+def iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
+    """
+    1 - IOU percentage between the boxes (xy only).
+    :param gt_box: GT annotation sample.
+    :param pred_box: Predicted sample.
+    :return: 1 - IOU.
+    """
+    # Do a cheaper first pass before calculating IOU i.e. check if the circles that enclose the two
+    # boxes overlap
+    gt_radius = np.linalg.norm(0.5*np.array([gt_box.size[0],gt_box.size[1]]))
+    pred_radius = np.linalg.norm(0.5*np.array([pred_box.size[0],pred_box.size[1]]))
+    if (center_distance(gt_box,pred_box) < pred_radius + gt_radius):
+        iou = intersection_over_union(create_polygon_from_box(gt_box),create_polygon_from_box(pred_box))
+    else:
+        iou = 0.0
+    return 1.0 - iou
 
 def center_distance(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
