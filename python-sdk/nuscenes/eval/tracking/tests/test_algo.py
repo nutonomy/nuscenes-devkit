@@ -19,7 +19,6 @@ class TestAlgo(unittest.TestCase):
         class_name = 'car'
         box = TrackingBox(translation=(0, 0, 0), tracking_id='ta', tracking_name=class_name,
                           tracking_score=0.5)
-        box.size = [3,1,1]
         timestamp_boxes_gt = {
             0: [copy.deepcopy(box)],
             1: [copy.deepcopy(box)],
