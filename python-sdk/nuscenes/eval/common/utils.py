@@ -13,6 +13,11 @@ from nuscenes.utils.data_classes import Box
 DetectionBox = Any  # Workaround as direct imports lead to cyclic dependencies.
 
 def create_polygon_from_box(bbox: EvalBox):
+    """
+    Convert an EvalBox into a Polygon
+    :param bbox: A EvalBox describing center, rotation and size.
+    :return: A Polygon describing the xy vertices.
+    """
     l = bbox.size[0]
     w = bbox.size[1]
     poly_veh = Polygon(((0.5*l,0.5*w),(-0.5*l,0.5*w),(-0.5*l,-0.5*w),(0.5*l,-0.5*w),(0.5*l,0.5*w)))
@@ -21,13 +26,22 @@ def create_polygon_from_box(bbox: EvalBox):
     return poly_glob
 
 def intersection_over_union(gt_poly: Polygon, pred_poly: Polygon):
+    """
+    IOU percentage between two input polygons (xy only).
+    :param gt_poly: GT annotation sample.
+    :param pred_poly: Predicted sample.
+    :return: IOU.
+    """
     intersection = gt_poly.intersection(pred_poly).area
     iou = intersection/(gt_poly.area + pred_poly.area - intersection)
+
+     # Guard against machine precision (i.e. when dealing with perfect overlap)
+    iou = min(iou,1.0)
     return iou
 
 def iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
-    1 - IOU percentage between the boxes (xy only).
+    1 - IOU percentage between two input boxes (xy only).
     :param gt_box: GT annotation sample.
     :param pred_box: Predicted sample.
     :return: 1 - IOU.
@@ -36,11 +50,12 @@ def iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
     # boxes overlap
     gt_radius = np.linalg.norm(0.5*np.array([gt_box.size[0],gt_box.size[1]]))
     pred_radius = np.linalg.norm(0.5*np.array([pred_box.size[0],pred_box.size[1]]))
-    if (center_distance(gt_box,pred_box) < pred_radius + gt_radius):
-        iou = intersection_over_union(create_polygon_from_box(gt_box),create_polygon_from_box(pred_box))
+    if (center_distance(gt_box,pred_box) >= pred_radius + gt_radius):
+        iou_complement = 1.0
     else:
-        iou = 0.0
-    return 1.0 - iou
+        iou_complement = 1.0 - intersection_over_union(create_polygon_from_box(gt_box),
+                                      create_polygon_from_box(pred_box))
+    return iou_complement
 
 def center_distance(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
