@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
-from nuscenes.eval.common.utils import center_distance, iou_complement
+from nuscenes.eval.common.utils import center_distance, bev_iou_complement
 from nuscenes.eval.detection.constants import DETECTION_NAMES, ATTRIBUTE_NAMES, TP_METRICS
 
 
@@ -74,8 +74,8 @@ class DetectionConfig:
         """ Return the distance function corresponding to the dist_fcn string. """
         if self.dist_fcn == 'center_distance':
             return center_distance
-        elif self.dist_fcn == "iou_complement":
-            return iou_complement
+        elif self.dist_fcn == "bev_iou_complement":
+            return bev_iou_complement
         else:
             raise Exception('Error: Unknown distance function %s!' % self.dist_fcn)
 

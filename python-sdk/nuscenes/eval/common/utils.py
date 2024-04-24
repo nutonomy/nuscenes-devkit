@@ -12,11 +12,11 @@ from nuscenes.utils.data_classes import Box
 
 DetectionBox = Any  # Workaround as direct imports lead to cyclic dependencies.
 
-def create_polygon_from_box(bbox: EvalBox):
+def create_2d_polygon_from_box(bbox: EvalBox) -> Polygon:
     """
-    Convert an EvalBox into a Polygon
-    :param bbox: A EvalBox describing center, rotation and size.
-    :return: A Polygon describing the xy vertices.
+    Convert an EvalBox into a 2D Polygon
+    :param bbox: An EvalBox describing center, rotation and size.
+    :return: A 2D Polygon describing the xy vertices.
     """
     l = bbox.size[0]
     w = bbox.size[1]
@@ -25,23 +25,23 @@ def create_polygon_from_box(bbox: EvalBox):
     poly_glob = affinity.translate(poly_rot,bbox.translation[0],bbox.translation[1])
     return poly_glob
 
-def intersection_over_union(gt_poly: Polygon, pred_poly: Polygon):
+def bev_iou(gt_poly: Polygon, pred_poly: Polygon) -> float:
     """
-    IOU percentage between two input polygons (xy only).
+    Birds Eye View IOU percentage between two input polygons (xy only).
     :param gt_poly: GT annotation sample.
     :param pred_poly: Predicted sample.
     :return: IOU.
     """
     intersection = gt_poly.intersection(pred_poly).area
-    iou = intersection/(gt_poly.area + pred_poly.area - intersection)
+    bev_iou = intersection/(gt_poly.area + pred_poly.area - intersection)
 
      # Guard against machine precision (i.e. when dealing with perfect overlap)
-    iou = min(iou,1.0)
-    return iou
+    bev_iou = min(bev_iou,1.0)
+    return bev_iou
 
-def iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
+def bev_iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
-    1 - IOU percentage between two input boxes (xy only).
+    1 - BEV_IOU percentage between two input boxes (xy only).
     :param gt_box: GT annotation sample.
     :param pred_box: Predicted sample.
     :return: 1 - IOU.
@@ -51,11 +51,11 @@ def iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
     gt_radius = np.linalg.norm(0.5*np.array([gt_box.size[0],gt_box.size[1]]))
     pred_radius = np.linalg.norm(0.5*np.array([pred_box.size[0],pred_box.size[1]]))
     if (center_distance(gt_box,pred_box) >= pred_radius + gt_radius):
-        iou_complement = 1.0
+        bev_iou_complement = 1.0
     else:
-        iou_complement = 1.0 - intersection_over_union(create_polygon_from_box(gt_box),
-                                      create_polygon_from_box(pred_box))
-    return iou_complement
+        bev_iou_complement = 1.0 - bev_iou(create_2d_polygon_from_box(gt_box),
+                                      create_2d_polygon_from_box(pred_box))
+    return bev_iou_complement
 
 def center_distance(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """

@@ -149,9 +149,9 @@ class TestMain(unittest.TestCase):
         # 10. Score = 0.19449091580477748. Changed to use v1.0 mini_val split, and the equal mini_custom_val split.
         self.assertAlmostEqual(metrics.nd_score, 0.19449091580477748)
 
-        # Evaluate again but use the iou_complement distance function
+        # Evaluate again but use the bev_iou_complement distance function
         # 1. Score = 0.16651633528966858. Measured on forked repo sbarkby/nuscenes-devkit April 22nd 2024.
-        cfg.dist_fcn = "iou_complement"
+        cfg.dist_fcn = "bev_iou_complement"
         cfg.dist_ths = [0,0.999999]
         cfg.dist_th_tp = 0.999999
 

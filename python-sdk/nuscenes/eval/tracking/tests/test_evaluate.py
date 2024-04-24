@@ -212,9 +212,9 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-        # Run again with the alternative iou_complement dist_fcn
+        # Run again with the alternative bev_iou_complement dist_fcn
         metrics = self.basic_test(eval_set, add_errors=True, render_curves=render_curves,
-                                  dist_fcn='iou_complement', dist_th_tp=0.999999)
+                                  dist_fcn='bev_iou_complement', dist_th_tp=0.999999)
 
         # Compare metrics to known solution.
         if eval_set == 'mini_val':
@@ -270,9 +270,9 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
-        # Run again with the alternative iou_complement dist_fcn (and a very precise threshold)
+        # Run again with the alternative bev_iou_complement dist_fcn (and a very precise threshold)
         metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves,
-                                  dist_fcn='iou_complement', dist_th_tp=1e-6)
+                                  dist_fcn='bev_iou_complement', dist_th_tp=1e-6)
 
         # Compare metrics to known solution. Do not check:
         # - MT/TP (hard to figure out here).

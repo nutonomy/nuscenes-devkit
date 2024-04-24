@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:
     raise unittest.SkipTest('Skipping test as pandas was not found!')
 
-from nuscenes.eval.common.utils import iou_complement
+from nuscenes.eval.common.utils import bev_iou_complement
 from nuscenes.eval.tracking.constants import MOT_METRIC_MAP, TRACKING_METRICS
 from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 from nuscenes.eval.tracking.mot import MOTAccumulatorCustom
@@ -264,11 +264,11 @@ class TrackingEvaluation(object):
                     gt_boxes = np.array([b.translation[:2] for b in frame_gt])
                     pred_boxes = np.array([b.translation[:2] for b in frame_pred])
                     distances = sklearn.metrics.pairwise.euclidean_distances(gt_boxes, pred_boxes)
-                elif self.dist_fcn.__name__ == 'iou_complement':
+                elif self.dist_fcn.__name__ == 'bev_iou_complement':
                     distances = np.zeros((len(frame_gt),len(frame_pred)))
                     for i in range(len(frame_gt)):
                         for j in range(len(frame_pred)):
-                             distances[i,j] = iou_complement(frame_gt[i],frame_pred[j])
+                             distances[i,j] = bev_iou_complement(frame_gt[i],frame_pred[j])
                 else:
                     raise Exception('Error: Unknown distance function %s!' % self.dist_fcn.__name__)
 
