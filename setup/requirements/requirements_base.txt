@@ -1,7 +1,7 @@
 cachetools
 descartes
 fire
-matplotlib>=3.6.0
+matplotlib>3.4.0
 numpy>=1.22.0
 opencv-python>=4.5.4.58
 Pillow>6.2.1
