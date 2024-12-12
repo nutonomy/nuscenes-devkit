@@ -1,4 +1,4 @@
-# <img src="docs/nutonomy-logo-big-r.svg" width="182px" height="46px" style="vertical-align: middle" /> nuScenes™ devkit
+# <img src="https://cdn.cookielaw.org/logos/8c60fe9e-585e-46b1-8f92-eba17239401e/d3e43cda-e0a4-42f2-9c04-0e1900c3f68f/894f42e4-cba8-48e4-8a15-e9c3ea937950/motional_logo_horiz_fullcolor_rgb.png" height="46px" style="vertical-align: middle" /> nuScenes™ devkit
 Welcome to the nuTonomy® downloadable driverless vehicle software page. Click on the green box above labeled "Code" to download a copy of the software described below.
 
 
@@ -49,6 +49,8 @@ Welcome to the nuTonomy® downloadable driverless vehicle software page. Click o
 - Sep. 12, 2018: Devkit for teaser dataset released.
 
 ## Devkit setup
+<img src="https://cdn.cookielaw.org/logos/8c60fe9e-585e-46b1-8f92-eba17239401e/d3e43cda-e0a4-42f2-9c04-0e1900c3f68f/808c47fb-8484-44eb-b369-d90d6bb4733e/motional_logo_stack_colorrev_rgb_black.png" width="350px" style="vertical-align: middle"/>
+
 We use a common devkit for nuScenes and nuImages.
 The devkit is tested for Python 3.6 and Python 3.7.
 To install Python, please check [here](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md#install-python).
