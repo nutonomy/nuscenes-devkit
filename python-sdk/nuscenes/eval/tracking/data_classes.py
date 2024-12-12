@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from nuscenes.eval.common.data_classes import MetricData, EvalBox
-from nuscenes.eval.common.utils import center_distance
+from nuscenes.eval.common.utils import center_distance, bev_iou_complement
 from nuscenes.eval.tracking.constants import TRACKING_METRICS, AMOT_METRICS
 
 
@@ -86,6 +86,8 @@ class TrackingConfig:
         """ Return the distance function corresponding to the dist_fcn string. """
         if self.dist_fcn == 'center_distance':
             return center_distance
+        elif self.dist_fcn == "bev_iou_complement":
+            return bev_iou_complement
         else:
             raise Exception('Error: Unknown distance function %s!' % self.dist_fcn)
 

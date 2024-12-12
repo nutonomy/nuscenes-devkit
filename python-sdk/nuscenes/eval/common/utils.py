@@ -5,12 +5,57 @@ from typing import List, Dict, Any
 
 import numpy as np
 from pyquaternion import Quaternion
-
+from shapely import affinity
+from shapely.geometry import Polygon
 from nuscenes.eval.common.data_classes import EvalBox
 from nuscenes.utils.data_classes import Box
 
 DetectionBox = Any  # Workaround as direct imports lead to cyclic dependencies.
 
+def create_2d_polygon_from_box(bbox: EvalBox) -> Polygon:
+    """
+    Convert an EvalBox into a 2D Polygon
+    :param bbox: An EvalBox describing center, rotation and size.
+    :return: A 2D Polygon describing the xy vertices.
+    """
+    l = bbox.size[0]
+    w = bbox.size[1]
+    poly_veh = Polygon(((0.5*l,0.5*w),(-0.5*l,0.5*w),(-0.5*l,-0.5*w),(0.5*l,-0.5*w),(0.5*l,0.5*w)))
+    poly_rot = affinity.rotate(poly_veh,quaternion_yaw(Quaternion(bbox.rotation)),use_radians=True)
+    poly_glob = affinity.translate(poly_rot,bbox.translation[0],bbox.translation[1])
+    return poly_glob
+
+def bev_iou(gt_poly: Polygon, pred_poly: Polygon) -> float:
+    """
+    Birds Eye View IOU percentage between two input polygons (xy only).
+    :param gt_poly: GT annotation sample.
+    :param pred_poly: Predicted sample.
+    :return: IOU.
+    """
+    intersection = gt_poly.intersection(pred_poly).area
+    bev_iou = intersection/(gt_poly.area + pred_poly.area - intersection)
+
+     # Guard against machine precision (i.e. when dealing with perfect overlap)
+    bev_iou = min(bev_iou,1.0)
+    return bev_iou
+
+def bev_iou_complement(gt_box: EvalBox, pred_box: EvalBox) -> float:
+    """
+    1 - BEV_IOU percentage between two input boxes (xy only).
+    :param gt_box: GT annotation sample.
+    :param pred_box: Predicted sample.
+    :return: 1 - IOU.
+    """
+    # Do a cheaper first pass before calculating IOU i.e. check if the circles that enclose the two
+    # boxes overlap
+    gt_radius = np.linalg.norm(0.5*np.array([gt_box.size[0],gt_box.size[1]]))
+    pred_radius = np.linalg.norm(0.5*np.array([pred_box.size[0],pred_box.size[1]]))
+    if (center_distance(gt_box,pred_box) >= pred_radius + gt_radius):
+        bev_iou_complement = 1.0
+    else:
+        bev_iou_complement = 1.0 - bev_iou(create_2d_polygon_from_box(gt_box),
+                                      create_2d_polygon_from_box(pred_box))
+    return bev_iou_complement
 
 def center_distance(gt_box: EvalBox, pred_box: EvalBox) -> float:
     """
