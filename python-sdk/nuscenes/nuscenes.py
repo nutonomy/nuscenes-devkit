@@ -8,27 +8,32 @@ import os.path as osp
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List, Iterable
+from typing import Iterable, List, Tuple
 
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.metrics
-from PIL import Image
 from matplotlib import rcParams
 from matplotlib.axes import Axes
+from nuscenes.lidarseg.lidarseg_utils import (colormap_to_colors,
+                                              create_lidarseg_legend,
+                                              get_labels_in_coloring,
+                                              get_stats, paint_points_label,
+                                              plt_to_cv2)
+from nuscenes.panoptic.panoptic_utils import (get_frame_panoptic_instances,
+                                              get_panoptic_instances_stats,
+                                              paint_panop_points_label,
+                                              stuff_cat_ids)
+from nuscenes.utils.color_map import get_colormap
+from nuscenes.utils.data_classes import Box, LidarPointCloud, RadarPointCloud
+from nuscenes.utils.data_io import load_bin_file, panoptic_to_lidarseg
+from nuscenes.utils.geometry_utils import (BoxVisibility, box_in_image,
+                                           transform_matrix, view_points)
+from nuscenes.utils.map_mask import MapMask
+from PIL import Image
 from pyquaternion import Quaternion
 from tqdm import tqdm
-
-from nuscenes.lidarseg.lidarseg_utils import colormap_to_colors, plt_to_cv2, get_stats, \
-    get_labels_in_coloring, create_lidarseg_legend, paint_points_label
-from nuscenes.panoptic.panoptic_utils import paint_panop_points_label, stuff_cat_ids, get_frame_panoptic_instances,\
-    get_panoptic_instances_stats
-from nuscenes.utils.data_classes import LidarPointCloud, RadarPointCloud, Box
-from nuscenes.utils.data_io import load_bin_file, panoptic_to_lidarseg
-from nuscenes.utils.geometry_utils import view_points, box_in_image, BoxVisibility, transform_matrix
-from nuscenes.utils.map_mask import MapMask
-from nuscenes.utils.color_map import get_colormap
 
 PYTHON_VERSION = sys.version_info[0]
 
@@ -1023,9 +1028,9 @@ class NuScenesExplorer:
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=(9, 16))
             if lidarseg_preds_bin_path:
-                fig.canvas.set_window_title(sample_token + '(predictions)')
+                fig.canvas.manager.set_window_title(sample_token + '(predictions)')
             else:
-                fig.canvas.set_window_title(sample_token)
+                fig.canvas.manager.set_window_title(sample_token)
         else:  # Set title on if rendering as part of render_sample.
             ax.set_title(camera_channel)
         ax.imshow(im)
