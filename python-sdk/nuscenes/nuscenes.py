@@ -800,10 +800,10 @@ class NuScenesExplorer:
                 sample = self.nusc.get('sample', sample['next'])
             return count
 
-        recs = [(self.nusc.get('sample', record['first_sample_token'])['timestamp'], record['token'], record) for record in
-                self.nusc.scene]
+        recs = [(self.nusc.get('sample', record['first_sample_token'])['timestamp'], record['token'], record)
+                for record in self.nusc.scene]
 
-        for start_time, record in sorted(recs):
+        for start_time, _, record in sorted(recs):
             start_time = self.nusc.get('sample', record['first_sample_token'])['timestamp'] / 1000000
             length_time = self.nusc.get('sample', record['last_sample_token'])['timestamp'] / 1000000 - start_time
             location = self.nusc.get('log', record['log_token'])['location']
