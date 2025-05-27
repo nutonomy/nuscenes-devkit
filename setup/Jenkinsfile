@@ -46,8 +46,7 @@ pipeline {
   environment {
     PROD_IMAGE = "233885420847.dkr.ecr.us-east-1.amazonaws.com/nuscenes-test:production"
     TEST_IMAGE = "233885420847.dkr.ecr.us-east-1.amazonaws.com/nuscenes-test:1.0"
-    TEST_IMAGE_3_6 = "${env.TEST_IMAGE}-3.6"
-    TEST_IMAGE_3_7 = "${env.TEST_IMAGE}-3.7"
+    TEST_IMAGE_PYTHON_LATEST = "${env.TEST_IMAGE}-3.10"
     NUSCENES = "/data/sets/nuscenes"
     NUIMAGES = "/data/sets/nuimages"
     PYTHONPATH = "${env.WORKSPACE}/python-sdk"
@@ -63,9 +62,8 @@ pipeline {
       when {
         expression { return params.REBUILD_TEST_IMAGE }
       }
-      failFast true
-      parallel  {
-        stage('Build 3.6') {
+      steps {
+        stage('Build Python 3.10 Image') {
           steps {
             withAWS(credentials: 'ecr-233') {
               container('docker') {
@@ -73,25 +71,9 @@ pipeline {
                 // an activated Conda environment inside of the container.
                 sh """#!/bin/bash
                   set -eux
-                  docker build --build-arg PYTHON_VERSION=3.6 -t $TEST_IMAGE_3_6 -f setup/Dockerfile .
+                  docker build --build-arg PYTHON_VERSION=3.10 -t $TEST_IMAGE_PYTHON_LATEST -f setup/Dockerfile .
                   `aws ecr get-login --no-include-email --region us-east-1`
-                  docker push $TEST_IMAGE_3_6
-                """
-              } // container
-            }
-          } // steps
-        } // stage
-        stage('Build 3.7') {
-          steps {
-            withAWS(credentials: 'ecr-233') {
-              container('docker') {
-                // Build the Docker image, and then run python -m unittest inside
-                // an activated Conda environment inside of the container.
-                sh """#!/bin/bash
-                  set -eux
-                  docker build --build-arg PYTHON_VERSION=3.7 -t $TEST_IMAGE_3_7 -f setup/Dockerfile .
-                  `aws ecr get-login --no-include-email --region us-east-1`
-                  docker push $TEST_IMAGE_3_7
+                  docker push $TEST_IMAGE_PYTHON_LATEST
                 """
               } // container
             }
@@ -101,12 +83,11 @@ pipeline {
     }
 
     stage('Tests') {
-      failFast true
-      parallel  {
-        stage('Test 3.6') {
+      steps {
+        stage('Test Python 3.10') {
           agent {
-            kubernetes(kubeagent("nuscenes-test3.6",
-                                env.TEST_IMAGE_3_6))
+            kubernetes(kubeagent("nuscenes-test3.10",
+                                env.TEST_IMAGE_PYTHON_LATEST))
           } // agent
 
           steps {
@@ -120,25 +101,7 @@ pipeline {
             } // container
           } // steps
         } // stage
-
-        stage('Test 3.7') {
-          agent {
-            kubernetes(kubeagent("nuscenes-test3.7",
-                                env.TEST_IMAGE_3_7))
-          } // agent
-
-          steps {
-            container('docker') {
-              update_deps()
-              sh """#!/bin/bash
-                set -e
-                source activate nuscenes && python -m unittest discover python-sdk
-                bash setup/test_tutorial.sh
-              """
-            } // container
-          } // steps
-        } // stage
-      } // parallel
+      } // steps
     } // stage
 
     stage('Deploy') {

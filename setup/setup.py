@@ -48,14 +48,14 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/nutonomy/nuscenes-devkit',
-    python_requires='>=3.6',
+    python_requires='>=3.10',
     install_requires=requirements,
     packages=packages,
     package_dir={'': 'python-sdk'},
     package_data={'': ['*.json']},
     include_package_data=True,
     classifiers=[
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.10',
         'Operating System :: OS Independent',
         'License :: Free for non-commercial use'
     ],
