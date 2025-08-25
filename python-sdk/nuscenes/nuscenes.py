@@ -8,7 +8,7 @@ import os.path as osp
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List, Iterable, Optional
+from typing import Tuple, List, Iterable, Optional, Dict
 
 import cv2
 import matplotlib.pyplot as plt
@@ -46,7 +46,7 @@ class NuScenes:
                  dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
                  map_resolution: float = 0.1, 
-                 colormap: Optional[dict] = None
+                 colormap: Optional[Dict[str, Tuple[int, int, int]]] = None
                  ):
         """
         Loads database and creates reverse indexes and shortcuts.
