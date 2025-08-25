@@ -118,7 +118,7 @@ def points_in_box(box: 'Box', points: np.ndarray, wlh_factor: float = 1.0):
     :param box: <Box>.
     :param points: <np.float: 3, n>.
     :param wlh_factor: Inflates or deflates the box.
-    :return: <np.bool: n, >.
+    :return: <bool: n, >.
     """
     corners = box.corners(wlh_factor=wlh_factor)
 

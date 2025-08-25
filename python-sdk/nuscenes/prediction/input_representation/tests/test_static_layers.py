@@ -20,7 +20,7 @@ class TestStaticLayerRasterizer(unittest.TestCase):
 
         layer_1 = np.zeros((100, 100, 3))
         box = cv2.boxPoints(((50, 50), (20, 10), -90))
-        layer_1 = cv2.fillPoly(layer_1, pts=[np.int0(box)], color=(1, 1, 1))
+        layer_1 = cv2.fillPoly(layer_1, pts=[np.intp(box)], color=(1, 1, 1))
         layer_1 = layer_1[::-1, :, 0]
 
         layer_2 = np.zeros((100, 100, 3))
@@ -56,7 +56,7 @@ class TestStaticLayerRasterizer(unittest.TestCase):
 
         lanes = np.zeros((100, 100, 3)).astype('uint8')
         lane_box = cv2.boxPoints(((25, 75), (5, 5), -90))
-        lanes = cv2.fillPoly(lanes, pts=[np.int0(lane_box)], color=(255, 0, 0))
+        lanes = cv2.fillPoly(lanes, pts=[np.intp(lane_box)], color=(255, 0, 0))
         mock_draw_lanes.return_value = lanes
 
         layers = self.get_layer_mocks()
@@ -81,8 +81,8 @@ class TestStaticLayerRasterizer(unittest.TestCase):
 
         answer = np.zeros((100, 100, 3))
         box = cv2.boxPoints(((50, 50), (20, 10), -90))
-        answer = cv2.fillPoly(answer, pts=[np.int0(box)], color=(255, 255, 255))
+        answer = cv2.fillPoly(answer, pts=[np.intp(box)], color=(255, 255, 255))
         answer = cv2.line(answer, (50, 50), (50, 40), color=(255, 0, 0), thickness=2)
-        answer = cv2.fillPoly(answer, pts=[np.int0(lane_box)], color=(255, 0, 0))
+        answer = cv2.fillPoly(answer, pts=[np.intp(lane_box)], color=(255, 0, 0))
 
         np.testing.assert_allclose(answer, image)

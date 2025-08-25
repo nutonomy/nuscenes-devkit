@@ -119,7 +119,7 @@ def pointcloud_color_from_image(nusc: NuScenes,
     :param nusc: NuScenes instance.
     :param pointsensor_token: Lidar/radar sample_data token.
     :param camera_token: Camera sample data token.
-    :return (coloring <np.float: 3, n>, mask <np.bool: m>). Returns the colors for n points that reproject into the
+    :return (coloring <np.float: 3, n>, mask <bool: m>). Returns the colors for n points that reproject into the
         image out of m total points. The mask indicates which points are selected.
     """
 

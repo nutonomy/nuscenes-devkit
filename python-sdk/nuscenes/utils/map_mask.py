@@ -57,11 +57,11 @@ class MapMask:
         :param x: Global x coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :param y: Global y coordinates. Can be a scalar, list or a numpy array of x coordinates.
         :param dilation: Optional dilation of map mask.
-        :return: <np.bool: x.shape>. Whether the points are on the mask.
+        :return: <bool: x.shape>. Whether the points are on the mask.
         """
         px, py = self.to_pixel_coords(x, y)
 
-        on_mask = np.ones(px.size, dtype=np.bool)
+        on_mask = np.ones(px.size, dtype=bool)
         this_mask = self.mask(dilation)
 
         on_mask[px < 0] = False
