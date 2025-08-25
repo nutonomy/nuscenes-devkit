@@ -8,7 +8,7 @@ import os.path as osp
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List, Iterable
+from typing import Tuple, List, Iterable, Optional, Dict
 
 import cv2
 import matplotlib.pyplot as plt
@@ -45,13 +45,16 @@ class NuScenes:
                  version: str = 'v1.0-mini',
                  dataroot: str = '/data/sets/nuscenes',
                  verbose: bool = True,
-                 map_resolution: float = 0.1):
+                 map_resolution: float = 0.1, 
+                 colormap: Optional[Dict[str, Tuple[int, int, int]]] = None
+                 ):
         """
         Loads database and creates reverse indexes and shortcuts.
         :param version: Version to load (e.g. "v1.0", ...).
         :param dataroot: Path to the tables and data.
         :param verbose: Whether to print status messages during load.
         :param map_resolution: Resolution of maps (meters).
+        :param colormap: Colormap mapping from class names to RGB values.
         """
         self.version = version
         self.dataroot = dataroot
@@ -81,7 +84,7 @@ class NuScenes:
         self.map = self.__load_table__('map')
 
         # Initialize the colormap which maps from class names to RGB values.
-        self.colormap = get_colormap()
+        self.colormap = colormap if colormap is not None else get_colormap() 
 
         lidar_tasks = [t for t in ['lidarseg', 'panoptic'] if osp.exists(osp.join(self.table_root, t + '.json'))]
         if len(lidar_tasks) > 0:
