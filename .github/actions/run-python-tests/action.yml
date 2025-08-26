@@ -1,0 +1,62 @@
+name: 'Run Python Tests'
+description: 'Run Python Tests'
+inputs:
+  python-version:
+    description: 'Python version'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Display Python version
+      shell: bash
+      env:
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: echo "Running Python tests with version ${PYTHON_VERSION}"
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install datasets
+      shell: bash
+      run: |
+        mkdir -p ${NUSCENES} && mkdir -p ${NUIMAGES}
+
+        echo "Installing: v1.0-mini.tgz"
+        curl -fsSL https://motional-nuscenes.s3-ap-northeast-1.amazonaws.com/public/v1.0/v1.0-mini.tgz | tar -xzf - -C ${NUSCENES} --exclude sweeps
+
+        echo "Installing: nuimages-v1.0-mini.tgz"
+        curl -fsSL https://motional-nuscenes.s3-ap-northeast-1.amazonaws.com/public/nuimages-v1.0/nuimages-v1.0-mini.tgz | tar -xzf - -C ${NUIMAGES}
+
+        echo "Installing: nuScenes-lidarseg-mini-v1.0.tar.bz2"
+        curl -fsSL https://motional-nuscenes.s3-ap-northeast-1.amazonaws.com/public/nuscenes-lidarseg-v1.0/nuScenes-lidarseg-mini-v1.0.tar.bz2 | tar -xjf - -C ${NUSCENES}
+
+        echo "Installing: nuScenes-panoptic-v1.0-mini.tar.gz"
+        curl -fsSL https://motional-nuscenes.s3-ap-northeast-1.amazonaws.com/public/nuscenes-panoptic-v1.0/nuScenes-panoptic-v1.0-mini.tar.gz | tar -xzf - --strip-components=1 -C ${NUSCENES}
+
+        echo "Installing: nuScenes-map-expansion-v1.3.zip"
+        curl -fsSL https://motional-nuscenes.s3-ap-northeast-1.amazonaws.com/public/v1.0/nuScenes-map-expansion-v1.3.zip -o nuScenes-map-expansion-v1.3.zip
+        unzip -q nuScenes-map-expansion-v1.3.zip -d ${NUSCENES}/maps/
+
+        echo "Installing: can_bus.zip"
+        curl -fsSL https://motional-nuscenes.s3-ap-northeast-1.amazonaws.com/public/v1.0/can_bus.zip -o can_bus.zip
+        unzip -q can_bus.zip -d ${NUSCENES} can_bus/scene-0001_*
+
+        echo "Removing zip files . . ."
+        rm nuScenes-map-expansion-v1.3.zip can_bus.zip
+    - name: Install dependencies
+      shell: bash
+      env:
+        PYTHON_VERSION: ${{ inputs.python-version }}
+      run: |
+        PYTHON_VERSION_UNDERSCORE=${PYTHON_VERSION//./_}
+        pip install -r setup/requirements_${PYTHON_VERSION_UNDERSCORE}_lock.txt
+    - name: Run Python unit tests
+      shell: bash
+      run: |
+        python -m unittest discover python-sdk
+    - name: Run Jupyter notebook tests
+      shell: bash
+      run: |
+        pip install jupyter -q
+        export PYTHONPATH="${PYTHONPATH}:$(pwd)/python-sdk"
+        ./setup/test_tutorial.sh --ci
