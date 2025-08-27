@@ -3,7 +3,7 @@
 
 import unittest
 import warnings
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import numpy as np
 
@@ -14,8 +14,15 @@ except ModuleNotFoundError:
     raise unittest.SkipTest('Skipping test as motmetrics was not found!')
 
 from nuscenes.eval.tracking.data_classes import TrackingMetrics
-from nuscenes.eval.tracking.metrics import motar, mota_custom, motp_custom, faf, track_initialization_duration, \
-    longest_gap_duration, num_fragmentations_custom
+from nuscenes.eval.tracking.metrics import (
+    faf,
+    longest_gap_duration,
+    mota_custom,
+    motar,
+    motp_custom,
+    num_fragmentations_custom,
+    track_initialization_duration,
+)
 
 
 def category_to_tracking_name(category_name: str) -> Optional[str]:
@@ -148,8 +155,8 @@ def create_motmetrics() -> MetricsHost:
     # Register standard metrics.
     fields = [
         'num_frames', 'obj_frequencies', 'num_matches', 'num_switches', 'num_false_positives', 'num_misses',
-        'num_detections', 'num_objects', 'num_predictions', 'mostly_tracked', 'mostly_lost', 'num_fragmentations',
-        'motp', 'mota', 'precision', 'recall', 'track_ratios'
+        'num_detections', 'num_objects', 'pred_frequencies', 'num_predictions', 'mostly_tracked', 'mostly_lost',
+        'num_fragmentations', 'motp', 'mota', 'precision', 'recall', 'track_ratios'
     ]
     for field in fields:
         mh.register(getattr(motmetrics.metrics, field), formatter='{:d}'.format)

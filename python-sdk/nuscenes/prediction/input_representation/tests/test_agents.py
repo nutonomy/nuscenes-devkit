@@ -153,9 +153,9 @@ class TestAgentBoxesWithFadedHistory(unittest.TestCase):
         agent_1_ts_0 = cv2.boxPoints(((300, 350), (30, 30), -90))
         agent_1_ts_1 = cv2.boxPoints(((300, 300), (30, 30), -90))
 
-        answer = cv2.fillPoly(answer, pts=[np.int0(agent_0_ts_0)], color=(102, 0, 0))
-        answer = cv2.fillPoly(answer, pts=[np.int0(angent_0_ts_1)], color=(255, 0, 0))
-        answer = cv2.fillPoly(answer, pts=[np.int0(agent_1_ts_0)], color=(102, 102, 0))
-        answer = cv2.fillPoly(answer, pts=[np.int0(agent_1_ts_1)], color=(255, 255, 0))
+        answer = cv2.fillPoly(answer, pts=[np.intp(agent_0_ts_0)], color=(102, 0, 0))
+        answer = cv2.fillPoly(answer, pts=[np.intp(angent_0_ts_1)], color=(255, 0, 0))
+        answer = cv2.fillPoly(answer, pts=[np.intp(agent_1_ts_0)], color=(102, 102, 0))
+        answer = cv2.fillPoly(answer, pts=[np.intp(agent_1_ts_1)], color=(255, 255, 0))
 
         np.testing.assert_allclose(answer, img)

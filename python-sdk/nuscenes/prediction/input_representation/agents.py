@@ -193,7 +193,7 @@ def draw_agent_boxes(center_agent_annotation: Dict[str, Any],
             if num_points > 1:
                 color = fade_color(color, i, num_points - 1)
 
-            cv2.fillPoly(base_image, pts=[np.int0(box)], color=color)
+            cv2.fillPoly(base_image, pts=[np.intp(box)], color=color)
 
 
 class AgentBoxesWithFadedHistory(AgentRepresentation):

@@ -1,0 +1,24 @@
+name: nuscenes-devkit CI pipeline
+on: [pull_request]
+env:
+  NUSCENES: data/sets/nuscenes
+  NUIMAGES: data/sets/nuimages
+jobs:
+  test-in-3-9:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - id: run-test-in-3-9
+        uses: ./.github/actions/run-python-tests
+        with:
+          python-version: 3.9
+  test-in-3-12:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - id: run-test-in-3-12
+        uses: ./.github/actions/run-python-tests
+        with:
+          python-version: 3.12
