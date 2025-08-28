@@ -23,7 +23,7 @@ Welcome to the Motionalᵀᴹ nuTonomy® downloadable driverless vehicle softwar
 - [Citation](#citation)
 
 ## Changelog
-- Aug. 28, 2025: Devkit v1.1.12: Change to supporting Python 3.9 and Python 3.12.
+- Aug. 28, 2025: Devkit v1.2.0: Change to supporting Python 3.9 and Python 3.12.
 - Sep. 25, 2023: Devkit v1.1.11: Specify version for various pip requirements.
 - Feb. 13, 2023: Devkit v1.1.10: Specify version for various pip requirements.
 - Sep. 20, 2021: Devkit v1.1.9: Refactor tracking eval code for custom datasets with different classes.

@@ -21,14 +21,14 @@ For these, you will need to download the source code and [manually install the r
 
 ## Install Python
 
-The devkit is tested for Python 3.9 and Python 3.12.
+The devkit is tested for Python 3.9 and Python 3.12, but we recommend to use Python 3.12.
 For Ubuntu: If the right Python version is not already installed on your system, install it by running:
 ```
 sudo apt install python-pip
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install python3.7
-sudo apt-get install python3.7-dev
+sudo apt-get install python3.12
+sudo apt-get install python3.12-dev
 ```
 For Mac OS download and install from `https://www.python.org/downloads/mac-osx/`.
 
