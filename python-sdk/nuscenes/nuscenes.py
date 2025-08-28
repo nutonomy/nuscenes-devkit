@@ -797,10 +797,11 @@ class NuScenesExplorer:
 
         def ann_count(record):
             count = 0
-            sample = self.nusc.get('sample', record['first_sample_token'])
-            while not sample['next'] == "":
+            next_sample_token = record['first_sample_token']
+            while next_sample_token:
+                sample = self.nusc.get('sample', next_sample_token)
                 count += len(sample['anns'])
-                sample = self.nusc.get('sample', sample['next'])
+                next_sample_token = sample["next"]
             return count
 
         recs = [(self.nusc.get('sample', record['first_sample_token'])['timestamp'], record) for record in
