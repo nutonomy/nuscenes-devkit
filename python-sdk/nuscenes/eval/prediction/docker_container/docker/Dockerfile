@@ -32,7 +32,7 @@ ENV PYTHONPATH=/nuscenes-dev/python-sdk
 
 COPY setup/requirements.txt .
 
-RUN bash -c "conda create -y -n nuscenes python=3.7 \
+RUN bash -c "conda create -y -n nuscenes python=3.12 \
     && source activate nuscenes \
     && pip install --no-cache-dir -r /nuscenes-dev/prediction/requirements.txt \
     && conda clean --yes --all"

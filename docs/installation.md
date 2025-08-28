@@ -42,7 +42,7 @@ See the [official Miniconda page](https://conda.io/en/latest/miniconda.html).
 #### Setup a Conda environment
 We create a new Conda environment named `nuscenes`. We will use this environment for both nuScenes and nuImages.
 ```
-conda create --name nuscenes python=3.7
+conda create --name nuscenes python=3.12
 ```
 
 #### Activate the environment
@@ -81,7 +81,7 @@ For more details, see [this issue](https://github.com/nutonomy/nuscenes-devkit/i
 #### Create the virtual environment
 We create a new virtual environment named `nuscenes`.
 ```
-mkvirtualenv nuscenes --python=python3.7 
+mkvirtualenv nuscenes --python=python3.12 
 ```
 
 #### Activate the virtual environment
