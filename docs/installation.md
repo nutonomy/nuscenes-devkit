@@ -21,7 +21,7 @@ For these, you will need to download the source code and [manually install the r
 
 ## Install Python
 
-The devkit is tested for Python 3.6 onwards, but we recommend to use Python 3.7.
+The devkit is tested for Python 3.9 and Python 3.12.
 For Ubuntu: If the right Python version is not already installed on your system, install it by running:
 ```
 sudo apt install python-pip
