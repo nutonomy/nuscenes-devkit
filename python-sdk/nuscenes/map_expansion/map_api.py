@@ -97,7 +97,7 @@ class NuScenesMap:
         else:
             self.version = '1.0'
         if self.version < '1.3':
-            raise Exception('Error: You are using an outdated map version (%s)! '
+            raise Exception(f'Error: You are using an outdated map version ({self.version})! '
                             'Please go to https://www.nuscenes.org/download to download the latest map!')
 
         self.canvas_edge = self.json_obj['canvas_edge']
