@@ -9,14 +9,14 @@ import random
 from typing import Dict, List, Tuple, Optional, Union
 
 import cv2
-import descartes
+from matplotlib.path import Path
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from matplotlib.patches import Rectangle, Arrow
+from matplotlib.patches import PathPatch, Rectangle, Arrow
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from pyquaternion import Quaternion
 from shapely import affinity
@@ -30,6 +30,31 @@ from nuscenes.utils.geometry_utils import view_points
 
 # Recommended style to use as the plots will show grids.
 plt.style.use('seaborn-v0_8-whitegrid')
+
+
+def polygon_patch(polygon, **kwargs):
+    """Create a matplotlib PathPatch from a Shapely polygon.
+
+    This replaces descartes.PolygonPatch which is incompatible with Shapely 2.0+.
+    """
+    exterior_coords = np.array(polygon.exterior.coords)
+    codes = np.full(len(exterior_coords), Path.LINETO, dtype=Path.code_type)
+    codes[0] = Path.MOVETO
+    codes[-1] = Path.CLOSEPOLY
+
+    all_coords = [exterior_coords]
+    all_codes = [codes]
+
+    for interior in polygon.interiors:
+        interior_coords = np.array(interior.coords)
+        interior_codes = np.full(len(interior_coords), Path.LINETO, dtype=Path.code_type)
+        interior_codes[0] = Path.MOVETO
+        interior_codes[-1] = Path.CLOSEPOLY
+        all_coords.append(interior_coords)
+        all_codes.append(interior_codes)
+
+    path = Path(np.concatenate(all_coords), np.concatenate(all_codes))
+    return PathPatch(path, **kwargs)
 
 # Define a map geometry type for polygons and lines.
 Geometry = Union[Polygon, LineString]
@@ -1186,7 +1211,7 @@ class NuScenesMapExplorer:
                         continue
 
                     label = layer_name
-                    ax.add_patch(descartes.PolygonPatch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
+                    ax.add_patch(polygon_patch(polygon_proj, fc=self.color_map[layer_name], alpha=alpha,
                                                         label=label))
 
         # Display the image.
@@ -1719,7 +1744,7 @@ class NuScenesMapExplorer:
                         first_time = False
                     else:
                         label = None
-                    ax.add_patch(descartes.PolygonPatch(polygon, fc=self.color_map[layer_name], alpha=alpha,
+                    ax.add_patch(polygon_patch(polygon, fc=self.color_map[layer_name], alpha=alpha,
                                                         label=label))
         else:
             for record in records:
@@ -1731,7 +1756,7 @@ class NuScenesMapExplorer:
                 else:
                     label = None
 
-                ax.add_patch(descartes.PolygonPatch(polygon, fc=self.color_map[layer_name], alpha=alpha,
+                ax.add_patch(polygon_patch(polygon, fc=self.color_map[layer_name], alpha=alpha,
                                                     label=label))
 
     def _render_line_layer(self, ax: Axes, layer_name: str, alpha: float, tokens: List[str] = None) -> None:
