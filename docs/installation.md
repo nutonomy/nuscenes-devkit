@@ -9,6 +9,7 @@ We provide step-by-step instructions to install our devkit. These instructions a
 - [Setup environment variable](#setup-environment-variable)
 - [Setup Matplotlib backend](#setup-matplotlib-backend)
 - [Verify install](#verify-install)
+- [Troubleshooting nuScenes mini setup](#troubleshooting-nuscenes-mini-setup)
 
 ## Download
 
@@ -140,5 +141,54 @@ backend: TKAgg
 ## Verify install
 To verify your environment run `python -m unittest` in the `python-sdk` folder.
 You can also run `assert_download.py` in the `python-sdk/nuscenes/tests` and `python-sdk/nuimages/tests` folders to verify that all files are in the right place.
+
+## Troubleshooting nuScenes mini setup
+
+If you are using the `v1.0-mini` dataset and the devkit cannot find files, check the following:
+
+1. Make sure the mini dataset is extracted under the same directory used as `dataroot`.
+
+   Example:
+
+   ```python
+   from nuscenes.nuscenes import NuScenes
+
+   nusc = NuScenes(
+       version='v1.0-mini',
+       dataroot='/data/sets/nuscenes',
+       verbose=True
+   )
+   ```
+
+2. Confirm that the dataset folder contains the expected metadata files, such as:
+
+   ```text
+   /data/sets/nuscenes/v1.0-mini/sample.json
+   /data/sets/nuscenes/v1.0-mini/sample_data.json
+   /data/sets/nuscenes/v1.0-mini/scene.json
+   ```
+
+3. If you downloaded the data manually, make sure the archive was fully extracted and not placed one directory too deep.
+
+   This may fail:
+
+   ```text
+   /data/sets/nuscenes/v1.0-mini/v1.0-mini/sample.json
+   ```
+
+   Prefer:
+
+   ```text
+   /data/sets/nuscenes/v1.0-mini/sample.json
+   ```
+
+4. If import errors occur after installation, verify that the active Python environment is the same environment where the devkit dependencies were installed.
+
+   ```bash
+   which python
+   python -m pip show nuscenes-devkit
+   ```
+
+5. If you are working from a source checkout, make sure the repository is installed in editable mode or added to `PYTHONPATH` as described above.
 
 That's it you should be good to go!
