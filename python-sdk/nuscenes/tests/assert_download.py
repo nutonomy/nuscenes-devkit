@@ -1,5 +1,6 @@
 # nuScenes dev-kit.
 # Code written by Holger Caesar, 2018.
+# Extended with clearer validation output.
 
 import argparse
 import os
@@ -9,43 +10,59 @@ from tqdm import tqdm
 from nuscenes import NuScenes
 
 
-def verify_setup(nusc: NuScenes):
+def _check_file_exists(file_path: str, label: str) -> None:
+    """
+    Raise a clear error if a required dataset file is missing.
+    """
+    if not os.path.exists(file_path):
+        raise AssertionError(f'Error: Missing {label} at: {file_path}')
+
+
+def verify_setup(nusc: NuScenes) -> None:
     """
     Script to verify that the nuScenes installation is complete.
     """
+    print(f'Verifying nuScenes dataset at: {nusc.dataroot}')
+    print(f'Version: {nusc.version}')
 
-    # Check that each sample_data file exists.
     print('Checking that sample_data files are complete...')
     for sd in tqdm(nusc.sample_data):
         file_path = os.path.join(nusc.dataroot, sd['filename'])
-        assert os.path.exists(file_path), 'Error: Missing sample_data at: %s' % file_path
+        _check_file_exists(file_path, 'sample_data')
 
-    # Check that each map file exists.
     print('Checking that map files are complete...')
-    for map in tqdm(nusc.map):
-        file_path = os.path.join(nusc.dataroot, map['filename'])
-        assert os.path.exists(file_path), 'Error: Missing map at: %s' % file_path
+    for map_record in tqdm(nusc.map):
+        file_path = os.path.join(nusc.dataroot, map_record['filename'])
+        _check_file_exists(file_path, 'map')
+
+    print('Dataset verification passed.')
+    print(f'Checked {len(nusc.sample_data)} sample_data files and {len(nusc.map)} map files.')
 
 
 if __name__ == "__main__":
-
-    # Settings.
-    parser = argparse.ArgumentParser(description='Test that the installed dataset is complete.',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--dataroot', type=str, default='/data/sets/nuscenes',
-                        help='Default nuScenes data directory.')
-    parser.add_argument('--version', type=str, default='v1.0-trainval',
-                        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.')
-    parser.add_argument('--verbose', type=int, default=1,
-                        help='Whether to print to stdout.')
+    parser = argparse.ArgumentParser(
+        description='Test that the installed dataset is complete.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        '--dataroot',
+        type=str,
+        default='/data/sets/nuscenes',
+        help='Default nuScenes data directory.'
+    )
+    parser.add_argument(
+        '--version',
+        type=str,
+        default='v1.0-trainval',
+        help='Which version of the nuScenes dataset to evaluate on, e.g. v1.0-trainval.'
+    )
+    parser.add_argument(
+        '--verbose',
+        type=int,
+        default=1,
+        help='Whether to print to stdout.'
+    )
 
     args = parser.parse_args()
-    dataroot = args.dataroot
-    version = args.version
-    verbose = bool(args.verbose)
-
-    # Init.
-    nusc_ = NuScenes(version=version, verbose=verbose, dataroot=dataroot)
-
-    # Verify data blobs.
+    nusc_ = NuScenes(version=args.version, verbose=bool(args.verbose), dataroot=args.dataroot)
     verify_setup(nusc_)

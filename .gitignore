@@ -19,3 +19,5 @@ doc
 .project
 .pydevproject
 _ext
+
+.venv/
