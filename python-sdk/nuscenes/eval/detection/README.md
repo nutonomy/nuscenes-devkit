@@ -17,12 +17,12 @@ The goal of this task is to place a 3D bounding box around 10 different object c
 as well as estimating a set of attributes and the current velocity vector.
 
 ## Participation
-The nuScenes detection [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) is open all year round for submission.
-To participate in the challenge, please create an account at [EvalAI](https://eval.ai/web/challenges/challenge-page/356/overview).
+The nuScenes detection [evaluation server](https://huggingface.co/spaces/nuscenes/nuscenes-detection-challenge) is open all year round for submission.
+To participate in the challenge, please create an account at [Hugging Face](https://huggingface.co/join).
 Then upload your zipped result file including all of the required [meta data](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/object-detection) shown above.
 This is the only way to benchmark your method against the test dataset. 
-We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on Hugging Face: 
 - Team name
 - Method name
 - Authors
@@ -38,14 +38,13 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](https://eval.ai/web/challenges/challenge-page/356/overview) for the **EvalAI detection evaluation server**.
+Click [here](https://huggingface.co/spaces/nuscenes/nuscenes-detection-challenge) for the **Hugging Face detection evaluation server**.
 
 ### 6th AI Driving Olympics, ICRA 2021
 The fourth nuScenes detection challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Submissions will be accepted from April 1 to May 26, 2021.
 The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
-Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) as previous detection challenges.
 
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
@@ -60,7 +59,6 @@ For details, please refer to the [detection leaderboard](https://www.nuscenes.or
 The third nuScenes detection challenge will be held at [NeurIPS 2020](https://nips.cc/Conferences/2020/).
 Submissions will be accepted from November 1 to December 8, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
-Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) as previous detection challenges.
 
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
@@ -76,7 +74,6 @@ For details, please refer to the [detection leaderboard](https://www.nuscenes.or
 The second nuScenes detection challenge will be held at [ICRA 2020](https://www.icra2020.org/).
 The submission period will open April 1 and continue until May 28th, 2020.
 Results and winners will be announced at the [Workshop on Benchmarking Progress in Autonomous Driving](http://montrealrobotics.ca/driving-benchmarks/).
-Note that the previous [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) can still be used to benchmark your results after the challenge period.
 
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
@@ -95,7 +92,6 @@ The first nuScenes detection challenge was held at CVPR 2019.
 Submission opened May 6 and closed June 12, 2019.
 Results and winners were announced at the Workshop on Autonomous Driving ([WAD](https://sites.google.com/view/wad2019)) at [CVPR 2019](http://cvpr2019.thecvf.com/).
 For more information see the [leaderboard](https://www.nuscenes.org/object-detection).
-Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/356/overview) can still be used to benchmark your results.
 
 A summary of the results can be seen below. 
 For details, please refer to the [detection leaderboard](https://www.nuscenes.org/object-detection).
@@ -122,7 +118,7 @@ For details, please refer to the [detection leaderboard](https://www.nuscenes.or
 * Top leaderboard entries and their papers will be manually reviewed.
 * Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
 * Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
-* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
+* Faulty submissions that return an error on Hugging Face do not count towards the submission limit.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges. 
 
 ## Results format

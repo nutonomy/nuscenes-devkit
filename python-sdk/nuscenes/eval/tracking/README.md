@@ -37,12 +37,12 @@ To evaluate the tracking results, use `evaluate.py` in the [eval folder](https:/
 In `loaders.py` we provide some methods to organize the raw box data into tracks that may be helpful.
  
 ## Participation
-The nuScenes tracking evaluation server is open all year round for submission.
-To participate in the challenge, please create an account at [EvalAI](https://eval.ai/web/challenges/challenge-page/476/overview).
+The nuScenes tracking [evaluation server](https://huggingface.co/spaces/nuscenes/nuscenes-tracking-challenge) is open all year round for submission.
+To participate in the challenge, please create an account at [Hugging Face](https://huggingface.co/join).
 Then upload your zipped result file including all of the required [meta data](#results-format).
 The results will be exported to the nuScenes leaderboard shown above (coming soon).
 This is the only way to benchmark your method against the test dataset.
-We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on Hugging Face: 
 - Team name
 - Method name
 - Authors
@@ -58,14 +58,13 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](https://eval.ai/web/challenges/challenge-page/476/overview) for the **EvalAI tracking evaluation server**.
+Click [here](https://huggingface.co/spaces/nuscenes/nuscenes-tracking-challenge) for the **Hugging Face tracking evaluation server**.
 
 ### 6th AI Driving Olympics, ICRA 2021
 The second nuScenes tracking challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Submissions will be accepted from April 1 to May 26, 2021.
 The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
-Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/476/overview) as previous tracking challenges.
 
 A summary of the results can be seen below. 
 For details, please refer to the [tracking leaderboard](https://www.nuscenes.org/tracking).
@@ -110,7 +109,7 @@ For details, please refer to the [tracking leaderboard](https://www.nuscenes.org
 * Top leaderboard entries and their papers will be manually reviewed.
 * Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
 * Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
-* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
+* Faulty submissions that return an error on Hugging Face do not count towards the submission limit.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges.
 
 ## Results format
