@@ -1,0 +1,84 @@
+[build-system]
+requires = ["maturin>=1.11,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "nuscenes-devkit"
+version="1.2.0"
+description = "The official devkit of the nuScenes dataset (www.nuscenes.org)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Rust",
+    "License :: Free for non-commercial use"
+]
+authors = [
+    {name = "Holger Caesar"},
+    {name = "Oscar Beijbom"},
+    {name = "Qiang Xu"},
+    {name = "Varun Bankiti"},
+    {name = "Alex H. Lang"},
+    {name = "Sourabh Vora"},
+    {name = "Venice Erin Liong"},
+    {name = "Sergi Widjaja"},
+    {name = "Kiwoo Shin"},
+    {name = "Caglayan Dicle"},
+    {name = "Freddy Boulton"},
+    {name = "Whye Kit Fong"},
+    {name = "Asha Asvathaman"},
+    {name = "Lubing Zhou"},
+    {name = "et al."},
+    {email = "nuscenes@motional.com"}
+]
+dependencies = [
+    "cachetools>=6.2.5",
+    "descartes>=1.1.0",
+    "fire>=0.7.1",
+    "matplotlib>=3.6.0",
+    "numpy>=1.22.0,<2.0.0",
+    "opencv-python-headless>=4.5.4.58",
+    "parameterized>=0.9.0",
+    "pillow>6.2.1",
+    "pyquaternion>=0.9.5",
+    "scikit-learn>=1.6.1",
+    "scipy>=1.13.1",
+    "shapely~=2.0.3",
+    "tqdm>=4.67.1",
+]
+
+[project.urls]
+homepage = "https://www.nuscenes.org"
+repository = "https://github.com/nutonomy/nuscenes-devkit"
+
+[project.optional-dependencies]
+tests = ["pytest"]
+nuimages = [
+    "pycocotools>=2.0.1",
+]
+prediction = [
+    "torch>=1.3.1",
+    "torchvision>=0.4.2",
+]
+tracking = [
+    "motmetrics==1.4.0",
+    "pandas>=0.24",
+]
+
+[tool.maturin]
+python-source = "python-sdk"
+module-name = "nuscenes._lib"
+
+[tool.ruff]
+line-length = 120
+
+[dependency-groups]
+dev = [
+    "maturin>=1.11.5",
+    "maturin-import-hook>=0.3.0",
+    "pytest>=8.4.2",
+]
