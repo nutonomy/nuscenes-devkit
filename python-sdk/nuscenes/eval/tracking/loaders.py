@@ -82,7 +82,7 @@ def interpolate_tracks(tracks_by_timestamp: DefaultDict[int, List[TrackingBox]])
                 left_timestamp = track_timestamps_by_id[tracking_id][left_ind]
                 right_tracking_box = tracks_by_id[tracking_id][right_ind]
                 left_tracking_box = tracks_by_id[tracking_id][left_ind]
-                right_ratio = float(right_timestamp - timestamp) / (right_timestamp - left_timestamp)
+                right_ratio = float(timestamp - left_timestamp) / (right_timestamp - left_timestamp)
 
                 # Interpolate.
                 tracking_box = interpolate_tracking_boxes(left_tracking_box, right_tracking_box, right_ratio)
