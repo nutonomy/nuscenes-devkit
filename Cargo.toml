@@ -1,0 +1,24 @@
+[package]
+name = "nuscenes-rs"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "_lib"
+path = "rust-src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+ahash = "0.8.12"
+enum-map = "2.7.3"
+hex = { version = "0.4.3", features = ["serde"] }
+log = "0.4.29"
+memmap2 = "0.9.9"
+num-format = "0.4.4"
+pyo3 = { version = "0.27.0", features = ["extension-module", "generate-import-lib"] }
+pyo3-log = "0.13.2"
+rayon = "1.11.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+serde_with = { version = "3.16.1", features = ["hex"] }
