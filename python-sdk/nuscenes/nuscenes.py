@@ -302,7 +302,7 @@ class NuScenes:
                 box.translate(-np.array(cs_record['translation']))
                 box.rotate(Quaternion(cs_record['rotation']).inverse)
 
-            if sensor_record['modality'] == 'camera' and not \
+            if not use_flat_vehicle_coordinates and sensor_record['modality'] == 'camera' and not \
                     box_in_image(box, cam_intrinsic, imsize, vis_level=box_vis_level):
                 continue
 
