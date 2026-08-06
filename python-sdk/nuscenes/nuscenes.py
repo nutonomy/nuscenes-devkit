@@ -8,7 +8,7 @@ import os.path as osp
 import sys
 import time
 from datetime import datetime
-from typing import Tuple, List, Iterable, Optional, Dict
+from typing import Tuple, List, Iterable, Optional, Dict, Any
 
 import cv2
 import matplotlib.pyplot as plt
@@ -36,37 +36,92 @@ if not PYTHON_VERSION == 3:
     raise ValueError("nuScenes dev-kit only supports Python version 3.")
 
 
-class NuScenes:
-    """
-    Database class for nuScenes to help query and retrieve information from the database.
-    """
+class _RustLoader:
+    def __init__(self, version: str, dataroot: str, verbose: bool, map_resolution: float):
+        import logging
+        from ._lib import Tables
 
-    def __init__(self,
-                 version: str = 'v1.0-mini',
-                 dataroot: str = '/data/sets/nuscenes',
-                 verbose: bool = True,
-                 map_resolution: float = 0.1, 
-                 colormap: Optional[Dict[str, Tuple[int, int, int]]] = None
-                 ):
-        """
-        Loads database and creates reverse indexes and shortcuts.
-        :param version: Version to load (e.g. "v1.0", ...).
-        :param dataroot: Path to the tables and data.
-        :param verbose: Whether to print status messages during load.
-        :param map_resolution: Resolution of maps (meters).
-        :param colormap: Colormap mapping from class names to RGB values.
-        """
-        self.version = version
-        self.dataroot = dataroot
-        self.verbose = verbose
+        # The verbosity is controlled via logging
+        logger = logging.getLogger("nuscenes")
+        logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+        self._tables = Tables(version, dataroot)
+
+        self._map_masks = dict()
+        for map in self._tables.map:
+            self._map_masks[map["token"]] = MapMask(osp.join(dataroot, map['filename']), resolution=map_resolution)
+
+    def get(self, table_name: str, token: str) -> Dict[str, Any]:
+        entry = self._tables.get(table_name, token)
+        if table_name == "map":
+            entry["mask"] = self._map_masks[entry["token"]]
+        return entry
+
+    @property
+    def log(self) -> List[Dict[str, Any]]:
+        return self._tables.log
+
+    @property
+    def map(self) -> List[Dict[str, Any]]:
+        return self._tables.map
+
+    @property
+    def sensor(self) -> List[Dict[str, Any]]:
+        return self._tables.sensor
+
+    @property
+    def calibrated_sensor(self) -> List[Dict[str, Any]]:
+        return self._tables.calibrated_sensor
+
+    @property
+    def scene(self) -> List[Dict[str, Any]]:
+        return self._tables.scene
+
+    @property
+    def sample(self) -> List[Dict[str, Any]]:
+        return self._tables.sample
+
+    @property
+    def sample_data(self) -> List[Dict[str, Any]]:
+        return self._tables.sample_data
+
+    @property
+    def ego_pose(self) -> List[Dict[str, Any]]:
+        return self._tables.ego_pose
+
+    @property
+    def instance(self) -> List[Dict[str, Any]]:
+        return self._tables.instance
+
+    @property
+    def sample_annotation(self) -> List[Dict[str, Any]]:
+        return self._tables.sample_annotation
+
+    @property
+    def category(self) -> List[Dict[str, Any]]:
+        return self._tables.category
+
+    @property
+    def attribute(self) -> List[Dict[str, Any]]:
+        return self._tables.attribute
+
+    @property
+    def lidarseg(self) -> Optional[List[Dict[str, Any]]]:
+        return self._tables.lidarseg
+
+    @property
+    def panoptic(self) -> Optional[List[Dict[str, Any]]]:
+        return self._tables.panoptic
+
+
+class _PythonLoader:
+    def __init__(self, version: str, dataroot: str, verbose: bool, map_resolution: float):
+        self.table_root = osp.join(dataroot, version)
         self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
                             'ego_pose', 'log', 'scene', 'sample', 'sample_data', 'sample_annotation', 'map']
 
-        assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
-
         start_time = time.time()
         if verbose:
-            print("======\nLoading NuScenes tables for version {}...".format(self.version))
+            print("======\nLoading NuScenes tables for version {}...".format(version))
 
         # Explicitly assign tables to help the IDE determine valid class members.
         self.category = self.__load_table__('category')
@@ -83,16 +138,9 @@ class NuScenes:
         self.sample_annotation = self.__load_table__('sample_annotation')
         self.map = self.__load_table__('map')
 
-        # Initialize the colormap which maps from class names to RGB values.
-        self.colormap = colormap if colormap is not None else get_colormap() 
-
         lidar_tasks = [t for t in ['lidarseg', 'panoptic'] if osp.exists(osp.join(self.table_root, t + '.json'))]
-        if len(lidar_tasks) > 0:
-            self.lidarseg_idx2name_mapping = dict()
-            self.lidarseg_name2idx_mapping = dict()
-            self.load_lidarseg_cat_name_mapping()
         for i, lidar_task in enumerate(lidar_tasks):
-            if self.verbose:
+            if verbose:
                 print(f'Loading nuScenes-{lidar_task}...')
             if lidar_task == 'lidarseg':
                 self.lidarseg = self.__load_table__(lidar_task)
@@ -100,15 +148,12 @@ class NuScenes:
                 self.panoptic = self.__load_table__(lidar_task)
 
             setattr(self, lidar_task, self.__load_table__(lidar_task))
-            label_files = os.listdir(os.path.join(self.dataroot, lidar_task, self.version))
+            label_files = os.listdir(os.path.join(dataroot, lidar_task, version))
             num_label_files = len([name for name in label_files if (name.endswith('.bin') or name.endswith('.npz'))])
             num_lidarseg_recs = len(getattr(self, lidar_task))
             assert num_lidarseg_recs == num_label_files, \
                 f'Error: there are {num_label_files} label files but {num_lidarseg_recs} {lidar_task} records.'
             self.table_names.append(lidar_task)
-            # Sort the colormap to ensure that it is ordered according to the indices in self.category.
-            self.colormap = dict({c['name']: self.colormap[c['name']]
-                                  for c in sorted(self.category, key=lambda k: k['index'])})
 
         # If available, also load the image_annotations table created by export_2d_annotations_as_json().
         if osp.exists(osp.join(self.table_root, 'image_annotations.json')):
@@ -116,7 +161,7 @@ class NuScenes:
 
         # Initialize map mask for each map record.
         for map_record in self.map:
-            map_record['mask'] = MapMask(osp.join(self.dataroot, map_record['filename']), resolution=map_resolution)
+            map_record['mask'] = MapMask(osp.join(dataroot, map_record['filename']), resolution=map_resolution)
 
         if verbose:
             for table in self.table_names:
@@ -126,29 +171,23 @@ class NuScenes:
         # Make reverse indexes for common lookups.
         self.__make_reverse_index__(verbose)
 
-        # Initialize NuScenesExplorer class.
-        self.explorer = NuScenesExplorer(self)
+    def get(self, table_name: str, token: str) -> Dict[str, Any]:
+        return getattr(self, table_name)[self.getind(table_name, token)]
 
-    @property
-    def table_root(self) -> str:
-        """ Returns the folder where the tables are stored for the relevant version. """
-        return osp.join(self.dataroot, self.version)
+    def getind(self, table_name: str, token: str) -> int:
+        """
+        This returns the index of the record in a table in constant runtime.
+        :param table_name: Table name.
+        :param token: Token of the record.
+        :return: The index of the record in table, table is an array.
+        """
+        return self._token2ind[table_name][token]
 
-    def __load_table__(self, table_name) -> dict:
+    def __load_table__(self, table_name) -> List[Dict[str, Any]]:
         """ Loads a table. """
         with open(osp.join(self.table_root, '{}.json'.format(table_name))) as f:
             table = json.load(f)
         return table
-
-    def load_lidarseg_cat_name_mapping(self):
-        """ Create mapping from class index to class name, and vice versa, for easy lookup later on """
-        for lidarseg_category in self.category:
-            # Check that the category records contain both the keys 'name' and 'index'.
-            assert 'index' in lidarseg_category.keys(), \
-                'Please use the category.json that comes with nuScenes-lidarseg, and not the old category.json.'
-
-            self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
-            self.lidarseg_name2idx_mapping[lidarseg_category['name']] = lidarseg_category['index']
 
     def __make_reverse_index__(self, verbose: bool) -> None:
         """
@@ -207,6 +246,126 @@ class NuScenes:
         if verbose:
             print("Done reverse indexing in {:.1f} seconds.\n======".format(time.time() - start_time))
 
+
+class NuScenes:
+    """
+    Database class for nuScenes to help query and retrieve information from the database.
+    """
+
+    def __init__(self,
+                 version: str = 'v1.0-mini',
+                 dataroot: str = '/data/sets/nuscenes',
+                 verbose: bool = True,
+                 map_resolution: float = 0.1,
+                 colormap: Optional[Dict[str, Tuple[int, int, int]]] = None,
+                 use_rust: bool = False
+                 ):
+        """
+        Loads database and creates reverse indexes and shortcuts.
+        :param version: Version to load (e.g. "v1.0", ...).
+        :param dataroot: Path to the tables and data.
+        :param verbose: Whether to print status messages during load.
+        :param map_resolution: Resolution of maps (meters).
+        :param colormap: Colormap mapping from class names to RGB values.
+        """
+        self.version = version
+        self.dataroot = dataroot
+        self.verbose = verbose
+        self.table_names = ['category', 'attribute', 'visibility', 'instance', 'sensor', 'calibrated_sensor',
+                            'ego_pose', 'log', 'scene', 'sample', 'sample_data', 'sample_annotation', 'map']
+
+        assert osp.exists(self.table_root), 'Database version not found: {}'.format(self.table_root)
+
+        # Initialize the colormap which maps from class names to RGB values.
+        self.colormap = colormap if colormap is not None else get_colormap()
+
+        self._loader = _RustLoader(version, dataroot, verbose, map_resolution) if use_rust else _PythonLoader(version, dataroot, verbose, map_resolution)
+
+        if getattr(self._loader, "lidarseg", None) is not None:
+            self.lidarseg_idx2name_mapping = dict()
+            self.lidarseg_name2idx_mapping = dict()
+            self.load_lidarseg_cat_name_mapping()
+            # Sort the colormap to ensure that it is ordered according to the indices in self.category.
+            self.colormap = {c['name']: self.colormap[c['name']] for c in sorted(self.category, key=lambda k: k['index'])}
+            self.table_names.append("lidarseg")
+        if getattr(self._loader, "panoptic", None) is not None:
+            self.table_names.append("panoptic")
+
+        # Initialize NuScenesExplorer class.
+        self.explorer = NuScenesExplorer(self)
+
+    @property
+    def table_root(self) -> str:
+        """ Returns the folder where the tables are stored for the relevant version. """
+        return osp.join(self.dataroot, self.version)
+
+    @property
+    def log(self) -> List[Dict[str, Any]]:
+        return self._loader.log
+
+    @property
+    def map(self) -> List[Dict[str, Any]]:
+        return self._loader.map
+
+    @property
+    def sensor(self) -> List[Dict[str, Any]]:
+        return self._loader.sensor
+
+    @property
+    def calibrated_sensor(self) -> List[Dict[str, Any]]:
+        return self._loader.calibrated_sensor
+
+    @property
+    def scene(self) -> List[Dict[str, Any]]:
+        return self._loader.scene
+
+    @property
+    def sample(self) -> List[Dict[str, Any]]:
+        return self._loader.sample
+
+    @property
+    def sample_data(self) -> List[Dict[str, Any]]:
+        return self._loader.sample_data
+
+    @property
+    def ego_pose(self) -> List[Dict[str, Any]]:
+        return self._loader.ego_pose
+
+    @property
+    def instance(self) -> List[Dict[str, Any]]:
+        return self._loader.instance
+
+    @property
+    def sample_annotation(self) -> List[Dict[str, Any]]:
+        return self._loader.sample_annotation
+
+    @property
+    def category(self) -> List[Dict[str, Any]]:
+        return self._loader.category
+
+    @property
+    def attribute(self) -> List[Dict[str, Any]]:
+        return self._loader.attribute
+
+    @property
+    def lidarseg(self) -> Optional[List[Dict[str, Any]]]:
+        return self._loader.lidarseg
+
+    @property
+    def panoptic(self) -> Optional[List[Dict[str, Any]]]:
+        return self._loader.panoptic
+
+    def load_lidarseg_cat_name_mapping(self):
+        """ Create mapping from class index to class name, and vice versa, for easy lookup later on """
+        for lidarseg_category in self.category:
+            # Check that the category records contain both the keys 'name' and 'index'.
+            assert 'index' in lidarseg_category.keys(), \
+                'Please use the category.json that comes with nuScenes-lidarseg, and not the old category.json.'
+
+            self.lidarseg_idx2name_mapping[lidarseg_category['index']] = lidarseg_category['name']
+            self.lidarseg_name2idx_mapping[lidarseg_category['name']] = lidarseg_category['index']
+
+
     def get(self, table_name: str, token: str) -> dict:
         """
         Returns a record from table in constant runtime.
@@ -215,17 +374,7 @@ class NuScenes:
         :return: Table record. See README.md for record details for each table.
         """
         assert table_name in self.table_names, "Table {} not found".format(table_name)
-
-        return getattr(self, table_name)[self.getind(table_name, token)]
-
-    def getind(self, table_name: str, token: str) -> int:
-        """
-        This returns the index of the record in a table in constant runtime.
-        :param table_name: Table name.
-        :param token: Token of the record.
-        :return: The index of the record in table, table is an array.
-        """
-        return self._token2ind[table_name][token]
+        return self._loader.get(table_name, token)
 
     def field2token(self, table_name: str, field: str, query) -> List[str]:
         """
