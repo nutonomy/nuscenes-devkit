@@ -101,6 +101,14 @@ Add the `python-sdk` directory to your `PYTHONPATH` environmental variable, by a
 export PYTHONPATH="${PYTHONPATH}:$HOME/nuscenes-devkit/python-sdk"
 ```
 
+
+When developing from a local clone, note that the repository root is not an installable Python package root. Running `pip install -e .` from the repository root will fail because the package source is located under `python-sdk`.
+
+You can verify that Python is loading the local source with:
+```
+python -c "import nuscenes; print(nuscenes.__file__)"
+```
+
 ## Install required packages
 
 To install the required packages, run the following command in your favourite virtual environment:
