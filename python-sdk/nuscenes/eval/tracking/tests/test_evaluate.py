@@ -148,7 +148,9 @@ class TestMain(unittest.TestCase):
     def basic_test(self,
                    eval_set: str = 'mini_val',
                    add_errors: bool = False,
-                   render_curves: bool = False) -> Dict[str, Any]:
+                   render_curves: bool = False,
+                   dist_fcn: str = '',
+                   dist_th_tp: float = 0.0) -> Dict[str, Any]:
         """
         Run the evaluation with fixed randomness on the specified subset, with or without introducing errors in the
         submission.
@@ -174,6 +176,11 @@ class TestMain(unittest.TestCase):
             json.dump(mock, f, indent=2)
 
         cfg = config_factory('tracking_nips_2019')
+
+        # Update dist fcn and threshold with those specified
+        cfg.dist_fcn = dist_fcn
+        cfg.dist_th_tp = dist_th_tp
+
         nusc_eval = TrackingEval(cfg, self.res_mockup, eval_set=eval_set, output_dir=self.res_eval_folder,
                                  nusc_version=version, nusc_dataroot=os.environ['NUSCENES'], verbose=False)
         metrics = nusc_eval.main(render_curves=render_curves)
@@ -192,7 +199,8 @@ class TestMain(unittest.TestCase):
         :param render_curves: Whether to render stats curves to disk.
         """
         # Run the evaluation with errors.
-        metrics = self.basic_test(eval_set, add_errors=True, render_curves=render_curves)
+        metrics = self.basic_test(eval_set, add_errors=True, render_curves=render_curves,
+                                dist_fcn='center_distance', dist_th_tp=2.0)
 
         # Compare metrics to known solution.
         if eval_set == 'mini_val':
@@ -201,6 +209,20 @@ class TestMain(unittest.TestCase):
             self.assertAlmostEqual(metrics['motar'], 0.3726570200013319)
             self.assertAlmostEqual(metrics['mota'], 0.25003943918566174)
             self.assertAlmostEqual(metrics['motp'], 1.2976508610883917)
+        else:
+            print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
+
+        # Run again with the alternative bev_iou_complement dist_fcn
+        metrics = self.basic_test(eval_set, add_errors=True, render_curves=render_curves,
+                                  dist_fcn='bev_iou_complement', dist_th_tp=0.999999)
+
+        # Compare metrics to known solution.
+        if eval_set == 'mini_val':
+            self.assertAlmostEqual(metrics['amota'], 0.231839679131956)
+            self.assertAlmostEqual(metrics['amotp'], 1.3629342647309446)
+            self.assertAlmostEqual(metrics['motar'], 0.27918315466340504)
+            self.assertAlmostEqual(metrics['mota'], 0.22922560056448252)
+            self.assertAlmostEqual(metrics['motp'], 0.7541595548820258)
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
@@ -224,7 +246,8 @@ class TestMain(unittest.TestCase):
         mock__get_custom_splits_file_path.return_value = self.splits_file_mockup
 
         # Run the evaluation without errors.
-        metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves)
+        metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves,
+                                  dist_fcn='center_distance', dist_th_tp=2.0)
 
         # Compare metrics to known solution. Do not check:
         # - MT/TP (hard to figure out here).
@@ -247,6 +270,30 @@ class TestMain(unittest.TestCase):
         else:
             print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
+        # Run again with the alternative bev_iou_complement dist_fcn (and a very precise threshold)
+        metrics = self.basic_test(eval_set, add_errors=False, render_curves=render_curves,
+                                  dist_fcn='bev_iou_complement', dist_th_tp=1e-6)
+
+        # Compare metrics to known solution. Do not check:
+        # - MT/TP (hard to figure out here).
+        # - AMOTA/AMOTP (unachieved recall values lead to hard unintuitive results).
+        if eval_set in ['mini_val', 'mini_custom_train']:
+            self.assertAlmostEqual(metrics['amota'], 1.0)
+            self.assertAlmostEqual(metrics['amotp'], 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics['motar'], 1.0)
+            self.assertAlmostEqual(metrics['recall'], 1.0)
+            self.assertAlmostEqual(metrics['mota'], 1.0)
+            self.assertAlmostEqual(metrics['motp'], 0.0, delta=1e-5)
+            self.assertAlmostEqual(metrics['faf'], 0.0)
+            self.assertAlmostEqual(metrics['ml'], 0.0)
+            self.assertAlmostEqual(metrics['fp'], 0.0)
+            self.assertAlmostEqual(metrics['fn'], 0.0)
+            self.assertAlmostEqual(metrics['ids'], 0.0)
+            self.assertAlmostEqual(metrics['frag'], 0.0)
+            self.assertAlmostEqual(metrics['tid'], 0.0)
+            self.assertAlmostEqual(metrics['lgd'], 0.0)
+        else:
+            print('Skipping checks due to choice of custom eval_set: %s' % eval_set)
 
 if __name__ == '__main__':
     unittest.main()
