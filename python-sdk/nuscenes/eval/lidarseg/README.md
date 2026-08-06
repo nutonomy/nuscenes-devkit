@@ -29,12 +29,12 @@ When using the dataset in your research, please cite [Panoptic nuScenes](https:/
 ```
 
 ## Participation
-The nuScenes lidarseg segmentation [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) is open all year round for submission.
-To participate in the challenge, please create an account at [EvalAI](https://eval.ai).
+The nuScenes lidarseg segmentation [evaluation server](https://huggingface.co/spaces/nuscenes/nuscenes-lidarseg-challenge) is open all year round for submission.
+To participate in the challenge, please create an account at [Hugging Face](https://huggingface.co/join).
 Then upload your zipped result folder with the required [content](#results-format).
 After each challenge, the results will be exported to the nuScenes [leaderboard](https://www.nuscenes.org/lidar-segmentation).
 This is the only way to benchmark your method against the test dataset. 
-We require that all participants send the following information to nuScenes@motional.com after submitting their results on EvalAI: 
+We require that all participants send the following information to nuScenes@motional.com after submitting their results on Hugging Face: 
 - Team name
 - Method name
 - Authors
@@ -50,14 +50,13 @@ Additionally we organize a number of challenges at leading Computer Vision confe
 Users that submit their results during the challenge period are eligible for awards.
 Any user that cannot attend the workshop (direct or via a representative) will be excluded from the challenge, but will still be listed on the leaderboard.
 
-Click [here](https://eval.ai/web/challenges/challenge-page/720/overview) for the **EvalAI lidar segmentation evaluation server**.
+Click [here](https://huggingface.co/spaces/nuscenes/nuscenes-lidarseg-challenge) for the **Hugging Face lidar segmentation evaluation server**.
 
 ### 6th AI Driving Olympics, ICRA 2021
 The second nuScenes lidar segmentation challenge will be held at [ICRA 2021](http://www.icra2021.org/) as part of [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
 Submissions will be accepted from April 1 to May 26, 2021.
 The prizes will be awarded to submissions that outperform the previous state-of-the-art in their respective tracks.
 Results and winners will be announced at [The AI Driving Olympics: Evaluating Progress in Robotics through Standardized and Reproducible Benchmarks](https://driving-olympics.ai/).
-Note that this challenge uses the same [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) as previous lidar segmentation challenges.
 
 A summary of the results can be seen below. 
 For details, please refer to the [lidar segmentation leaderboard](https://www.nuscenes.org/lidar-segmentation).
@@ -73,7 +72,6 @@ The first nuScenes lidar segmentation challenge will be held at [NeurIPS 2020](h
 Submissions will be accepted from November 1 to December 8, 2020.
 Results and winners will be announced at the [5th AI Driving Olympics](https://driving-olympics.ai/) at NeurIPS 2020.
 For more information see the [leaderboard](https://www.nuscenes.org/lidar-segmentation).
-Note that the [evaluation server](https://eval.ai/web/challenges/challenge-page/720/overview) can still be used to benchmark your results.
 
 A summary of the results can be seen below. 
 For details, please refer to the [lidar segmentation leaderboard](https://www.nuscenes.org/lidar-segmentation).
@@ -97,7 +95,7 @@ For details, please refer to the [lidar segmentation leaderboard](https://www.nu
 * Top leaderboard entries and their papers will be manually reviewed.
 * Each user or team can have at most one account *per year* on the evaluation server. Users that create multiple accounts to circumvent the rules will be excluded from the competition.
 * Each user or team can submit at most three results *per year*. These results must come from different models, rather than submitting results from the same model at different training epochs or with slightly different parameters.
-* Faulty submissions that return an error on Eval AI do not count towards the submission limit.
+* Faulty submissions that return an error on Hugging Face do not count towards the submission limit.
 * Any attempt to circumvent these rules will result in a permanent ban of the team or company from all nuScenes challenges. 
 
 ## Results format
