@@ -889,13 +889,20 @@ class NuScenesExplorer:
 
         # Second step: transform from ego to the global frame.
         poserecord = self.nusc.get('ego_pose', pointsensor['ego_pose_token'])
-        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix)
-        pc.translate(np.array(poserecord['translation']))
+        sensor_timestamp_ego_pose = np.eye(4)
+        sensor_timestamp_ego_pose[:3, :3] = Quaternion(poserecord['rotation']).rotation_matrix
+        sensor_timestamp_ego_pose[:3, 3] = np.array(poserecord['translation'])
 
         # Third step: transform from global into the ego vehicle frame for the timestamp of the image.
         poserecord = self.nusc.get('ego_pose', cam['ego_pose_token'])
-        pc.translate(-np.array(poserecord['translation']))
-        pc.rotate(Quaternion(poserecord['rotation']).rotation_matrix.T)
+        image_timestamp_ego_pose = np.eye(4)
+        image_timestamp_ego_pose[:3, :3] = Quaternion(poserecord['rotation']).rotation_matrix
+        image_timestamp_ego_pose[:3, 3] = np.array(poserecord['translation'])
+
+        # Compute the transformation matrix from point sensor timestamp to image timestamp.
+        sensor_to_image_matrix = np.linalg.inv(image_timestamp_ego_pose).dot(sensor_timestamp_ego_pose)
+        pc.rotate(sensor_to_image_matrix[:3, :3])
+        pc.translate(sensor_to_image_matrix[:3, 3])
 
         # Fourth step: transform from ego into the camera.
         cs_record = self.nusc.get('calibrated_sensor', cam['calibrated_sensor_token'])
