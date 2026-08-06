@@ -403,8 +403,8 @@ class RadarPointCloud(PointCloud):
         data = meta[10].split(' ')[1]
         feature_count = len(types)
         assert width > 0
-        assert len([c for c in counts if c != c]) == 0, 'Error: COUNT not supported!'
-        assert height == 1, 'Error: height != 0 not supported!'
+        assert all(int(c) == 1 for c in counts), 'Error: COUNT != 1 not supported!'
+        assert height == 1, 'Error: height != 1 not supported!'
         assert data == 'binary'
 
         # Lookup table for how to decode the binaries.
