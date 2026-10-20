@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nuscenes-devkit"
+version = "1.2.0"
+description = "The official devkit of the nuScenes dataset (www.nuscenes.org)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "apache-2.0"}
+authors = [
+    {name = "Holger Caesar, Oscar Beijbom, Qiang Xu, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, Sergi Widjaja, Kiwoo Shin, Caglayan Dicle, Freddy Boulton, Whye Kit Fong, Asha Asvathaman, Lubing Zhou et al.", email = "nuscenes@motional.com"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "License :: Free for non-commercial use",
+]
+dynamic = ["dependencies", "optional-dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/nutonomy/nuscenes-devkit"
+
+[tool.setuptools.packages.find]
+where = ["python-sdk"]
+include = ["nuscenes", "nuscenes.*", "nuimages", "nuimages.*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = [
+    "setup/requirements/requirements_base.txt",
+    "setup/requirements/requirements_nuimages.txt",
+]}
+
+[tool.setuptools.dynamic.optional-dependencies]
+prediction = {file = ["setup/requirements/requirements_prediction.txt"]}
+tracking = {file = ["setup/requirements/requirements_tracking.txt"]}

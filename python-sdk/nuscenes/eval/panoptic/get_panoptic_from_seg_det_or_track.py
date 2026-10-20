@@ -79,7 +79,7 @@ def generate_panoptic_labels(nusc: NuScenes,
         lidar_path = os.path.join(nusc.dataroot, sd_record['filename'])
         lidarseg_pred_filename = os.path.join(lidarseg_preds_folder, 'lidarseg', nusc.version.split('-')[-1],
                                               sd_record['token'] + '_lidarseg.bin')
-        lidar_seg = LidarSegPointCloud(lidar_path, lidarseg_pred_filename)
+        lidar_seg:LidarSegPointCloud = LidarSegPointCloud(lidar_path, lidarseg_pred_filename)
 
         panop_labels = np.zeros(lidar_seg.labels.shape, dtype=np.uint16)
         overlaps = np.zeros(lidar_seg.labels.shape, dtype=np.uint8)
@@ -89,7 +89,7 @@ def generate_panoptic_labels(nusc: NuScenes,
         # Tracking IDs will be None if pred_boxes is of DetectionBox type.
         sorted_pred_boxes, pred_cls, tracking_ids = sort_confidence(pred_boxes)
         sorted_pred_boxes = boxes_to_sensor(sorted_pred_boxes, pose_record, cs_record)
-
+        
         # Go through each box (a.k.a instance) and obtain the panoptic label for each.
         for instance_id, (pred_box, cl, tracking_id) in enumerate(zip(sorted_pred_boxes, pred_cls, tracking_ids)):
             cl_id = coarse2idx[cl]
@@ -101,6 +101,7 @@ def generate_panoptic_labels(nusc: NuScenes,
                     inst_tok2id[scene_token][tracking_id] = len(inst_tok2id[scene_token]) + 1
 
             msk = np.zeros(lidar_seg.labels.shape, dtype=np.uint8)
+            
             indices = np.where(points_in_box(pred_box, lidar_seg.points[:, :3].T))[0]
 
             msk[indices] = 1
@@ -120,7 +121,7 @@ def generate_panoptic_labels(nusc: NuScenes,
             overlaps += msk
 
         stuff_msk = np.logical_and(panop_labels == 0, lidar_seg.labels >= STUFF_START_COARSE_CLASS_ID)
-        panop_labels[stuff_msk] = lidar_seg.labels[stuff_msk] * 1000
+        panop_labels[stuff_msk] = np.uint16(lidar_seg.labels[stuff_msk]) * 1000
         panoptic_file = sd_record['token'] + '_panoptic.npz'
         np.savez_compressed(os.path.join(panoptic_dir, panoptic_file), data=panop_labels.astype(np.uint16))
 
