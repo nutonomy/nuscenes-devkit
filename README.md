@@ -60,6 +60,11 @@ Our devkit is available and can be installed via [pip](https://pip.pypa.io/en/st
 ```
 pip install nuscenes-devkit
 ```
+or to build locally 
+```
+pip install .
+```
+
 For an advanced installation, see [installation](https://github.com/nutonomy/nuscenes-devkit/blob/master/docs/installation.md) for detailed instructions.
 
 ## nuImages
