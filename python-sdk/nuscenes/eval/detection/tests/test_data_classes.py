@@ -3,6 +3,7 @@
 
 import json
 import os
+import pickle
 import unittest
 
 from nuscenes.eval.common.data_classes import EvalBoxes
@@ -29,6 +30,23 @@ class TestDetectionConfig(unittest.TestCase):
 
         recovered = DetectionConfig.deserialize(json.loads(json.dumps(detect_cfg.serialize())))
         self.assertEqual(detect_cfg, recovered)
+
+    def test_pickle(self):
+        """ Test that DetectionConfig can be pickled and unpickled. """
+
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        cfg_name = 'detection_cvpr_2019'
+        config_path = os.path.join(this_dir, '..', 'configs', cfg_name + '.json')
+
+        with open(config_path) as f:
+            cfg = json.load(f)
+
+        detect_cfg = DetectionConfig.deserialize(cfg)
+        recovered = pickle.loads(pickle.dumps(detect_cfg))
+
+        self.assertEqual(detect_cfg, recovered)
+        self.assertEqual(detect_cfg.class_names, recovered.class_names)
+        self.assertIsInstance(recovered.class_names, list)
 
 
 class TestDetectionBox(unittest.TestCase):
