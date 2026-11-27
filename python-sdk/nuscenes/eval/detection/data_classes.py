@@ -36,7 +36,7 @@ class DetectionConfig:
         self.max_boxes_per_sample = max_boxes_per_sample
         self.mean_ap_weight = mean_ap_weight
 
-        self.class_names = self.class_range.keys()
+        self.class_names = list(self.class_range.keys())
 
     def __eq__(self, other):
         eq = True
